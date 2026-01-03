@@ -4,9 +4,11 @@ import { AsyncResult, err, ok, Result } from "@/aspects/result";
 import {
   AggregateNotFoundError,
   DuplicationError,
+  UnexpectedError,
   ValidationError,
   validationErrors,
 } from "@/aspects/error";
+import { PublishStatus, publishStatusSchema } from "../common";
 
 export const articleIdentifierSchema = z.ulid().brand("ArticleIdentifier");
 
@@ -46,15 +48,6 @@ export const slugSchema = z
 
 export type ArticleSlug = z.infer<typeof slugSchema>;
 
-export const Status = {
-  DRAFT: "draft",
-  PUBLISHED: "published",
-} as const;
-
-export const statusSchema = z.enum(Status).brand("Status");
-
-export type Status = z.infer<typeof statusSchema>;
-
 export const articleSchema = z
   .object({
     identifier: articleIdentifierSchema,
@@ -62,7 +55,7 @@ export const articleSchema = z
     content: contentSchema,
     excerpt: excerptSchema,
     slug: slugSchema,
-    status: statusSchema,
+    status: publishStatusSchema,
     tags: z.array(tagSchema),
   })
   .brand("Article");
@@ -71,12 +64,12 @@ export type Article = z.infer<typeof articleSchema>;
 
 export const toDraft = (article: Article): Article => ({
   ...article,
-  status: Status.DRAFT as Status,
+  status: PublishStatus.DRAFT as PublishStatus,
 });
 
 export const toPublished = (article: Article): Article => ({
   ...article,
-  status: Status.PUBLISHED as Status,
+  status: PublishStatus.PUBLISHED as PublishStatus,
 });
 
 export type UnvalidatedArticle = {
@@ -104,12 +97,13 @@ export const validateArticle = (
 export type ArticleError =
   | ValidationError
   | AggregateNotFoundError<"Article">
-  | DuplicationError<"Article">;
+  | DuplicationError<"Article">
+  | UnexpectedError;
 
 export const criteriaSchema = z
   .object({
     slug: slugSchema.nullable(),
-    status: statusSchema.nullable(),
+    status: publishStatusSchema.nullable(),
     freeWord: z.string().min(1).max(100).nullable(),
     tags: z.array(tagSchema).nullable(),
   })
@@ -117,18 +111,44 @@ export const criteriaSchema = z
 
 export type Criteria = z.infer<typeof criteriaSchema>;
 
+export const validateCriteria = (
+  candidate: UnvalidatedCriteria
+): Result<Criteria, ValidationError[]> => {
+  const errors = validationErrors(criteriaSchema, candidate);
+
+  if (errors.length > 0) {
+    return err(errors);
+  }
+
+  return ok(criteriaSchema.parse(candidate));
+};
+
+export type UnvalidatedCriteria = {
+  slug?: string | null;
+  status?: string | null;
+  freeWord?: string | null;
+  tags?: string[] | null;
+};
+
 export interface ArticleRepository {
   persist: (
     article: Article
   ) => AsyncResult<
     void,
-    AggregateNotFoundError<"Article"> | DuplicationError<"Article">
+    | AggregateNotFoundError<"Article">
+    | DuplicationError<"Article">
+    | UnexpectedError
   >;
   find: (
     identifier: ArticleIdentifier
-  ) => AsyncResult<Article, AggregateNotFoundError<"Article">>;
-  search: (criteria: Criteria) => AsyncResult<Article[], ValidationError[]>;
+  ) => AsyncResult<
+    Article,
+    AggregateNotFoundError<"Article"> | UnexpectedError
+  >;
+  search: (
+    criteria: Criteria
+  ) => AsyncResult<Article[], UnexpectedError>;
   terminate: (
     identifier: ArticleIdentifier
-  ) => AsyncResult<void, AggregateNotFoundError<"Article">>;
+  ) => AsyncResult<void, AggregateNotFoundError<"Article"> | UnexpectedError>;
 }

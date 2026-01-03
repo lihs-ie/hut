@@ -5,6 +5,7 @@ import { AsyncResult, err, ok, Result } from "@/aspects/result";
 import {
   AggregateNotFoundError,
   DuplicationError,
+  UnexpectedError,
   ValidationError,
   validationErrors,
 } from "@/aspects/error";
@@ -128,13 +129,13 @@ export interface MemoRepository {
     memo: Memo
   ) => AsyncResult<
     void,
-    AggregateNotFoundError<"Memo"> | DuplicationError<"Memo">
+    AggregateNotFoundError<"Memo"> | DuplicationError<"Memo"> | UnexpectedError
   >;
   find: (
     identifier: MemoIdentifier
-  ) => AsyncResult<Memo, AggregateNotFoundError<"Memo">>;
-  search: (criteria: Criteria) => AsyncResult<Memo[], ValidationError[]>;
+  ) => AsyncResult<Memo, AggregateNotFoundError<"Memo"> | UnexpectedError>;
+  search: (criteria: Criteria) => AsyncResult<Memo[], UnexpectedError>;
   terminate: (
     identifier: MemoIdentifier
-  ) => AsyncResult<void, AggregateNotFoundError<"Memo">>;
+  ) => AsyncResult<void, AggregateNotFoundError<"Memo"> | UnexpectedError>;
 }
