@@ -1,4 +1,3 @@
-// Result型のインターフェース定義
 export interface Result<T, E> {
   readonly _tag: "Ok" | "Err";
   readonly isOk: boolean;
@@ -9,9 +8,11 @@ export interface Result<T, E> {
   unwrapOr(defaultValue: T): T;
   unwrapError(): E;
   toAsync(): AsyncResult<T, E>;
-  andThen<U>(fn: (value: T) => Result<U, E>): Result<U, E>;
+  andThen<U, F = E>(fn: (value: T) => Result<U, F>): Result<U, E | F>;
   orElse<F>(fn: (error: E) => Result<T, F>): Result<T, F>;
   match<U>(handlers: { ok: (value: T) => U; err: (error: E) => U }): U;
+  tap(fn: (value: T) => void): Result<T, E>;
+  tapError(fn: (error: E) => void): Result<T, E>;
 }
 
 export interface AsyncResult<T, E> {
@@ -21,9 +22,9 @@ export interface AsyncResult<T, E> {
   unwrap(): Promise<T>;
   unwrapOr(defaultValue: T): Promise<T>;
   unwrapError(): Promise<E>;
-  andThen<U>(
-    fn: (value: T) => Result<U, E> | Promise<Result<U, E>> | AsyncResult<U, E>
-  ): AsyncResult<U, E>;
+  andThen<U, F = E>(
+    fn: (value: T) => Result<U, F> | Promise<Result<U, F>> | AsyncResult<U, F>
+  ): AsyncResult<U, E | F>;
   orElse<F>(
     fn: (error: E) => Result<T, F> | Promise<Result<T, F>> | AsyncResult<T, F>
   ): AsyncResult<T, F>;
@@ -31,6 +32,8 @@ export interface AsyncResult<T, E> {
     ok: (value: T) => U | Promise<U>;
     err: (error: E) => U | Promise<U>;
   }): Promise<U>;
+  tap(fn: (value: T) => void | Promise<void>): AsyncResult<T, E>;
+  tapError(fn: (error: E) => void | Promise<void>): AsyncResult<T, E>;
 }
 
 export type Some<T> = {
@@ -44,7 +47,6 @@ export type None = {
 
 export type Option<T> = Some<T> | None;
 
-// AsyncResult を作成するファクトリ関数
 const createAsyncResult = <T, E>(
   promise: Promise<Result<T, E>>
 ): AsyncResult<T, E> => ({
@@ -89,22 +91,22 @@ const createAsyncResult = <T, E>(
     return result.unwrapError();
   },
 
-  andThen<U>(
-    fn: (value: T) => Result<U, E> | Promise<Result<U, E>> | AsyncResult<U, E>
-  ): AsyncResult<U, E> {
+  andThen<U, F = E>(
+    fn: (value: T) => Result<U, F> | Promise<Result<U, F>> | AsyncResult<U, F>
+  ): AsyncResult<U, E | F> {
     return createAsyncResult(
       promise.then(async (result) => {
         if (result.isOk) {
           const nextResult = fn(result.unwrap());
           if (isAsyncResult(nextResult)) {
             return nextResult.match({
-              ok: (v) => ok<U, E>(v),
-              err: (e) => err<U, E>(e),
+              ok: (v) => ok<U, E | F>(v),
+              err: (e) => err<U, E | F>(e),
             });
           }
-          return nextResult;
+          return nextResult as Result<U, E | F>;
         }
-        return err<U, E>(result.unwrapError());
+        return err<U, E | F>(result.unwrapError());
       })
     );
   },
@@ -139,9 +141,30 @@ const createAsyncResult = <T, E>(
     }
     return handlers.err(result.unwrapError());
   },
+
+  tap(fn: (value: T) => void | Promise<void>): AsyncResult<T, E> {
+    return createAsyncResult(
+      promise.then(async (result) => {
+        if (result.isOk) {
+          await fn(result.unwrap());
+        }
+        return result;
+      })
+    );
+  },
+
+  tapError(fn: (error: E) => void | Promise<void>): AsyncResult<T, E> {
+    return createAsyncResult(
+      promise.then(async (result) => {
+        if (result.isErr) {
+          await fn(result.unwrapError());
+        }
+        return result;
+      })
+    );
+  },
 });
 
-// Ok を作成するファクトリ関数
 const createOk = <T, E>(value: T): Result<T, E> => ({
   _tag: "Ok" as const,
   isOk: true as const,
@@ -173,7 +196,7 @@ const createOk = <T, E>(value: T): Result<T, E> => ({
     return createAsyncResult(Promise.resolve(createOk<T, E>(value)));
   },
 
-  andThen<U>(fn: (value: T) => Result<U, E>): Result<U, E> {
+  andThen<U, F = E>(fn: (value: T) => Result<U, F>): Result<U, E | F> {
     return fn(value);
   },
 
@@ -185,9 +208,18 @@ const createOk = <T, E>(value: T): Result<T, E> => ({
   match<U>(handlers: { ok: (value: T) => U; err: (error: E) => U }): U {
     return handlers.ok(value);
   },
+
+  tap(fn: (value: T) => void): Result<T, E> {
+    fn(value);
+    return createOk(value);
+  },
+
+  tapError(_fn: (error: E) => void): Result<T, E> {
+    void _fn;
+    return createOk(value);
+  },
 });
 
-// Err を作成するファクトリ関数
 const createErr = <T, E>(error: E): Result<T, E> => ({
   _tag: "Err" as const,
   isOk: false as const,
@@ -218,7 +250,7 @@ const createErr = <T, E>(error: E): Result<T, E> => ({
     return createAsyncResult(Promise.resolve(createErr<T, E>(error)));
   },
 
-  andThen<U>(_fn: (value: T) => Result<U, E>): Result<U, E> {
+  andThen<U, F = E>(_fn: (value: T) => Result<U, F>): Result<U, E | F> {
     void _fn;
     return createErr(error);
   },
@@ -230,27 +262,26 @@ const createErr = <T, E>(error: E): Result<T, E> => ({
   match<U>(handlers: { ok: (value: T) => U; err: (error: E) => U }): U {
     return handlers.err(error);
   },
+
+  tap(_fn: (value: T) => void): Result<T, E> {
+    void _fn;
+    return createErr(error);
+  },
+
+  tapError(fn: (error: E) => void): Result<T, E> {
+    fn(error);
+    return createErr(error);
+  },
 });
 
-// ヘルパー関数
-
-/**
- * 成功のResultを作成
- */
 export function ok<T, E = never>(value: T): Result<T, E> {
   return createOk(value);
 }
 
-/**
- * 失敗のResultを作成
- */
 export function err<T = never, E = unknown>(error: E): Result<T, E> {
   return createErr(error);
 }
 
-/**
- * AsyncResultかどうかを判定
- */
 export function isAsyncResult<T, E>(
   result: Result<T, E> | AsyncResult<T, E> | Promise<Result<T, E>>
 ): result is AsyncResult<T, E> {
@@ -262,10 +293,6 @@ export function isAsyncResult<T, E>(
   );
 }
 
-/**
- * Promiseから AsyncResult を作成
- * エラー時にはエラーマッパー関数でエラーを変換
- */
 export function fromPromise<T, E>(
   promise: Promise<T>,
   errorMapper: (error: unknown) => E
@@ -277,9 +304,6 @@ export function fromPromise<T, E>(
   );
 }
 
-/**
- * 例外をスローする可能性のある関数をラップしてResultを返す関数を作成
- */
 export function fromThrowable<T, A extends unknown[], E>(
   fn: (...args: A) => T,
   errorMapper: (error: unknown) => E
@@ -293,9 +317,6 @@ export function fromThrowable<T, A extends unknown[], E>(
   };
 }
 
-/**
- * 非同期関数をラップしてAsyncResultを返す関数を作成
- */
 export function fromAsyncThrowable<T, A extends unknown[], E>(
   fn: (...args: A) => Promise<T>,
   errorMapper: (error: unknown) => E
@@ -305,10 +326,6 @@ export function fromAsyncThrowable<T, A extends unknown[], E>(
   };
 }
 
-/**
- * 複数のResultを結合して、すべて成功の場合はタプルで返す
- * いずれかが失敗の場合は最初のエラーを返す
- */
 export function combine<T extends readonly Result<unknown, unknown>[]>(
   results: T
 ): Result<
@@ -333,9 +350,6 @@ export function combine<T extends readonly Result<unknown, unknown>[]>(
   >;
 }
 
-/**
- * 複数のAsyncResultを結合
- */
 export function combineAsync<
   T extends readonly AsyncResult<unknown, unknown>[]
 >(
@@ -369,18 +383,12 @@ export function combineAsync<
   );
 }
 
-/**
- * ResultがOkかどうかを型ガードで判定
- */
 export function isOk<T, E>(
   result: Result<T, E>
 ): result is Result<T, never> & { isOk: true } {
   return result.isOk;
 }
 
-/**
- * ResultがErrかどうかを型ガードで判定
- */
 export function isErr<T, E>(
   result: Result<T, E>
 ): result is Result<never, E> & { isErr: true } {
