@@ -4,6 +4,7 @@ import { AsyncResult, err, ok, Result } from "@/aspects/result";
 import {
   AggregateNotFoundError,
   DuplicationError,
+  UnexpectedError,
   ValidationError,
   validationErrors,
 } from "@/aspects/error";
@@ -98,13 +99,15 @@ export interface SeriesRepository {
     series: Series
   ) => AsyncResult<
     void,
-    AggregateNotFoundError<"Series"> | DuplicationError<"Series">
+    | AggregateNotFoundError<"Series">
+    | DuplicationError<"Series">
+    | UnexpectedError
   >;
   find: (
     identifier: SeriesIdentifier
-  ) => AsyncResult<Series, AggregateNotFoundError<"Series">>;
-  search: (title: string) => AsyncResult<Series[], ValidationError[]>;
+  ) => AsyncResult<Series, AggregateNotFoundError<"Series"> | UnexpectedError>;
+  search: (title: string) => AsyncResult<Series[], UnexpectedError>;
   terminate: (
     identifier: SeriesIdentifier
-  ) => AsyncResult<void, AggregateNotFoundError<"Series">>;
+  ) => AsyncResult<void, AggregateNotFoundError<"Series"> | UnexpectedError>;
 }
