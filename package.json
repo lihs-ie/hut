@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@next/mdx": "^16.1.1",
+    "firebase": "^12.7.0",
     "hash-it": "^7.0.2",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "ulid": "^3.0.2",
     "zod": "^4.3.4"
   },
   "devDependencies": {
