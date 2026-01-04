@@ -1,0 +1,47 @@
+{
+  "name": "@hut/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./domains/*": "./src/domains/*",
+    "./aspects/*": "./src/aspects/*",
+    "./infrastructures/*": "./src/infrastructures/*",
+    "./workflows/*": "./src/workflows/*",
+    "./components/*": "./src/components/*",
+    "./actions/*": "./src/actions/*"
+  },
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "firebase": "^12.7.0",
+    "hash-it": "^7.0.2",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
+    "ulid": "^3.0.2",
+    "zod": "^4.3.4"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^4.1.3",
+    "@storybook/addon-a11y": "^10.1.11",
+    "@storybook/addon-docs": "^10.1.11",
+    "@storybook/addon-onboarding": "^10.1.11",
+    "@storybook/addon-vitest": "^10.1.11",
+    "@storybook/nextjs-vite": "^10.1.11",
+    "@types/node": "^20.19.27",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "storybook": "^10.1.11",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.5"
+  },
+  "peerDependencies": {
+    "next": "^16.1.1",
+    "react": "^19.2.3"
+  }
+}

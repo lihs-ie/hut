@@ -1,0 +1,28 @@
+{
+  "name": "@hut/reader",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "@hut/shared": "workspace:*",
+    "next": "16.1.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-markdown": "^10.1.0",
+    "next-mdx-remote": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "rehype-pretty-code": "^0.14.1",
+    "rehype-highlight": "^7.0.2",
+    "@next/mdx": "^16.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/react": "^19.2.7",
+    "@types/node": "^20.19.27"
+  }
+}
