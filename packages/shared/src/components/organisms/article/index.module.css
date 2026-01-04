@@ -1,0 +1,135 @@
+/* styles/container.css */
+.container {
+  /* レイアウト */
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px;
+
+  /* Typography */
+  font-size: 16px;
+  line-height: 1.9;
+  color: #111827; /* ほぼ黒 */
+  word-break: break-word;
+}
+
+.container p {
+  margin: 1em 0;
+}
+
+.container a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.container strong {
+  font-weight: 700;
+}
+
+.container h1 {
+  font-size: 2rem;
+  line-height: 1.25;
+  font-weight: 800;
+  margin: 1.6em 0 0.8em;
+}
+
+.container h2 {
+  font-size: 1.6rem;
+  line-height: 1.3;
+  font-weight: 800;
+  margin: 2.2em 0 0.8em;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.container h3 {
+  font-size: 1.3rem;
+  line-height: 1.35;
+  font-weight: 800;
+  margin: 1.8em 0 0.6em;
+}
+
+.container ul,
+.container ol {
+  margin: 1em 0;
+  padding-left: 1.4em;
+}
+
+.container li {
+  margin: 0.35em 0;
+}
+
+.container blockquote {
+  margin: 1.5em 0;
+  padding: 0.2em 0 0.2em 1em;
+  border-left: 4px solid #d1d5db;
+  color: #374151;
+}
+
+.container hr {
+  margin: 2em 0;
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+.container img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  margin: 1.2em auto;
+}
+
+/* インラインコード */
+.container :not(pre) > code {
+  background: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+/* コードブロック（ベース） */
+.container pre {
+  background: #0b1220;
+  color: #e5e7eb;
+  padding: 1em;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 1.5em 0;
+}
+
+.container pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* pretty-code は pre の内側構造が変わるので余白だけ整える */
+.container pre {
+  padding: 0;
+}
+
+.container pre code {
+  display: block;
+  padding: 1em;
+}
+
+.prose-zenn table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 0.95em;
+}
+
+.prose-zenn th,
+.prose-zenn td {
+  border: 1px solid #e5e7eb;
+  padding: 0.6em 0.8em;
+  vertical-align: top;
+}
+
+.prose-zenn th {
+  background: #f9fafb;
+  font-weight: 700;
+}
