@@ -1,50 +1,74 @@
 import { ulid } from "ulid";
 import { Event } from "../common";
-import { MemoIdentifier } from "./common";
+import { MemoIdentifier, MemoSnapshot } from "./common";
 
-export type MemoCreatedEvent = Event<{
-  memo: MemoIdentifier;
-}>;
+export type MemoEditedEvent = Event<
+  "memo.edited",
+  {
+    next: MemoSnapshot;
+    before: MemoSnapshot;
+  }
+>;
+
+export const createMemoEditedEvent = (
+  next: MemoSnapshot,
+  before: MemoSnapshot,
+  occurredAt: Date,
+): MemoEditedEvent => {
+  return {
+    identifier: ulid(),
+    occurredAt,
+    type: "memo.edited",
+    payload: {
+      next,
+      before,
+    },
+  };
+};
+
+export type MemoCreatedEvent = Event<
+  "memo.created",
+  {
+    snapshot: MemoSnapshot;
+  }
+>;
 
 export const createMemoCreatedEvent = (
-  memo: MemoIdentifier
-): MemoCreatedEvent => ({
-  identifier: ulid(),
-  occurredAt: new Date(),
-  payload: {
-    memo,
-  },
-});
+  snapshot: MemoSnapshot,
+  occurredAt: Date,
+): MemoCreatedEvent => {
+  return {
+    identifier: ulid(),
+    occurredAt,
+    type: "memo.created",
+    payload: {
+      snapshot,
+    },
+  };
+};
 
-export type MemoUpdatedEvent = Event<{
-  memo: MemoIdentifier;
-}>;
-
-export const createMemoUpdatedEvent = (
-  memo: MemoIdentifier
-): MemoUpdatedEvent => ({
-  identifier: ulid(),
-  occurredAt: new Date(),
-  payload: {
-    memo,
-  },
-});
-
-export type MemoTerminatedEvent = Event<{
-  memo: MemoIdentifier;
-}>;
+export type MemoTerminatedEvent = Event<
+  "memo.terminated",
+  {
+    memo: MemoIdentifier;
+  }
+>;
 
 export const createMemoTerminatedEvent = (
-  memo: MemoIdentifier
-): MemoTerminatedEvent => ({
-  identifier: ulid(),
-  occurredAt: new Date(),
-  payload: {
-    memo,
-  },
-});
+  memo: MemoIdentifier,
+  occurredAt = new Date(),
+): MemoTerminatedEvent => {
+  return {
+    identifier: ulid(),
+    occurredAt,
+    type: "memo.terminated",
+    payload: {
+      memo,
+    },
+  };
+};
 
 export type MemoEvent =
   | MemoCreatedEvent
-  | MemoUpdatedEvent
+  | MemoEditedEvent
   | MemoTerminatedEvent;

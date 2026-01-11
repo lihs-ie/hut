@@ -1,30 +1,40 @@
 "use server";
 
-import { Article, articleSchema } from "@/domains/articles";
+import { cache } from "react";
+import { generateToc } from "@shared/components/global/mdx";
+import { unwrapForNextJs } from "@shared/components/global/next-error";
+import { Article, UnvalidatedCriteria } from "@shared/domains/articles";
+import { PublishStatus } from "@shared/domains/common";
+import { ArticleWorkflowProvider } from "@shared/providers/workflows/article";
 
-export async function Persist(formData: FormData) {
-  console.log("Persist article", formData);
+export const find = cache(async (identifier: string): Promise<Article> => {
+  return await unwrapForNextJs(
+    ArticleWorkflowProvider.find({ payload: { identifier }, now: new Date() }),
+  );
+});
 
-  return;
-}
+export const findBySlug = cache(async (slug: string): Promise<Article> => {
+  return await unwrapForNextJs(
+    ArticleWorkflowProvider.findBySlug({ payload: { slug }, now: new Date() }),
+  );
+});
 
-export async function Terminate(identifier: string) {
-  console.log("Terminate article", identifier);
+export const search = cache(
+  async (unvalidated: UnvalidatedCriteria): Promise<Article[]> => {
+    return await unwrapForNextJs(
+      ArticleWorkflowProvider.search({
+        payload: {
+          ...unvalidated,
+          status: PublishStatus.PUBLISHED,
+        },
+        now: new Date(),
+      }),
+    );
+  },
+);
 
-  return;
-}
+export const createTableOfContents = cache(async (slug: string) => {
+  const article = await findBySlug(slug);
 
-export async function Find(identifier: string): Promise<Article> {
-  console.log("Find article", identifier);
-
-  throw new Error("Not implemented");
-}
-
-export async function Search(params: {
-  freeWord?: string;
-  tagIdentifiers?: string[];
-}) {
-  console.log("Search articles", params);
-
-  return [];
-}
+  return generateToc(article.content);
+});

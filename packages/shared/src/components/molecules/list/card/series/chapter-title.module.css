@@ -1,0 +1,145 @@
+.container {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.6rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+
+  color: var(--card-foreground);
+  text-decoration: none !important;
+}
+
+.chaptersSection {
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .chaptersSection {
+    margin-bottom: 2rem;
+  }
+}
+
+.chaptersTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .chaptersTitle {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.chapterList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .chapterList {
+    gap: 0.75rem;
+  }
+}
+
+.chapterCard {
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+@media (min-width: 768px) {
+  .chapterCard {
+    padding: 1rem;
+  }
+}
+
+.chapterCard:hover {
+  border-color: var(--accent);
+  background: var(--card);
+}
+
+.contents {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 768px) {
+  .contents {
+    gap: 1rem;
+  }
+}
+
+.chapterNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: oklch(from var(--accent) l c h / 0.1);
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .chapterNumber {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1rem;
+  }
+}
+
+.chapterTitle {
+  font-weight: 500;
+  font-size: 0.9375rem;
+  transition: color 0.2s;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .chapterTitle {
+    font-size: 1rem;
+  }
+}
+
+.chapterCard:hover .chapterTitle {
+  color: var(--accent);
+}
+
+.right {
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted-foreground);
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .right {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+.chapterCard:hover .chapterIcon {
+  color: var(--accent);
+}

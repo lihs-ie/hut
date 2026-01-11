@@ -1,0 +1,68 @@
+.container {
+  max-width: 600px;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.button-primary {
+  color: var(--primary-foreground);
+  border: none;
+  background-color: var(--primary);
+}
+
+.button-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-outline {
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  background-color: transparent;
+}
+
+.button-outline:hover {
+  background-color: var(--muted);
+}
+
+.button-destructive {
+  color: var(--destructive);
+  border: 1px solid var(--destructive);
+  background-color: transparent;
+}
+
+.button-destructive:hover {
+  background-color: color-mix(in oklch, var(--destructive), transparent 90%);
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (max-width: 768px) {
+  .actions {
+    flex-direction: column;
+  }
+}

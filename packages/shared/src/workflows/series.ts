@@ -1,19 +1,26 @@
 import {
   AggregateNotFoundError,
   DuplicationError,
+  UnexpectedError,
   ValidationError,
-} from "@/aspects/error";
-import { Logger } from "@/aspects/logger";
-import { AsyncResult, Result } from "@/aspects/result";
-import { Series, SeriesIdentifier, UnvalidatedSeries } from "@/domains/series";
+} from "@shared/aspects/error";
+import { Logger } from "@shared/aspects/logger";
+import { AsyncResult, Result } from "@shared/aspects/result";
+import { Slug, ValidateSlug } from "@shared/domains/common";
+import {
+  Criteria,
+  Series,
+  SeriesIdentifier,
+  UnvalidatedCriteria,
+  UnvalidatedSeries,
+} from "@shared/domains/series";
 import {
   createSeriesCreatedEvent,
   createSeriesTerminatedEvent,
-  createSeriesUpdatedEvent,
   SeriesCreatedEvent,
   SeriesTerminatedEvent,
-  SeriesUpdatedEvent,
-} from "@/domains/series/event";
+} from "@shared/domains/series/event";
+import { Command } from "./common";
 
 type ValidateIdentifier = (
   identifier: string
@@ -21,12 +28,14 @@ type ValidateIdentifier = (
 
 type FindSeries = (
   identifier: SeriesIdentifier
-) => AsyncResult<Series, AggregateNotFoundError<"Series">>;
+) => AsyncResult<Series, AggregateNotFoundError<"Series"> | UnexpectedError>;
 
 export type SeriesFindWorkflow = (
   identifier: string
-) => AsyncResult<Series, ValidationError | AggregateNotFoundError<"Series">>;
-
+) => AsyncResult<
+  Series,
+  ValidationError | AggregateNotFoundError<"Series"> | UnexpectedError
+>;
 export const createSeriesFindWorkflow =
   (validate: ValidateIdentifier) =>
   (find: FindSeries) =>
@@ -53,19 +62,78 @@ export const createSeriesFindWorkflow =
       });
   };
 
-type SearchSeries = (title: string) => AsyncResult<Series[], never>;
+type SeriesFindBySlugCommand = Command<{ slug: string }>;
+
+type SeriesFindBySlugWorkflow = (
+  command: SeriesFindBySlugCommand
+) => AsyncResult<
+  Series,
+  ValidationError | AggregateNotFoundError<"Series"> | UnexpectedError
+>;
+
+type FindBySLug = {
+  (slug: Slug): AsyncResult<
+    Series,
+    AggregateNotFoundError<"Series"> | UnexpectedError
+  >;
+};
+
+export const createSeriesFindBySlugWorkflow =
+  (validate: ValidateSlug) =>
+  (logger: Logger) =>
+  (findBySlug: FindBySLug): SeriesFindBySlugWorkflow =>
+  (command: SeriesFindBySlugCommand) => {
+    logger.info("SeriesFindBySlugWorkflow started", {
+      slug: command.payload.slug,
+    });
+
+    return validate(command.payload.slug)
+      .toAsync()
+      .tap((slug) => {
+        logger.debug("Validation passed", { slug });
+      })
+      .tapError((error) => {
+        logger.warn("Validation failed", { error });
+      })
+      .andThen(findBySlug)
+      .tap((series) => {
+        logger.info("SeriesFindBySlugWorkflow completed", {
+          identifier: series.identifier,
+        });
+      })
+      .tapError((error) => {
+        logger.error("SeriesFindBySlugWorkflow failed", { error });
+      });
+  };
+
+type SearchSeries = (
+  criteria: Criteria
+) => AsyncResult<Series[], UnexpectedError>;
+
+type ValidateCriteria = (
+  unvalidated: UnvalidatedCriteria
+) => Result<Criteria, ValidationError[]>;
 
 export type SeriesSearchWorkflow = (
-  title: string
-) => AsyncResult<Series[], never>;
+  unvalidated: UnvalidatedCriteria
+) => AsyncResult<Series[], ValidationError[] | UnexpectedError>;
 
 export const createSeriesSearchWorkflow =
+  (validateCriteria: ValidateCriteria) =>
   (search: SearchSeries) =>
   (logger: Logger): SeriesSearchWorkflow =>
-  (title: string) => {
-    logger.info("SeriesSearchWorkflow started", { title });
+  (unvalidated: UnvalidatedCriteria) => {
+    logger.info("SeriesSearchWorkflow started", { unvalidated });
 
-    return search(title)
+    return validateCriteria(unvalidated)
+      .toAsync()
+      .tap((criteria) => {
+        logger.debug("Criteria validation passed", { criteria });
+      })
+      .tapError((errors) => {
+        logger.warn("Criteria validation failed", { errors });
+      })
+      .andThen(search)
       .tap((seriesList) => {
         logger.info("SeriesSearchWorkflow completed", {
           resultCount: seriesList.length,
@@ -82,31 +150,27 @@ type ValidateSeries = (
 
 type PersistSeries = (
   series: Series
-) => AsyncResult<
-  void,
-  AggregateNotFoundError<"Series"> | DuplicationError<"Series">
->;
+) => AsyncResult<void, DuplicationError<"Series"> | UnexpectedError>;
 
-type SeriesPersistedEvent = SeriesCreatedEvent | SeriesUpdatedEvent;
+type SeriesPersistedEvent = SeriesCreatedEvent;
 
 export type SeriesPersistWorkflow = (
-  unvalidated: UnvalidatedSeries,
-  isNew: boolean
+  unvalidated: UnvalidatedSeries
 ) => AsyncResult<
   SeriesPersistedEvent,
   | AggregateNotFoundError<"Series">
   | DuplicationError<"Series">
   | ValidationError[]
+  | UnexpectedError
 >;
 
 export const createSeriesPersistWorkflow =
   (validate: ValidateSeries) =>
   (persist: PersistSeries) =>
   (logger: Logger): SeriesPersistWorkflow =>
-  (unvalidated: UnvalidatedSeries, isNew: boolean) => {
+  (unvalidated: UnvalidatedSeries) => {
     logger.info("SeriesPersistWorkflow started", {
       identifier: unvalidated.identifier,
-      isNew,
     });
 
     return validate(unvalidated)
@@ -126,11 +190,7 @@ export const createSeriesPersistWorkflow =
               identifier: series.identifier,
             });
           })
-          .map(() =>
-            isNew
-              ? createSeriesCreatedEvent(series.identifier)
-              : createSeriesUpdatedEvent(series.identifier)
-          )
+          .map(() => createSeriesCreatedEvent(series.identifier))
       )
       .tap((event) => {
         logger.info("SeriesPersistWorkflow completed", { event });
@@ -142,13 +202,13 @@ export const createSeriesPersistWorkflow =
 
 type TerminateSeries = (
   identifier: SeriesIdentifier
-) => AsyncResult<void, AggregateNotFoundError<"Series">>;
+) => AsyncResult<void, AggregateNotFoundError<"Series"> | UnexpectedError>;
 
 export type SeriesTerminateWorkflow = (
   identifier: string
 ) => AsyncResult<
   SeriesTerminatedEvent,
-  ValidationError | AggregateNotFoundError<"Series">
+  ValidationError | AggregateNotFoundError<"Series"> | UnexpectedError
 >;
 
 export const createSeriesTerminateWorkflow =

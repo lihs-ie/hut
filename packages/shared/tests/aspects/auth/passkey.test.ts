@@ -4,7 +4,7 @@ import {
   authenticationFailedError,
   isAuthenticationFailedError,
   type PasskeyAuthConfig,
-} from "@/aspects/auth/passkey";
+} from "@shared/aspects/auth/passkey";
 
 describe("aspects/auth/passkey", () => {
   describe("validatePasskeyAuthenticator", () => {

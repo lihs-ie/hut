@@ -7,7 +7,7 @@ import {
   isSessionExpiredError,
   type AdminSession,
   type SessionId,
-} from "@/aspects/auth/session";
+} from "@shared/aspects/auth/session";
 
 describe("aspects/auth/session", () => {
   describe("validateSession", () => {

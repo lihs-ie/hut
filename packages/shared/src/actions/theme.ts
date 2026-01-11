@@ -1,7 +1,8 @@
 "use server";
 
-import { Theme } from "@/components/atoms/toggle/theme";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { Theme } from "@shared/domains/common/theme";
 
 export async function toggleTheme() {
   const cookieStore = await cookies();
@@ -10,6 +11,8 @@ export async function toggleTheme() {
   const next = current === Theme.LIGHT ? Theme.DARK : Theme.LIGHT;
 
   cookieStore.set("theme", next, { path: "/", sameSite: "lax" });
+
+  revalidatePath("/", "layout");
 }
 
 export async function currentTheme(): Promise<Theme> {

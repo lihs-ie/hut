@@ -1,6 +1,6 @@
-import { Article } from "@/domains/articles";
+import { Article } from "@shared/domains/articles";
 import styles from "./list.module.css";
-import { ArticleCard } from "@/components/molecules/list/card/article";
+import { ArticleCard } from "@shared/components/molecules/list/card/article";
 
 export type Props = {
   articles: Article[];

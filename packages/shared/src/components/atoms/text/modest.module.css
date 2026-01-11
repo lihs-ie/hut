@@ -1,0 +1,7 @@
+.container {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}

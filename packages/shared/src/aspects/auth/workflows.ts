@@ -1,10 +1,10 @@
-import { Logger } from "@/aspects/logger";
+import { Logger } from "@shared/aspects/logger";
 import {
   AggregateNotFoundError,
   UnexpectedError,
   ValidationError,
-} from "@/aspects/error";
-import { AsyncResult, err, ok } from "@/aspects/result";
+} from "@shared/aspects/error";
+import { AsyncResult, err, ok } from "@shared/aspects/result";
 import { ulid } from "ulid";
 import {
   AdminSession,

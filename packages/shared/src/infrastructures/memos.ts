@@ -2,11 +2,15 @@ import {
   Firestore,
   QueryDocumentSnapshot,
   SnapshotOptions,
+  Timestamp,
 } from "firebase/firestore";
 import {
+  createSlugIndexInTransaction,
   createVersion,
+  deleteSlugIndexInTransaction,
   FirestoreOperations,
   mapFirestoreError,
+  updateSlugIndexInTransaction,
   Version,
 } from "./common";
 import {
@@ -14,29 +18,35 @@ import {
   Memo,
   MemoIdentifier,
   MemoRepository,
+  MemoSlug,
   validateMemo,
-} from "@/domains/memo";
-import { fromPromise } from "@/aspects/result";
-import { aggregateNotFoundError, duplicationError } from "@/aspects/error";
+} from "@shared/domains/memo";
+import { fromPromise } from "@shared/aspects/result";
+import {
+  aggregateNotFoundError,
+  duplicationError,
+} from "@shared/aspects/error";
 
 type PersistedMemo = {
   identifier: string;
   title: string;
+  slug: string;
   entries: Array<{
     text: string;
-    createdAt: Date;
+    createdAt: Timestamp;
   }>;
   tags: string[];
+  status: string;
   timeline: {
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
   };
   version: number;
 };
 
 export const FirebaseMemoRepository = (
   firestore: Firestore,
-  operations: FirestoreOperations
+  operations: FirestoreOperations,
 ): MemoRepository => {
   const mapError = mapFirestoreError("Memo");
   const versions: Map<MemoIdentifier, Version> = new Map();
@@ -50,29 +60,40 @@ export const FirebaseMemoRepository = (
         return {
           identifier: memo.identifier,
           title: memo.title,
+          slug: memo.slug,
           entries: memo.entries.map((entry) => ({
             text: entry.text,
-            createdAt: entry.createdAt,
+            createdAt: Timestamp.fromDate(entry.createdAt),
           })),
           tags: [...memo.tags],
+          status: memo.status,
           timeline: {
-            createdAt: memo.timeline.createdAt,
-            updatedAt: memo.timeline.updatedAt,
+            createdAt: Timestamp.fromDate(memo.timeline.createdAt),
+            updatedAt: Timestamp.fromDate(memo.timeline.updatedAt),
           },
           version: currentVersion?.increment().value ?? 1,
         };
       },
       fromFirestore: (
         snapshot: QueryDocumentSnapshot<PersistedMemo>,
-        options?: SnapshotOptions
+        options?: SnapshotOptions,
       ): Memo => {
         const data = snapshot.data(options);
 
         const memo = validateMemo({
           identifier: data.identifier,
           title: data.title,
-          entries: data.entries,
+          slug: data.slug,
+          entries: data.entries.map((entry) => ({
+            text: entry.text,
+            createdAt: entry.createdAt.toDate(),
+          })),
           tags: data.tags,
+          status: data.status,
+          timeline: {
+            createdAt: data.timeline.createdAt.toDate(),
+            updatedAt: data.timeline.updatedAt.toDate(),
+          },
         }).unwrap();
 
         const version = createVersion(data.version);
@@ -94,20 +115,50 @@ export const FirebaseMemoRepository = (
           if (!snapshot.exists()) {
             throw aggregateNotFoundError(
               "Memo",
-              `Memo ${memo.identifier} not found for update.`
+              `Memo ${memo.identifier} not found for update.`,
             );
           }
 
+          const existingData = snapshot.data();
+          const oldSlug = existingData.slug;
+
+          await updateSlugIndexInTransaction(
+            transaction,
+            operations,
+            firestore,
+            {
+              collectionName: "memos",
+              oldSlug,
+              newSlug: memo.slug,
+              referenceIdentifier: memo.identifier,
+              aggregateName: "Memo",
+            },
+          );
+
           transaction.set(document, memo, { merge: true });
+          versions.set(memo.identifier, currentVersion.increment());
         } else {
           if (snapshot.exists()) {
             throw duplicationError("Memo", memo.identifier);
           }
 
+          await createSlugIndexInTransaction(
+            transaction,
+            operations,
+            firestore,
+            {
+              collectionName: "memos",
+              slug: memo.slug,
+              referenceIdentifier: memo.identifier,
+              aggregateName: "Memo",
+            },
+          );
+
           transaction.set(document, memo);
+          versions.set(memo.identifier, createVersion(1));
         }
       }),
-      mapError
+      mapError,
     );
   };
 
@@ -123,7 +174,7 @@ export const FirebaseMemoRepository = (
 
         return snapshot.data();
       })(),
-      mapError
+      mapError,
     );
   };
 
@@ -134,7 +185,7 @@ export const FirebaseMemoRepository = (
 
         if (criteria.tag) {
           constraints.push(
-            operations.where("tags", "array-contains", criteria.tag)
+            operations.where("tags", "array-contains", criteria.tag),
           );
         }
 
@@ -152,19 +203,19 @@ export const FirebaseMemoRepository = (
             (memo) =>
               memo.title.toLowerCase().includes(keyword) ||
               memo.entries.some((entry) =>
-                entry.text.toLowerCase().includes(keyword)
-              )
+                entry.text.toLowerCase().includes(keyword),
+              ),
           );
         }
 
         return memos;
       })(),
-      mapError
+      mapError,
     );
   };
 
   const terminate: MemoRepository["terminate"] = (
-    identifier: MemoIdentifier
+    identifier: MemoIdentifier,
   ) => {
     return fromPromise(
       operations.runTransaction(firestore, async (transaction) => {
@@ -174,19 +225,80 @@ export const FirebaseMemoRepository = (
         if (!snapshot.exists()) {
           throw aggregateNotFoundError(
             "Memo",
-            `Memo ${identifier} not found for deletion.`
+            `Memo ${identifier} not found for deletion.`,
           );
         }
 
+        const memo = snapshot.data();
+        deleteSlugIndexInTransaction(transaction, operations, firestore, {
+          collectionName: "memos",
+          slug: memo.slug,
+        });
+
         transaction.delete(document);
+        versions.delete(identifier);
       }),
-      mapError
+      mapError,
+    );
+  };
+
+  const findBySlug: MemoRepository["findBySlug"] = (slug: MemoSlug) => {
+    return fromPromise(
+      (async () => {
+        const q = operations.query(
+          collection,
+          operations.where("slug", "==", slug),
+        );
+        const querySnapshot = await operations.getDocs(q);
+
+        if (querySnapshot.empty) {
+          throw aggregateNotFoundError(
+            "Memo",
+            `Memo with slug ${slug} not found.`,
+          );
+        }
+
+        const doc = querySnapshot.docs[0];
+        return doc.data();
+      })(),
+      mapError,
+    );
+  };
+
+  const ofIdentifiers: MemoRepository["ofIdentifiers"] = (
+    identifiers: MemoIdentifier[],
+    throwOnMissing = false,
+  ) => {
+    return fromPromise(
+      (async () => {
+        const memos: Memo[] = [];
+        for (const identifier of identifiers) {
+          const document = operations.doc(collection, identifier);
+          const snapshot = await operations.getDoc(document);
+
+          if (!snapshot.exists()) {
+            if (throwOnMissing) {
+              throw aggregateNotFoundError(
+                "Memo",
+                `Memo ${identifier} not found.`,
+              );
+            }
+            continue;
+          }
+
+          memos.push(snapshot.data());
+        }
+        return memos;
+      })(),
+      mapError,
     );
   };
 
   return {
     persist,
     find,
+    findBySlug,
+    ofIdentifiers,
     search,
     terminate,
   };

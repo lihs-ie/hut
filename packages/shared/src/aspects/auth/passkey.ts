@@ -1,5 +1,5 @@
 import z from "zod";
-import { AsyncResult, err, fromPromise, ok, Result } from "@/aspects/result";
+import { AsyncResult, err, fromPromise, ok, Result } from "@shared/aspects/result";
 import {
   AggregateNotFoundError,
   aggregateNotFoundError,
@@ -7,7 +7,7 @@ import {
   unexpectedError,
   ValidationError,
   validationErrors,
-} from "@/aspects/error";
+} from "@shared/aspects/error";
 import {
   Firestore,
   collection,

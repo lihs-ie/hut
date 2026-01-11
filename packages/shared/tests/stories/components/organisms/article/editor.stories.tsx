@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
-import { ArticleEditor } from "@/components/organisms/article/editor";
+import { ArticleEditor } from "@shared/components/organisms/article/editor";
 
 const meta = {
   component: ArticleEditor,

@@ -1,22 +1,20 @@
-import { HeaderLogo } from "@/components/atoms/logo/header";
-import styles from "./index.module.css";
-import { ThemeToggle } from "@/components/atoms/toggle/theme";
-import { currentTheme, toggleTheme } from "@/app/actions/theme";
-import { isAdmin } from "@/app/actions/admin";
-import { SimpleButton } from "@/components/atoms/button/simple";
+import { currentTheme } from "@shared/actions/theme";
+import { HeaderPresenter } from "./index.presenter";
 
-export const Header = async () => {
+export type Props = {
+  isAdmin?: () => Promise<boolean>;
+  logout?: () => Promise<void>;
+};
+
+export const Header = async (props: Props) => {
   const theme = await currentTheme();
-  const admin = await isAdmin();
+  const isAdmin = props.isAdmin ? await props.isAdmin() : false;
 
   return (
-    <header className={styles.container}>
-      <HeaderLogo />
-      <div className={styles.contents}>
-        <ThemeToggle value={theme} onToggle={toggleTheme} />
-        <button>検索</button>
-        {admin && <SimpleButton>投稿する</SimpleButton>}
-      </div>
-    </header>
+    <HeaderPresenter
+      currentTheme={theme}
+      isAdmin={isAdmin}
+      logout={props.logout}
+    />
   );
 };

@@ -1,4 +1,5 @@
 import z from "zod";
+import { err, ok, Result } from "./result";
 
 export type DomainError<T> = T & {
   readonly _tag: symbol;
@@ -21,28 +22,50 @@ export const validationError = (
   field: string,
   description: string
 ): ValidationError => ({
-  _tag: Symbol("ValidationError"),
+  _tag: Symbol.for("ValidationError"),
   field,
   description,
 });
+
+export const flattenValidationErrors = (
+  errors: ValidationError[]
+): ValidationError => {
+  if (errors.length === 0) {
+    return validationError("", "");
+  }
+
+  return {
+    _tag: Symbol.for("ValidationError"),
+    field: errors.map((error) => error.field).join(", "),
+    description: errors.map((error) => error.description).join(", "),
+  };
+};
 
 export const isValidationError = isError<ValidationError>(
   Symbol.for("ValidationError")
 );
 
-export const validationErrors = <T>(
-  parser: z.ZodObject,
-  candidate: T
-): ValidationError[] => {
-  const result = parser.safeParse(candidate);
+export const validate = <
+  B extends string,
+  T extends Readonly<{
+    [k: string]: unknown;
+  }> &
+    z.core.$brand<B>
+>(
+  validation: z.core.$ZodBranded<z.ZodTypeAny, B>,
+  candidate: unknown
+): Result<T, ValidationError[]> => {
+  const result = validation.safeParse(candidate);
 
-  if (result.success) {
-    return [];
+  if (!result.success) {
+    return err(
+      result.error.issues.map((issue) =>
+        validationError(issue.path.join("."), issue.message)
+      )
+    );
   }
 
-  return result.error.issues.map((issue) =>
-    validationError(issue.path.join("."), issue.message)
-  );
+  return ok(result.data as T);
 };
 
 export type AggregateNotFoundError<N extends string> = DomainError<{
@@ -54,7 +77,7 @@ export const aggregateNotFoundError = <N extends string>(
   name: N,
   message: string
 ): AggregateNotFoundError<N> => ({
-  _tag: Symbol("AggregateNotFoundError"),
+  _tag: Symbol.for("AggregateNotFoundError"),
   name,
   message,
 });
@@ -72,7 +95,7 @@ export const duplicationError = <N extends string>(
   name: N,
   message: string
 ): DuplicationError<N> => ({
-  _tag: Symbol("DuplicationError"),
+  _tag: Symbol.for("DuplicationError"),
   name,
   message,
 });
@@ -90,7 +113,7 @@ export const unexpectedError = (
   message: string,
   cause?: unknown
 ): UnexpectedError => ({
-  _tag: Symbol("UnexpectedError"),
+  _tag: Symbol.for("UnexpectedError"),
   message,
   cause,
 });
@@ -99,7 +122,6 @@ export const isUnexpectedError = isError<UnexpectedError>(
   Symbol.for("UnexpectedError")
 );
 
-// 認証エラー（未認証）
 export type UnauthenticatedError = DomainError<{
   message: string;
 }>;
@@ -107,7 +129,7 @@ export type UnauthenticatedError = DomainError<{
 export const unauthenticatedError = (
   message: string
 ): UnauthenticatedError => ({
-  _tag: Symbol("UnauthenticatedError"),
+  _tag: Symbol.for("UnauthenticatedError"),
   message,
 });
 
@@ -115,7 +137,6 @@ export const isUnauthenticatedError = isError<UnauthenticatedError>(
   Symbol.for("UnauthenticatedError")
 );
 
-// 権限エラー（認証済みだが権限なし）
 export type PermissionDeniedError = DomainError<{
   message: string;
 }>;
@@ -123,7 +144,7 @@ export type PermissionDeniedError = DomainError<{
 export const permissionDeniedError = (
   message: string
 ): PermissionDeniedError => ({
-  _tag: Symbol("PermissionDeniedError"),
+  _tag: Symbol.for("PermissionDeniedError"),
   message,
 });
 
@@ -131,7 +152,6 @@ export const isPermissionDeniedError = isError<PermissionDeniedError>(
   Symbol.for("PermissionDeniedError")
 );
 
-// リソース枯渇エラー（レート制限など）
 export type ResourceExhaustedError = DomainError<{
   message: string;
 }>;
@@ -139,7 +159,7 @@ export type ResourceExhaustedError = DomainError<{
 export const resourceExhaustedError = (
   message: string
 ): ResourceExhaustedError => ({
-  _tag: Symbol("ResourceExhaustedError"),
+  _tag: Symbol.for("ResourceExhaustedError"),
   message,
 });
 
@@ -147,7 +167,6 @@ export const isResourceExhaustedError = isError<ResourceExhaustedError>(
   Symbol.for("ResourceExhaustedError")
 );
 
-// サービス利用不可エラー（一時的な障害）
 export type ServiceUnavailableError = DomainError<{
   message: string;
   retryable: boolean;
@@ -157,7 +176,7 @@ export const serviceUnavailableError = (
   message: string,
   retryable: boolean = true
 ): ServiceUnavailableError => ({
-  _tag: Symbol("ServiceUnavailableError"),
+  _tag: Symbol.for("ServiceUnavailableError"),
   message,
   retryable,
 });

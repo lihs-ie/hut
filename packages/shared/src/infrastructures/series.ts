@@ -2,45 +2,58 @@ import {
   Firestore,
   QueryDocumentSnapshot,
   SnapshotOptions,
+  Timestamp,
 } from "firebase/firestore";
 import {
+  createSlugIndexInTransaction,
   createVersion,
+  deleteSlugIndexInTransaction,
   FirestoreOperations,
   mapFirestoreError,
+  updateSlugIndexInTransaction,
   Version,
 } from "./common";
 import {
+  Criteria,
   Series,
   SeriesIdentifier,
   SeriesRepository,
+  SeriesSlug,
   validateSeries,
-} from "@/domains/series";
-import { fromPromise } from "@/aspects/result";
-import { aggregateNotFoundError, duplicationError } from "@/aspects/error";
+} from "@shared/domains/series";
+import { fromPromise } from "@shared/aspects/result";
+import {
+  aggregateNotFoundError,
+  duplicationError,
+} from "@shared/aspects/error";
 
 type PersistedSeries = {
   identifier: string;
   title: string;
+  slug: string;
+  tags: string[];
   description?: string;
+  subTitle?: string | null;
   cover: string | null;
-  pages: Array<{
+  chapters: Array<{
     title: string;
     content: string;
+    slug: string;
     timeline: {
-      createdAt: Date;
-      updatedAt: Date;
+      createdAt: Timestamp;
+      updatedAt: Timestamp;
     };
   }>;
   timeline: {
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
   };
   version: number;
 };
 
 export const FirebaseSeriesRepository = (
   firestore: Firestore,
-  operations: FirestoreOperations
+  operations: FirestoreOperations,
 ): SeriesRepository => {
   const mapError = mapFirestoreError("Series");
   const versions: Map<SeriesIdentifier, Version> = new Map();
@@ -56,24 +69,28 @@ export const FirebaseSeriesRepository = (
           title: series.title,
           description: series.description,
           cover: series.cover,
-          pages: series.pages.map((page) => ({
-            title: page.title,
-            content: page.content,
+          slug: series.slug,
+          tags: series.tags,
+          subTitle: series.subTitle,
+          chapters: series.chapters.map((chapter) => ({
+            title: chapter.title,
+            slug: chapter.slug,
+            content: chapter.content,
             timeline: {
-              createdAt: page.timeline.createdAt,
-              updatedAt: page.timeline.updatedAt,
+              createdAt: Timestamp.fromDate(chapter.timeline.createdAt),
+              updatedAt: Timestamp.fromDate(chapter.timeline.updatedAt),
             },
           })),
           timeline: {
-            createdAt: series.timeline.createdAt,
-            updatedAt: series.timeline.updatedAt,
+            createdAt: Timestamp.fromDate(series.timeline.createdAt),
+            updatedAt: Timestamp.fromDate(series.timeline.updatedAt),
           },
           version: currentVersion?.increment().value ?? 1,
         };
       },
       fromFirestore: (
         snapshot: QueryDocumentSnapshot<PersistedSeries>,
-        options?: SnapshotOptions
+        options?: SnapshotOptions,
       ): Series => {
         const data = snapshot.data(options);
 
@@ -82,7 +99,22 @@ export const FirebaseSeriesRepository = (
           title: data.title,
           description: data.description,
           cover: data.cover,
-          pages: data.pages,
+          slug: data.slug,
+          tags: data.tags,
+          subTitle: data.subTitle || null,
+          chapters: data.chapters.map((chapter) => ({
+            title: chapter.title,
+            slug: chapter.slug,
+            content: chapter.content,
+            timeline: {
+              createdAt: chapter.timeline.createdAt.toDate(),
+              updatedAt: chapter.timeline.updatedAt.toDate(),
+            },
+          })),
+          timeline: {
+            createdAt: data.timeline.createdAt.toDate(),
+            updatedAt: data.timeline.updatedAt.toDate(),
+          },
         }).unwrap();
 
         const version = createVersion(data.version);
@@ -104,20 +136,50 @@ export const FirebaseSeriesRepository = (
           if (!snapshot.exists()) {
             throw aggregateNotFoundError(
               "Series",
-              `Series ${series.identifier} not found for update.`
+              `Series ${series.identifier} not found for update.`,
             );
           }
 
+          const existingData = snapshot.data();
+          const oldSlug = existingData.slug;
+
+          await updateSlugIndexInTransaction(
+            transaction,
+            operations,
+            firestore,
+            {
+              collectionName: "series",
+              oldSlug,
+              newSlug: series.slug,
+              referenceIdentifier: series.identifier,
+              aggregateName: "Series",
+            },
+          );
+
           transaction.set(document, series, { merge: true });
+          versions.set(series.identifier, currentVersion.increment());
         } else {
           if (snapshot.exists()) {
             throw duplicationError("Series", series.identifier);
           }
 
+          await createSlugIndexInTransaction(
+            transaction,
+            operations,
+            firestore,
+            {
+              collectionName: "series",
+              slug: series.slug,
+              referenceIdentifier: series.identifier,
+              aggregateName: "Series",
+            },
+          );
+
           transaction.set(document, series);
+          versions.set(series.identifier, createVersion(1));
         }
       }),
-      mapError
+      mapError,
     );
   };
 
@@ -130,17 +192,40 @@ export const FirebaseSeriesRepository = (
         if (!snapshot.exists()) {
           throw aggregateNotFoundError(
             "Series",
-            `Series ${identifier} not found.`
+            `Series ${identifier} not found.`,
           );
         }
 
         return snapshot.data();
       })(),
-      mapError
+      mapError,
     );
   };
 
-  const search: SeriesRepository["search"] = (title: string) => {
+  const findBySlug: SeriesRepository["findBySlug"] = (slug: SeriesSlug) => {
+    return fromPromise(
+      (async () => {
+        const query = operations.query(
+          collection,
+          operations.where("slug", "==", slug),
+        );
+        const querySnapshot = await operations.getDocs(query);
+
+        if (querySnapshot.empty) {
+          throw aggregateNotFoundError(
+            "Series",
+            `Series with slug ${slug} not found.`,
+          );
+        }
+
+        const document = querySnapshot.docs[0];
+        return document.data();
+      })(),
+      mapError,
+    );
+  };
+
+  const search: SeriesRepository["search"] = (criteria: Criteria) => {
     return fromPromise(
       (async () => {
         const q = operations.query(collection);
@@ -151,21 +236,21 @@ export const FirebaseSeriesRepository = (
           seriesList.push(doc.data());
         });
 
-        if (title) {
-          const keyword = title.toLowerCase();
+        if (criteria.slug) {
+          const keyword = criteria.slug.toLowerCase();
           return seriesList.filter((series) =>
-            series.title.toLowerCase().includes(keyword)
+            series.title.toLowerCase().includes(keyword),
           );
         }
 
         return seriesList;
       })(),
-      mapError
+      mapError,
     );
   };
 
   const terminate: SeriesRepository["terminate"] = (
-    identifier: SeriesIdentifier
+    identifier: SeriesIdentifier,
   ) => {
     return fromPromise(
       operations.runTransaction(firestore, async (transaction) => {
@@ -175,19 +260,59 @@ export const FirebaseSeriesRepository = (
         if (!snapshot.exists()) {
           throw aggregateNotFoundError(
             "Series",
-            `Series ${identifier} not found for deletion.`
+            `Series ${identifier} not found for deletion.`,
           );
         }
 
+        const series = snapshot.data();
+        deleteSlugIndexInTransaction(transaction, operations, firestore, {
+          collectionName: "series",
+          slug: series.slug,
+        });
+
         transaction.delete(document);
+        versions.delete(identifier);
       }),
-      mapError
+      mapError,
+    );
+  };
+
+  const ofIdentifiers: SeriesRepository["ofIdentifiers"] = (
+    identifiers: SeriesIdentifier[],
+    throwOnMissing = false,
+  ) => {
+    return fromPromise(
+      (async () => {
+        const seriesList: Series[] = [];
+
+        for (const identifier of identifiers) {
+          const document = operations.doc(collection, identifier);
+          const snapshot = await operations.getDoc(document);
+
+          if (!snapshot.exists()) {
+            if (throwOnMissing) {
+              throw aggregateNotFoundError(
+                "Series",
+                `Series ${identifier} not found.`,
+              );
+            }
+            continue;
+          }
+
+          seriesList.push(snapshot.data());
+        }
+
+        return seriesList;
+      })(),
+      mapError,
     );
   };
 
   return {
     persist,
     find,
+    findBySlug,
+    ofIdentifiers,
     search,
     terminate,
   };
