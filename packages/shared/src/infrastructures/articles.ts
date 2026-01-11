@@ -4,20 +4,27 @@ import {
   SnapshotOptions,
 } from "firebase/firestore";
 import {
+  createSlugIndexInTransaction,
   createVersion,
+  deleteSlugIndexInTransaction,
   FirestoreOperations,
   mapFirestoreError,
+  updateSlugIndexInTransaction,
   Version,
 } from "./common";
 import {
   Article,
   ArticleIdentifier,
   ArticleRepository,
+  ArticleSlug,
   Criteria,
   validateArticle,
-} from "@/domains/articles";
-import { fromPromise } from "@/aspects/result";
-import { aggregateNotFoundError, duplicationError } from "@/aspects/error";
+} from "@shared/domains/articles";
+import { fromPromise } from "@shared/aspects/result";
+import {
+  aggregateNotFoundError,
+  duplicationError,
+} from "@shared/aspects/error";
 
 type PersistedArticle = {
   identifier: string;
@@ -27,12 +34,16 @@ type PersistedArticle = {
   slug: string;
   status: string;
   tags: string[];
+  timeline: {
+    createdAt: string;
+    updatedAt: string;
+  };
   version: number;
 };
 
 export const FirebaseArticleRepository = (
   firestore: Firestore,
-  operations: FirestoreOperations
+  operations: FirestoreOperations,
 ): ArticleRepository => {
   const mapError = mapFirestoreError("Article");
   const versions: Map<ArticleIdentifier, Version> = new Map();
@@ -51,16 +62,32 @@ export const FirebaseArticleRepository = (
           slug: article.slug,
           status: article.status,
           tags: [...article.tags],
+          timeline: {
+            createdAt: article.timeline.createdAt.toISOString(),
+            updatedAt: article.timeline.updatedAt.toISOString(),
+          },
           version: currentVersion?.increment().value ?? 1,
         };
       },
       fromFirestore: (
         snapshot: QueryDocumentSnapshot<PersistedArticle>,
-        options?: SnapshotOptions
+        options?: SnapshotOptions,
       ): Article => {
         const data = snapshot.data(options);
 
-        const article = validateArticle(data).unwrap();
+        const article = validateArticle({
+          identifier: data.identifier,
+          title: data.title,
+          content: data.content,
+          excerpt: data.excerpt,
+          slug: data.slug,
+          status: data.status,
+          tags: data.tags,
+          timeline: {
+            createdAt: new Date(data.timeline.createdAt),
+            updatedAt: new Date(data.timeline.updatedAt),
+          },
+        }).unwrap();
 
         const version = createVersion(data.version);
 
@@ -81,20 +108,50 @@ export const FirebaseArticleRepository = (
           if (!snapshot.exists()) {
             throw aggregateNotFoundError(
               "Article",
-              `Article ${article.identifier} not found for update.`
+              `Article ${article.identifier} not found for update.`,
             );
           }
 
+          const existingData = snapshot.data();
+          const oldSlug = existingData.slug;
+
+          await updateSlugIndexInTransaction(
+            transaction,
+            operations,
+            firestore,
+            {
+              collectionName: "articles",
+              oldSlug,
+              newSlug: article.slug,
+              referenceIdentifier: article.identifier,
+              aggregateName: "Article",
+            },
+          );
+
           transaction.set(document, article, { merge: true });
+          versions.set(article.identifier, currentVersion.increment());
         } else {
           if (snapshot.exists()) {
             throw duplicationError("Article", article.identifier);
           }
 
+          await createSlugIndexInTransaction(
+            transaction,
+            operations,
+            firestore,
+            {
+              collectionName: "articles",
+              slug: article.slug,
+              referenceIdentifier: article.identifier,
+              aggregateName: "Article",
+            },
+          );
+
           transaction.set(document, article);
+          versions.set(article.identifier, createVersion(1));
         }
       }),
-      mapError
+      mapError,
     );
   };
 
@@ -107,13 +164,67 @@ export const FirebaseArticleRepository = (
         if (!snapshot.exists()) {
           throw aggregateNotFoundError(
             "Article",
-            `Article ${identifier} not found.`
+            `Article ${identifier} not found.`,
           );
         }
 
         return snapshot.data();
       })(),
-      mapError
+      mapError,
+    );
+  };
+
+  const findBySlug: ArticleRepository["findBySlug"] = (slug: ArticleSlug) => {
+    return fromPromise(
+      (async () => {
+        const query = operations.query(
+          collection,
+          operations.where("slug", "==", slug),
+        );
+        const querySnapshot = await operations.getDocs(query);
+
+        if (querySnapshot.empty) {
+          throw aggregateNotFoundError(
+            "Article",
+            `Article with slug ${slug} not found.`,
+          );
+        }
+
+        const document = querySnapshot.docs[0];
+        return document.data();
+      })(),
+      mapError,
+    );
+  };
+
+  const ofIdentifiers: ArticleRepository["ofIdentifiers"] = (
+    identifiers: ArticleIdentifier[],
+    throwOnMissing = false,
+  ) => {
+    return fromPromise(
+      (async () => {
+        const articles: Article[] = [];
+
+        for (const identifier of identifiers) {
+          const document = operations.doc(collection, identifier);
+          const snapshot = await operations.getDoc(document);
+
+          if (!snapshot.exists()) {
+            if (throwOnMissing) {
+              throw aggregateNotFoundError(
+                "Article",
+                `Article ${identifier} not found.`,
+              );
+            }
+            continue;
+          }
+
+          articles.push(snapshot.data());
+        }
+
+        return articles;
+      })(),
+      mapError,
     );
   };
 
@@ -132,7 +243,7 @@ export const FirebaseArticleRepository = (
 
         if (criteria.tags && criteria.tags.length > 0) {
           constraints.push(
-            operations.where("tags", "array-contains-any", criteria.tags)
+            operations.where("tags", "array-contains-any", criteria.tags),
           );
         }
 
@@ -144,25 +255,24 @@ export const FirebaseArticleRepository = (
           articles.push(doc.data());
         });
 
-        // freeWord がある場合はクライアントサイドでフィルタリング
         if (criteria.freeWord) {
           const keyword = criteria.freeWord.toLowerCase();
           return articles.filter(
             (article) =>
               article.title.toLowerCase().includes(keyword) ||
               article.content.toLowerCase().includes(keyword) ||
-              article.excerpt.toLowerCase().includes(keyword)
+              article.excerpt.toLowerCase().includes(keyword),
           );
         }
 
         return articles;
       })(),
-      mapError
+      mapError,
     );
   };
 
   const terminate: ArticleRepository["terminate"] = (
-    identifier: ArticleIdentifier
+    identifier: ArticleIdentifier,
   ) => {
     return fromPromise(
       operations.runTransaction(firestore, async (transaction) => {
@@ -172,19 +282,28 @@ export const FirebaseArticleRepository = (
         if (!snapshot.exists()) {
           throw aggregateNotFoundError(
             "Article",
-            `Article ${identifier} not found for deletion.`
+            `Article ${identifier} not found for deletion.`,
           );
         }
 
+        const article = snapshot.data();
+        deleteSlugIndexInTransaction(transaction, operations, firestore, {
+          collectionName: "articles",
+          slug: article.slug,
+        });
+
         transaction.delete(document);
+        versions.delete(identifier);
       }),
-      mapError
+      mapError,
     );
   };
 
   return {
     persist,
     find,
+    findBySlug,
+    ofIdentifiers,
     search,
     terminate,
   };

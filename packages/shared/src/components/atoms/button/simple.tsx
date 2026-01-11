@@ -1,4 +1,4 @@
-import { HTMLAttributes, ReactNode } from "react";
+import { ReactNode } from "react";
 import styles from "./simple.module.css";
 
 export type Props = {
@@ -13,6 +13,7 @@ export const SimpleButton = (props: Props) => (
     className={styles.container}
     onClick={props.onClick}
     disabled={props.disabled}
+    type={props.type}
   >
     {props.children}
   </button>

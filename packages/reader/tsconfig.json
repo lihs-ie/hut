@@ -12,6 +12,8 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "next.config.ts",
-    "../shared/src/actions"
+    "../shared/src/actions",
+    "../shared/types",
+    "../admin/src/app/memos/new"
   ]
 }

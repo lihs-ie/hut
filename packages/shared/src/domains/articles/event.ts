@@ -1,95 +1,67 @@
 import { ulid } from "ulid";
 import { Event } from "../common";
-import { ArticleIdentifier } from "./common";
+import { ArticleIdentifier, ArticleSnapshot } from "./common";
 
-export type ArticleViewedEvent = Event<{
-  article: ArticleIdentifier;
-}>;
+export type ArticleCreatedEvent = Event<
+  "article.created",
+  {
+    snapshot: ArticleSnapshot;
+  }
+>;
 
-export const createArticleViewedEvent = (
-  article: ArticleIdentifier
-): ArticleViewedEvent => ({
-  identifier: ulid(),
-  occurredAt: new Date(),
-  payload: {
-    article,
-  },
-});
+export const createArticleCreatedEvent = (
+  article: ArticleSnapshot,
+  occurredAt: Date,
+): ArticleCreatedEvent =>
+  ({
+    identifier: ulid(),
+    occurredAt,
+    payload: {
+      snapshot: article,
+    },
+  }) as ArticleCreatedEvent;
 
-export type ArticleDraftedEvent = Event<{
-  article: ArticleIdentifier;
-}>;
+export type ArticleEditedEvent = Event<
+  "article.edited",
+  {
+    next: ArticleSnapshot;
+    before: ArticleSnapshot;
+  }
+>;
 
-export const createArticleDraftedEvent = (
-  article: ArticleIdentifier
-): ArticleDraftedEvent => ({
-  identifier: ulid(),
-  occurredAt: new Date(),
-  payload: {
-    article,
-  },
-});
+export const createArticleEditedEvent = (
+  next: ArticleSnapshot,
+  before: ArticleSnapshot,
+  occurredAt: Date,
+): ArticleEditedEvent =>
+  ({
+    identifier: ulid(),
+    occurredAt,
+    payload: {
+      next,
+      before,
+    },
+  }) as ArticleEditedEvent;
 
-export type ArticlePublishedEvent = Event<{
-  article: ArticleIdentifier;
-}>;
-
-export const createArticlePublishedEvent = (
-  article: ArticleIdentifier
-): ArticlePublishedEvent => ({
-  identifier: ulid(),
-  occurredAt: new Date(),
-  payload: {
-    article,
-  },
-});
-
-export type ArticleUpdatedEvent = Event<{
-  article: ArticleIdentifier;
-}>;
-
-export const createArticleUpdatedEvent = (
-  article: ArticleIdentifier
-): ArticleUpdatedEvent => ({
-  identifier: ulid(),
-  occurredAt: new Date(),
-  payload: {
-    article,
-  },
-});
-
-export type ArticleArchivedEvent = Event<{
-  article: ArticleIdentifier;
-}>;
-
-export const createArticleArchivedEvent = (
-  article: ArticleIdentifier
-): ArticleArchivedEvent => ({
-  identifier: ulid(),
-  occurredAt: new Date(),
-  payload: {
-    article,
-  },
-});
-
-export type ArticleTerminatedEvent = Event<{
-  article: ArticleIdentifier;
-}>;
+export type ArticleTerminatedEvent = Event<
+  "article.terminated",
+  {
+    article: ArticleIdentifier;
+  }
+>;
 
 export const createArticleTerminatedEvent = (
-  article: ArticleIdentifier
-): ArticleTerminatedEvent => ({
-  identifier: ulid(),
-  occurredAt: new Date(),
-  payload: {
-    article,
-  },
-});
+  article: ArticleIdentifier,
+): ArticleTerminatedEvent =>
+  ({
+    identifier: ulid(),
+    occurredAt: new Date(),
+    payload: {
+      article,
+    },
+  }) as ArticleTerminatedEvent;
 
 export type ArticleEvent =
-  | ArticleViewedEvent
-  | ArticleDraftedEvent
-  | ArticlePublishedEvent
-  | ArticleUpdatedEvent
-  | ArticleArchivedEvent
+  | ArticleCreatedEvent
+  | ArticleEditedEvent
   | ArticleTerminatedEvent;

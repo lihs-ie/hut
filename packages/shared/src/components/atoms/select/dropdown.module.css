@@ -1,0 +1,159 @@
+.container {
+  position: relative;
+  width: 100%;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 0.5rem;
+  color: var(--primary-foreground);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.trigger:hover {
+  background: var(--primary-hover);
+}
+
+.trigger:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.triggerContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.label {
+  font-weight: 500;
+}
+
+.chevron {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  z-index: 50;
+  animation: slideDown 0.15s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.option:hover {
+  background: var(--accent);
+}
+
+.optionSelected {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.optionSelected:hover {
+  background: var(--primary-hover);
+}
+
+.optionContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.optionLabel {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.optionDescription {
+  font-size: 0.8125rem;
+  opacity: 0.7;
+}
+
+.checkIcon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .trigger {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .option {
+    padding: 0.625rem 0.875rem;
+  }
+
+  .optionLabel {
+    font-size: 0.875rem;
+  }
+
+  .optionDescription {
+    font-size: 0.75rem;
+  }
+}

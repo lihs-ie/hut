@@ -304,6 +304,12 @@ export function fromPromise<T, E>(
   );
 }
 
+export function asyncResult<T, E>(
+  promise: Promise<Result<T, E>>
+): AsyncResult<T, E> {
+  return createAsyncResult(promise);
+}
+
 export function fromThrowable<T, A extends unknown[], E>(
   fn: (...args: A) => T,
   errorMapper: (error: unknown) => E

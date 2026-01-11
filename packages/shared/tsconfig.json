@@ -2,8 +2,18 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"]
+      "@shared/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "types/**/*.d.ts"]
+  "include": [
+    "src/**/*",
+    "types/**/*.d.ts",
+    ".storybook/**/*",
+    "tests/stories/components/molecules/logo",
+    "../admin/src/app/admin/_components/templates/admin/admin",
+    "../admin/src/app/admin/_components/organisms/admin",
+    "../admin/src/infrastructure/event.ts",
+    "../admin/src/app/memos/[slug]/edit",
+    "../admin/src/app/memos/new"
+  ]
 }

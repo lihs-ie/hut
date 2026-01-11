@@ -1,0 +1,14 @@
+.container {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: currentColor;
+  mask-image: url("/icon/ballpen.svg");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-image: url("/icon/ballpen.svg");
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}

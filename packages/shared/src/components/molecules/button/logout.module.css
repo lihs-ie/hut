@@ -1,0 +1,52 @@
+.container {
+  display: contents;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: var(--radius);
+  background-color: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button:hover {
+  background-color: color-mix(in oklch, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--destructive);
+  outline-offset: 2px;
+}
+
+.icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .button {
+    padding: 0.5rem;
+  }
+
+  .label {
+    display: none;
+  }
+}

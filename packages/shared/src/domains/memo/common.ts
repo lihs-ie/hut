@@ -1,18 +1,37 @@
 import z from "zod";
-import { tagSchema } from "../common/tag";
+import { publishStatusSchema, Slug, slugSchema } from "../common";
 import { timelineSchema } from "../common/date";
-import { AsyncResult, err, ok, Result } from "@/aspects/result";
+import { AsyncResult, err, ok, Result } from "@shared/aspects/result";
 import {
   AggregateNotFoundError,
   DuplicationError,
   UnexpectedError,
+  validate,
+  validationError,
   ValidationError,
-  validationErrors,
-} from "@/aspects/error";
+} from "@shared/aspects/error";
+import { tagIdentifierSchema } from "../attributes/tag";
 
 export const memoIdentifierSchema = z.ulid().brand("MemoIdentifier");
 
 export type MemoIdentifier = z.infer<typeof memoIdentifierSchema>;
+
+export const validateMemoIdentifier = (
+  candidate: string,
+): Result<MemoIdentifier, ValidationError> => {
+  const result = memoIdentifierSchema.safeParse(candidate);
+
+  if (!result.success) {
+    return err(
+      validationError(
+        "MemoIdentifier",
+        `Invalid MemoIdentifier format: ${candidate}`,
+      ),
+    );
+  }
+
+  return ok(result.data);
+};
 
 export const titleSchema = z
   .string()
@@ -22,17 +41,21 @@ export const titleSchema = z
 
 export type MemoTitle = z.infer<typeof titleSchema>;
 
-export const entrySchema = z.object({
-  text: z
-    .string()
-    .min(1, { message: "Content text must be at least 1 character long" })
-    .max(1000, {
-      message: "Content text must be at most 1000 characters long",
-    }),
-  createdAt: z.date(),
-});
+export const entrySchema = z
+  .object({
+    text: z
+      .string()
+      .min(1, { message: "Content text must be at least 1 character long" })
+      .max(1000, {
+        message: "Content text must be at most 1000 characters long",
+      }),
+    createdAt: z.date(),
+  })
+  .brand("Entry");
 
 export type MemoEntry = z.infer<typeof entrySchema>;
+
+export type MemoSlug = Slug;
 
 export type UnvalidatedEntry = {
   text: string;
@@ -40,23 +63,17 @@ export type UnvalidatedEntry = {
 };
 
 export const validateEntry = (
-  candidate: UnvalidatedEntry
-): Result<MemoEntry, ValidationError[]> => {
-  const errors = validationErrors(entrySchema, candidate);
-
-  if (errors.length > 0) {
-    return err(errors);
-  }
-
-  return ok(entrySchema.parse(candidate));
-};
+  candidate: UnvalidatedEntry,
+): Result<MemoEntry, ValidationError[]> => validate(entrySchema, candidate);
 
 export const memoSchema = z
   .object({
     identifier: memoIdentifierSchema,
     title: titleSchema,
+    slug: slugSchema,
     entries: z.array(entrySchema),
-    tags: z.array(tagSchema),
+    tags: z.array(tagIdentifierSchema),
+    status: publishStatusSchema,
     timeline: timelineSchema,
   })
   .brand("Memo");
@@ -77,8 +94,14 @@ export const addEntry = (memo: Memo, entry: MemoEntry): Memo => {
 export type UnvalidatedMemo = {
   identifier: string;
   title: string;
+  slug: string;
   entries: UnvalidatedEntry[];
   tags: string[];
+  status: string;
+  timeline: {
+    createdAt: Date;
+    updatedAt: Date;
+  };
 };
 
 export type MemoError =
@@ -87,55 +110,73 @@ export type MemoError =
   | DuplicationError<"Memo">;
 
 export const validateMemo = (
-  candidate: UnvalidatedMemo
-): Result<Memo, ValidationError[]> => {
-  const errors = validationErrors(memoSchema, candidate);
-
-  if (errors.length > 0) {
-    return err(errors);
-  }
-
-  return ok(memoSchema.parse(candidate));
-};
+  candidate: UnvalidatedMemo,
+): Result<Memo, ValidationError[]> => validate(memoSchema, candidate);
 
 export const criteriaSchema = z
   .object({
-    tag: tagSchema.nullable(),
+    tags: z.array(tagIdentifierSchema).nullable(),
     freeWord: z.string().min(1).max(100).nullable(),
+    status: publishStatusSchema.nullable(),
   })
   .brand("Criteria");
 
 export type Criteria = z.infer<typeof criteriaSchema>;
 
 export type UnvalidatedCriteria = {
-  tag: string | null;
+  tags: string[] | null;
   freeWord: string | null;
+  status: string | null;
 };
 
 export const validateCriteria = (
-  candidate: UnvalidatedCriteria
-): Result<Criteria, ValidationError[]> => {
-  const errors = validationErrors(criteriaSchema, candidate);
+  candidate: UnvalidatedCriteria,
+): Result<Criteria, ValidationError[]> => validate(criteriaSchema, candidate);
 
-  if (errors.length > 0) {
-    return err(errors);
-  }
+export const memoSnapshotSchema = z
+  .object({
+    identifier: memoIdentifierSchema,
+    title: titleSchema,
+    slug: slugSchema,
+    entries: z.array(entrySchema),
+    tags: z.array(tagIdentifierSchema),
+    status: publishStatusSchema,
+    timeline: timelineSchema,
+  })
+  .brand("MemoSnapshot");
 
-  return ok(criteriaSchema.parse(candidate));
-};
+export type MemoSnapshot = z.infer<typeof memoSnapshotSchema>;
+
+export const toSnapshot = (memo: Memo): MemoSnapshot =>
+  ({
+    identifier: memo.identifier,
+    title: memo.title,
+    slug: memo.slug,
+    entries: memo.entries,
+    tags: memo.tags,
+    status: memo.status,
+    timeline: memo.timeline,
+  }) as MemoSnapshot;
 
 export interface MemoRepository {
   persist: (
-    memo: Memo
+    memo: Memo,
   ) => AsyncResult<
     void,
     AggregateNotFoundError<"Memo"> | DuplicationError<"Memo"> | UnexpectedError
   >;
   find: (
-    identifier: MemoIdentifier
+    identifier: MemoIdentifier,
   ) => AsyncResult<Memo, AggregateNotFoundError<"Memo"> | UnexpectedError>;
+  findBySlug: (
+    slug: MemoSlug,
+  ) => AsyncResult<Memo, AggregateNotFoundError<"Memo"> | UnexpectedError>;
+  ofIdentifiers: (
+    identifiers: MemoIdentifier[],
+    throwOnMissing?: boolean,
+  ) => AsyncResult<Memo[], UnexpectedError | AggregateNotFoundError<"Memo">>;
   search: (criteria: Criteria) => AsyncResult<Memo[], UnexpectedError>;
   terminate: (
-    identifier: MemoIdentifier
+    identifier: MemoIdentifier,
   ) => AsyncResult<void, AggregateNotFoundError<"Memo"> | UnexpectedError>;
 }

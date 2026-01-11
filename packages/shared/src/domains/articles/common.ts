@@ -1,18 +1,42 @@
 import z from "zod";
-import { tagSchema } from "../common/tag";
-import { AsyncResult, err, ok, Result } from "@/aspects/result";
+import { AsyncResult, err, ok, Result } from "@shared/aspects/result";
 import {
   AggregateNotFoundError,
   DuplicationError,
   UnexpectedError,
+  validate,
+  validationError,
   ValidationError,
-  validationErrors,
-} from "@/aspects/error";
-import { PublishStatus, publishStatusSchema } from "../common";
+} from "@shared/aspects/error";
+import {
+  PublishStatus,
+  publishStatusSchema,
+  Slug,
+  slugSchema,
+  timelineSchema,
+} from "../common";
+import { tagIdentifierSchema } from "../attributes/tag";
 
 export const articleIdentifierSchema = z.ulid().brand("ArticleIdentifier");
 
 export type ArticleIdentifier = z.infer<typeof articleIdentifierSchema>;
+
+export const validateArticleIdentifier = (
+  candidate: string,
+): Result<ArticleIdentifier, ValidationError> => {
+  const result = articleIdentifierSchema.safeParse(candidate);
+
+  if (result.success) {
+    return ok(result.data);
+  } else {
+    return err(
+      validationError(
+        "ArticleIdentifier",
+        `Invalid article identifier: ${candidate}`,
+      ),
+    );
+  }
+};
 
 export const titleSchema = z
   .string()
@@ -36,17 +60,7 @@ export const excerptSchema = z
 
 export type ArticleExcerpt = z.infer<typeof excerptSchema>;
 
-export const slugSchema = z
-  .string()
-  .min(1, { message: "Slug must be at least 1 character long" })
-  .max(100, { message: "Slug must be at most 100 characters long" })
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
-    message:
-      "Slug can only contain lowercase letters, numbers, and hyphens, and cannot start or end with a hyphen",
-  })
-  .brand("Slug");
-
-export type ArticleSlug = z.infer<typeof slugSchema>;
+export type ArticleSlug = Slug;
 
 export const articleSchema = z
   .object({
@@ -56,7 +70,8 @@ export const articleSchema = z
     excerpt: excerptSchema,
     slug: slugSchema,
     status: publishStatusSchema,
-    tags: z.array(tagSchema),
+    tags: z.array(tagIdentifierSchema),
+    timeline: timelineSchema,
   })
   .brand("Article");
 
@@ -80,19 +95,15 @@ export type UnvalidatedArticle = {
   slug: string;
   status: string;
   tags: string[];
+  timeline: {
+    createdAt: Date;
+    updatedAt: Date;
+  };
 };
 
 export const validateArticle = (
-  candidate: UnvalidatedArticle
-): Result<Article, ValidationError[]> => {
-  const errors = validationErrors(articleSchema, candidate);
-
-  if (errors.length > 0) {
-    return err(errors);
-  }
-
-  return ok(articleSchema.parse(candidate));
-};
+  candidate: UnvalidatedArticle,
+): Result<Article, ValidationError[]> => validate(articleSchema, candidate);
 
 export type ArticleError =
   | ValidationError
@@ -102,26 +113,18 @@ export type ArticleError =
 
 export const criteriaSchema = z
   .object({
-    slug: slugSchema.nullable(),
-    status: publishStatusSchema.nullable(),
-    freeWord: z.string().min(1).max(100).nullable(),
-    tags: z.array(tagSchema).nullable(),
+    slug: slugSchema.nullish(),
+    status: publishStatusSchema.nullish(),
+    freeWord: z.string().min(1).max(100).nullish(),
+    tags: z.array(tagIdentifierSchema).nullish(),
   })
   .brand("Criteria");
 
 export type Criteria = z.infer<typeof criteriaSchema>;
 
 export const validateCriteria = (
-  candidate: UnvalidatedCriteria
-): Result<Criteria, ValidationError[]> => {
-  const errors = validationErrors(criteriaSchema, candidate);
-
-  if (errors.length > 0) {
-    return err(errors);
-  }
-
-  return ok(criteriaSchema.parse(candidate));
-};
+  candidate: UnvalidatedCriteria,
+): Result<Criteria, ValidationError[]> => validate(criteriaSchema, candidate);
 
 export type UnvalidatedCriteria = {
   slug?: string | null;
@@ -130,18 +133,58 @@ export type UnvalidatedCriteria = {
   tags?: string[] | null;
 };
 
+export const articleSnapshotSchema = z
+  .object({
+    identifier: articleIdentifierSchema,
+    title: titleSchema,
+    content: contentSchema,
+    excerpt: excerptSchema,
+    slug: slugSchema,
+    status: publishStatusSchema,
+    tags: z.array(tagIdentifierSchema),
+    timeline: timelineSchema,
+  })
+  .brand("ArticleSnapshot");
+
+export type ArticleSnapshot = z.infer<typeof articleSnapshotSchema>;
+
+export const toSnapshot = (article: Article): ArticleSnapshot =>
+  ({
+    identifier: article.identifier,
+    title: article.title,
+    content: article.content,
+    excerpt: article.excerpt,
+    slug: article.slug,
+    status: article.status,
+    tags: article.tags,
+    timeline: article.timeline,
+  }) as ArticleSnapshot;
+
 export interface ArticleRepository {
   persist: (
-    article: Article
+    article: Article,
   ) => AsyncResult<void, DuplicationError<"Article"> | UnexpectedError>;
   find: (
-    identifier: ArticleIdentifier
+    identifier: ArticleIdentifier,
   ) => AsyncResult<
     Article,
     AggregateNotFoundError<"Article"> | UnexpectedError
   >;
+  findBySlug: (
+    slug: ArticleSlug,
+  ) => AsyncResult<
+    Article,
+    AggregateNotFoundError<"Article"> | UnexpectedError
+  >;
+  ofIdentifiers: (
+    identifiers: ArticleIdentifier[],
+    throwOnMissing?: boolean,
+  ) => AsyncResult<
+    Article[],
+    UnexpectedError | AggregateNotFoundError<"Article">
+  >;
   search: (criteria: Criteria) => AsyncResult<Article[], UnexpectedError>;
   terminate: (
-    identifier: ArticleIdentifier
+    identifier: ArticleIdentifier,
   ) => AsyncResult<void, AggregateNotFoundError<"Article"> | UnexpectedError>;
 }

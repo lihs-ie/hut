@@ -1,37 +1,49 @@
 import {
   AggregateNotFoundError,
   DuplicationError,
+  UnexpectedError,
   ValidationError,
-} from "@/aspects/error";
-import { Logger } from "@/aspects/logger";
-import { AsyncResult, Result } from "@/aspects/result";
+} from "@shared/aspects/error";
+import { Logger } from "@shared/aspects/logger";
+import { AsyncResult, combine, ok, Result } from "@shared/aspects/result";
 import {
+  addEntry,
   Criteria,
   Memo,
+  MemoEntry,
   MemoIdentifier,
+  MemoSlug,
+  MemoSnapshot,
+  toSnapshot,
   UnvalidatedCriteria,
+  UnvalidatedEntry,
   UnvalidatedMemo,
-} from "@/domains/memo";
+} from "@shared/domains/memo";
 import {
   createMemoCreatedEvent,
+  createMemoEditedEvent,
   createMemoTerminatedEvent,
-  createMemoUpdatedEvent,
   MemoCreatedEvent,
+  MemoEditedEvent,
   MemoTerminatedEvent,
-  MemoUpdatedEvent,
-} from "@/domains/memo/event";
+} from "@shared/domains/memo/event";
+import { Command } from "./common";
+import { ValidateSlug } from "@shared/domains/common";
 
 type ValidateIdentifier = (
-  identifier: string
+  identifier: string,
 ) => Result<MemoIdentifier, ValidationError>;
 
 type FindMemo = (
-  identifier: MemoIdentifier
-) => AsyncResult<Memo, AggregateNotFoundError<"Memo">>;
+  identifier: MemoIdentifier,
+) => AsyncResult<Memo, AggregateNotFoundError<"Memo"> | UnexpectedError>;
 
 export type MemoFindWorkflow = (
-  identifier: string
-) => AsyncResult<Memo, ValidationError | AggregateNotFoundError<"Memo">>;
+  identifier: string,
+) => AsyncResult<
+  Memo,
+  ValidationError | AggregateNotFoundError<"Memo"> | UnexpectedError
+>;
 
 export const createMemoFindWorkflow =
   (validate: ValidateIdentifier) =>
@@ -59,24 +71,63 @@ export const createMemoFindWorkflow =
       });
   };
 
+type FindBySlug = (
+  slug: MemoSlug,
+) => AsyncResult<Memo, AggregateNotFoundError<"Memo"> | UnexpectedError>;
+
+export type MemoFindBySlugWorkflow = (
+  slug: string,
+) => AsyncResult<
+  Memo,
+  ValidationError | AggregateNotFoundError<"Memo"> | UnexpectedError
+>;
+
+export const createMemoFindBySlugWorkflow =
+  (validate: (slug: string) => Result<MemoSlug, ValidationError>) =>
+  (findBySlug: FindBySlug) =>
+  (logger: Logger): MemoFindBySlugWorkflow =>
+  (slug: string) => {
+    logger.info("MemoFindBySlugWorkflow started", { slug });
+
+    return validate(slug)
+      .toAsync()
+      .tap((validatedSlug) => {
+        logger.debug("Validation passed", { slug: validatedSlug });
+      })
+      .tapError((error) => {
+        logger.warn("Validation failed", { error });
+      })
+      .andThen(findBySlug)
+      .tap((memo) => {
+        logger.info("MemoFindBySlugWorkflow completed", {
+          identifier: memo.identifier,
+        });
+      })
+      .tapError((error) => {
+        logger.error("MemoFindBySlugWorkflow failed", { error });
+      });
+  };
+
 type ValidateCriteria = (
-  unvalidated: UnvalidatedCriteria
+  unvalidated: UnvalidatedCriteria,
 ) => Result<Criteria, ValidationError[]>;
 
-type SearchCriteria = (criteria: Criteria) => AsyncResult<Memo[], never>;
+type SearchMemos = (criteria: Criteria) => AsyncResult<Memo[], UnexpectedError>;
+
+type MemoSearchWorkflowCommand = Command<UnvalidatedCriteria>;
 
 export type MemoSearchWorkflow = (
-  unvalidated: UnvalidatedCriteria
-) => AsyncResult<Memo[], ValidationError[]>;
+  command: MemoSearchWorkflowCommand,
+) => AsyncResult<Memo[], ValidationError[] | UnexpectedError>;
 
 export const createMemoSearchWorkflow =
   (validate: ValidateCriteria) =>
-  (search: SearchCriteria) =>
+  (search: SearchMemos) =>
   (logger: Logger): MemoSearchWorkflow =>
-  (unvalidated: UnvalidatedCriteria) => {
-    logger.info("MemoSearchWorkflow started", { criteria: unvalidated });
+  (command: MemoSearchWorkflowCommand) => {
+    logger.info("MemoSearchWorkflow started", { command });
 
-    return validate(unvalidated)
+    return validate(command.payload)
       .toAsync()
       .tap((criteria) => {
         logger.debug("Criteria validation passed", { criteria });
@@ -96,37 +147,40 @@ export const createMemoSearchWorkflow =
   };
 
 type ValidateMemo = (
-  unvalidated: UnvalidatedMemo
+  unvalidated: UnvalidatedMemo,
 ) => Result<Memo, ValidationError[]>;
 
 type PersistMemo = (
-  memo: Memo
+  memo: Memo,
 ) => AsyncResult<
   void,
-  AggregateNotFoundError<"Memo"> | DuplicationError<"Memo">
+  AggregateNotFoundError<"Memo"> | DuplicationError<"Memo"> | UnexpectedError
 >;
 
-type MemoPersistedEvent = MemoCreatedEvent | MemoUpdatedEvent;
+type MemoCreateWorkflowCommand = Command<{
+  unvalidated: UnvalidatedMemo;
+}>;
 
-export type MemoPersistWorkflow = (
-  unvalidated: UnvalidatedMemo,
-  isNew: boolean
+export type MemoCreateWorkflow = (
+  command: MemoCreateWorkflowCommand,
 ) => AsyncResult<
-  MemoPersistedEvent,
-  AggregateNotFoundError<"Memo"> | DuplicationError<"Memo"> | ValidationError[]
+  MemoCreatedEvent,
+  | AggregateNotFoundError<"Memo">
+  | DuplicationError<"Memo">
+  | ValidationError[]
+  | UnexpectedError
 >;
 
-export const createMemoPersistWorkflow =
+export const createMemoCreateWorkflow =
   (validate: ValidateMemo) =>
   (persist: PersistMemo) =>
-  (logger: Logger): MemoPersistWorkflow =>
-  (unvalidated: UnvalidatedMemo, isNew: boolean) => {
-    logger.info("MemoPersistWorkflow started", {
-      identifier: unvalidated.identifier,
-      isNew,
+  (logger: Logger): MemoCreateWorkflow =>
+  (command: MemoCreateWorkflowCommand) => {
+    logger.info("MemoCreateWorkflow started", {
+      command,
     });
 
-    return validate(unvalidated)
+    return validate(command.payload.unvalidated)
       .toAsync()
       .tap((memo) => {
         logger.debug("Memo validation passed", {
@@ -139,41 +193,149 @@ export const createMemoPersistWorkflow =
       .andThen((memo) =>
         persist(memo)
           .tap(() => {
-            logger.debug("Memo persisted", { identifier: memo.identifier });
+            logger.debug("Memo persisted", {
+              identifier: memo.identifier,
+            });
           })
-          .map(() =>
-            isNew
-              ? createMemoCreatedEvent(memo.identifier)
-              : createMemoUpdatedEvent(memo.identifier)
-          )
+          .map(() => createMemoCreatedEvent(toSnapshot(memo), command.now)),
       )
       .tap((event) => {
-        logger.info("MemoPersistWorkflow completed", { event });
+        logger.info("MemoCreateWorkflow completed", { event });
       })
       .tapError((error) => {
-        logger.error("MemoPersistWorkflow failed", { error });
+        logger.error("MemoCreateWorkflow failed", { error });
+      });
+  };
+
+export type MemoEditWorkflowCommand = Command<{
+  unvalidated: UnvalidatedMemo;
+  before: MemoSnapshot;
+}>;
+
+export type MemoEditWorkflow = (
+  command: MemoEditWorkflowCommand,
+) => AsyncResult<
+  MemoEditedEvent,
+  | AggregateNotFoundError<"Memo">
+  | DuplicationError<"Memo">
+  | ValidationError[]
+  | UnexpectedError
+>;
+
+export const createMemoEditWorkflow =
+  (validate: ValidateMemo) =>
+  (persist: PersistMemo) =>
+  (logger: Logger): MemoEditWorkflow =>
+  (command: MemoEditWorkflowCommand) => {
+    logger.info("MemoEditWorkflow started", {
+      identifier: command.payload.unvalidated.identifier,
+    });
+
+    return validate(command.payload.unvalidated)
+      .toAsync()
+      .tap((memo) => {
+        logger.debug("Memo validation passed", {
+          identifier: memo.identifier,
+        });
+      })
+      .tapError((errors) => {
+        logger.warn("Memo validation failed", { errors });
+      })
+      .andThen((memo) =>
+        persist(memo)
+          .tap(() => {
+            logger.debug("Memo persisted", {
+              identifier: memo.identifier,
+            });
+          })
+          .map(() =>
+            createMemoEditedEvent(
+              toSnapshot(memo),
+              command.payload.before,
+              command.now,
+            ),
+          ),
+      )
+      .tap((event) => {
+        logger.info("MemoEditWorkflow completed", { event });
+      })
+      .tapError((error) => {
+        logger.error("MemoEditWorkflow failed", { error });
+      });
+  };
+
+type PersistMemoEntryWorkflowCommand = Command<{
+  slug: string;
+  unvalidated: UnvalidatedEntry;
+}>;
+
+type PersistMemoEntryWorkflow = (
+  command: PersistMemoEntryWorkflowCommand,
+) => AsyncResult<
+  MemoEditedEvent,
+  | UnexpectedError
+  | AggregateNotFoundError<"Memo">
+  | ValidationError[]
+  | DuplicationError<"Memo">
+>;
+
+type ValidateEntry = (
+  unvalidated: UnvalidatedEntry,
+) => Result<MemoEntry, ValidationError[]>;
+
+export const createPersistMemoEntryWorkflow =
+  (validateSlug: ValidateSlug) =>
+  (validateEntry: ValidateEntry) =>
+  (findBySlug: FindBySlug) =>
+  (persist: PersistMemo) =>
+  (logger: Logger): PersistMemoEntryWorkflow =>
+  (command: PersistMemoEntryWorkflowCommand) => {
+    logger.info("PersistMemoEntryWorkflow started", { command });
+
+    return combine([
+      validateSlug(command.payload.slug),
+      validateEntry(command.payload.unvalidated),
+    ] as const)
+      .mapError((error) => (Array.isArray(error) ? error : [error]))
+      .toAsync()
+      .andThen(([slug, entry]) =>
+        findBySlug(slug).andThen((memo) => ok(addEntry(memo, entry))),
+      )
+      .andThen((memo) => persist(memo).map(() => memo))
+      .map((memo) =>
+        createMemoEditedEvent(toSnapshot(memo), toSnapshot(memo), command.now),
+      )
+      .tap(() => {
+        logger.info("PersistMemoEntryWorkflow completed", { command });
+      })
+      .tapError((error) => {
+        logger.error("PersistMemoEntryWorkflow failed", { error });
       });
   };
 
 type TerminateMemo = (
-  identifier: MemoIdentifier
-) => AsyncResult<void, AggregateNotFoundError<"Memo">>;
+  identifier: MemoIdentifier,
+) => AsyncResult<void, AggregateNotFoundError<"Memo"> | UnexpectedError>;
+
+type MemoTerminateWorkflowCommand = Command<{
+  identifier: string;
+}>;
 
 export type MemoTerminateWorkflow = (
-  identifier: string
+  command: MemoTerminateWorkflowCommand,
 ) => AsyncResult<
   MemoTerminatedEvent,
-  ValidationError | AggregateNotFoundError<"Memo">
+  ValidationError | AggregateNotFoundError<"Memo"> | UnexpectedError
 >;
 
 export const createMemoTerminateWorkflow =
   (validate: ValidateIdentifier) =>
   (terminate: TerminateMemo) =>
   (logger: Logger): MemoTerminateWorkflow =>
-  (identifier: string) => {
-    logger.info("MemoTerminateWorkflow started", { identifier });
+  (command: MemoTerminateWorkflowCommand) => {
+    logger.info("MemoTerminateWorkflow started", { command });
 
-    return validate(identifier)
+    return validate(command.payload.identifier)
       .toAsync()
       .tap((id) => {
         logger.debug("Validation passed", { identifier: id });
@@ -186,7 +348,7 @@ export const createMemoTerminateWorkflow =
           .tap(() => {
             logger.debug("Memo terminated", { identifier: id });
           })
-          .map(() => createMemoTerminatedEvent(id))
+          .map(() => createMemoTerminatedEvent(id)),
       )
       .tap((event) => {
         logger.info("MemoTerminateWorkflow completed", { event });

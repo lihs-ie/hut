@@ -1,0 +1,126 @@
+.container {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  background-color: var(--card);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 28rem;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.iconWrapper {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.iconWrapper.info {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: rgb(59, 130, 246);
+}
+
+.iconWrapper.warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: rgb(245, 158, 11);
+}
+
+.iconWrapper.success {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: rgb(34, 197, 94);
+}
+
+.iconWrapper.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: rgb(239, 68, 68);
+}
+
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: var(--foreground);
+}
+
+.message {
+  text-align: center;
+  color: var(--muted-foreground);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.cancelButton {
+  flex: 1;
+}
+
+.confirmButton {
+  flex: 1;
+  background-color: var(--accent);
+}
+
+.confirmButton:hover {
+  background-color: var(--accent-hover);
+}
+
+@media (max-width: 640px) {
+  .modal {
+    padding: 1.5rem;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancelButton,
+  .confirmButton {
+    width: 100%;
+  }
+}

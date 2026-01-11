@@ -62,7 +62,7 @@ export const Logger = (
         entry.message
       }`;
       if (entry.meta) {
-        console.log(logMessage, entry.meta);
+        console.log(logMessage, JSON.stringify(entry.meta, null, 2));
       } else {
         console.log(logMessage);
       }

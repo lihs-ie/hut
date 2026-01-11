@@ -1,0 +1,41 @@
+.container {
+  text-align: center;
+  padding: 2rem;
+}
+
+.code {
+  font-size: 6rem;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 1rem;
+}
+
+.message {
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  max-width: 32rem;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .code {
+    font-size: 4rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .message {
+    font-size: 0.875rem;
+  }
+}

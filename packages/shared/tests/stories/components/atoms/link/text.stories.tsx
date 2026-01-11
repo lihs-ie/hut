@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
-import { TextLink } from "@/components/atoms/link/text";
+import { TextLink } from "@shared/components/atoms/link/text";
 
 const meta = {
   component: TextLink,

@@ -1,0 +1,9 @@
+.container {
+  display: flex;
+  min-height: calc(100vh - var(--header-height));
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}

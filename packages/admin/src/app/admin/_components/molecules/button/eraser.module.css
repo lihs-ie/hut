@@ -1,0 +1,26 @@
+.container {
+  color: var(--foreground);
+  background: var(--background-secondary);
+
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+
+  cursor: pointer;
+}
+
+.container:hover {
+  background: var(--background-secondary-hover);
+}
+
+.icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+
+  color: var(--muted-foreground);
+}

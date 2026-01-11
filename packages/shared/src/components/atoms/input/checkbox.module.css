@@ -1,0 +1,41 @@
+.container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.input {
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring), transparent 80%);
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: var(--foreground);
+  user-select: none;
+}
+
+.container:has(.input:disabled) {
+  cursor: not-allowed;
+}
+
+.container:has(.input:disabled) .label {
+  opacity: 0.5;
+}

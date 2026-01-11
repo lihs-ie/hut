@@ -1,0 +1,30 @@
+.container {
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.wrapper {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .wrapper {
+    padding: 2rem;
+  }
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.description {
+  color: var(--muted-foreground);
+}

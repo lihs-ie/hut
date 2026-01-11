@@ -1,0 +1,31 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.header {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.contents {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  grid-area: contents;
+
+  box-sizing: border-box;
+
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .contents {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

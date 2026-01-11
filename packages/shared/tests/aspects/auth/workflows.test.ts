@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ok, err } from "@/aspects/result";
-import { unexpectedError, aggregateNotFoundError } from "@/aspects/error";
-import type { Logger } from "@/aspects/logger";
+import { ok, err } from "@shared/aspects/result";
+import { unexpectedError, aggregateNotFoundError } from "@shared/aspects/error";
+import type { Logger } from "@shared/aspects/logger";
 import {
   type AuthContext,
   type AdminAuthConfig,
@@ -12,12 +12,12 @@ import {
   logout,
   validateSessionAuth,
   authenticationSuccess,
-} from "@/aspects/auth/workflows";
+} from "@shared/aspects/auth/workflows";
 import {
   validateSession,
   type AdminSession,
   type SessionStorage,
-} from "@/aspects/auth/session";
+} from "@shared/aspects/auth/session";
 import {
   validatePasskeyAuthenticator,
   authenticationFailedError,
@@ -25,7 +25,7 @@ import {
   type PasskeyAuth,
   type PasskeyAuthConfig,
   type PasskeyAuthenticator,
-} from "@/aspects/auth/passkey";
+} from "@shared/aspects/auth/passkey";
 
 // =============================================================================
 // モックファクトリー
