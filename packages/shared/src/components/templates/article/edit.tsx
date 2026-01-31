@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { ulid } from "ulid";
 import { PublishStatus } from "@shared/domains/common";
-import { useServerAction } from "@shared/hooks";
+import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { EditorHeader } from "@shared/components/organisms/common/editor/header";
 import { MarkdownPreview } from "@shared/components/organisms/common/editor/markdown-preview";

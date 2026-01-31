@@ -9,7 +9,7 @@ import { VariantButton } from "@shared/components/atoms/button/variant";
 import { PlusIcon } from "@shared/components/atoms/icon/plus";
 import styles from "./editor.module.css";
 import { UnvalidatedPrivacyPolicy } from "@shared/domains/document";
-import { useServerAction } from "@shared/hooks";
+import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 
 export type Props = {

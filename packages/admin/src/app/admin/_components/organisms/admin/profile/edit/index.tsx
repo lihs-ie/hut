@@ -12,7 +12,7 @@ import {
   UnvalidatedProfile,
 } from "@shared/domains/user";
 import { UnvalidatedTechnologyStack } from "@shared/domains/common/tech";
-import { useServerAction } from "@shared/hooks";
+import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { Tag } from "@shared/domains/attributes/tag";
 

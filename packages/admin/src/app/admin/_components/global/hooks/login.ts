@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { OIDCClientProvider } from "@/providers/acl/oidc/client";
 import { login } from "@/actions/auth";
 import { fromPromise, ok } from "@shared/aspects/result";
-import { useServerAction } from "@shared/hooks/useServerAction";
+import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 
 export type LoginState = "idle" | "checking" | "loading" | "error";
 

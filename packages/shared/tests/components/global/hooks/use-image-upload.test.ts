@@ -3,9 +3,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useImageUpload } from "@shared/hooks/useImageUpload";
+import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
 
-vi.mock("@shared/hooks/useImageCompression", () => ({
+vi.mock("@shared/components/global/hooks/use-image-compression", () => ({
   compressImageToWebP: vi.fn().mockImplementation((file: File) => ({
     _tag: "AsyncResult",
     match: vi

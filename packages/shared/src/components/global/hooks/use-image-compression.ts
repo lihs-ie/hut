@@ -32,7 +32,7 @@ export const calculateResizedDimensions = (
   originalWidth: number,
   originalHeight: number,
   maxWidth: number,
-  maxHeight: number
+  maxHeight: number,
 ): { width: number; height: number } => {
   let width = originalWidth;
   let height = originalHeight;
@@ -52,7 +52,7 @@ export const calculateResizedDimensions = (
 
 export const getCompressedFileName = (
   originalName: string,
-  mimeType: SupportedImageMimeType
+  mimeType: SupportedImageMimeType,
 ): string => {
   if (mimeType === "image/gif") {
     return originalName;
@@ -84,7 +84,7 @@ const loadImageFromFile = (file: File): Promise<HTMLImageElement> => {
 const canvasToBlob = (
   canvas: HTMLCanvasElement,
   mimeType: string,
-  quality: number
+  quality: number,
 ): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -96,14 +96,14 @@ const canvasToBlob = (
         }
       },
       mimeType,
-      quality
+      quality,
     );
   });
 };
 
 export const compressImageToWebP = (
   file: File,
-  options: CompressionOptions = DEFAULT_COMPRESSION_OPTIONS
+  options: CompressionOptions = DEFAULT_COMPRESSION_OPTIONS,
 ): AsyncResult<CompressedImage, ValidationError> => {
   return asyncResult(
     (async () => {
@@ -125,7 +125,7 @@ export const compressImageToWebP = (
           image.width,
           image.height,
           options.maxWidth,
-          options.maxHeight
+          options.maxHeight,
         );
 
         const canvas = document.createElement("canvas");
@@ -135,7 +135,7 @@ export const compressImageToWebP = (
         const context = canvas.getContext("2d");
         if (!context) {
           return err<CompressedImage, ValidationError>(
-            validationError("canvas", "Canvas 2D contextの取得に失敗しました")
+            validationError("canvas", "Canvas 2D contextの取得に失敗しました"),
           );
         }
 
@@ -155,9 +155,9 @@ export const compressImageToWebP = (
         const message =
           error instanceof Error ? error.message : "画像の圧縮に失敗しました";
         return err<CompressedImage, ValidationError>(
-          validationError("compression", message)
+          validationError("compression", message),
         );
       }
-    })()
+    })(),
   );
 };

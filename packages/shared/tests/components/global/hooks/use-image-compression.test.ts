@@ -7,7 +7,7 @@ import {
   getCompressedFileName,
   calculateResizedDimensions,
   DEFAULT_COMPRESSION_OPTIONS,
-} from "@shared/hooks/useImageCompression";
+} from "@shared/components/global/hooks/use-image-compression";
 
 class MockImage {
   width: number;
