@@ -203,11 +203,11 @@ describe("hooks/useImageUpload", () => {
 
   describe("cancelUpload", () => {
     it("キャンセル時はfailed状態になる", async () => {
-      let resolveUpload: (value: string) => void;
+      let _resolveUpload: (value: string) => void;
       const mockUploadAction = vi.fn(
         () =>
           new Promise<string>((resolve) => {
-            resolveUpload = resolve;
+            _resolveUpload = resolve;
           }),
       );
 

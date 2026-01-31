@@ -4,7 +4,6 @@ import {
   FieldPath,
   OrderByDirection,
   QueryCompositeFilterConstraint,
-  QueryConstraint,
   QueryEndAtConstraint,
   QueryFieldFilterConstraint,
   QueryLimitConstraint,
@@ -97,7 +96,7 @@ export function startAt(...fieldValues: unknown[]): QueryStartAtConstraintImpl
 export function startAt<T>(
   snapshot: DocumentSnapshot<T>
 ): QueryStartAtConstraintImpl
-export function startAt<T>(...args: unknown[]): QueryStartAtConstraintImpl {
+export function startAt<_T>(...args: unknown[]): QueryStartAtConstraintImpl {
   if (
     args.length === 1 &&
     args[0] &&
@@ -119,7 +118,7 @@ export function startAfter(
 export function startAfter<T>(
   snapshot: DocumentSnapshot<T>
 ): QueryStartAtConstraintImpl
-export function startAfter<T>(...args: unknown[]): QueryStartAtConstraintImpl {
+export function startAfter<_T>(...args: unknown[]): QueryStartAtConstraintImpl {
   if (
     args.length === 1 &&
     args[0] &&
@@ -139,7 +138,7 @@ export function endAt(...fieldValues: unknown[]): QueryEndAtConstraintImpl
 export function endAt<T>(
   snapshot: DocumentSnapshot<T>
 ): QueryEndAtConstraintImpl
-export function endAt<T>(...args: unknown[]): QueryEndAtConstraintImpl {
+export function endAt<_T>(...args: unknown[]): QueryEndAtConstraintImpl {
   if (
     args.length === 1 &&
     args[0] &&
@@ -159,7 +158,7 @@ export function endBefore(...fieldValues: unknown[]): QueryEndAtConstraintImpl
 export function endBefore<T>(
   snapshot: DocumentSnapshot<T>
 ): QueryEndAtConstraintImpl
-export function endBefore<T>(...args: unknown[]): QueryEndAtConstraintImpl {
+export function endBefore<_T>(...args: unknown[]): QueryEndAtConstraintImpl {
   if (
     args.length === 1 &&
     args[0] &&

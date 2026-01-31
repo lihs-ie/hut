@@ -184,9 +184,12 @@ const exchangeCustomTokenForIdToken = async (
 const createSessionCookie = async (idToken: string): Promise<string> => {
   const result = await OIDCServerProvider.verifyIdToken(idToken)
     .andThen(() => OIDCServerProvider.createSessionCookie(idToken))
-    .match({
-      ok: (cookie) => ({ ok: true as const, cookie }),
-      err: (error) => ({ ok: false as const, error }),
+    .match<
+      | { ok: true; cookie: string }
+      | { ok: false; error: unknown }
+    >({
+      ok: (cookie) => ({ ok: true, cookie }),
+      err: (error) => ({ ok: false, error }),
     });
 
   if (!result.ok) {

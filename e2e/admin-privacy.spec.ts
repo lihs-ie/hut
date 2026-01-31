@@ -4,9 +4,6 @@ type TestArgs = {
   page: Page;
 };
 
-/**
- * Privacy policy edit tests - require authentication
- */
 test.describe("privacy policy edit", () => {
   test("privacy policy edit page renders", async ({ page }: TestArgs) => {
     await page.goto("/admin/privacy/edit");

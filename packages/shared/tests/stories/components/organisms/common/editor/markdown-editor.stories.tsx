@@ -1,76 +1,55 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { MarkdownEditor } from "@shared/components/organisms/common/editor";
+
+import { MarkdownEditor } from "@shared/components/organisms/common/editor/markdown-editor";
 
 const meta = {
   component: MarkdownEditor,
   args: {
-    onChange: () => {},
-    onTagsChange: () => {},
+    onChange: (value: string) => console.log("onChange:", value),
   },
-  decorators: [
-    (Story) => (
-      <div style={{ height: "600px", display: "flex" }}>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta<typeof MarkdownEditor>;
 
 export default meta;
 
-export const Empty: StoryObj<typeof MarkdownEditor> = {
+export const Default: StoryObj<typeof MarkdownEditor> = {
   args: {
     value: "",
-    tags: [],
+    placeholder: "マークダウンで記述",
   },
 };
 
 export const WithContent: StoryObj<typeof MarkdownEditor> = {
   args: {
-    value: `## 概要
+    value: `## サンプル記事
 
-Next.js 15とReact 19を使用したWebアプリケーション開発における、
-基本的なルールとディレクトリ構成について解説します。
+これは**Markdown**で書かれたサンプルです。
 
-### ディレクトリ構成の基本方針
+### セクション1
 
-App Routerを前提とした場合、以下のようなディレクトリ構成を推奨します。
-
-\`\`\`
-app/
-├── (marketing)/
-│   ├── page.tsx
-│   └── about/
-│       └── page.tsx
-├── (dashboard)/
-│   ├── layout.tsx
-│   └── dashboard/
-│       └── page.tsx
-└── layout.tsx
-\`\`\`
-
-### 命名規則
-
-コンポーネントやファイルの命名には一貫性を持たせることが重要です。
+- アイテム1
+- アイテム2
+- アイテム3
 `,
-    tags: [],
+    placeholder: "マークダウンで記述",
   },
 };
 
-export const WithTags: StoryObj<typeof MarkdownEditor> = {
+export const CustomPlaceholder: StoryObj<typeof MarkdownEditor> = {
   args: {
-    value: `## React Hooksの基礎
-
-Hooksを使用することで、関数コンポーネントで状態やライフサイクルを扱えます。
-`,
-    tags: ["React", "Hooks", "TypeScript"],
+    value: "",
+    placeholder: "メモを入力してください...",
   },
 };
 
-export const NoTagsSection: StoryObj<typeof MarkdownEditor> = {
+export const LongContent: StoryObj<typeof MarkdownEditor> = {
   args: {
-    value: "タグ入力欄がないバージョン",
-    tags: undefined,
-    onTagsChange: undefined,
+    value: Array(20)
+      .fill(null)
+      .map(
+        (_, index) =>
+          `## セクション${index + 1}\n\nこれはセクション${index + 1}の内容です。\n`
+      )
+      .join("\n"),
+    placeholder: "マークダウンで記述",
   },
 };

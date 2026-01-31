@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { ModestText } from "@shared/components/atoms/text/modest";
-import { GlobeIcon } from "@shared/components/atoms/icon";
+import { GlobeIcon } from "@shared/components/atoms/icon/globe";
 
 const meta = {
   component: ModestText,

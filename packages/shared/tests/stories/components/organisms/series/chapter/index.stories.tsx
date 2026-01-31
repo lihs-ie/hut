@@ -9,7 +9,7 @@ import {
   SeriesMold,
   SeriesSlugMold,
 } from "../../../../../support/molds/domains/series";
-import { TagMold } from "../../../../../support/molds/domains/attributes/tag";
+import { TagIdentifierMold } from "../../../../../support/molds/domains/attributes/tag";
 
 const meta = {
   component: ChapterPresenter,
@@ -67,7 +67,7 @@ const chapters = [
   Forger(ChapterMold).forgeWithSeed(7, { title: "エラーハンドリング" }),
 ];
 
-const tags = Forger(TagMold).forgeMulti(3);
+const tags = Forger(TagIdentifierMold).forgeMulti(3);
 
 const series = Forger(SeriesMold).forge({
   title: "Next.js 15 / React 19 実践設計ガイド",
@@ -108,7 +108,7 @@ export const FewChapters: StoryObj<typeof ChapterPresenter> = {
   args: {
     series: Forger(SeriesMold).forge({
       title: "短いシリーズ",
-      tags: Forger(TagMold).forgeMulti(2),
+      tags: Forger(TagIdentifierMold).forgeMulti(2),
       chapters: [
         Forger(ChapterMold).forge({
           title: "イントロダクション",

@@ -68,16 +68,17 @@ export class DocumentSnapshotImpl<T = DocumentData>
     return this.data_
   }
 
-  get(fieldPath: string): any {
+  get(fieldPath: string): unknown {
     if (!this.data_) return undefined
 
-    const data = this.data_ as any
+    const data = this.data_ as Record<string, unknown>
     const pathSegments = fieldPath.split(".")
 
-    let current = data
+    let current: unknown = data
     for (const segment of pathSegments) {
       if (current === null || current === undefined) return undefined
-      current = current[segment]
+      if (typeof current !== "object") return undefined
+      current = (current as Record<string, unknown>)[segment]
     }
 
     return current
@@ -137,7 +138,7 @@ export class QuerySnapshotImpl<T = DocumentData> implements QuerySnapshot<T> {
 
   forEach(
     callback: (result: QueryDocumentSnapshot<T>) => void,
-    thisArg?: any
+    thisArg?: unknown
   ): void {
     this.docs.forEach(callback, thisArg)
   }

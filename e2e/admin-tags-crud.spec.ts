@@ -67,7 +67,7 @@ async function getTagByName(
 /**
  * Delete a tag from Firestore by identifier
  */
-async function deleteTagFromFirestore(identifier: string): Promise<void> {
+async function _deleteTagFromFirestore(identifier: string): Promise<void> {
   const url = `${FIRESTORE_EMULATOR_HOST}/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents/tags/${identifier}`;
   await fetch(url, { method: "DELETE" });
 }
@@ -75,7 +75,7 @@ async function deleteTagFromFirestore(identifier: string): Promise<void> {
 /**
  * Delete tag name index from Firestore
  */
-async function deleteTagNameIndex(tagName: string): Promise<void> {
+async function _deleteTagNameIndex(tagName: string): Promise<void> {
   const url = `${FIRESTORE_EMULATOR_HOST}/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents/index/tags/name/${tagName}`;
   await fetch(url, { method: "DELETE" });
 }
@@ -85,7 +85,7 @@ async function deleteTagNameIndex(tagName: string): Promise<void> {
  * NOTE: identifier must be a valid ULID format
  * NOTE: timeline dates must be stored as stringValue (not timestampValue) to match the infrastructure layer
  */
-async function createTagInFirestore(
+async function _createTagInFirestore(
   identifier: string,
   name: string,
   logo: string,
@@ -123,7 +123,7 @@ async function createTagInFirestore(
  * Create tag name index in Firestore
  * NOTE: Index uses timestampValue for createdAt (matches seed script)
  */
-async function createTagNameIndex(
+async function _createTagNameIndex(
   tagName: string,
   identifier: string,
 ): Promise<void> {
@@ -202,48 +202,27 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     test("creates new tag and verifies in Firestore", async ({
       page,
     }: TestArgs) => {
-      console.log("Step 1: Navigating to /admin/tags/new");
       await page.goto("/admin/tags/new");
       await page.waitForLoadState("networkidle");
 
-      console.log("Step 2: Waiting for form to be ready");
       const nameInput = page.getByPlaceholder("例: Next.js");
       await expect(nameInput).toBeVisible();
       await expect(nameInput).toBeEditable();
 
-      console.log("Step 3: Filling tag name:", testTagName);
       await nameInput.fill(testTagName);
 
-      console.log("Step 4: Filling logo URL:", testTagLogo);
       const logoInput = page.getByPlaceholder("https://example.com/logo.png");
       await logoInput.fill(testTagLogo);
 
-      console.log("Step 5: Verifying values were entered");
       await expect(nameInput).toHaveValue(testTagName);
       await expect(logoInput).toHaveValue(testTagLogo);
 
-      console.log("Step 6: Checking create button");
       const createButton = page.getByRole("button", { name: "作成する" });
       await expect(createButton).toBeEnabled();
-      console.log("Create button is enabled");
 
-      console.log("Step 7: Clicking create button");
       await createButton.click();
 
-      console.log("Step 8: Waiting for navigation");
-      try {
-        await page.waitForURL(/\/admin\/tags$/, { timeout: 15000 });
-        console.log("Navigation successful");
-      } catch (error) {
-        console.log("Navigation timeout - current URL:", page.url());
-        // Check if there's an error modal
-        const errorModal = page.getByRole("dialog");
-        const hasError = await errorModal.isVisible().catch(() => false);
-        if (hasError) {
-          console.log("Error modal found:", await errorModal.textContent());
-        }
-        throw error;
-      }
+      await page.waitForURL(/\/admin\/tags$/, { timeout: 15000 });
 
       // Verify tag appears in the list
       await expect(page.getByText(testTagName)).toBeVisible();
@@ -444,54 +423,36 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     }: TestArgs) => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
-      console.log("Delete test: Starting with identifier:", createdTagIdentifier);
-
       await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
       await page.waitForLoadState("networkidle");
 
       // Get current tag name for verification
       const nameInput = page.getByPlaceholder("例: Next.js");
       const currentTagName = await nameInput.inputValue();
-      console.log("Delete test: Current tag name:", currentTagName);
 
       // Click delete button
-      console.log("Delete test: Clicking delete button");
       await page.getByRole("button", { name: "タグを削除" }).click();
 
       // Wait for modal to appear
       const modalHeading = page.getByRole("heading", { name: "タグを削除", level: 2 });
       await expect(modalHeading).toBeVisible();
-      console.log("Delete test: Modal visible");
-
-      // Listen for console messages to capture any errors
-      page.on("console", (msg) => {
-        if (msg.type() === "error") {
-          console.log("Browser error:", msg.text());
-        }
-      });
 
       // Confirm deletion in modal
-      console.log("Delete test: Clicking confirm button");
       const confirmButton = page.getByRole("button", { name: "削除する" });
       await confirmButton.click();
 
       // Wait for the action to complete
-      console.log("Delete test: Waiting for navigation");
       await page.waitForURL("/admin/tags", { timeout: 10000 });
-      console.log("Delete test: Navigation complete, URL:", page.url());
 
       // Verify tag no longer appears in the list
       await expect(page.getByText(currentTagName)).not.toBeVisible();
-      console.log("Delete test: Tag no longer visible in list");
 
       // Wait a bit for Firestore to sync
       await page.waitForTimeout(2000);
 
       // Verify removal from Firestore by identifier
       const tags = await getTagsFromFirestore();
-      console.log("Delete test: Tags in Firestore:", tags.map(t => ({ id: t.identifier, name: t.name })));
       const tagExists = tags.some((t) => t.identifier === createdTagIdentifier);
-      console.log("Delete test: Tag exists:", tagExists);
       expect(tagExists).toBe(false);
 
       // Clear the identifier since tag is deleted
@@ -574,11 +535,6 @@ test.describe("tag list page", () => {
   test("displays tag logos", async ({ page }: TestArgs) => {
     await page.goto("/admin/tags");
     await page.waitForLoadState("networkidle");
-
-    // Check that logo images are displayed
-    const logos = page.locator("img").filter({
-      has: page.locator('[alt*="TypeScript"], [alt*="React"], [alt*="Next.js"]'),
-    });
 
     // At least some logos should be visible (depends on UI implementation)
     const logoCount = await page.locator("img").count();

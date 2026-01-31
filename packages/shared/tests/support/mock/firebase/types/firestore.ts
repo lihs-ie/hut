@@ -1,7 +1,7 @@
 import { FirebaseApp } from "firebase/app";
 
 export interface DocumentData {
-  [field: string]: any;
+  [field: string]: unknown;
 }
 
 export interface FirestoreSettings {
@@ -17,22 +17,31 @@ export interface Firestore {
   toJSON(): object;
 }
 
-export interface DocumentReference<T = DocumentData> {
+export interface DocumentReference<T = DocumentData, DbModelType = DocumentData> {
   readonly id: string;
   readonly path: string;
   readonly type: "document";
   readonly firestore: Firestore;
-  readonly converter: FirestoreDataConverter<T> | null;
+  readonly converter: FirestoreDataConverter<T, DbModelType> | null;
   readonly parent: CollectionReference<T>;
+  withConverter<NewAppModelType, NewDbModelType extends DocumentData = DocumentData>(
+    converter: FirestoreDataConverter<NewAppModelType, NewDbModelType>
+  ): DocumentReference<NewAppModelType, NewDbModelType>;
+  withConverter(converter: null): DocumentReference<DocumentData, DocumentData>;
+  toJSON(): object;
 }
 
-export interface CollectionReference<T = DocumentData> {
+export interface CollectionReference<T = DocumentData, DbModelType = DocumentData> {
   readonly id: string;
   readonly path: string;
   readonly type: "collection";
   readonly firestore: Firestore;
-  readonly converter: FirestoreDataConverter<T> | null;
+  readonly converter: FirestoreDataConverter<T, DbModelType> | null;
   readonly parent: DocumentReference | null;
+  withConverter<NewAppModelType, NewDbModelType extends DocumentData = DocumentData>(
+    converter: FirestoreDataConverter<NewAppModelType, NewDbModelType>
+  ): CollectionReference<NewAppModelType, NewDbModelType>;
+  withConverter(converter: null): CollectionReference<DocumentData, DocumentData>;
 }
 
 export interface DocumentSnapshot<T = DocumentData> {
@@ -41,7 +50,7 @@ export interface DocumentSnapshot<T = DocumentData> {
   readonly metadata: SnapshotMetadata;
   exists(): boolean;
   data(): T | undefined;
-  get(fieldPath: string): any;
+  get(fieldPath: string): unknown;
   toJSON(): object;
 }
 
@@ -58,7 +67,7 @@ export interface QuerySnapshot<T = DocumentData> {
   readonly query: Query<T>;
   forEach(
     callback: (result: QueryDocumentSnapshot<T>) => void,
-    thisArg?: any
+    thisArg?: unknown
   ): void;
   toJSON(): object;
 }
@@ -180,7 +189,11 @@ export interface FirestoreDataConverter<T, DbModelType = DocumentData> {
     modelObject: Partial<T>,
     options: SetOptions
   ): Partial<DbModelType>;
-  fromFirestore(snapshot: QueryDocumentSnapshot<DbModelType>): T;
+  fromFirestore(snapshot: QueryDocumentSnapshot<DbModelType>, options?: SnapshotOptions): T;
+}
+
+export interface SnapshotOptions {
+  readonly serverTimestamps?: "estimate" | "previous" | "none";
 }
 
 export interface SetOptions {
@@ -190,13 +203,14 @@ export interface SetOptions {
 
 export type UpdateData<T> = T extends Primitive
   ? T
-  : T extends {}
+  : T extends object
   ? {
       [K in keyof T]?: UpdateData<T[K]> | FieldValue;
     } & NestedUpdateFields<T>
   : Partial<T>;
 
-export interface NestedUpdateFields<T extends Record<string, unknown>> {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface NestedUpdateFields<_T extends Record<string, unknown>> {}
 
 export type Primitive = string | number | boolean | undefined | null;
 
@@ -228,10 +242,10 @@ export interface Transaction {
   update<T = DocumentData>(
     documentRef: DocumentReference<T>,
     field: string | FieldPath,
-    value: any,
-    ...moreFieldsAndValues: any[]
+    value: unknown,
+    ...moreFieldsAndValues: unknown[]
   ): Transaction;
-  delete(documentRef: DocumentReference<any>): Transaction;
+  delete(documentRef: DocumentReference<DocumentData>): Transaction;
 }
 
 export interface WriteBatch {
@@ -248,10 +262,10 @@ export interface WriteBatch {
   update<T = DocumentData>(
     documentRef: DocumentReference<T>,
     field: string | FieldPath,
-    value: any,
-    ...moreFieldsAndValues: any[]
+    value: unknown,
+    ...moreFieldsAndValues: unknown[]
   ): WriteBatch;
-  delete(documentRef: DocumentReference<any>): WriteBatch;
+  delete(documentRef: DocumentReference<DocumentData>): WriteBatch;
   commit(): Promise<void>;
 }
 
@@ -318,8 +332,8 @@ export interface FirestoreOperations {
   startAfter(...values: unknown[]): QueryConstraint;
   endAt(...values: unknown[]): QueryConstraint;
   endBefore(...values: unknown[]): QueryConstraint;
-  and(...queryConstraints: QueryFilterConstraint[]): QueryConstraint;
-  or(...queryConstraints: QueryFilterConstraint[]): QueryConstraint;
+  and(...queryConstraints: QueryFilterConstraint[]): QueryCompositeFilterConstraint;
+  or(...queryConstraints: QueryFilterConstraint[]): QueryCompositeFilterConstraint;
   collectionGroup(
     firestore: Firestore,
     collectionId: string

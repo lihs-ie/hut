@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { SearchResultCard } from "@shared/components/molecules/list/card/search-result";
-import { ContentType } from "@shared/domains/search-index/common";
+import { ContentType } from "@shared/domains/search-token";
 
 const meta = {
   component: SearchResultCard,

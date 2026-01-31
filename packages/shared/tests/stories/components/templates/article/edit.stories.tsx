@@ -1,108 +1,115 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { ArticleEditTemplate } from "@shared/components/templates/article/edit";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeHighlight from "rehype-highlight";
 
-// Storybook用の簡易markdownレンダラー（MDXRendererはRSC用なのでクライアントではreact-markdownを使用）
-const storybookRenderer = (content: string) => (
-  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-    {content}
-  </ReactMarkdown>
-);
+import { ArticleEdit } from "@shared/components/templates/article/edit";
+import { Forger } from "@lihs-ie/forger-ts";
+import {
+  ArticleMold,
+  TitleMold,
+  SlugMold,
+  ContentMold,
+} from "../../../../support/molds/domains/article";
+import { TagMold } from "../../../../support/molds/domains/attributes/tag";
+import { PublishStatus } from "@shared/domains/common";
 
 const meta = {
-  component: ArticleEditTemplate,
-  args: {
-    onSave: async () => {},
-    renderer: storybookRenderer,
-  },
+  component: ArticleEdit,
   parameters: {
-    layout: "fullscreen",
+    nextjs: {
+      appDirectory: true,
+    },
   },
-} satisfies Meta<typeof ArticleEditTemplate>;
+} satisfies Meta<typeof ArticleEdit>;
 
 export default meta;
 
-export const NewArticle: StoryObj<typeof ArticleEditTemplate> = {
+const tags = Forger(TagMold).forgeMultiWithSeed(10, 1);
+
+const persist = async () => {
+  console.log("Article persisted");
+};
+
+const uploadImage = async (_file: File | Blob, path: string) => {
+  console.log("Image uploaded to", path);
+  return `https://example.com/images/${path}`;
+};
+
+export const NewArticle: StoryObj<typeof ArticleEdit> = {
   args: {
-    type: "article",
-    backHref: "/admin/articles",
+    tags,
+    persist,
+    uploadImage,
   },
 };
 
-export const EditArticle: StoryObj<typeof ArticleEditTemplate> = {
-  args: {
-    initialTitle: "Next.js 15の新機能について",
-    initialContent: `## 概要
+const articleContent = `---
+title: "Next.js 15の新機能について"
+slug: "nextjs-15-features"
+excerpt: "Next.js 15で追加された新機能を紹介します"
+tags: []
+---
 
-Next.js 15とReact 19を使用したWebアプリケーション開発における、
-基本的なルールとディレクトリ構成について解説します。
+## はじめに
 
-### ディレクトリ構成の基本方針
+Next.js 15がリリースされました。この記事では、主要な新機能について解説します。
 
-App Routerを前提とした場合、以下のようなディレクトリ構成を推奨します。
+## Server Actions の改善
+
+Server Actionsがより使いやすくなりました。
 
 \`\`\`typescript
-// app/layout.tsx
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <html lang="ja">
-      <body>{children}</body>
-    </html>
-  )
+async function submitForm(formData: FormData) {
+  "use server";
+  // サーバー側で処理
 }
 \`\`\`
-`,
-    initialTags: ["Next.js", "React", "TypeScript"],
-    initialPublished: false,
-    type: "article",
-    backHref: "/admin/articles",
+
+## まとめ
+
+Next.js 15は多くの改善が含まれています。
+`;
+
+const existingArticle = Forger(ArticleMold).forge({
+  title: Forger(TitleMold).forge({ value: "Next.js 15の新機能について" }),
+  slug: Forger(SlugMold).forge({ value: "nextjs-15-features" }),
+  content: Forger(ContentMold).forge({ value: articleContent }),
+  status: PublishStatus.DRAFT,
+  tags: [tags[0].identifier, tags[1].identifier],
+});
+
+export const EditExistingArticle: StoryObj<typeof ArticleEdit> = {
+  args: {
+    initial: existingArticle,
+    tags,
+    persist,
+    uploadImage,
   },
 };
 
-export const PublishedArticle: StoryObj<typeof ArticleEditTemplate> = {
+const publishedContent = `---
+title: "公開済みの記事"
+slug: "published-article"
+excerpt: "これは公開済みの記事です"
+tags: []
+---
+
+## 公開済みコンテンツ
+
+この記事は公開されています。
+`;
+
+const publishedArticle = Forger(ArticleMold).forge({
+  title: Forger(TitleMold).forge({ value: "公開済みの記事" }),
+  slug: Forger(SlugMold).forge({ value: "published-article" }),
+  content: Forger(ContentMold).forge({ value: publishedContent }),
+  status: PublishStatus.PUBLISHED,
+  tags: [tags[2].identifier],
+});
+
+export const EditPublishedArticle: StoryObj<typeof ArticleEdit> = {
   args: {
-    initialTitle: "React Hooksの完全ガイド",
-    initialContent: `## はじめに
-
-React Hooksは、React 16.8で導入された機能です。
-
-## useState
-
-最も基本的なHookです。
-
-\`\`\`typescript
-const [count, setCount] = useState(0);
-\`\`\`
-`,
-    initialTags: ["React", "Hooks"],
-    initialPublished: true,
-    type: "article",
-    backHref: "/admin/articles",
-  },
-};
-
-export const NewChapter: StoryObj<typeof ArticleEditTemplate> = {
-  args: {
-    type: "chapter",
-    backHref: "/admin/books/my-book",
-  },
-};
-
-export const EditChapter: StoryObj<typeof ArticleEditTemplate> = {
-  args: {
-    initialTitle: "第1章: はじめに",
-    initialContent: `## この章で学ぶこと
-
-この章では、基本的な概念について学びます。
-`,
-    initialPublished: false,
-    type: "chapter",
-    backHref: "/admin/books/my-book",
+    initial: publishedArticle,
+    tags,
+    persist,
+    uploadImage,
   },
 };
