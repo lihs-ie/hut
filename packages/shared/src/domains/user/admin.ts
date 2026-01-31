@@ -89,7 +89,7 @@ export type UnvalidatedProfile = {
     type: string;
     user: string;
   }>;
-  techStacks: Map<string, { kind: string; from: Date; continue: boolean }[]>;
+  techStacks: Map<string, { tag: string; from: Date; continue: boolean; type: string }[]>;
 };
 
 export const validateProfile = (

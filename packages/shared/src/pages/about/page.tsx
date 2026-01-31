@@ -1,12 +1,12 @@
 import { getProfile } from "@shared/actions/admin";
+import { getAllTags } from "@shared/actions/tag";
 import { AboutIndex } from "@shared/components/templates/about";
-import { profile } from "@shared/config/presentation/profile";
 
 export default async function AboutPage() {
   return (
     <AboutIndex
       getProfile={getProfile}
-      logoSources={profile.techStack.logoSources}
+      getAllTags={getAllTags}
       now={new Date()}
     />
   );
