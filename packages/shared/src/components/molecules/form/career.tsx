@@ -1,5 +1,5 @@
 import type { DragEvent } from "react";
-import { DragHandleIcon } from "@shared/components/atoms/icon";
+import { DragHandleIcon } from "@shared/components/atoms/icon/drag-handle";
 import { FormLabel } from "@shared/components/atoms/text/form-label";
 import { TextInput } from "@shared/components/atoms/input/text";
 import { Textarea } from "@shared/components/atoms/input/textarea";

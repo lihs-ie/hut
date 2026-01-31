@@ -8,20 +8,18 @@ import { PublishStatus } from "@shared/domains/common";
 
 export default async function TopPage() {
   return (
-    <>
-      <TopIndex
-        searchArticles={async () => searchArticles({})}
-        searchMemos={async () =>
-          searchMemos({
-            freeWord: null,
-            tags: null,
-            status: PublishStatus.PUBLISHED,
-          })
-        }
-        // [初期リリース対象外] searchSeries={async () => searchSeries({ slug: null, tags: null })}
-        findAllTags={findAllTags}
-        getProfile={getProfile}
-      />
-    </>
+    <TopIndex
+      searchArticles={async () => searchArticles({})}
+      searchMemos={async () =>
+        searchMemos({
+          freeWord: null,
+          tags: null,
+          status: PublishStatus.PUBLISHED,
+        })
+      }
+      // [初期リリース対象外] searchSeries={async () => searchSeries({ slug: null, tags: null })}
+      findAllTags={findAllTags}
+      getProfile={getProfile}
+    />
   );
 }

@@ -1,14 +1,11 @@
 import { AdminSidebar, NavItem } from "../_components/organisms/admin/sidebar";
 import { Routes } from "@/config/routes";
 import styles from "./layout.module.css";
-import {
-  // [初期リリース対象外] BookOpenIcon,
-  MessageSquareIcon,
-  TagIcon,
-  UserIcon,
-  ShieldIcon,
-  FileTextIcon,
-} from "@shared/components/atoms/icon";
+import { FileTextIcon } from "@shared/components/atoms/icon/file-text";
+import { MessageSquareIcon } from "@shared/components/atoms/icon/message";
+import { TagIcon } from "@shared/components/atoms/icon/tag";
+import { UserIcon } from "@shared/components/atoms/icon/user";
+import { ShieldIcon } from "@shared/components/atoms/icon/shield";
 
 const navItems: NavItem[] = [
   {

@@ -3,7 +3,9 @@
 import { PublishStatus } from "@shared/domains/common";
 import styles from "./sidebar.module.css";
 import { SimpleCard } from "@shared/components/atoms/card/simple";
-import { CheckIcon, GlobeIcon, LockIcon } from "@shared/components/atoms/icon";
+import { CheckIcon } from "@shared/components/atoms/icon/check";
+import { GlobeIcon } from "@shared/components/atoms/icon/globe";
+import { LockIcon } from "@shared/components/atoms/icon/lock";
 import { useState } from "react";
 import { SimpleSwitch } from "@shared/components/atoms/toggle/simple";
 import { ConfirmModal } from "@shared/components/molecules/modal/confirm";

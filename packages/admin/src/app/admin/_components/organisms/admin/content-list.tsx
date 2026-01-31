@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
-import { PlusIcon } from "@shared/components/atoms/icon";
+import { PlusIcon } from "@shared/components/atoms/icon/plus";
 import Link from "next/link";
 import { SearchInput } from "@shared/components/molecules/form/search-input";
 import styles from "./content-list.module.css";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BookOpenIcon } from "@shared/components/atoms/icon";
+import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 import { SimpleBadge } from "@shared/components/atoms/badge/simple";
 import styles from "./summary.module.css";
 

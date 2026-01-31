@@ -99,7 +99,9 @@ const buildScoreMap = (
 };
 
 const sortByScore = (results: ScoredResult[]): SearchResult[] => {
-  return results.sort((a, b) => b.score - a.score).map((scored) => scored.item);
+  return results
+    .toSorted((a, b) => b.score - a.score)
+    .map((result) => result.item);
 };
 
 export const createSearchByIndexWorkflow =

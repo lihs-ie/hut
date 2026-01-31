@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { MessageSquareIcon, BookOpenIcon } from "@shared/components/atoms/icon";
+import { MessageSquareIcon } from "@shared/components/atoms/icon/message";
+import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 import styles from "./search-result.module.css";
 import { CommonImage } from "@shared/components/atoms/image/common";
 import { ContentType } from "@shared/domains/search-token";

@@ -1,6 +1,6 @@
 import type { DragEvent } from "react";
 import { SimpleCard } from "@shared/components/atoms/card/simple";
-import { PlusIcon } from "@shared/components/atoms/icon";
+import { PlusIcon } from "@shared/components/atoms/icon/plus";
 import { SectionHeader } from "@shared/components/molecules/form/section-header";
 import { CareerItem } from "@shared/components/molecules/form/career";
 import styles from "./career.module.css";

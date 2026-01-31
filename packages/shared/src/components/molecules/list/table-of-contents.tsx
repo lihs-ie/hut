@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDownIcon } from "@shared/components/atoms/icon";
+import { ChevronDownIcon } from "@shared/components/atoms/icon/chevron-down";
 import styles from "./table-of-contents.module.css";
 import { Node } from "@shared/components/global/mdx";
 

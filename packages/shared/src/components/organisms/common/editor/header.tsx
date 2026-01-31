@@ -1,4 +1,4 @@
-import { SaveIcon } from "@shared/components/atoms/icon";
+import { SaveIcon } from "@shared/components/atoms/icon/save";
 import { SimpleSwitch } from "@shared/components/atoms/toggle/simple";
 import styles from "./header.module.css";
 import { useRouter } from "next/navigation";

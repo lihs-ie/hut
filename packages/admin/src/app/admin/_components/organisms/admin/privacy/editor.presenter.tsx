@@ -6,7 +6,7 @@ import {
   EditablePolicySection,
 } from "@shared/components/molecules/editor/policy-section";
 import { VariantButton } from "@shared/components/atoms/button/variant";
-import { PlusIcon } from "@shared/components/atoms/icon";
+import { PlusIcon } from "@shared/components/atoms/icon/plus";
 import styles from "./editor.module.css";
 import { UnvalidatedPrivacyPolicy } from "@shared/domains/document";
 import { useServerAction } from "@shared/hooks";
