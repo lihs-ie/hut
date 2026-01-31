@@ -5,13 +5,14 @@ import styles from "./tech-stack.module.css";
 import { RemoveButton } from "../button/remove";
 import { SimpleSelect } from "@shared/components/atoms/select/simple";
 import { UnvalidatedTechnologyStack } from "@shared/domains/common/tech";
+import { Tag } from "@shared/domains/attributes/tag";
 
 export type Props = {
   value: UnvalidatedTechnologyStack;
   index: number;
   onUpdate: (index: number, value: UnvalidatedTechnologyStack) => void;
   onRemove: (index: number) => void;
-  availableTechnologies: string[];
+  availableTags: Tag[];
 };
 
 export const TechStackItem = (props: Props) => (
@@ -21,15 +22,18 @@ export const TechStackItem = (props: Props) => (
         <div className={styles.field}>
           <FormLabel>技術</FormLabel>
           <SimpleSelect
-            value={props.value.kind}
+            value={props.value.tag}
             onChange={(value) =>
-              props.onUpdate(props.index, { ...props.value, kind: value })
+              props.onUpdate(props.index, {
+                ...props.value,
+                tag: value,
+              })
             }
           >
             <option value="">選択してください</option>
-            {props.availableTechnologies.map((option) => (
-              <option key={option} value={option}>
-                {option}
+            {props.availableTags.map((tag) => (
+              <option key={tag.identifier} value={tag.identifier}>
+                {tag.name}
               </option>
             ))}
           </SimpleSelect>

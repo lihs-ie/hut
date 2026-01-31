@@ -4,48 +4,26 @@ import { TechStackItem } from "@shared/components/molecules/form/tech-stack";
 import styles from "./tech-stack.module.css";
 import { AddButton } from "@shared/components/molecules/button/add";
 import { UnvalidatedTechnologyStack } from "@shared/domains/common/tech";
-
-const TECH_OPTIONS = [
-  "React",
-  "Next.js",
-  "TypeScript",
-  "JavaScript",
-  "Node.js",
-  "Go",
-  "Python",
-  "Rust",
-  "Vue.js",
-  "Angular",
-  "Svelte",
-  "PostgreSQL",
-  "MySQL",
-  "MongoDB",
-  "Redis",
-  "Docker",
-  "Kubernetes",
-  "AWS",
-  "GCP",
-  "Azure",
-  "Tailwind CSS",
-  "styled-components",
-];
+import { Tag } from "@shared/domains/attributes/tag";
 
 export type Props = {
   values: UnvalidatedTechnologyStack[];
+  tags: Tag[];
   onAdd: () => void;
   onUpdate: (index: number, value: UnvalidatedTechnologyStack) => void;
   onRemove: (index: number) => void;
 };
 
 export const ProfileTechStackForm = (props: Props) => {
-  const usedTechnologies = props.values
-    .map((tech) => tech.kind)
+  const usedTagIdentifiers = props.values
+    .map((tech) => tech.tag)
     .filter(Boolean);
 
-  const getAvailableTechnologies = (currentTechnology: string) => {
-    return TECH_OPTIONS.filter(
-      (option) =>
-        !usedTechnologies.includes(option) || option === currentTechnology,
+  const getAvailableTags = (currentTagIdentifier: string) => {
+    return props.tags.filter(
+      (tag) =>
+        !usedTagIdentifiers.includes(tag.identifier) ||
+        tag.identifier === currentTagIdentifier,
     );
   };
 
@@ -58,12 +36,12 @@ export const ProfileTechStackForm = (props: Props) => {
       <div className={styles.list}>
         {props.values.map((value, index) => (
           <TechStackItem
-            key={value.kind}
+            key={value.tag || `new-${index}`}
             value={value}
             index={index}
             onUpdate={(index, value) => props.onUpdate(index, value)}
             onRemove={props.onRemove}
-            availableTechnologies={getAvailableTechnologies(value.kind)}
+            availableTags={getAvailableTags(value.tag)}
           />
         ))}
       </div>

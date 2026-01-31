@@ -1,20 +1,23 @@
 import {
+  ExperienceType,
   TechnologyCategory,
-  TechnologyKind,
   TechnologyStack,
   technologyStackSchema,
 } from "@shared/domains/common/tech";
+import { TagIdentifier } from "@shared/domains/attributes/tag";
 import { DateMold } from "./date";
 import { EnumMold, Forger, Mold } from "@lihs-ie/forger-ts";
+import { TagIdentifierMold } from "../attributes/tag";
 
 export const TechnologyCategoryMold = EnumMold(TechnologyCategory);
 
-export const TechnologyKindMold = EnumMold(TechnologyKind);
+export const ExperienceTypeMold = EnumMold(ExperienceType);
 
 export type TechnologyStackProperties = {
-  kind: TechnologyKind;
+  tag: TagIdentifier;
   from: Date;
   continue: boolean;
+  type: ExperienceType;
 };
 
 export const TechnologyStackMold = Mold<
@@ -23,9 +26,12 @@ export const TechnologyStackMold = Mold<
 >({
   pour: (properties) => technologyStackSchema.parse(properties),
   prepare: (overrides, seed) => ({
-    kind: overrides.kind ?? Forger(TechnologyKindMold).forgeWithSeed(seed),
+    tag:
+      overrides.tag ??
+      Forger(TagIdentifierMold).forgeWithSeed(seed),
     from: overrides.from ?? Forger(DateMold).forgeWithSeed(seed),
     continue: overrides.continue ?? seed % 2 === 0,
+    type: overrides.type ?? Forger(ExperienceTypeMold).forgeWithSeed(seed),
   }),
 });
 

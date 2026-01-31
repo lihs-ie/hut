@@ -28,10 +28,8 @@ import {
 } from "@shared/aspects/error";
 import { ExternalService } from "@shared/domains/common/service";
 import { ExternalServiceMold } from "../common/service";
-import {
-  TechnologyCategory,
-  TechnologyStack,
-} from "@shared/domains/common/tech";
+import { TechnologyCategory, TechnologyStack } from "@shared/domains/common/tech";
+import { TechnologyStackMold } from "../common/tech";
 import {
   Characters,
   EnumMold,

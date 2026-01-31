@@ -35,7 +35,7 @@ type PersistedExternalService = {
 };
 
 type PersistedTechnologyStack = {
-  kind: string;
+  tag: string;
   from: Timestamp;
   continue: boolean;
   type: string;
@@ -73,7 +73,7 @@ export const FirebaseAdminRepository = (
         const techStacksObject: Record<string, PersistedTechnologyStack[]> = {};
         admin.profile.techStacks.forEach((stacks, category) => {
           techStacksObject[category] = stacks.map((stack) => ({
-            kind: stack.kind,
+            tag: stack.tag,
             from: Timestamp.fromDate(stack.from),
             continue: stack.continue,
             type: stack.type,
@@ -115,14 +115,14 @@ export const FirebaseAdminRepository = (
 
         const techStacksMap = new Map<
           string,
-          { kind: string; from: Date; continue: boolean }[]
+          { tag: string; from: Date; continue: boolean; type: string }[]
         >();
         Object.entries(data.profile.techStacks).forEach(
           ([category, stacks]) => {
             techStacksMap.set(
               category,
               stacks.map((stack) => ({
-                kind: stack.kind,
+                tag: stack.tag,
                 from: stack.from.toDate(),
                 continue: stack.continue,
                 type: stack.type,

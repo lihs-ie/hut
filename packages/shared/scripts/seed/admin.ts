@@ -2,7 +2,7 @@
  * 管理者プロフィールシードデータ
  */
 
-import { createDocument, ADMIN_ID } from "./common";
+import { createDocument, ADMIN_ID, TAG_IDS } from "./common";
 
 export async function seedAdmin(): Promise<void> {
   console.log("\n--- Creating Admin Profile ---");
@@ -49,19 +49,19 @@ export async function seedAdmin(): Promise<void> {
       techStacks: {
         frontend: [
           {
-            kind: "typescript",
+            tag: TAG_IDS.typescript,
             from: new Date("2019-01-01"),
             continue: true,
             type: "both",
           },
           {
-            kind: "react",
+            tag: TAG_IDS.react,
             from: new Date("2019-06-01"),
             continue: true,
             type: "both",
           },
           {
-            kind: "nextjs",
+            tag: TAG_IDS.nextjs,
             from: new Date("2020-01-01"),
             continue: true,
             type: "business",
@@ -69,13 +69,13 @@ export async function seedAdmin(): Promise<void> {
         ],
         backend: [
           {
-            kind: "go",
+            tag: TAG_IDS.go,
             from: new Date("2020-06-01"),
             continue: true,
             type: "business",
           },
           {
-            kind: "rust",
+            tag: TAG_IDS.rust,
             from: new Date("2022-01-01"),
             continue: true,
             type: "personal",
