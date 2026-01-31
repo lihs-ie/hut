@@ -1,0 +1,77 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--primary);
+}
+
+.line {
+  width: 2px;
+  flex: 1;
+  background-color: var(--border);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.message {
+  font-size: 0.875rem;
+  color: var(--foreground);
+  line-height: 1.4;
+}
+
+.timestamp {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.type-create .dot {
+  background-color: var(--accent);
+}
+
+.type-update .dot {
+  background-color: var(--primary);
+}
+
+.type-delete .dot {
+  background-color: var(--destructive);
+}
+
+.type-publish .dot {
+  background-color: var(--chart-2);
+}
+
+@media (max-width: 640px) {
+  .item {
+    gap: 0.75rem;
+  }
+}

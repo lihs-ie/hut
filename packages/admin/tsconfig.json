@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["../shared/src/*"]
+    },
+    "plugins": [{ "name": "next" }]
+  },
+  "include": [
+    "src/**/*",
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "next.config.ts",
+    "../shared/types/**/*.d.ts",
+    "src/app/admin/_components/templates/admin/admin",
+    "src/app/admin/_components/organisms/admin",
+    "../shared/src/components/atoms/icon/logout.tsx",
+    "../shared/src/components/molecules/button/logout.tsx",
+    "../shared/tests/support"
+  ]
+}

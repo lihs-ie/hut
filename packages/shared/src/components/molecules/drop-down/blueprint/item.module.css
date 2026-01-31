@@ -1,0 +1,14 @@
+.container {
+  padding: 4px 0 4px 8px;
+  margin: 0.1rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  cursor: pointer;
+
+  color: var(--foreground);
+}
+
+.container:hover {
+  background: color-mix(in oklch, var(--foreground) 15%, var(--card));
+  color: var(--foreground);
+}
