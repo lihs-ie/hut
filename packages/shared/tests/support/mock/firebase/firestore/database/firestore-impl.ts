@@ -1,11 +1,11 @@
 
-import { FirebaseApp } from "@firebase/app"
+import { FirebaseApp } from "firebase/app"
 
 import { Firestore, FirestoreSettings } from "../../types/firestore"
 import { MemoryStore } from "../core/memory-store"
 
 export class FirestoreImpl implements Firestore {
-  readonly type: "firestore" = "firestore"
+  readonly type = "firestore" as const
   private readonly memoryStore: MemoryStore
 
   constructor(

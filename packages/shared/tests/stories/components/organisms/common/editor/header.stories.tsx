@@ -1,67 +1,59 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { EditorHeader } from "@shared/components/organisms/common/editor";
+
+import { EditorHeader } from "@shared/components/organisms/common/editor/header";
 
 const meta = {
   component: EditorHeader,
+  parameters: {
+    nextjs: { appDirectory: true },
+  },
   args: {
-    onTitleChange: () => {},
-    onPublishChange: () => {},
-    onSave: () => {},
+    onTitleChange: (title: string) => console.log("onTitleChange:", title),
+    onPublishChange: (value: boolean) =>
+      console.log("onPublishChange:", value),
+    persist: async () => console.log("persist called"),
   },
 } satisfies Meta<typeof EditorHeader>;
 
 export default meta;
 
-export const ArticleNew: StoryObj<typeof EditorHeader> = {
+export const Default: StoryObj<typeof EditorHeader> = {
   args: {
-    title: "",
+    title: "記事タイトル",
     isPublished: false,
-    isSaving: false,
-    type: "article",
+    isLoading: false,
   },
 };
 
-export const ArticleWithTitle: StoryObj<typeof EditorHeader> = {
+export const Published: StoryObj<typeof EditorHeader> = {
   args: {
-    title: "Next.js 15の新機能について",
-    isPublished: false,
-    isSaving: false,
-    type: "article",
-  },
-};
-
-export const ArticlePublished: StoryObj<typeof EditorHeader> = {
-  args: {
-    title: "Next.js 15の新機能について",
+    title: "公開済み記事",
     isPublished: true,
-    isSaving: false,
-    type: "article",
+    isLoading: false,
   },
 };
 
-export const ArticleSaving: StoryObj<typeof EditorHeader> = {
+export const Loading: StoryObj<typeof EditorHeader> = {
   args: {
-    title: "Next.js 15の新機能について",
+    title: "保存中の記事",
     isPublished: false,
-    isSaving: true,
-    type: "article",
+    isLoading: true,
   },
 };
 
-export const ChapterNew: StoryObj<typeof EditorHeader> = {
+export const EmptyTitle: StoryObj<typeof EditorHeader> = {
   args: {
     title: "",
     isPublished: false,
-    isSaving: false,
-    type: "chapter",
+    isLoading: false,
   },
 };
 
-export const BookNew: StoryObj<typeof EditorHeader> = {
+export const LongTitle: StoryObj<typeof EditorHeader> = {
   args: {
-    title: "",
-    isPublished: false,
-    isSaving: false,
-    type: "book",
+    title:
+      "これは非常に長いタイトルで、ヘッダーのレイアウトがどのように処理されるかをテストするためのものです",
+    isPublished: true,
+    isLoading: false,
   },
 };

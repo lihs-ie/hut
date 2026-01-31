@@ -1,133 +1,121 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { MarkdownPreview } from "@shared/components/organisms/common/editor";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeHighlight from "rehype-highlight";
 
-// Storybook用の簡易markdownレンダラー（MDXRendererはRSC用なのでクライアントではreact-markdownを使用）
-const storybookRenderer = (content: string) => (
-  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-    {content}
-  </ReactMarkdown>
-);
+import { MarkdownPreview } from "@shared/components/organisms/common/editor/markdown-preview";
 
 const meta = {
   component: MarkdownPreview,
-  args: {
-    renderer: storybookRenderer,
-  },
-  decorators: [
-    (Story) => (
-      <div style={{ height: "600px" }}>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta<typeof MarkdownPreview>;
 
 export default meta;
 
-export const Empty: StoryObj<typeof MarkdownPreview> = {
-  args: {
-    title: "",
-    content: "",
-  },
-};
+const sampleMarkdown = `## サンプル記事
 
-export const TitleOnly: StoryObj<typeof MarkdownPreview> = {
-  args: {
-    title: "Next.js 15の新機能について",
-    content: "",
-  },
-};
+これは**Markdown**で書かれたサンプル記事です。
 
-export const WithContent: StoryObj<typeof MarkdownPreview> = {
-  args: {
-    title: "Next.js 15の新機能について",
-    content: `## 概要
+### セクション1
 
-Next.js 15とReact 19を使用したWebアプリケーション開発における、
-基本的なルールとディレクトリ構成について解説します。
+サンプルコンテンツです。
 
-### ディレクトリ構成の基本方針
+- アイテム1
+- アイテム2
+- アイテム3
 
-App Routerを前提とした場合、以下のようなディレクトリ構成を推奨します。
+### コードブロック
 
 \`\`\`typescript
-// app/layout.tsx
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <html lang="ja">
-      <body>{children}</body>
-    </html>
-  )
-}
+const greeting = (name: string): string => {
+  return \`Hello, \${name}!\`;
+};
 \`\`\`
 
-### 命名規則
+### リンク
 
-コンポーネントやファイルの命名には一貫性を持たせることが重要です。
-以下の規則に従うことを推奨します。
+[サンプルリンク](https://example.com)
+`;
 
-- コンポーネントファイル: PascalCase (例: \`UserProfile.tsx\`)
-- ユーティリティ関数: camelCase (例: \`formatDate.ts\`)
-- 定数: UPPER_SNAKE_CASE (例: \`API_BASE_URL\`)
-`,
+export const Default: StoryObj<typeof MarkdownPreview> = {
+  args: {
+    title: "サンプルタイトル",
+    content: sampleMarkdown,
+  },
+};
+
+export const WithoutTitle: StoryObj<typeof MarkdownPreview> = {
+  args: {
+    title: "",
+    content: sampleMarkdown,
+  },
+};
+
+export const EmptyContent: StoryObj<typeof MarkdownPreview> = {
+  args: {
+    title: "空のコンテンツ",
+    content: "",
   },
 };
 
 export const LongContent: StoryObj<typeof MarkdownPreview> = {
   args: {
-    title: "React Hooksの完全ガイド",
-    content: `## はじめに
+    title: "長いコンテンツ",
+    content: `## 長い記事
 
-React Hooksは、React 16.8で導入された機能で、関数コンポーネントで状態やライフサイクルを扱えるようになります。
+${Array(10)
+  .fill(null)
+  .map(
+    (_, index) => `### セクション${index + 1}
 
-## useState
+これはセクション${index + 1}のコンテンツです。サンプルテキストを繰り返し表示しています。
 
-最も基本的なHookで、コンポーネントに状態を追加できます。
+- ポイント1
+- ポイント2
+- ポイント3
 
-\`\`\`typescript
-const [count, setCount] = useState(0);
-\`\`\`
+`
+  )
+  .join("")}`,
+  },
+};
 
-## useEffect
+export const WithCodeBlocks: StoryObj<typeof MarkdownPreview> = {
+  args: {
+    title: "コードブロック付き記事",
+    content: `## プログラミングガイド
 
-副作用を扱うためのHookです。
-
-\`\`\`typescript
-useEffect(() => {
-  document.title = \`Count: \${count}\`;
-}, [count]);
-\`\`\`
-
-## useCallback
-
-メモ化されたコールバック関数を返します。
-
-\`\`\`typescript
-const handleClick = useCallback(() => {
-  console.log(count);
-}, [count]);
-\`\`\`
-
-## useMemo
-
-メモ化された値を返します。
+### TypeScript
 
 \`\`\`typescript
-const expensiveValue = useMemo(() => {
-  return computeExpensiveValue(a, b);
-}, [a, b]);
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+const createUser = (data: Partial<User>): User => {
+  return {
+    id: data.id ?? crypto.randomUUID(),
+    name: data.name ?? "Unknown",
+    email: data.email ?? "",
+  };
+};
 \`\`\`
 
-## まとめ
+### Go
 
-React Hooksを使いこなすことで、より簡潔で再利用可能なコードを書くことができます。
+\`\`\`go
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, World!")
+}
+\`\`\`
+
+### SQL
+
+\`\`\`sql
+SELECT * FROM users WHERE status = 'active' ORDER BY created_at DESC;
+\`\`\`
 `,
   },
 };

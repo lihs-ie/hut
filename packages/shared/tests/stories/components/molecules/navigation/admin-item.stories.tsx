@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { FileTextIcon, MessageSquareIcon, BookOpenIcon, InfoIcon } from "@shared/components/atoms/icon";
+import { FileTextIcon } from "@shared/components/atoms/icon/file-text";
+import { MessageSquareIcon } from "@shared/components/atoms/icon/message";
+import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
+import { InfoIcon } from "@shared/components/atoms/icon/info";
 
 import { AdminNavItem } from "@shared/components/molecules/navigation/admin-item";
 

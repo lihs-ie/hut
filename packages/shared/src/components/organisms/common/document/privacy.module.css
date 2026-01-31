@@ -4,6 +4,8 @@
   flex-direction: column;
 
   gap: 1rem;
+
+  box-sizing: border-box;
 }
 
 .section {
@@ -15,6 +17,14 @@
   font-weight: 700;
   margin: 0;
   color: var(--foreground);
+
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.content {
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 @media (min-width: 768px) {

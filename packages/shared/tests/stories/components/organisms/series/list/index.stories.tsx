@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { SeriesList } from "@shared/components/organisms/series/list";
-import { Builder } from "../../../../../support/molds";
-import { SeriesFactory } from "../../../../../support/molds/domains/series";
+import { Forger } from "@lihs-ie/forger-ts";
+import { SeriesMold } from "../../../../../support/molds/domains/series";
 
 const meta = {
   component: SeriesList,
@@ -10,7 +10,7 @@ const meta = {
 
 export default meta;
 
-const seriesList = Builder(SeriesFactory).buildListWith(4, 1).toArray();
+const seriesList = Forger(SeriesMold).forgeMultiWithSeed(4, 1);
 
 export const Default: StoryObj<typeof SeriesList> = {
   args: {
@@ -24,7 +24,7 @@ export const Default: StoryObj<typeof SeriesList> = {
 
 export const SingleItem: StoryObj<typeof SeriesList> = {
   args: {
-    seriesList: [Builder(SeriesFactory).build()],
+    seriesList: [Forger(SeriesMold).forge()],
     author: {
       name: "Single Author",
     },
@@ -39,6 +39,6 @@ export const Empty: StoryObj<typeof SeriesList> = {
 
 export const WithoutAuthor: StoryObj<typeof SeriesList> = {
   args: {
-    seriesList: Builder(SeriesFactory).buildListWith(3, 2).toArray(),
+    seriesList: Forger(SeriesMold).forgeMultiWithSeed(3, 2),
   },
 };

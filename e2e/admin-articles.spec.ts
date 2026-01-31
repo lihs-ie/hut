@@ -4,9 +4,6 @@ type TestArgs = {
   page: Page;
 };
 
-/**
- * Article management tests - require authentication
- */
 test.describe("article management", () => {
   test("article management page renders", async ({ page }: TestArgs) => {
     await page.goto("/admin/articles");
@@ -61,9 +58,6 @@ test.describe("article management", () => {
   });
 });
 
-/**
- * Article search functionality tests
- */
 test.describe("article search functionality", () => {
   test("search by title updates URL", async ({ page }: TestArgs) => {
     await page.goto("/admin/articles");
@@ -117,9 +111,6 @@ test.describe("article search functionality", () => {
   });
 });
 
-/**
- * Article navigation tests
- */
 test.describe("article navigation", () => {
   test("clicking article title navigates to preview page", async ({
     page,
@@ -168,19 +159,6 @@ test.describe("article navigation", () => {
   });
 });
 
-/**
- * Article deletion tests
- *
- * Note: AdminContentCard structure:
- * <div.container>
- *   <article.texts>...</article>
- *   <div.actions>
- *     <Link>PlayButton</Link>
- *     <Link>EditButton</Link>
- *     <button>EraserButton</button>  <- only button element
- *   </div>
- * </div>
- */
 test.describe("article deletion", () => {
   test("clicking delete button opens confirmation modal", async ({
     page,

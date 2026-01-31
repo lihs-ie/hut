@@ -19,7 +19,7 @@ import {
 
 import { ulid } from "ulid";
 import { DateMold } from "../common/date";
-import { ImmutableList, ImmutableMap } from "@shared/domains/common";
+import { ImmutableMap } from "@shared/domains/common";
 import { fromPromise } from "@shared/aspects/result";
 import {
   AggregateNotFoundError,
@@ -29,7 +29,6 @@ import {
 import { ExternalService } from "@shared/domains/common/service";
 import { ExternalServiceMold } from "../common/service";
 import { TechnologyCategory, TechnologyStack } from "@shared/domains/common/tech";
-import { TechnologyStackMold } from "../common/tech";
 import {
   Characters,
   EnumMold,

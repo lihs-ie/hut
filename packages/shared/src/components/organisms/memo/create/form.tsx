@@ -30,6 +30,7 @@ export const MemoCreateForm = (props: Props) => {
         slug: "test",
         tags: [],
         entries: [],
+        status,
         timeline: {
           createdAt: new Date(),
           updatedAt: new Date(),

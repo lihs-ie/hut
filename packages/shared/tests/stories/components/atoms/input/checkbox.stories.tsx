@@ -56,7 +56,7 @@ export const Interactive: Story = {
         <Checkbox
           label="現在も使用中"
           checked={checked}
-          onChange={(event) => setChecked(event.target.checked)}
+          onChange={(value) => setChecked(value)}
         />
         <p style={{ marginTop: "1rem", color: "var(--muted-foreground)", fontSize: "0.875rem" }}>
           状態: {checked ? "チェック済み" : "未チェック"}

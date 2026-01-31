@@ -38,7 +38,7 @@ export const Interactive: Story = {
       <div style={{ width: "200px" }}>
         <MonthInput
           value={value}
-          onChange={(event) => setValue(event.target.value)}
+          onChange={(date) => setValue(date.toISOString().slice(0, 7))}
         />
         <p style={{ marginTop: "1rem", color: "var(--muted-foreground)", fontSize: "0.875rem" }}>
           選択値: {value || "(未選択)"}

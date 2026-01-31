@@ -123,20 +123,18 @@ export const FirebaseTagRepository = (
     search(criteria: Criteria): AsyncResult<Tag[], UnexpectedError> {
       return fromPromise(
         (async () => {
-          let queryRef = operations.query(collection);
+          const constraints = [];
 
           if (criteria.name) {
-            queryRef = operations.query(
-              queryRef,
-              operations.where("name", ">=", criteria.name),
+            constraints.push(operations.where("name", ">=", criteria.name));
+            constraints.push(
               operations.where("name", "<=", criteria.name + "\uf8ff"),
             );
           }
 
-          queryRef = operations.query(
-            queryRef,
-            operations.orderBy("timeline.createdAt", "desc"),
-          );
+          constraints.push(operations.orderBy("timeline.createdAt", "desc"));
+
+          const queryRef = operations.query(collection, ...constraints);
 
           const snapshot = await operations.getDocs(queryRef);
 

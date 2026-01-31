@@ -1,4 +1,4 @@
-import { Properties, ValueObject } from "@shared/domains/common/value-object";
+import { Properties } from "@shared/domains/common/value-object";
 
 export const ValueObjectTest = <
   T extends Record<string, unknown>,

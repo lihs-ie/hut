@@ -239,11 +239,12 @@ test.describe("content type filter", () => {
     const memoBadges = page.locator("text=メモ");
 
     const articleCount = await articleBadges.count();
-    const memoCount = await memoBadges.count();
+    const _memoCount = await memoBadges.count();
 
     // Should have articles but no memos (excluding filter button text)
     expect(articleCount).toBeGreaterThan(0);
     // Note: The filter button also says "記事", so we check if memo badges are minimal
+    // _memoCount is stored for potential future assertions
   });
 
   test("filters to show only memos", async ({ page }: TestArgs) => {

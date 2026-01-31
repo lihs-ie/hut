@@ -1,100 +1,114 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { SearchIndex } from "@shared/components/templates/search";
-import { createSearchByIndexWorkflow } from "@shared/workflows/search-index";
-import {
-  ContentType,
-  SearchIndexTitle,
-  validateCriteria,
-} from "@shared/domains/search-index/common";
-import { Logger } from "@shared/aspects/logger";
-import { score } from "@shared/aspects/ngram";
-import {
-  ArticleMold,
-  ArticleRepositoryMold,
-} from "../../../../support/molds/domains/article";
-import {
-  SeriesMold,
-  SeriesRepositoryMold,
-} from "../../../../support/molds/domains/series";
-import {
-  MemoMold,
-  MemoRepositoryMold,
-} from "../../../../support/molds/domains/memo";
-import {
-  SearchIndexMold,
-  SearchIndexRepositoryMold,
-} from "../../../../support/molds/domains/search-index";
 import { Forger } from "@lihs-ie/forger-ts";
-import { Tag } from "@shared/domains/attributes/tag";
+import { ArticleMold } from "../../../../support/molds/domains/article";
+import { MemoMold } from "../../../../support/molds/domains/memo";
+import { SeriesMold } from "../../../../support/molds/domains/series";
 import { TagMold } from "../../../../support/molds/domains/attributes/tag";
+import { Tag } from "@shared/domains/attributes/tag";
+import { Article } from "@shared/domains/articles";
+import { Memo } from "@shared/domains/memo";
+import { Series } from "@shared/domains/series";
 
 const meta = {
   component: SearchIndex,
   parameters: {
-    layout: "fullscreen",
-    nextjs: {
-      appDirectory: true,
-    },
+    nextjs: { appDirectory: true },
   },
 } satisfies Meta<typeof SearchIndex>;
 
 export default meta;
 
-const articles = Forger(ArticleMold).forgeMulti(20);
-const series = Forger(SeriesMold).forgeMulti(20);
-const memos = Forger(MemoMold).forgeMulti(20);
-const tags = Forger(TagMold).forgeMulti(10);
-const searchIndices = [...articles, ...series, ...memos].map((content) =>
-  Forger(SearchIndexMold).forge({
-    reference: content.identifier,
-    title: content.title as SearchIndexTitle,
-    timeline: content.timeline,
-    tags: content.tags,
-  })
-);
+const tags = Forger(TagMold).forgeMultiWithSeed(10, 1);
 
-const indexRepository = Forger(SearchIndexRepositoryMold).forge({
-  instances: searchIndices,
-});
-const articleRepository = Forger(ArticleRepositoryMold).forge({
-  instances: articles,
-});
-const seriesRepository = Forger(SeriesRepositoryMold).forge({
-  instances: series,
-});
-const memoRepository = Forger(MemoRepositoryMold).forge({
-  instances: memos,
-});
+const articles = Forger(ArticleMold).forgeMultiWithSeed(5, 1);
+const memos = Forger(MemoMold).forgeMultiWithSeed(5, 2);
+const seriesList = Forger(SeriesMold).forgeMultiWithSeed(3, 3);
 
-const search = createSearchByIndexWorkflow(validateCriteria)(
-  Logger("development")
-)(score(() => 1))(indexRepository.search)(articleRepository.ofIdentifiers)(
-  memoRepository.ofIdentifiers
-)(seriesRepository.ofIdentifiers);
+const search = async (): Promise<(Article | Memo | Series)[]> => [
+  ...articles,
+  ...memos,
+  ...seriesList,
+];
 
-/**
- * Resolves tags for Storybook fixtures.
- */
+const getAllTags = async (): Promise<Tag[]> => tags;
+
 const findAllTags = async (identifiers: string[]): Promise<Tag[]> =>
   tags.filter((tag) => identifiers.includes(tag.identifier));
 
-/**
- * Provides tags for Storybook fixtures.
- */
-const getAllTags = async (): Promise<Tag[]> => tags;
+const ofNamesTags = async (names: string[]): Promise<Tag[]> =>
+  tags.filter((tag) => names.includes(tag.name));
 
 export const Default: StoryObj<typeof SearchIndex> = {
   args: {
-    search,
-    getAllTags,
-    findAllTags,
     unvalidatedCriteria: {
       freeWord: null,
       tags: null,
-      type: ContentType.ALL,
+      type: null,
       sortBy: null,
       order: null,
+      limit: null,
     },
+    search,
+    getAllTags,
+    findAllTags,
+    ofNamesTags,
+  },
+};
+
+export const WithFreeWord: StoryObj<typeof SearchIndex> = {
+  args: {
+    unvalidatedCriteria: {
+      freeWord: "React",
+      tags: null,
+      type: null,
+      sortBy: null,
+      order: null,
+      limit: null,
+    },
+    search,
+    getAllTags,
+    findAllTags,
+    ofNamesTags,
+  },
+};
+
+const searchEmpty = async (): Promise<(Article | Memo | Series)[]> => [];
+
+export const NoResults: StoryObj<typeof SearchIndex> = {
+  args: {
+    unvalidatedCriteria: {
+      freeWord: "存在しないキーワード",
+      tags: null,
+      type: null,
+      sortBy: null,
+      order: null,
+      limit: null,
+    },
+    search: searchEmpty,
+    getAllTags,
+    findAllTags,
+    ofNamesTags,
+  },
+};
+
+const searchArticlesOnly = async (): Promise<(Article | Memo | Series)[]> =>
+  articles;
+
+export const ArticlesOnly: StoryObj<typeof SearchIndex> = {
+  args: {
+    unvalidatedCriteria: {
+      freeWord: null,
+      tags: null,
+      type: "article",
+      sortBy: null,
+      order: null,
+      limit: null,
+    },
+    search: searchArticlesOnly,
+    getAllTags,
+    findAllTags,
+    ofNamesTags,
   },
 };

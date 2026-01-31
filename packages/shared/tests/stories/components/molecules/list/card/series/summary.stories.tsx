@@ -1,12 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { SeriesSummaryCard } from "@shared/components/molecules/list/card/series/summary";
-import { Builder } from "../../../../../../support/molds";
+import { Forger } from "@lihs-ie/forger-ts";
 import {
-  SeriesFactory,
-  SeriesSlugFactory,
-  SeriesTitleFactory,
-  SeriesDescriptionFactory,
+  SeriesMold,
+  SeriesSlugMold,
 } from "../../../../../../support/molds/domains/series";
 
 const meta = {
@@ -15,7 +13,7 @@ const meta = {
 
 export default meta;
 
-const series = Builder(SeriesFactory).build();
+const series = Forger(SeriesMold).forge();
 
 export const Default: StoryObj<typeof SeriesSummaryCard> = {
   args: {
@@ -34,7 +32,7 @@ export const Default: StoryObj<typeof SeriesSummaryCard> = {
 
 export const WithEmoji: StoryObj<typeof SeriesSummaryCard> = {
   args: {
-    slug: Builder(SeriesSlugFactory).build({ value: "nextjs-guide" }),
+    slug: Forger(SeriesSlugMold).forge({ value: "nextjs-guide" }),
     title: "Next.js 15 実践ガイド",
     description: "App Router を使った実践的な開発手法を学ぶ",
     cover: null,
@@ -50,7 +48,7 @@ export const WithEmoji: StoryObj<typeof SeriesSummaryCard> = {
 
 export const NoCover: StoryObj<typeof SeriesSummaryCard> = {
   args: {
-    slug: Builder(SeriesSlugFactory).build({ value: "typescript-complete" }),
+    slug: Forger(SeriesSlugMold).forge({ value: "typescript-complete" }),
     title: "TypeScript 完全ガイド",
     description: "基礎から実践まで完全網羅",
     cover: null,
@@ -61,7 +59,7 @@ export const NoCover: StoryObj<typeof SeriesSummaryCard> = {
 
 export const ManyTags: StoryObj<typeof SeriesSummaryCard> = {
   args: {
-    slug: Builder(SeriesSlugFactory).build({ value: "web-design" }),
+    slug: Forger(SeriesSlugMold).forge({ value: "web-design" }),
     title: "モダンWebデザイン実践",
     description: "UI/UXデザインの実践テクニック",
     cover: "https://picsum.photos/seed/cover/200/300",

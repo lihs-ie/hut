@@ -5,6 +5,7 @@ import { MDXRenderer } from "@shared/components/global/mdx";
 import { contentSchema, Article } from "@shared/domains/articles";
 import { Forger } from "@lihs-ie/forger-ts";
 import { ArticleMold } from "../../../../support/molds/domains/article";
+import { TagMold } from "../../../../support/molds/domains/attributes";
 
 const meta = {
   component: ContentPresenter<Article>,
@@ -36,5 +37,6 @@ export const Default: StoryObj<typeof ContentPresenter<Article>> = {
     tagOf: (article) => article.tags,
     contentOf: (article) => article.content,
     renderer: (content: string) => MDXRenderer(content),
+    findAllTags: async (_: string[]) => Forger(TagMold).forgeMulti(20),
   },
 };

@@ -10,12 +10,15 @@ import {
   SeriesFactory,
   SeriesIdentifierFactory,
   SeriesSlugFactory,
+  SeriesSlugMold,
 } from "../support/molds/domains/series/common";
 import {
   isAggregateNotFoundError,
   isDuplicationError,
 } from "@shared/aspects/error";
 import type { FirestoreOperations } from "@shared/infrastructures/common";
+import { validateCriteria, type Criteria, type SeriesSlug } from "@shared/domains/series";
+import type { TagIdentifier } from "@shared/domains/attributes/tag";
 
 describe("infrastructures/series", () => {
   let firestore: Firestore;
@@ -28,6 +31,16 @@ describe("infrastructures/series", () => {
   });
 
   const getOperations = () => operations as FirestoreOperations;
+
+  const createCriteria = (params: {
+    slug?: SeriesSlug | null;
+    tags?: TagIdentifier[] | null;
+  }): Criteria => {
+    return validateCriteria({
+      slug: params.slug ?? null,
+      tags: params.tags ?? null,
+    }).unwrap();
+  };
 
   describe("FirebaseSeriesRepository", () => {
     describe("persist", () => {
@@ -201,10 +214,10 @@ describe("infrastructures/series", () => {
 
         await repository.persist(series).unwrap();
 
-        const nonExistentId = Builder(SeriesIdentifierFactory).buildWith(26);
-        const identifiers = [series.identifier, nonExistentId];
+        const nonExistentIdentifier = Builder(SeriesIdentifierFactory).buildWith(26);
+        const identifiers = [series.identifier, nonExistentIdentifier];
 
-        const result = await repository.ofIdentifiers(identifiers).match({
+        const result = await repository.ofIdentifiers(identifiers, true).match({
           ok: () => null,
           err: (error) => error,
         });
@@ -225,7 +238,8 @@ describe("infrastructures/series", () => {
           await repository.persist(series).unwrap();
         }
 
-        const found = await repository.search("").unwrap();
+        const criteria = createCriteria({});
+        const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(5);
       });
@@ -233,44 +247,50 @@ describe("infrastructures/series", () => {
       it("タイトルでシリーズを検索できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
         const series1 = Builder(SeriesFactory).buildWith(40, {
-          title: "TypeScript入門シリーズ" as typeof series1.title,
+          title: "typescript-series" as typeof series1.title,
         });
         const series2 = Builder(SeriesFactory).buildWith(41, {
-          title: "Rust入門シリーズ" as typeof series2.title,
+          title: "rust-series" as typeof series2.title,
         });
 
         await repository.persist(series1).unwrap();
         await repository.persist(series2).unwrap();
 
-        const found = await repository.search("TypeScript").unwrap();
+        const searchSlug = Builder(SeriesSlugMold).buildWith(1000, { value: "typescript" });
+        const criteria = createCriteria({ slug: searchSlug });
+        const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(1);
-        expect(found[0]?.title).toBe("TypeScript入門シリーズ");
+        expect(found[0]?.title).toBe("typescript-series");
       });
 
       it("大文字小文字を区別しない検索ができる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
         const series = Builder(SeriesFactory).buildWith(50, {
-          title: "JavaScript Basics" as typeof series.title,
+          title: "javascript-basics" as typeof series.title,
         });
 
         await repository.persist(series).unwrap();
 
-        const found = await repository.search("javascript").unwrap();
+        const searchSlug = Builder(SeriesSlugMold).buildWith(1001, { value: "javascript" });
+        const criteria = createCriteria({ slug: searchSlug });
+        const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(1);
-        expect(found[0]?.title).toBe("JavaScript Basics");
+        expect(found[0]?.title).toBe("javascript-basics");
       });
 
       it("マッチしない検索語では空の配列を返す", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
         const series = Builder(SeriesFactory).buildWith(55, {
-          title: "React Tutorial" as typeof series.title,
+          title: "react-tutorial" as typeof series.title,
         });
 
         await repository.persist(series).unwrap();
 
-        const found = await repository.search("Angular").unwrap();
+        const searchSlug = Builder(SeriesSlugMold).buildWith(1002, { value: "angular" });
+        const criteria = createCriteria({ slug: searchSlug });
+        const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(0);
       });
