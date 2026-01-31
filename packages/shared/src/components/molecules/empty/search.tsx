@@ -1,9 +1,7 @@
 import styles from "./search.module.css";
-import {
-  AlertTriangleIcon,
-  SearchIcon,
-  SearchOffIcon,
-} from "@shared/components/atoms/icon";
+import { AlertTriangleIcon } from "@shared/components/atoms/icon/alert-triangle";
+import { SearchIcon } from "@shared/components/atoms/icon/search";
+import { SearchOffIcon } from "@shared/components/atoms/icon/search-off";
 
 type Variant = "initial" | "empty" | "error";
 

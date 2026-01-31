@@ -1,6 +1,6 @@
 "use client";
 
-import { SearchIcon } from "@shared/components/atoms/icon";
+import { SearchIcon } from "@shared/components/atoms/icon/search";
 import styles from "./search-input.module.css";
 
 export type Props = {

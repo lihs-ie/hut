@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import {
-  SearchIcon,
-  FilterIcon,
-  XIcon,
-  FileTextIcon,
-  MessageSquareIcon,
-  ChevronDownIcon,
-} from "@shared/components/atoms/icon";
+import { SearchIcon } from "@shared/components/atoms/icon/search";
+import { FilterIcon } from "@shared/components/atoms/icon/filter";
+import { XIcon } from "@shared/components/atoms/icon/cross";
+import { FileTextIcon } from "@shared/components/atoms/icon/file-text";
+import { MessageSquareIcon } from "@shared/components/atoms/icon/message";
+import { ChevronDownIcon } from "@shared/components/atoms/icon/chevron-down";
 import { TextInput } from "@shared/components/atoms/input/text";
 import { VariantButton } from "@shared/components/atoms/button/variant";
 import { Tag } from "@shared/domains/attributes/tag";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PlusIcon } from "@shared/components/atoms/icon";
+import { PlusIcon } from "@shared/components/atoms/icon/plus";
 import { Tag, UnvalidatedCriteria } from "@shared/domains/attributes/tag";
 import styles from "./list.module.css";
 import { TagList } from "../../../organisms/admin/tag/list";

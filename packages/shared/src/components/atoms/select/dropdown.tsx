@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, type ReactNode } from "react";
-import { CheckIcon, ChevronDownIcon } from "@shared/components/atoms/icon";
 import styles from "./dropdown.module.css";
+import { ChevronDownIcon } from "../icon/chevron-down";
+import { CheckIcon } from "../icon/check";
 
 export interface CustomSelectOption {
   value: string;
@@ -92,7 +93,9 @@ export const DropdownSelect = ({
                   )}
                 </div>
               </div>
-              {value === option.value && <CheckIcon className={styles.checkIcon} />}
+              {value === option.value && (
+                <CheckIcon className={styles.checkIcon} />
+              )}
             </button>
           ))}
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { AlertTriangleIcon } from "@shared/components/atoms/icon";
+import { AlertTriangleIcon } from "@shared/components/atoms/icon/alert-triangle";
 import styles from "./error.module.css";
 
 export type ErrorDetail = {
