@@ -1,0 +1,24 @@
+.container {
+  position: sticky;
+  top: var(--header-height);
+  width: 240px;
+  height: calc(100vh - var(--header-height));
+  min-height: 0;
+  flex-shrink: 0;
+  background-color: var(--sidebar);
+  border-right: 1px solid var(--sidebar-border);
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    display: none;
+  }
+}

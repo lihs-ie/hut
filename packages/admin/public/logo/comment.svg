@@ -1,0 +1,26 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shadow -->
+  <ellipse cx="100" cy="160" rx="40" ry="10" fill="#6B7280" opacity="0.2" />
+  
+  <!-- Note/Document -->
+  <rect x="75" y="60" width="50" height="65" rx="4" fill="#9CA3AF" />
+  
+  <!-- Left arrow/lines -->
+  <path
+    d="M85 100 L95 110 L85 120 M90 110 L50 110 L40 100 L50 90 L90 90"
+    stroke="#60A5FA"
+    strokeWidth="3"
+    fill="none"
+  />
+  
+  <!-- Right arrow/lines -->
+  <path
+    d="M115 100 L105 110 L115 120 M110 110 L150 110 L160 100 L150 90 L110 90"
+    stroke="#60A5FA"
+    strokeWidth="3"
+    fill="none"
+  />
+  
+  <!-- Idea bulb/dot -->
+  <circle cx="135" cy="85" r="8" fill="#FBBF24" />
+</svg>
