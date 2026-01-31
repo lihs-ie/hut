@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { UploadIcon } from "@shared/components/atoms/icon";
+import { UploadIcon } from "@shared/components/atoms/icon/upload";
 import styles from "./avatar-upload.module.css";
 import { CircleImage } from "../image/circle";
 

@@ -1,7 +1,7 @@
 import { ChapterSlug, SeriesIdentifier } from "@shared/domains/series";
 import Link from "next/link";
 import styles from "./chapter-title.module.css";
-import { ChevronRightIcon } from "@shared/components/atoms/icon";
+import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
 
 export type Props = {
   title: string;

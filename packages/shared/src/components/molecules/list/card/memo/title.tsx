@@ -1,7 +1,7 @@
 import { MemoSlug, MemoTitle } from "@shared/domains/memo";
 import Link from "next/link";
 import styles from "./title.module.css";
-import { ClockIcon } from "@shared/components/atoms/icon";
+import { ClockIcon } from "@shared/components/atoms/icon/clock";
 import { Timeline } from "@shared/domains/common";
 import { ModestText } from "@shared/components/atoms/text/modest";
 import { formatDateTime } from "@shared/aspects/date";

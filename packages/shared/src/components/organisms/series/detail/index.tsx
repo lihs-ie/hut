@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BookOpenIcon, ChevronRightIcon } from "@shared/components/atoms/icon";
 import { Series, SeriesSlug } from "@shared/domains/series";
 import { SimpleBadge } from "@shared/components/atoms/badge/simple";
 import styles from "./index.module.css";
+import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
+import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
 
 export type Props = {
   series: Series;

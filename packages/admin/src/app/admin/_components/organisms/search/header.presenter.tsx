@@ -4,7 +4,7 @@ import { VariantButton } from "@shared/components/atoms/button/variant";
 import styles from "./header.module.css";
 import { useRouter } from "next/navigation";
 import { Sort } from "@shared/domains/search-token";
-import { PlusIcon } from "@shared/components/atoms/icon";
+import { PlusIcon } from "@shared/components/atoms/icon/plus";
 import {
   parseAsArrayOf,
   parseAsString,

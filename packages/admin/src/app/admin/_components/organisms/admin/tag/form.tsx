@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2Icon } from "@shared/components/atoms/icon";
+import { Trash2Icon } from "@shared/components/atoms/icon/trash";
 import { Tag, UnvalidatedTag } from "@shared/domains/attributes/tag";
 import { TagForm } from "@shared/components/molecules/form/tag";
 import { ConfirmModal } from "@shared/components/molecules/modal/confirm";
