@@ -1,0 +1,45 @@
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.icon {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .icon {
+    display: block;
+    cursor: pointer;
+
+    width: 1.5rem;
+  }
+
+  .container {
+    position: relative;
+  }
+
+  .links {
+    position: absolute;
+    width: 200px;
+    top: 55px;
+    right: 0px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+
+    background-color: var(--card);
+
+    padding: 0.5rem;
+
+    right: -100px;
+  }
+
+  .links.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}

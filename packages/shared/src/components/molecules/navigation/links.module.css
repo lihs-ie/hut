@@ -1,0 +1,38 @@
+.container {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.link {
+  text-decoration: none;
+  display: flex;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.2s;
+  color: var(--text-secondary);
+}
+
+.link:hover {
+  color: var(--primary);
+}
+
+@media (width <= 768px) {
+  .container {
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: space-evenly;
+  }
+
+  .link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    display: block;
+    transition: background-color 0.2s;
+  }
+
+  .link:hover {
+    background: var(--muted);
+  }
+}

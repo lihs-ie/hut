@@ -1,0 +1,36 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--muted-foreground);
+  transition: all 0.2s;
+}
+
+.container:hover {
+  background-color: var(--secondary);
+  color: var(--foreground);
+}
+
+.active {
+  background-color: var(--primary);
+  color: var(--foreground);
+}
+
+.active:hover {
+  background-color: var(--primary-hover);
+  color: var(--primary-foreground);
+}
+
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}

@@ -1,0 +1,29 @@
+.container {
+  width: 100%;
+  height: 4px;
+  background-color: var(--muted);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.bar[data-status="compressing"] {
+  background-color: var(--accent);
+}
+
+.bar[data-status="uploading"] {
+  background-color: var(--primary);
+}
+
+.bar[data-status="completed"] {
+  background-color: var(--chart-4);
+}
+
+.bar[data-status="failed"] {
+  background-color: var(--destructive);
+}

@@ -1,0 +1,27 @@
+.container {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: currentColor;
+  color: var(--muted-foreground);
+  transition: color 0.2s;
+  mask-image: url("/icon/search.svg");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-image: url("/icon/search.svg");
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+
+.container:hover {
+  color: var(--foreground);
+}
+
+@media (max-width: 640px) {
+  .container {
+    width: 1rem;
+    height: 1rem;
+  }
+}
