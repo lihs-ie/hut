@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@shared/*": ["../src/*"]
+    }
+  },
+  "include": [
+    "./**/*",
+    "../types/**/*.d.ts",
+    "stories/components/molecules/logo",
+    "../src/components/molecules/image"
+  ]
+}

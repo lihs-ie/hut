@@ -1,0 +1,32 @@
+.container {
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  overflow-x: hidden;
+}
+
+.result-count {
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.search-query {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.count-number {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.result-grid {
+  display: grid;
+  gap: 1.5rem;
+}

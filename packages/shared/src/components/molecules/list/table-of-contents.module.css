@@ -1,0 +1,136 @@
+/* PC用の目次スタイル */
+.desktopToc {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .desktopToc {
+    display: block;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 1rem;
+  }
+}
+
+.title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.link {
+  display: block;
+  color: var(--muted-foreground);
+  transition: color 0.2s;
+  text-decoration: none;
+  padding: 0.25rem 0;
+}
+
+.link:hover {
+  color: var(--foreground);
+}
+
+/* SP用の目次をヘッダー直下に固定追従 */
+.mobileToc {
+  display: block;
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  /* 背景色をカスタムプロパティに統一してダークモード対応 */
+  background: var(--card);
+  backdrop-filter: blur(10px) saturate(1.5);
+  -webkit-backdrop-filter: blur(10px) saturate(1.5);
+  border-bottom: 1px solid var(--border);
+  z-index: 45; /* ヘッダー(50)より下、コンテンツより上 */
+  transition: top 0.3s ease-in-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* スクロール時にトップに固定 */
+.mobileToc.scrolled {
+  top: 0;
+}
+
+@media (min-width: 1024px) {
+  .mobileToc {
+    display: none;
+  }
+}
+
+.toggleButton {
+  width: 100%;
+  height: var(--mobile-toc-height, 3rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--foreground);
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.toggleText {
+  font-size: 0.9375rem;
+}
+
+.toggleIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.3s ease-in-out;
+}
+
+.toggleIcon.rotated {
+  transform: rotate(180deg);
+}
+
+.mobileNav {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 0 1rem 0.75rem;
+  /* 背景色をカスタムプロパティに統一 */
+  background: var(--card);
+  backdrop-filter: blur(10px);
+  animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobileLink {
+  display: block;
+  color: var(--muted-foreground);
+  transition: color 0.2s;
+  text-decoration: none;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9375rem;
+}
+
+.mobileLink:last-child {
+  border-bottom: none;
+}
+
+.mobileLink:hover {
+  color: var(--foreground);
+}

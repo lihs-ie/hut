@@ -1,0 +1,16 @@
+.container {
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+@media (min-width: 768px) {
+  .wrapper {
+    padding: 1.5rem 2rem;
+  }
+}

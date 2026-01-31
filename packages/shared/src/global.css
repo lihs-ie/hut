@@ -1,0 +1,277 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --header-height: 62px;
+  --mobile-toc-height: 3rem;
+
+  --font-sans: "Noto Sans JP", "Geist", "Geist Fallback", sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
+
+  --background: #f5f5f5;
+  --background-secondary: #ededee;
+  --background-secondary-hover: #e0e1e2;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --primary-hover: #4f46e5;
+  --secondary: #fafafa;
+  --secondary-foreground: #1a1a1a;
+  --muted: #eeeeee;
+  --muted-foreground: #666666;
+  --accent: #06b6d4;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #c4c4c4;
+  --input: #c4c4c4;
+  --ring: #6366f1;
+  --chart-1: #6366f1;
+  --chart-2: #06b6d4;
+  --chart-3: #f59e0b;
+  --chart-4: #10b981;
+  --chart-5: #ec4899;
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --sidebar: #f7f7f8;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #6366f1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f5f7;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #c4c4c4;
+  --sidebar-ring: #6366f1;
+
+  --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+  --color-background-secondary-hover: var(--background-secondary-hover);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+.dark {
+  --background: #0a0a0a;
+  --background-secondary: #424141;
+  --background-secondary-hover: #4b4a4a;
+  --foreground: #f5f5f5;
+  --card: #161616;
+  --card-foreground: #f5f5f5;
+  --popover: #161616;
+  --popover-foreground: #f5f5f5;
+  --primary: #818cf8;
+  --primary-foreground: #0a0a0a;
+  --primary-hover: #6366f1;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #f5f5f5;
+  --muted: #1a1a1a;
+  --muted-foreground: #a0a0a0;
+  --accent: #22d3ee;
+  --accent-foreground: #f5f5f5;
+  --destructive: #ef4444;
+  --destructive-foreground: #f5f5f5;
+  --border: #404040;
+  --input: #404040;
+  --ring: #818cf8;
+  --chart-1: #818cf8;
+  --chart-2: #22d3ee;
+  --chart-3: #fbbf24;
+  --chart-4: #34d399;
+  --chart-5: #f472b6;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #f5f5f5;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #050505;
+  --sidebar-accent: #111111;
+  --sidebar-accent-foreground: #f5f5f5;
+  --sidebar-border: #404040;
+  --sidebar-ring: #818cf8;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+  }
+
+  main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--background);
+
+    padding: 0 0 var(--header-height) 0;
+  }
+  main > * {
+    flex: 1;
+  }
+
+  .admin main {
+    padding: 0;
+  }
+
+  h1[id],
+  h2[id],
+  h3[id],
+  h4[id],
+  h5[id],
+  h6[id] {
+    scroll-margin-top: calc(var(--header-height) + 2rem);
+  }
+
+  @media (max-width: 1023px) {
+    h1[id],
+    h2[id],
+    h3[id],
+    h4[id],
+    h5[id],
+    h6[id] {
+      scroll-margin-top: calc(
+        var(--header-height) + var(--mobile-toc-height, 3rem) + 1rem
+      );
+    }
+  }
+}
+
+@layer components {
+  .prose {
+    @apply text-foreground;
+    color: var(--foreground);
+  }
+
+  .prose *:not(pre *):not(.shiki *) {
+    color: inherit;
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    @apply text-foreground;
+    color: var(--foreground);
+    scroll-margin-top: calc(var(--header-height) + 1rem);
+  }
+
+  .prose h2 {
+    @apply mb-4 mt-8 text-2xl font-bold border-b pb-2;
+  }
+
+  .prose h3 {
+    @apply mb-3 mt-6 text-xl font-semibold;
+  }
+
+  .prose h4 {
+    @apply mb-2 mt-4 text-lg font-semibold;
+  }
+
+  .prose p {
+    @apply mb-4 leading-relaxed text-foreground;
+    color: var(--foreground);
+  }
+
+  .prose ul,
+  .prose ol {
+    @apply mb-4 ml-6 space-y-2 text-foreground;
+    color: var(--foreground);
+  }
+
+  .prose ul {
+    @apply list-disc;
+  }
+
+  .prose ol {
+    @apply list-decimal;
+  }
+
+  .prose li {
+    @apply leading-relaxed text-foreground;
+    color: var(--foreground);
+  }
+
+  .prose code {
+    @apply rounded px-1.5 py-0.5 font-mono text-sm;
+    background-color: color-mix(in oklch, var(--foreground) 10%, transparent);
+    color: var(--foreground);
+  }
+
+  .prose pre {
+    @apply overflow-x-auto;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .prose pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .prose strong {
+    @apply font-semibold text-foreground;
+    color: var(--foreground);
+  }
+
+  .prose em {
+    @apply italic;
+  }
+
+  .prose blockquote {
+    @apply border-l-4 border-primary pl-4 italic text-muted-foreground;
+  }
+
+  .prose a {
+    @apply text-primary underline underline-offset-2 hover:text-primary/80;
+  }
+
+  .prose img {
+    @apply block my-4 max-w-full h-auto rounded-lg;
+  }
+}
+
+header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+}

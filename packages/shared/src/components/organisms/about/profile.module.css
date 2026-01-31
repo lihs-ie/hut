@@ -1,0 +1,169 @@
+.container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.content {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+
+  white-space: normal;
+  word-break: break-word;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.followButton {
+  flex-shrink: 0;
+}
+
+.bio {
+  color: var(--muted-foreground);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+}
+
+.stat {
+  color: var(--muted-foreground);
+}
+
+.stat strong {
+  color: var(--foreground);
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.statLabel {
+  color: var(--muted-foreground);
+}
+
+.links {
+  display: flex;
+  gap: 1rem;
+
+  align-items: center;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  transform: translateY(-2px);
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+}
+
+.email {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 2rem;
+  width: 2rem;
+
+  color: var(--muted-foreground);
+
+  transition-property: color;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+
+  text-decoration: none;
+}
+
+.email:hover {
+  color: var(--foreground);
+}
+
+@media (max-width: 680px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .name {
+    font-size: 1rem;
+  }
+
+  .bio {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .links {
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .email {
+    height: 1.5rem;
+    width: 1.5rem;
+  }
+}

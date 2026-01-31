@@ -1,0 +1,16 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  text-decoration: none !important;
+}
+
+@media (max-width: 600px) {
+  .container {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+}

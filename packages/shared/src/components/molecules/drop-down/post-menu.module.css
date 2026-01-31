@@ -1,0 +1,44 @@
+.content {
+  display: flex;
+  text-decoration: none;
+  gap: 8px;
+
+  color: var(--foreground);
+}
+
+.icon {
+  width: 16px;
+}
+
+.text {
+  margin: 8px 12px;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 8px 12px;
+}
+
+.triggerIcon {
+  display: none;
+}
+
+.triggerText {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .trigger {
+    padding: 8px;
+  }
+
+  .triggerIcon {
+    display: inline-block;
+  }
+
+  .triggerText {
+    display: none;
+  }
+}
