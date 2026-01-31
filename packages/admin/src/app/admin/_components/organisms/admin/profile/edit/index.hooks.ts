@@ -4,10 +4,9 @@ import {
   UnvalidatedCareer,
   UnvalidatedProfile,
 } from "@shared/domains/user";
-import { useServerAction } from "@shared/hooks";
+import { useServerAction, ServerActionError } from "@shared/components/global/hooks/use-server-action";
 import { Dispatch, SetStateAction, useState } from "react";
 import { Value as Basic } from "./basic";
-import { ServerActionError } from "@shared/hooks/useServerAction";
 
 type Hooks = {
   avatar: string;

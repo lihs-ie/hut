@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useServerAction } from "@shared/hooks/useServerAction";
+import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 
 describe("hooks/useServerAction", () => {
   describe("初期状態", () => {

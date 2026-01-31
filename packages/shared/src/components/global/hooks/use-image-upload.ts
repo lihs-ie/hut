@@ -20,7 +20,7 @@ import {
   compressImageToWebP,
   getCompressedFileName,
   CompressedImage,
-} from "./useImageCompression";
+} from "./use-image-compression";
 
 export type UploadState = {
   id: string;
@@ -55,7 +55,7 @@ export type UseImageUploadReturn = {
   uploadImage: (
     file: File,
     contentType: ContentType,
-    slug: string
+    slug: string,
   ) => Promise<
     Result<
       { url: string; placeholder: PlaceholderInfo },
@@ -67,7 +67,7 @@ export type UseImageUploadReturn = {
 };
 
 export const useImageUpload = (
-  options: UseImageUploadOptions
+  options: UseImageUploadOptions,
 ): UseImageUploadReturn => {
   const [uploads, setUploads] = useState<UploadState[]>([]);
   const [error, setError] = useState<UploadError | null>(null);
@@ -81,18 +81,18 @@ export const useImageUpload = (
     (id: string, update: Partial<UploadState>) => {
       setUploads((previous) =>
         previous.map((upload) =>
-          upload.id === id ? { ...upload, ...update } : upload
-        )
+          upload.id === id ? { ...upload, ...update } : upload,
+        ),
       );
     },
-    []
+    [],
   );
 
   const uploadImage = useCallback(
     async (
       file: File,
       contentType: ContentType,
-      slug: string
+      slug: string,
     ): Promise<
       Result<
         { url: string; placeholder: PlaceholderInfo },
@@ -131,7 +131,7 @@ export const useImageUpload = (
 
         if (abortController.signal.aborted) {
           return err(
-            validationError("cancelled", "アップロードがキャンセルされました")
+            validationError("cancelled", "アップロードがキャンセルされました"),
           );
         }
 
@@ -160,7 +160,7 @@ export const useImageUpload = (
 
         if (abortController.signal.aborted) {
           return err(
-            validationError("cancelled", "アップロードがキャンセルされました")
+            validationError("cancelled", "アップロードがキャンセルされました"),
           );
         }
 
@@ -168,16 +168,16 @@ export const useImageUpload = (
 
         const compressedFileName = getCompressedFileName(
           file.name,
-          file.type as SupportedImageMimeType
+          file.type as SupportedImageMimeType,
         );
         const fileName = generateImageFileName(
           compressedFileName,
-          compressed.mimeType === "image/gif" ? "gif" : "webp"
+          compressed.mimeType === "image/gif" ? "gif" : "webp",
         );
         const path = generateUploadPath(
           contentType,
           { primary: slug },
-          fileName
+          fileName,
         );
 
         try {
@@ -221,7 +221,7 @@ export const useImageUpload = (
         return err(unexpectedError(message, unexpectedErr));
       }
     },
-    [options, updateUploadState]
+    [options, updateUploadState],
   );
 
   const cancelUpload = useCallback(
@@ -236,19 +236,20 @@ export const useImageUpload = (
         error: "キャンセルされました",
       });
     },
-    [updateUploadState]
+    [updateUploadState],
   );
 
   const clearCompleted = useCallback(() => {
     setUploads((previous) =>
       previous.filter(
-        (upload) => upload.status !== "completed" && upload.status !== "failed"
-      )
+        (upload) => upload.status !== "completed" && upload.status !== "failed",
+      ),
     );
   }, []);
 
   const isUploading = uploads.some(
-    (upload) => upload.status === "compressing" || upload.status === "uploading"
+    (upload) =>
+      upload.status === "compressing" || upload.status === "uploading",
   );
 
   const isError = error !== null;

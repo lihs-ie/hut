@@ -7,7 +7,7 @@ import { useState } from "react";
 import { UnvalidatedMemo } from "@shared/domains/memo";
 import { FormButton } from "@shared/components/atoms/button/form";
 import { DropdownSelect } from "@shared/components/atoms/select/dropdown";
-import { useServerAction } from "@shared/hooks";
+import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { ulid } from "ulid";
 import { useRouter } from "next/navigation";

@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useImageDropzone } from "@shared/hooks/useImageDropzone";
+import { useImageDropzone } from "@shared/components/global/hooks/use-image-dropzone";
 
 const createMockDragEvent = (files: File[]) => {
   const dataTransfer = {

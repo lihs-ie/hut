@@ -4,7 +4,8 @@ import { useCallback, useRef, useEffect } from "react";
 import { DropzoneOverlay } from "@shared/components/molecules/overlay/dropzone";
 import { UploadStatus } from "@shared/components/molecules/upload/status";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
-import { useImageUpload, useImageDropzone } from "@shared/hooks";
+import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
+import { useImageDropzone } from "@shared/components/global/hooks/use-image-dropzone";
 import { ContentType } from "@shared/domains/common/image-upload";
 import styles from "./markdown-editor.module.css";
 

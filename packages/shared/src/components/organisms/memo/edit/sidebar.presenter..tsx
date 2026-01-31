@@ -11,7 +11,7 @@ import { SimpleSwitch } from "@shared/components/atoms/toggle/simple";
 import { ConfirmModal } from "@shared/components/molecules/modal/confirm";
 import { useRouter } from "next/navigation";
 import { VariantButton } from "@shared/components/atoms/button/variant";
-import { useServerAction } from "@shared/hooks";
+import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
 

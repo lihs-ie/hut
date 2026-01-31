@@ -8,7 +8,7 @@ import { ConfirmModal } from "@shared/components/molecules/modal/confirm";
 import styles from "./form.module.css";
 import { useRouter } from "next/navigation";
 import { VariantButton } from "@shared/components/atoms/button/variant";
-import { useServerAction } from "@shared/hooks";
+import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ulid } from "ulid";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 

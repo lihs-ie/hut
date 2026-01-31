@@ -1,6 +1,6 @@
 import { UploadIndicator } from "@shared/components/atoms/indicator/upload";
 import { CrossIcon } from "@shared/components/atoms/icon/cross";
-import type { UploadState } from "@shared/hooks/useImageUpload";
+import type { UploadState } from "@shared/components/global/hooks/use-image-upload";
 import styles from "./status.module.css";
 
 type Props = {
