@@ -251,10 +251,11 @@ test.describe.serial("profile edit", () => {
       .locator("select")
       .filter({ hasText: "選択してください" })
       .first();
-    await techSelect.selectOption("React");
+    await techSelect.selectOption({ label: "React" });
 
-    // Verify selection
-    await expect(techSelect).toHaveValue("React");
+    // Verify selection - check that the selected option has the correct text
+    const selectedOption = techSelect.locator("option:checked");
+    await expect(selectedOption).toHaveText("React");
 
     // Find and check "現在も使用中" checkbox
     const continueCheckbox = page.getByLabel("現在も使用中").first();
@@ -429,7 +430,7 @@ test.describe.serial("profile edit", () => {
       .locator("select")
       .filter({ hasText: "選択してください" })
       .first();
-    await techSelect.selectOption("TypeScript");
+    await techSelect.selectOption({ label: "TypeScript" });
 
     // Add career
     const careerHeader = page.getByRole("heading", { name: "経歴" });
@@ -446,7 +447,9 @@ test.describe.serial("profile edit", () => {
     await expect(nameInput).toHaveValue("統合テスト名");
     await expect(bioTextarea).toHaveValue("統合テストの自己紹介です。");
     await expect(githubInput).toHaveValue("integration-test");
-    await expect(techSelect).toHaveValue("TypeScript");
+    // Verify selected option has correct text (value is Tag identifier ULID)
+    const selectedTechOption = techSelect.locator("option:checked");
+    await expect(selectedTechOption).toHaveText("TypeScript");
     await expect(companyInput).toHaveValue("統合テスト株式会社");
 
     // Verify update button is still available

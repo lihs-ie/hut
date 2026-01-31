@@ -14,10 +14,12 @@ import {
 import { UnvalidatedTechnologyStack } from "@shared/domains/common/tech";
 import { useServerAction } from "@shared/hooks";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
+import { Tag } from "@shared/domains/attributes/tag";
 
 export type Props = {
   initial?: Profile;
   persist: (unvalidated: UnvalidatedProfile) => Promise<void>;
+  tags: Tag[];
 };
 
 export const ProfileEditForm = (props: Props) => {
@@ -36,7 +38,7 @@ export const ProfileEditForm = (props: Props) => {
       ? Array.from(props.initial.techStacks.entries())
           .flatMap(([_, stacks]) => stacks)
           .map((techStack) => ({
-            kind: techStack.kind,
+            tag: techStack.tag,
             from: techStack.from,
             continue: techStack.continue,
             type: techStack.type,
@@ -57,7 +59,7 @@ export const ProfileEditForm = (props: Props) => {
 
   const handleAddTechStack = () => {
     const newTech: UnvalidatedTechnologyStack = {
-      kind: "",
+      tag: "",
       from: new Date(),
       continue: false,
       type: "personal",
@@ -122,6 +124,7 @@ export const ProfileEditForm = (props: Props) => {
 
       <ProfileTechStackForm
         values={techStacks}
+        tags={props.tags}
         onAdd={handleAddTechStack}
         onUpdate={(index, value) => {
           const target = techStacks[index];

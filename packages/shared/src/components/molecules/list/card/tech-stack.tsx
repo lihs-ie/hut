@@ -1,26 +1,23 @@
 import { CommonImage } from "@shared/components/atoms/image/common";
 import styles from "./tech-stack.module.css";
 import { determineExperience } from "@shared/aspects/date";
-import { TechnologyKind, TechnologyStack } from "@shared/domains/common/tech";
 
 export type Props = {
-  techStack: TechnologyStack;
+  from: Date;
   now: Date;
-  logoSources: Record<TechnologyKind, string>;
+  techStackName: string;
+  techStackLogo: string;
 };
 
 export const TechStackCard = (props: Props) => (
   <div className={styles.container}>
     <div className={styles.logo}>
-      <CommonImage
-        src={props.logoSources[props.techStack.kind as TechnologyKind]}
-        alt={props.techStack.kind}
-      />
+      <CommonImage src={props.techStackLogo} alt={props.techStackName} />
     </div>
     <div className={styles.body}>
-      <span className={styles.type}>{props.techStack.kind}</span>
+      <span className={styles.type}>{props.techStackName}</span>
       <p className={styles.experience}>
-        {determineExperience(props.techStack.from, props.now)}&nbsp;年
+        {determineExperience(props.from, props.now)}&nbsp;年
       </p>
     </div>
   </div>

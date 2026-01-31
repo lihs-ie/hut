@@ -1,6 +1,7 @@
 import { validate, ValidationError } from "@shared/aspects/error";
 import { Result } from "@shared/aspects/result";
 import z from "zod";
+import { tagIdentifierSchema } from "../attributes/tag";
 
 export const TechnologyCategory = {
   FRONTEND: "frontend",
@@ -13,25 +14,6 @@ export type TechnologyCategory =
 export const technologyCategorySchema = z
   .enum(TechnologyCategory)
   .brand("TechnologyCategory");
-
-export const TechnologyKind = {
-  NEXTJS: "nextjs",
-  REACT: "react",
-  TYPESCRIPT: "typescript",
-  GO: "go",
-  GIN: "gin",
-  JAVA: "java",
-  PHP: "php",
-  LARAVEL: "laravel",
-  RUST: "rust",
-} as const;
-
-export type TechnologyKind =
-  (typeof TechnologyKind)[keyof typeof TechnologyKind];
-
-export const technologyKindSchema = z
-  .enum(TechnologyKind)
-  .brand("TechnologyKind");
 
 export const experienceTypeSchema = z
   .enum(["personal", "business", "both"])
@@ -47,7 +29,7 @@ export const ExperienceType = {
 
 export const technologyStackSchema = z
   .object({
-    kind: technologyKindSchema,
+    tag: tagIdentifierSchema,
     from: z.date(),
     continue: z.boolean(),
     type: experienceTypeSchema,
@@ -57,7 +39,7 @@ export const technologyStackSchema = z
 export type TechnologyStack = z.infer<typeof technologyStackSchema>;
 
 export type UnvalidatedTechnologyStack = {
-  kind: string;
+  tag: string;
   from: Date;
   continue: boolean;
   type: string;
