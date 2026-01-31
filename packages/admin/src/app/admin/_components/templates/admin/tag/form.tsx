@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeftIcon } from "@shared/components/atoms/icon";
+import { ArrowLeftIcon } from "@shared/components/atoms/icon/arrow-left";
 import { Tag, UnvalidatedTag } from "@shared/domains/attributes/tag";
 import styles from "./form.module.css";
 import { Routes } from "@/config/routes";

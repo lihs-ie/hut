@@ -3,7 +3,7 @@
 import { Textarea } from "@shared/components/atoms/input/textarea";
 import { TextInput } from "@shared/components/atoms/input/text";
 import { VariantButton } from "@shared/components/atoms/button/variant";
-import { Trash2Icon } from "@shared/components/atoms/icon";
+import { Trash2Icon } from "@shared/components/atoms/icon/trash";
 import styles from "./policy-section.module.css";
 
 export type EditablePolicySection = {

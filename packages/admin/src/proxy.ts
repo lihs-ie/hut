@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resolveIP } from "./aspects/ip-address";
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|logo).*)"],
 };
 
 /**

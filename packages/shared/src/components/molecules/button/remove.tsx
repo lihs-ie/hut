@@ -1,4 +1,4 @@
-import { XIcon } from "@shared/components/atoms/icon";
+import { XIcon } from "@shared/components/atoms/icon/cross";
 import styles from "./remove.module.css";
 
 export type Props = {

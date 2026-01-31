@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { BookOpenIcon, ChevronLeftIcon, ChevronRightIcon } from "@shared/components/atoms/icon";
+import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
+import { ChevronLeftIcon } from "@shared/components/atoms/icon/chevron-left";
+import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
 import { MarkdownRenderer } from "@shared/components/global/mdx";
 import { ArticleContentSkeleton } from "@shared/components/molecules/skeleton";
 import { Series, SeriesSlug, ChapterSlug } from "@shared/domains/series";

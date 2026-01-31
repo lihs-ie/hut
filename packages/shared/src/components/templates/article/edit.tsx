@@ -1,13 +1,14 @@
 "use client";
 
 import styles from "./edit.module.css";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
+import { ulid } from "ulid";
 import { PublishStatus } from "@shared/domains/common";
 import { useServerAction } from "@shared/hooks";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { EditorHeader } from "@shared/components/organisms/common/editor/header";
-import { MarkdownEditor } from "@shared/components/organisms/common/editor/markdown-editor";
 import { MarkdownPreview } from "@shared/components/organisms/common/editor/markdown-preview";
 import { Article, UnvalidatedArticle } from "@shared/domains/articles";
 import {
@@ -21,10 +22,37 @@ import {
 } from "@shared/components/global/matter";
 import { TagSelect } from "@shared/components/molecules/select/tag";
 import { Tag, TagIdentifier } from "@shared/domains/attributes/tag";
-import { TagIcon, CrossIcon } from "@shared/components/atoms/icon";
+import { TagIcon } from "@shared/components/atoms/icon/tag";
+import { CrossIcon } from "@shared/components/atoms/icon/cross";
 import { ok } from "@shared/aspects/result";
-import { ulid } from "ulid";
 import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+
+const MarkdownEditor = dynamic(
+  () =>
+    import("@shared/components/organisms/common/editor/markdown-editor").then(
+      (module) => module.MarkdownEditor,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          minHeight: "100vh",
+          backgroundColor: "var(--muted)",
+          borderRadius: "var(--radius-md)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "var(--muted-foreground)",
+        }}
+      >
+        エディタを読み込み中...
+      </div>
+    ),
+  },
+);
 
 export type Props = {
   initial?: Article;

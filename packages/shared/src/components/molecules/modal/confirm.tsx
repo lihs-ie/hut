@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, type ComponentType } from "react";
-import {
-  AlertTriangleIcon,
-  InfoIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from "@shared/components/atoms/icon";
+import { AlertTriangleIcon } from "@shared/components/atoms/icon/alert-triangle";
+import { InfoIcon } from "@shared/components/atoms/icon/info";
+import { CheckCircleIcon } from "@shared/components/atoms/icon/check-circle";
+import { XCircleIcon } from "@shared/components/atoms/icon/x-circle";
 import styles from "./confirm.module.css";
 
 export type ConfirmModalType = "info" | "warning" | "success" | "error";

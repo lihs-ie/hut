@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { fetchOGP, OGPMetadata } from "@shared/actions/ogp";
 import styles from "./link.module.css";
 import Image from "next/image";
 import Link from "next/link";
+import useSWR from "swr";
 
 type Props = {
   url: string;
@@ -93,32 +93,10 @@ const LinkCardPresenter = (props: { metadata: OGPMetadata }) => {
 };
 
 export const LinkCardClient = (props: Props) => {
-  const [metadata, setMetadata] = useState<OGPMetadata | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchOGP(props.url);
-        if (!cancelled) {
-          setMetadata(data);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [props.url]);
+  const { data: metadata, isLoading: loading } = useSWR(props.url, fetchOGP, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60 * 1000,
+  });
 
   if (loading || !metadata) {
     return <LinkCardSkeleton url={props.url} />;

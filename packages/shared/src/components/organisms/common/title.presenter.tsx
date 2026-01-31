@@ -1,7 +1,7 @@
 import { Timeline } from "@shared/domains/common";
 
 import styles from "./title.module.css";
-import { ClockIcon } from "@shared/components/atoms/icon";
+import { ClockIcon } from "@shared/components/atoms/icon/clock";
 import { ModestText } from "@shared/components/atoms/text/modest";
 import { formatDate } from "@shared/aspects/date";
 

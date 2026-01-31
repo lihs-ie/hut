@@ -2,7 +2,7 @@ import { MarkdownRenderer } from "@shared/components/global/mdx";
 import { MemoEntry } from "@shared/domains/memo";
 import styles from "./entry-text.module.css";
 import { ModestText } from "@shared/components/atoms/text/modest";
-import { ClockIcon } from "@shared/components/atoms/icon";
+import { ClockIcon } from "@shared/components/atoms/icon/clock";
 import { formatDateTime } from "@shared/aspects/date";
 
 export type Props = {

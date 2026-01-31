@@ -1,13 +1,12 @@
 import Link from "next/link";
-import {
-  GithubIcon,
-  MailIcon,
-  XTwitterIcon,
-} from "@shared/components/atoms/icon";
+
 import styles from "./index.module.css";
 import { ExternalServiceType } from "@shared/domains/common/service";
 import { Routes } from "@shared/config/presentation/route";
 import { MailAddress } from "@shared/domains/user";
+import { GithubIcon } from "@shared/components/atoms/icon/github";
+import { XTwitterIcon } from "@shared/components/atoms/icon/x-twitter";
+import { MailIcon } from "@shared/components/atoms/icon/mail";
 
 export type Props = {
   mailAddress: MailAddress;

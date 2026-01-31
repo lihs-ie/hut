@@ -52,7 +52,7 @@ export const MarkdownEditor = (props: Props) => {
         textarea.focus();
       });
     },
-    [props]
+    [props],
   );
 
   const replacePlaceholder = useCallback(
@@ -62,7 +62,7 @@ export const MarkdownEditor = (props: Props) => {
       const newValue = currentValue.replace(placeholder, replacement);
       props.onChange(newValue);
     },
-    [props]
+    [props],
   );
 
   const handleImageUpload = useCallback(
@@ -72,14 +72,14 @@ export const MarkdownEditor = (props: Props) => {
       const result = await imageUploadHook.uploadImage(
         file,
         props.imageUpload.contentType,
-        props.imageUpload.slug
+        props.imageUpload.slug,
       );
 
       result.match({
         ok: ({ url, placeholder }) => {
           replacePlaceholder(
             placeholderId,
-            `![${placeholder.altText}](${url})`
+            `![${placeholder.altText}](${url})`,
           );
         },
         err: (uploadError) => {
@@ -89,12 +89,12 @@ export const MarkdownEditor = (props: Props) => {
               : uploadError.message;
           replacePlaceholder(
             placeholderId,
-            `<!-- 画像アップロード失敗: ${message} -->`
+            `<!-- 画像アップロード失敗: ${message} -->`,
           );
         },
       });
     },
-    [props.imageUpload, imageUploadHook, replacePlaceholder]
+    [props.imageUpload, imageUploadHook, replacePlaceholder],
   );
 
   const processFiles = useCallback(
@@ -105,7 +105,7 @@ export const MarkdownEditor = (props: Props) => {
         await handleImageUpload(file, placeholderId);
       }
     },
-    [handleImageUpload, insertTextAtCursor]
+    [handleImageUpload, insertTextAtCursor],
   );
 
   const { isDragOver, handlers, handlePaste } = useImageDropzone({
@@ -120,15 +120,11 @@ export const MarkdownEditor = (props: Props) => {
       const lineEnd = lineEndIndex === -1 ? props.value.length : lineEndIndex;
       return { lineStart, lineEnd };
     },
-    [props.value]
+    [props.value],
   );
 
   const wrapSelection = useCallback(
-    (
-      textarea: HTMLTextAreaElement,
-      wrapper: string,
-      placeholder: string
-    ) => {
+    (textarea: HTMLTextAreaElement, wrapper: string, placeholder: string) => {
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const selectedText = props.value.substring(start, end);
@@ -137,10 +133,7 @@ export const MarkdownEditor = (props: Props) => {
         const isWrapped =
           selectedText.startsWith(wrapper) && selectedText.endsWith(wrapper);
         if (isWrapped) {
-          const unwrapped = selectedText.slice(
-            wrapper.length,
-            -wrapper.length
-          );
+          const unwrapped = selectedText.slice(wrapper.length, -wrapper.length);
           const newValue =
             props.value.substring(0, start) +
             unwrapped +
@@ -175,7 +168,7 @@ export const MarkdownEditor = (props: Props) => {
         });
       }
     },
-    [props]
+    [props],
   );
 
   const handleKeyDown = useCallback(
@@ -232,8 +225,10 @@ export const MarkdownEditor = (props: Props) => {
               props.value.substring(lineStart + spacesToRemove);
             props.onChange(newValue);
             requestAnimationFrame(() => {
-              textarea.selectionStart = textarea.selectionEnd =
-                Math.max(lineStart, start - spacesToRemove);
+              textarea.selectionStart = textarea.selectionEnd = Math.max(
+                lineStart,
+                start - spacesToRemove,
+              );
             });
           }
         } else {
@@ -260,7 +255,10 @@ export const MarkdownEditor = (props: Props) => {
             props.value.substring(lineEnd);
           props.onChange(newValue);
           requestAnimationFrame(() => {
-            textarea.selectionStart = Math.max(lineStart, start - firstLineRemoved);
+            textarea.selectionStart = Math.max(
+              lineStart,
+              start - firstLineRemoved,
+            );
             textarea.selectionEnd = end - totalRemoved;
           });
         }
@@ -284,7 +282,7 @@ export const MarkdownEditor = (props: Props) => {
           const newValue =
             props.value.substring(0, lineStart) +
             props.value.substring(
-              includeNewline ? actualLineEnd + 1 : actualLineEnd
+              includeNewline ? actualLineEnd + 1 : actualLineEnd,
             );
 
           props.onChange(newValue);
@@ -334,7 +332,7 @@ export const MarkdownEditor = (props: Props) => {
         }
       }
     },
-    [props, getLineRange, wrapSelection]
+    [props, getLineRange, wrapSelection],
   );
 
   return (

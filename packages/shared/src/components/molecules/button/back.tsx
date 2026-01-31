@@ -1,4 +1,4 @@
-import { ArrowLeftIcon } from "@shared/components/atoms/icon";
+import { ArrowLeftIcon } from "@shared/components/atoms/icon/arrow-left";
 import styles from "./back.module.css";
 
 export type Props = {

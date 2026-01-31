@@ -1,4 +1,4 @@
-import { PlusIcon } from "@shared/components/atoms/icon";
+import { PlusIcon } from "@shared/components/atoms/icon/plus";
 import styles from "./add.module.css";
 
 export type Props = {

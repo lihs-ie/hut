@@ -3,7 +3,8 @@
 import { useLogin } from "@/app/admin/_components/global/hooks/login";
 import { SimpleCard } from "@shared/components/atoms/card/simple";
 import styles from "./login.module.css";
-import { LoaderIcon, LockIcon } from "@shared/components/atoms/icon";
+import { LoaderIcon } from "@shared/components/atoms/icon/loader";
+import { LockIcon } from "@shared/components/atoms/icon/lock";
 import { GoogleLoginButton } from "@/app/admin/_components/atoms/button/google-login";
 
 export type Props = {

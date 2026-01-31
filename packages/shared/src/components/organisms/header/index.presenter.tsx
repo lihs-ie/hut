@@ -3,7 +3,7 @@ import styles from "./index.module.css";
 import { Theme, ThemeToggle } from "@shared/components/molecules/toggle/theme";
 import Link from "next/link";
 import { SearchIcon } from "@shared/components/atoms/icon/search";
-import { LayoutDashboardIcon } from "@shared/components/atoms/icon";
+import { LayoutDashboardIcon } from "@shared/components/atoms/icon/layout-dashboard";
 import { Routes } from "@shared/config/presentation/route";
 import { PostMenuDropDown } from "@shared/components/molecules/drop-down/post-menu";
 import { LogoutButton } from "@shared/components/molecules/button/logout";
