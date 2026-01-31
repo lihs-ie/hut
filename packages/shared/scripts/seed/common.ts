@@ -12,11 +12,33 @@ export const BASE_URL = `${FIRESTORE_EMULATOR_HOST}/v1/projects/${PROJECT_ID}/da
 
 // テストデータ用のULID
 export const TAG_IDS = {
+  // Frontend
   typescript: ulid(),
+  javascript: ulid(),
   react: ulid(),
   nextjs: ulid(),
+  vue: ulid(),
+  nuxt: ulid(),
+  angular: ulid(),
+  svelte: ulid(),
+  tailwindcss: ulid(),
+  css: ulid(),
+  html: ulid(),
+  // Backend
+  nodejs: ulid(),
   go: ulid(),
   rust: ulid(),
+  python: ulid(),
+  java: ulid(),
+  php: ulid(),
+  ruby: ulid(),
+  csharp: ulid(),
+  kotlin: ulid(),
+  // Database
+  postgresql: ulid(),
+  mysql: ulid(),
+  mongodb: ulid(),
+  redis: ulid(),
 };
 
 export const ARTICLE_IDS = {

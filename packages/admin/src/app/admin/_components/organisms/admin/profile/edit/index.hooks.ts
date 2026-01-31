@@ -51,7 +51,7 @@ export const useHooks = (
       ? Array.from(initial.techStacks.entries())
           .flatMap(([_, stacks]) => stacks)
           .map((techStack) => ({
-            kind: techStack.kind,
+            tag: techStack.tag,
             from: techStack.from,
             continue: techStack.continue,
             type: techStack.type,
@@ -71,7 +71,7 @@ export const useHooks = (
 
   const handleAddTechStack = () => {
     const newTech: UnvalidatedTechnologyStack = {
-      kind: "",
+      tag: "",
       from: new Date(),
       continue: false,
       type: "personal",

@@ -3,7 +3,7 @@ import styles from "./index.module.css";
 import { Profile as ProfileComponent } from "@shared/components/organisms/about/profile";
 import { Profile } from "@shared/domains/user";
 import { TechStackSection } from "@shared/components/organisms/about/tech-stack";
-import { TechnologyKind } from "@shared/domains/common/tech";
+import { Tag } from "@shared/domains/attributes/tag";
 import { CareerSection } from "@shared/components/organisms/about/career";
 import {
   ProfileSkeleton,
@@ -13,7 +13,7 @@ import {
 
 export type Props = {
   getProfile: () => Promise<Profile>;
-  logoSources: Record<TechnologyKind, string>;
+  getAllTags: () => Promise<Tag[]>;
   now: Date;
 };
 
@@ -26,7 +26,7 @@ export const AboutIndex = async (props: Props) => (
     <Suspense fallback={<TechStackSkeleton />}>
       <TechStackSection
         getProfile={props.getProfile}
-        logoSources={props.logoSources}
+        getAllTags={props.getAllTags}
         now={props.now}
       />
     </Suspense>
