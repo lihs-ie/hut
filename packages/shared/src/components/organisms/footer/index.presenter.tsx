@@ -77,7 +77,9 @@ export const FooterPresenter = async (props: Props) => (
               rel="noopener noreferrer"
               aria-label="GitHub"
             >
-              <GithubIcon className={styles["social-icon"]} />
+              <span className={styles.icon}>
+                <GithubIcon className={styles["social-icon"]} />
+              </span>
             </a>
           )}
 
@@ -88,7 +90,9 @@ export const FooterPresenter = async (props: Props) => (
               rel="noopener noreferrer"
               aria-label="Twitter"
             >
-              <XTwitterIcon className={styles["social-icon"]} />
+              <span className={styles.icon}>
+                <XTwitterIcon className={styles["social-icon"]} />
+              </span>
             </a>
           )}
 
