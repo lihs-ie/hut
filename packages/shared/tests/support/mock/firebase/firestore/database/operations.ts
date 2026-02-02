@@ -126,7 +126,7 @@ export async function getDocs<T = DocumentData>(
   const memoryStore = firestore._getMemoryStore()
 
   const documents = memoryStore.getCollectionDocuments(query.path)
-  const docSnapshots = documents.map(({ id, data, path }) => ({
+  const docSnapshots = documents.map(({ id: _id, data, path }) => ({
     ref: new DocumentReferenceImpl<T>(firestore, path, query.converter), // converterを引き継ぐ
     data: data as T
   }))

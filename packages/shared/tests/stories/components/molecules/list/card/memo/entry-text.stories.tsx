@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { MemoEntryTextCard } from "@shared/components/molecules/list/card/memo/entry-text";
-import { Builder } from "../../../../../../support/molds";
-import { MemoEntryFactory } from "../../../../../../support/molds/domains/memo";
+import { Forger } from "@lihs-ie/forger-ts";
+import { MemoEntryMold } from "../../../../../../support/molds/domains/memo";
 import { MDXRenderer } from "@shared/components/global/mdx";
 
 const meta = {
@@ -13,7 +13,7 @@ export default meta;
 
 export const Default: StoryObj<typeof MemoEntryTextCard> = {
   args: {
-    entry: Builder(MemoEntryFactory).build(),
+    entry: Forger(MemoEntryMold).forge(),
     renderer: (content: string) => MDXRenderer(content),
   },
 };

@@ -48,6 +48,8 @@ storybook-static
 
 referendes
 
+.pnpm-store
+
 # Firebase Emulator
 packages/shared/docker/firebase/data/
 packages/shared/docker/firebase/firebase-debug.log

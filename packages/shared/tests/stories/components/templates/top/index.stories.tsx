@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { TopIndex } from "@shared/components/templates/top";
-import { Builder } from "../../../../support/molds";
-import { MemoFactory } from "../../../../support/molds/domains/memo";
-import { ProfileFactory } from "../../../../support/molds/domains/user";
+import { Forger } from "@lihs-ie/forger-ts";
+import { MemoMold } from "../../../../support/molds/domains/memo";
+import { ProfileMold } from "../../../../support/molds/domains/user";
 
 const meta = {
   component: TopIndex,
@@ -11,8 +11,8 @@ const meta = {
 
 export default meta;
 
-const searchMemos = async () => Builder(MemoFactory).buildList(10).toArray();
-const getProfile = async () => Builder(ProfileFactory).build();
+const searchMemos = async () => Forger(MemoMold).forgeMultiWithSeed(10, 1);
+const getProfile = async () => Forger(ProfileMold).forge();
 
 export const Default: StoryObj<typeof TopIndex> = {
   args: {

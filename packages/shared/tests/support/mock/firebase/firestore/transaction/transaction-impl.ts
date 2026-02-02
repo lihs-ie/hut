@@ -37,7 +37,7 @@ export class TransactionImpl implements Transaction {
   ): Transaction
   set<T = DocumentData>(
     documentRef: DocumentReference<T>,
-    data: any,
+    data: T | Partial<T>,
     options?: SetOptions
   ): Transaction {
     this.operations.push({
@@ -56,22 +56,22 @@ export class TransactionImpl implements Transaction {
   update<T = DocumentData>(
     documentRef: DocumentReference<T>,
     field: string | FieldPath,
-    value: any,
-    ...moreFieldsAndValues: any[]
+    value: unknown,
+    ...moreFieldsAndValues: unknown[]
   ): Transaction
   update<T = DocumentData>(
     documentRef: DocumentReference<T>,
     dataOrField: UpdateData<T> | string | FieldPath,
-    value?: any,
-    ...moreFieldsAndValues: any[]
+    value?: unknown,
+    ...moreFieldsAndValues: unknown[]
   ): Transaction {
-    let updateData: any
+    let updateData: Record<string, unknown>
 
     if (
       typeof dataOrField === "object" &&
       !(dataOrField instanceof FieldPath)
     ) {
-      updateData = dataOrField
+      updateData = dataOrField as Record<string, unknown>
     } else {
       updateData = {}
       const fieldPath =
@@ -81,7 +81,7 @@ export class TransactionImpl implements Transaction {
       for (let i = 0; i < moreFieldsAndValues.length; i += 2) {
         const field = moreFieldsAndValues[i]
         const val = moreFieldsAndValues[i + 1]
-        const path = field instanceof FieldPath ? field.toString() : field
+        const path = field instanceof FieldPath ? field.toString() : String(field)
         updateData[path] = val
       }
     }

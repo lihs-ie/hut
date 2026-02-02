@@ -6,6 +6,8 @@ import {
   seriesSchema,
   Title,
   titleSchema,
+  SubTitle,
+  subTitleSchema,
   Description,
   descriptionSchema,
   Cover,
@@ -56,6 +58,18 @@ export const SeriesTitleMold = Mold<Title, SeriesTitleProperties>({
   pour: (properties) => titleSchema.parse(properties.value),
   prepare: (overrides, seed) => ({
     value: overrides.value ?? Forger(StringMold(1, 100)).forgeWithSeed(seed),
+  }),
+});
+
+export type SeriesSubTitleProperties = {
+  value: string | null;
+};
+
+export const SeriesSubTitleMold = Mold<SubTitle | null, SeriesSubTitleProperties>({
+  pour: (properties) =>
+    properties.value ? subTitleSchema.parse(properties.value) : null,
+  prepare: (overrides, seed) => ({
+    value: overrides.value ?? Forger(StringMold(1, 200)).forgeWithSeed(seed),
   }),
 });
 
@@ -120,6 +134,7 @@ export type SeriesProperties = {
   title: Title;
   slug: SeriesSlug;
   tags: TagIdentifier[];
+  subTitle: SubTitle | null;
   description: Description;
   cover: Cover | null;
   chapters: Chapter[];
@@ -133,6 +148,7 @@ export const SeriesMold = Mold<Series, SeriesProperties>({
       title: properties.title,
       tags: properties.tags,
       slug: properties.slug,
+      subTitle: properties.subTitle,
       description: properties.description,
       cover: properties.cover,
       chapters: properties.chapters,
@@ -144,6 +160,8 @@ export const SeriesMold = Mold<Series, SeriesProperties>({
     title: overrides.title ?? Forger(SeriesTitleMold).forgeWithSeed(seed),
     tags: overrides.tags ?? [],
     slug: overrides.slug ?? Forger(SeriesSlugMold).forgeWithSeed(seed),
+    subTitle:
+      overrides.subTitle ?? Forger(SeriesSubTitleMold).forgeWithSeed(seed),
     description:
       overrides.description ??
       Forger(SeriesDescriptionMold).forgeWithSeed(seed),
@@ -287,14 +305,20 @@ export const SeriesRepositoryMold = Mold<
         (error) => error as AggregateNotFoundError<"Series"> | UnexpectedError
       );
 
-    const search: SeriesRepository["search"] = (title: string) =>
+    const search: SeriesRepository["search"] = (criteria) =>
       fromPromise<Series[], UnexpectedError>(
         new Promise((resolve) => {
           const results = instances
             .filter((_, series) => {
-              if (title) {
-                const keyword = title.toLowerCase();
-                if (!series.title.toLowerCase().includes(keyword)) {
+              if (criteria.slug && series.slug !== criteria.slug) {
+                return false;
+              }
+
+              if (criteria.tags && criteria.tags.length > 0) {
+                const hasTag = criteria.tags.some((tag) =>
+                  series.tags.includes(tag)
+                );
+                if (!hasTag) {
                   return false;
                 }
               }

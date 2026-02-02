@@ -24,6 +24,7 @@ export type UseImageDropzoneReturn = {
 export const useImageDropzone = (
   options: UseImageDropzoneOptions
 ): UseImageDropzoneReturn => {
+  const { enabled = true, onFilesDropped } = options;
   const [isDragOver, setIsDragOver] = useState(false);
 
   const filterImageFiles = useCallback((files: FileList | File[]) => {
@@ -36,10 +37,10 @@ export const useImageDropzone = (
     (event: DragEvent<HTMLElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      if (options.enabled === false) return;
+      if (!enabled) return;
       setIsDragOver(true);
     },
-    [options.enabled]
+    [enabled]
   );
 
   const handleDragLeave = useCallback((event: DragEvent<HTMLElement>) => {
@@ -54,24 +55,24 @@ export const useImageDropzone = (
       event.stopPropagation();
       setIsDragOver(false);
 
-      if (options.enabled === false) return;
+      if (!enabled) return;
 
       const imageFiles = filterImageFiles(event.dataTransfer.files);
       if (imageFiles.length > 0) {
-        await options.onFilesDropped(imageFiles);
+        await onFilesDropped(imageFiles);
       }
     },
-    [options.enabled, options.onFilesDropped, filterImageFiles]
+    [enabled, onFilesDropped, filterImageFiles]
   );
 
   const handlePaste = useCallback(
     async (event: ClipboardEvent<HTMLElement>) => {
-      if (options.enabled === false) return;
+      if (!enabled) return;
 
       const items = event.clipboardData.items;
       const imageFiles: File[] = [];
 
-      for (const item of items) {
+      for (const item of Array.from(items)) {
         if (item.type.startsWith("image/")) {
           const file = item.getAsFile();
           if (file) imageFiles.push(file);
@@ -80,10 +81,10 @@ export const useImageDropzone = (
 
       if (imageFiles.length > 0) {
         event.preventDefault();
-        await options.onFilesDropped(imageFiles);
+        await onFilesDropped(imageFiles);
       }
     },
-    [options.enabled, options.onFilesDropped]
+    [enabled, onFilesDropped]
   );
 
   return {

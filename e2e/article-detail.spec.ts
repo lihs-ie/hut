@@ -114,12 +114,6 @@ test.describe("article detail page", () => {
     // Wait for content to load including images
     await page.waitForLoadState("networkidle");
 
-    // Check for inline image in the article body (not the header image)
-    // The image has alt text "コードを書いている様子"
-    const inlineImage = page.locator("article img, .prose img, main img").filter({
-      has: page.locator('[alt*="コード"]'),
-    });
-
     // At least one image should be visible
     const images = page.locator("article img, .prose img");
     const imageCount = await images.count();

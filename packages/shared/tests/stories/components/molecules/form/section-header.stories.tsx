@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { SectionHeader } from "@shared/components/molecules/form/section-header";
-import { PlusIcon } from "@shared/components/atoms/icon";
+import { PlusIcon } from "@shared/components/atoms/icon/plus";
 
 const meta = {
   component: SectionHeader,
@@ -47,7 +47,7 @@ export const WithButton: Story = {
           cursor: "pointer",
         }}
       >
-        <PlusIcon style={{ width: "1rem", height: "1rem" }} />
+        <PlusIcon className="icon-sm" />
         追加
       </button>
     ),
@@ -74,7 +74,7 @@ export const CareerSection: Story = {
           cursor: "pointer",
         }}
       >
-        <PlusIcon style={{ width: "1rem", height: "1rem" }} />
+        <PlusIcon className="icon-sm" />
         追加
       </button>
     ),

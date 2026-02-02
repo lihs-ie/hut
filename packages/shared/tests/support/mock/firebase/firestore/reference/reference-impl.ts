@@ -12,7 +12,7 @@ import { FirestoreImpl } from "../database/firestore-impl"
 export class DocumentReferenceImpl<T = DocumentData>
   implements DocumentReference<T>
 {
-  readonly type: "document" = "document"
+  readonly type = "document" as const
 
   constructor(
     readonly firestore: FirestoreImpl,
@@ -54,12 +54,20 @@ export class DocumentReferenceImpl<T = DocumentData>
       converter
     )
   }
+
+  toJSON(): object {
+    return {
+      type: this.type,
+      path: this.path,
+      id: this.id
+    }
+  }
 }
 
 export class CollectionReferenceImpl<T = DocumentData>
   implements CollectionReference<T>, Query<T>
 {
-  readonly type: "collection" = "collection"
+  readonly type = "collection" as const
 
   constructor(
     readonly firestore: FirestoreImpl,
@@ -156,7 +164,7 @@ export function doc(
 ): DocumentReferenceImpl {
   let firestore: FirestoreImpl
   let fullPath: string
-  let converter: FirestoreDataConverter<any> | null = null
+  let converter: FirestoreDataConverter<unknown> | null = null
 
   if ("firestore" in firestoreOrReference) {
     firestore = firestoreOrReference.firestore as FirestoreImpl

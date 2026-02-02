@@ -28,6 +28,8 @@ import {
   SlugMold,
   SlugProperties,
 } from "../common/slug";
+import { PublishStatusMold } from "../common/status";
+import { PublishStatus } from "@shared/domains/common";
 
 export type MemoIdentifierProperties = {
   value: string;
@@ -81,6 +83,7 @@ export type MemoProperties = {
   slug: MemoSlug;
   entries: MemoEntry[];
   tags: TagIdentifier[];
+  status: PublishStatus;
   timeline: Timeline;
 };
 
@@ -92,6 +95,7 @@ export const MemoMold = Mold<Memo, MemoProperties>({
       slug: properties.slug,
       entries: properties.entries,
       tags: properties.tags,
+      status: properties.status,
       timeline: properties.timeline,
     }),
   prepare: (overrides, seed) => ({
@@ -102,6 +106,7 @@ export const MemoMold = Mold<Memo, MemoProperties>({
     entries:
       overrides.entries ?? Forger(MemoEntryMold).forgeMultiWithSeed(3, seed),
     tags: overrides.tags ?? [],
+    status: overrides.status ?? Forger(PublishStatusMold).forgeWithSeed(seed),
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
 });
@@ -240,8 +245,13 @@ export const MemoRepositoryMold = Mold<
         new Promise((resolve) => {
           const results = instances
             .filter((_, memo) => {
-              if (criteria.tag && !memo.tags.includes(criteria.tag)) {
-                return false;
+              if (criteria.tags && criteria.tags.length > 0) {
+                const hasTag = criteria.tags.some((tag) =>
+                  memo.tags.includes(tag)
+                );
+                if (!hasTag) {
+                  return false;
+                }
               }
 
               if (criteria.freeWord) {

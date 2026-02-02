@@ -2,11 +2,13 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@shared/*": ["./src/*"]
+      "@shared/*": ["./src/*"],
+      "@tests/*": ["./tests/*"]
     }
   },
   "include": [
     "src/**/*",
+    "tests/**/*",
     "types/**/*.d.ts",
     ".storybook/**/*",
     "tests/stories/components/molecules/logo",

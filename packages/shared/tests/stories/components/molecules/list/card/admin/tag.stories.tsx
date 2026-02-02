@@ -1,36 +1,53 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
-import { AdminTagCard } from "@shared/components/molecules/list/card/admin/tag";
-import { Builder } from "../../../../../../support/molds";
-import { TagAttributeFactory } from "../../../../../../support/molds/domains/attributes/tag";
+import { TagCard } from "@shared/components/molecules/list/card/admin/tag";
+import { TagMold } from "../../../../../../support/molds/domains/attributes/tag";
+import { Forger } from "@lihs-ie/forger-ts";
 
 const meta = {
-  component: AdminTagCard,
+  component: TagCard,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof AdminTagCard>;
+} satisfies Meta<typeof TagCard>;
 export default meta;
 
-type Story = StoryObj<typeof AdminTagCard>;
+type Story = StoryObj<typeof TagCard>;
+
+const tagForger = Forger(TagMold);
 
 export const Default: Story = {
-  args: {
-    tag: Builder(TagAttributeFactory).build(),
-    href: "/tags/edit/123",
-  },
+  args: (() => {
+    const tag = tagForger.forge();
+    return {
+      logo: tag.logo,
+      name: tag.name,
+      createdAt: tag.timeline.createdAt,
+      href: "/tags/edit/123",
+    };
+  })(),
 };
 
 export const LongName: Story = {
-  args: {
-    tag: Builder(TagAttributeFactory).build({ name: "TypeScript React" }),
-    href: "/tags/edit/123",
-  },
+  args: (() => {
+    const tag = tagForger.forge();
+    return {
+      logo: tag.logo,
+      name: "TypeScript React",
+      createdAt: tag.timeline.createdAt,
+      href: "/tags/edit/123",
+    };
+  })(),
 };
 
 export const ShortName: Story = {
-  args: {
-    tag: Builder(TagAttributeFactory).build({ name: "Go" }),
-    href: "/tags/edit/123",
-  },
+  args: (() => {
+    const tag = tagForger.forge();
+    return {
+      logo: tag.logo,
+      name: "Go",
+      createdAt: tag.timeline.createdAt,
+      href: "/tags/edit/123",
+    };
+  })(),
 };

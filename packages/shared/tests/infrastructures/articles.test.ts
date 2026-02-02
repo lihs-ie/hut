@@ -11,7 +11,9 @@ import {
   ArticleIdentifierFactory,
   SlugFactory,
 } from "../support/molds/domains/article/common";
-import { PublishStatus, Tag } from "@shared/domains/common";
+import { PublishStatus } from "@shared/domains/common";
+import { TagIdentifier } from "@shared/domains/attributes/tag";
+import { TagIdentifierMold } from "../support/molds/domains/attributes/tag";
 import {
   isAggregateNotFoundError,
   isDuplicationError,
@@ -35,15 +37,21 @@ describe("infrastructures/articles", () => {
 
   const getOperations = () => operations as FirestoreOperations;
 
+  // テスト用のTagIdentifier定数
+  const createTagIdentifier = (seed: number): TagIdentifier =>
+    Builder(TagIdentifierMold).buildWith(seed);
+
+  const TestTags = {
+    TYPESCRIPT: createTagIdentifier(1001),
+    REACT: createTagIdentifier(1002),
+    RUST: createTagIdentifier(1003),
+  };
+
   const createCriteria = (params: {
     slug?: ArticleSlug | null;
-    status?:
-      | typeof PublishStatus.DRAFT
-      | typeof PublishStatus.PUBLISHED
-      | typeof PublishStatus.ARCHIVED
-      | null;
+    status?: PublishStatus | null;
     freeWord?: string | null;
-    tags?: Tag[] | null;
+    tags?: TagIdentifier[] | null;
   }): Criteria => {
     return validateCriteria({
       slug: params.slug ?? null,
@@ -339,16 +347,16 @@ describe("infrastructures/articles", () => {
           getOperations(),
         );
         const article1 = Builder(ArticleFactory).buildWith(60, {
-          tags: [Tag.TYPESCRIPT, Tag.REACT],
+          tags: [TestTags.TYPESCRIPT, TestTags.REACT],
         });
         const article2 = Builder(ArticleFactory).buildWith(61, {
-          tags: [Tag.RUST],
+          tags: [TestTags.RUST],
         });
 
         await repository.persist(article1).unwrap();
         await repository.persist(article2).unwrap();
 
-        const criteria = createCriteria({ tags: [Tag.TYPESCRIPT] });
+        const criteria = createCriteria({ tags: [TestTags.TYPESCRIPT] });
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(1);
@@ -426,15 +434,15 @@ describe("infrastructures/articles", () => {
         );
         const article1 = Builder(ArticleFactory).buildWith(100, {
           status: PublishStatus.PUBLISHED,
-          tags: [Tag.TYPESCRIPT],
+          tags: [TestTags.TYPESCRIPT],
         });
         const article2 = Builder(ArticleFactory).buildWith(101, {
           status: PublishStatus.DRAFT,
-          tags: [Tag.TYPESCRIPT],
+          tags: [TestTags.TYPESCRIPT],
         });
         const article3 = Builder(ArticleFactory).buildWith(102, {
           status: PublishStatus.PUBLISHED,
-          tags: [Tag.RUST],
+          tags: [TestTags.RUST],
         });
 
         await repository.persist(article1).unwrap();
@@ -443,7 +451,7 @@ describe("infrastructures/articles", () => {
 
         const criteria = createCriteria({
           status: PublishStatus.PUBLISHED,
-          tags: [Tag.TYPESCRIPT],
+          tags: [TestTags.TYPESCRIPT],
         });
         const found = await repository.search(criteria).unwrap();
 

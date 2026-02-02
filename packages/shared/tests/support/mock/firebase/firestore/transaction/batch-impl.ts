@@ -24,7 +24,7 @@ export class WriteBatchImpl implements WriteBatch {
   ): WriteBatch
   set<T = DocumentData>(
     documentRef: DocumentReference<T>,
-    data: any,
+    data: T | Partial<T>,
     options?: SetOptions
   ): WriteBatch {
     this.operations.push({
@@ -43,22 +43,22 @@ export class WriteBatchImpl implements WriteBatch {
   update<T = DocumentData>(
     documentRef: DocumentReference<T>,
     field: string | FieldPath,
-    value: any,
-    ...moreFieldsAndValues: any[]
+    value: unknown,
+    ...moreFieldsAndValues: unknown[]
   ): WriteBatch
   update<T = DocumentData>(
     documentRef: DocumentReference<T>,
     dataOrField: UpdateData<T> | string | FieldPath,
-    value?: any,
-    ...moreFieldsAndValues: any[]
+    value?: unknown,
+    ...moreFieldsAndValues: unknown[]
   ): WriteBatch {
-    let updateData: any
+    let updateData: Record<string, unknown>
 
     if (
       typeof dataOrField === "object" &&
       !(dataOrField instanceof FieldPath)
     ) {
-      updateData = dataOrField
+      updateData = dataOrField as Record<string, unknown>
     } else {
       updateData = {}
       const fieldPath =
@@ -68,7 +68,7 @@ export class WriteBatchImpl implements WriteBatch {
       for (let i = 0; i < moreFieldsAndValues.length; i += 2) {
         const field = moreFieldsAndValues[i]
         const val = moreFieldsAndValues[i + 1]
-        const path = field instanceof FieldPath ? field.toString() : field
+        const path = field instanceof FieldPath ? field.toString() : String(field)
         updateData[path] = val
       }
     }

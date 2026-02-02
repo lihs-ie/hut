@@ -11,7 +11,20 @@ export default meta;
 export const Default: StoryObj<typeof HeaderPresenter> = {
   args: {
     currentTheme: "light",
-    onToggleTheme() {},
+    isAdmin: true,
+  },
+};
+
+export const NotAdmin: StoryObj<typeof HeaderPresenter> = {
+  args: {
+    currentTheme: "light",
+    isAdmin: false,
+  },
+};
+
+export const DarkTheme: StoryObj<typeof HeaderPresenter> = {
+  args: {
+    currentTheme: "dark",
     isAdmin: true,
   },
 };

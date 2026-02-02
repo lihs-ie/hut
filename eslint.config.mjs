@@ -59,9 +59,22 @@ const eslintConfig = defineConfig([
     rules: noUnusedVarsRule,
   },
   {
+    name: "shared/tests",
+    files: ["packages/shared/tests/**/*.{js,jsx,ts,tsx}"],
+    ignores: ["packages/shared/tests/stories/**/*.stories.{js,jsx,ts,tsx}"],
+    extends: [...nextTs],
+    rules: noUnusedVarsRule,
+  },
+  {
     name: "storybook",
     files: ["packages/shared/tests/stories/**/*.stories.{js,jsx,ts,tsx}"],
     extends: [...nextTs, ...storybook.configs["flat/recommended"]],
+    rules: noUnusedVarsRule,
+  },
+  {
+    name: "e2e",
+    files: ["e2e/**/*.{js,jsx,ts,tsx}"],
+    extends: [...nextTs],
     rules: noUnusedVarsRule,
   },
 ]);

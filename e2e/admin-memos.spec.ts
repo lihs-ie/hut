@@ -4,9 +4,6 @@ type TestArgs = {
   page: Page;
 };
 
-/**
- * Memo management tests - require authentication
- */
 test.describe("memo management", () => {
   test("memo management page renders", async ({ page }: TestArgs) => {
     await page.goto("/admin/memos");

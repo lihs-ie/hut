@@ -20,7 +20,7 @@ export const TextInput = forwardRef<HTMLInputElement, Props>((props, ref) => {
       placeholder={props.placeholder}
       value={props.value}
       onChange={(event: ChangeEvent<HTMLInputElement>) => {
-        props.onChange && props.onChange(event.target.value);
+        props.onChange?.(event.target.value);
       }}
       autoFocus={props.autoFocus}
       disabled={props.disabled}

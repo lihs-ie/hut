@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { LockIcon, GlobeIcon, MessageSquareIcon } from "@shared/components/atoms/icon";
+import { LockIcon } from "@shared/components/atoms/icon/lock";
+import { GlobeIcon } from "@shared/components/atoms/icon/globe";
+import { MessageSquareIcon } from "@shared/components/atoms/icon/message";
 
 import { AdminItemCard } from "@shared/components/molecules/list/card/admin/item";
 
