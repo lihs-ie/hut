@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { FileTextIcon } from "@shared/components/atoms/icon";
+import { FileTextIcon } from "@shared/components/atoms/icon/file-text";
 
 import { VariantButton } from "@shared/components/atoms/button/variant";
 

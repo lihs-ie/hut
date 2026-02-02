@@ -49,7 +49,7 @@ async function getDocsTypeSafe<T = DocumentData>(
     return getDocs(query) as Promise<QuerySnapshot<T>>
   } else if (
     "execute" in query &&
-    typeof (query as any).execute === "function"
+    typeof (query as { execute?: (...args: unknown[]) => unknown }).execute === "function"
   ) {
     const queryImpl = query as QueryImpl<T>
     return queryImpl.execute() as Promise<QuerySnapshot<T>>

@@ -183,9 +183,9 @@ export const FirebaseMemoRepository = (
       (async () => {
         const constraints = [];
 
-        if (criteria.tag) {
+        if (criteria.tags && criteria.tags.length > 0) {
           constraints.push(
-            operations.where("tags", "array-contains", criteria.tag),
+            operations.where("tags", "array-contains-any", criteria.tags),
           );
         }
 

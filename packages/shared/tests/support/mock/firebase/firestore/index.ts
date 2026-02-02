@@ -51,6 +51,7 @@ export type { FirestoreFixture } from "./test-seed"
 
 export type {
   Firestore,
+  FirestoreOperations,
   DocumentReference,
   CollectionReference,
   DocumentSnapshot,

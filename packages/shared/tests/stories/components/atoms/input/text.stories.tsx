@@ -48,7 +48,7 @@ export const Interactive: StoryObj<typeof TextInput> = {
         <TextInput
           placeholder="入力してください"
           value={value}
-          onChange={(event) => setValue(event.target.value)}
+          onChange={(newValue) => setValue(newValue)}
         />
         <p style={{ marginTop: "1rem", color: "var(--muted-foreground)", fontSize: "0.875rem" }}>
           入力値: {value || "(空)"}

@@ -182,13 +182,14 @@ export class QueryEngine {
     return field instanceof FieldPath ? field.toString() : field
   }
 
-  private static getNestedValue(obj: any, path: string): unknown {
+  private static getNestedValue(obj: Record<string, unknown>, path: string): unknown {
     const keys = path.split(".")
-    let current = obj
+    let current: unknown = obj
 
     for (const key of keys) {
       if (current === null || current === undefined) return undefined
-      current = current[key]
+      if (typeof current !== "object") return undefined
+      current = (current as Record<string, unknown>)[key]
     }
 
     return current
@@ -209,7 +210,7 @@ export class QueryEngine {
       const keysB = Object.keys(b as object)
       if (keysA.length !== keysB.length) return false
       return keysA.every((key) =>
-        this.isEqual((a as any)[key], (b as any)[key])
+        this.isEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])
       )
     }
 

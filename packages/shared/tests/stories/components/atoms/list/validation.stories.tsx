@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { ValidationErrorList } from "@shared/components/atoms/list/validation";
-import { ValidationError } from "@shared/aspects/error";
-import { Builder, StringFactory } from "../../../../support/molds";
+import { ValidationError, validationError } from "@shared/aspects/error";
 
 const meta = {
   component: ValidationErrorList,
@@ -10,14 +9,11 @@ const meta = {
 
 export default meta;
 
-const createError = (): ValidationError => ({
-  field: Builder(StringFactory(1, 10)).build(),
-  description: Builder(StringFactory(10, 50)).build(),
-  _tag: Symbol("ValidationError"),
-});
+const createError = (seed: number): ValidationError =>
+  validationError(`field_${seed}`, `This is error description for field ${seed}`);
 
 export const Default: StoryObj<typeof ValidationErrorList> = {
   args: {
-    errors: [createError(), createError(), createError()],
+    errors: [createError(1), createError(2), createError(3)],
   },
 };

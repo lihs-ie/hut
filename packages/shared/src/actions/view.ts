@@ -4,13 +4,15 @@ import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
 import { FirebaseProvider } from "@shared/providers/infrastructure/firebase";
 import { SearchReferenceIdentifier } from "@shared/domains/search-token/reference";
+import { FirestoreOperations } from "@shared/infrastructures/common";
+import { Firestore } from "firebase/firestore";
 
-type PageViewCounter = {
+export type PageViewCounter = {
   count: number;
   updatedAt: string;
 };
 
-type PageViewDedup = {
+export type PageViewDedup = {
   createdAt: string;
 };
 
@@ -22,35 +24,27 @@ const jstOffsetMs = 9 * 60 * 60 * 1000;
 /**
  * Builds a YYYY-MM-DD key in JST.
  */
-const getJstDateKey = (date: Date): string =>
+export const getJstDateKey = (date: Date): string =>
   new Date(date.getTime() + jstOffsetMs).toISOString().slice(0, 10);
 
-export async function incrementViewCount(
-  identifier: SearchReferenceIdentifier,
+export type IncrementViewCountCoreParams = {
+  firestore: Firestore;
+  operations: FirestoreOperations;
+  identifier: SearchReferenceIdentifier;
+  sessionKey: string;
+  now: Date;
+};
+
+/**
+ * Core function for incrementing view count.
+ * This function contains the Firestore transaction logic and is testable without cookies.
+ */
+export async function incrementViewCountCore(
+  params: IncrementViewCountCoreParams,
 ): Promise<void> {
-  const cookieStore = await cookies();
-
-  if (cookieStore.get(adminSessionCookieName)?.value) {
-    return;
-  }
-
-  const existingSession = cookieStore.get(viewSessionCookieName)?.value;
-  const sessionKey = existingSession ?? randomUUID();
-
-  if (!existingSession) {
-    cookieStore.set(viewSessionCookieName, sessionKey, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: viewSessionMaxAgeSeconds,
-      path: "/",
-    });
-  }
-
-  const now = new Date();
+  const { firestore, operations, identifier, sessionKey, now } = params;
   const dateKey = getJstDateKey(now);
   const dedupDocId = `${dateKey}:${sessionKey}`;
-  const { instance: firestore, operations } = FirebaseProvider.firestore;
 
   await operations.runTransaction(firestore, async (transaction) => {
     const dedupDoc = operations.doc<PageViewDedup>(
@@ -92,5 +86,38 @@ export async function incrementViewCount(
       },
       { merge: true },
     );
+  });
+}
+
+export async function incrementViewCount(
+  identifier: SearchReferenceIdentifier,
+): Promise<void> {
+  const cookieStore = await cookies();
+
+  if (cookieStore.get(adminSessionCookieName)?.value) {
+    return;
+  }
+
+  const existingSession = cookieStore.get(viewSessionCookieName)?.value;
+  const sessionKey = existingSession ?? randomUUID();
+
+  if (!existingSession) {
+    cookieStore.set(viewSessionCookieName, sessionKey, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: viewSessionMaxAgeSeconds,
+      path: "/",
+    });
+  }
+
+  const { instance: firestore, operations } = FirebaseProvider.firestore;
+
+  await incrementViewCountCore({
+    firestore,
+    operations,
+    identifier,
+    sessionKey,
+    now: new Date(),
   });
 }

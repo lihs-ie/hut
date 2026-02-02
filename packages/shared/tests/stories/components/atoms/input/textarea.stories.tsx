@@ -48,7 +48,7 @@ export const Interactive: StoryObj<typeof Textarea> = {
         <Textarea
           placeholder="入力してください"
           value={value}
-          onChange={(event) => setValue(event.target.value)}
+          onChange={(newValue) => setValue(newValue)}
           rows={6}
         />
         <p style={{ marginTop: "1rem", color: "var(--muted-foreground)", fontSize: "0.875rem" }}>

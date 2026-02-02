@@ -27,6 +27,7 @@ export default defineConfig({
       "packages/**/tests/**/*.test.{ts,tsx}",
       "packages/**/src/**/*.test.{ts,tsx}",
     ],
+    exclude: ["**/node_modules/**"],
     environment: "jsdom",
     globals: true,
     projects: [
@@ -38,7 +39,7 @@ export default defineConfig({
             "packages/**/tests/**/*.test.{ts,tsx}",
             "packages/**/src/**/*.test.{ts,tsx}",
           ],
-          exclude: ["**/stories/**"],
+          exclude: ["**/stories/**", "**/node_modules/**"],
           environment: "jsdom",
           setupFiles: ["packages/shared/tests/setup.ts"],
         },

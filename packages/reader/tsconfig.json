@@ -13,7 +13,6 @@
     ".next/types/**/*.ts",
     "next.config.ts",
     "../shared/src/actions",
-    "../shared/types",
-    "../admin/src/app/memos/new"
+    "../shared/types"
   ]
 }

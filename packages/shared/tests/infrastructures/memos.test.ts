@@ -17,8 +17,10 @@ import {
   isDuplicationError,
 } from "@shared/aspects/error";
 import type { FirestoreOperations } from "@shared/infrastructures/common";
-import type { Criteria, MemoSlug } from "@shared/domains/memo";
-import { Tag } from "@shared/domains/common";
+import { validateCriteria, type Criteria } from "@shared/domains/memo";
+import { PublishStatus } from "@shared/domains/common";
+import type { TagIdentifier } from "@shared/domains/attributes/tag";
+import { TagIdentifierMold } from "../support/molds/domains/attributes/tag";
 
 describe("infrastructures/memos", () => {
   let firestore: Firestore;
@@ -32,14 +34,26 @@ describe("infrastructures/memos", () => {
 
   const getOperations = () => operations as FirestoreOperations;
 
+  // テスト用のTagIdentifier定数
+  const createTagIdentifier = (seed: number): TagIdentifier =>
+    Builder(TagIdentifierMold).buildWith(seed);
+
+  const TestTags = {
+    TYPESCRIPT: createTagIdentifier(1001),
+    REACT: createTagIdentifier(1002),
+    RUST: createTagIdentifier(1003),
+  };
+
   const createCriteria = (params: {
-    tag?: Tag | null;
+    tags?: TagIdentifier[] | null;
     freeWord?: string | null;
+    status?: PublishStatus | null;
   }): Criteria => {
-    return {
-      tag: params.tag ?? null,
+    return validateCriteria({
+      tags: params.tags ?? null,
       freeWord: params.freeWord ?? null,
-    } as Criteria;
+      status: params.status ?? null,
+    }).unwrap();
   };
 
   describe("FirebaseMemoRepository", () => {
@@ -206,10 +220,10 @@ describe("infrastructures/memos", () => {
 
         await repository.persist(memo).unwrap();
 
-        const nonExistentId = Builder(MemoIdentifierFactory).buildWith(36);
-        const identifiers = [memo.identifier, nonExistentId];
+        const nonExistentIdentifier = Builder(MemoIdentifierFactory).buildWith(36);
+        const identifiers = [memo.identifier, nonExistentIdentifier];
 
-        const result = await repository.ofIdentifiers(identifiers).match({
+        const result = await repository.ofIdentifiers(identifiers, true).match({
           ok: () => null,
           err: (error) => error,
         });
@@ -237,16 +251,16 @@ describe("infrastructures/memos", () => {
       it("tagでメモを検索できる", async () => {
         const repository = FirebaseMemoRepository(firestore, getOperations());
         const memo1 = Builder(MemoFactory).buildWith(50, {
-          tags: [Tag.TYPESCRIPT, Tag.REACT],
+          tags: [TestTags.TYPESCRIPT, TestTags.REACT],
         });
         const memo2 = Builder(MemoFactory).buildWith(51, {
-          tags: [Tag.RUST],
+          tags: [TestTags.RUST],
         });
 
         await repository.persist(memo1).unwrap();
         await repository.persist(memo2).unwrap();
 
-        const criteria = createCriteria({ tag: Tag.TYPESCRIPT });
+        const criteria = createCriteria({ tags: [TestTags.TYPESCRIPT] });
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(1);

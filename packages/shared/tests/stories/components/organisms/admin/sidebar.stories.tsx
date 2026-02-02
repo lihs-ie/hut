@@ -1,11 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import {
-  FileTextIcon,
-  MessageSquareIcon,
-  BookOpenIcon,
-  InfoIcon,
-  GithubIcon,
-} from "@shared/components/atoms/icon";
+import { FileTextIcon } from "@shared/components/atoms/icon/file-text";
+import { MessageSquareIcon } from "@shared/components/atoms/icon/message";
+import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
+import { InfoIcon } from "@shared/components/atoms/icon/info";
+import { GithubIcon } from "@shared/components/atoms/icon/github";
 
 import { AdminSidebar } from "../../../../../../admin/src/app/admin/_components/organisms/admin/sidebar";
 
@@ -13,6 +11,7 @@ const meta = {
   component: AdminSidebar,
   parameters: {
     layout: "fullscreen",
+    nextjs: { appDirectory: true },
   },
 } satisfies Meta<typeof AdminSidebar>;
 
@@ -49,28 +48,6 @@ const defaultItems = [
 export const Default: StoryObj<typeof AdminSidebar> = {
   args: {
     items: defaultItems,
-    currentPath: "/admin/scraps",
-  },
-};
-
-export const ArticlesActive: StoryObj<typeof AdminSidebar> = {
-  args: {
-    items: defaultItems,
-    currentPath: "/admin/articles",
-  },
-};
-
-export const BooksActive: StoryObj<typeof AdminSidebar> = {
-  args: {
-    items: defaultItems,
-    currentPath: "/admin/books",
-  },
-};
-
-export const StatsActive: StoryObj<typeof AdminSidebar> = {
-  args: {
-    items: defaultItems,
-    currentPath: "/admin/stats",
   },
 };
 
@@ -88,6 +65,5 @@ export const MinimalItems: StoryObj<typeof AdminSidebar> = {
         label: "統計",
       },
     ],
-    currentPath: "/admin/articles",
   },
 };

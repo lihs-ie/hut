@@ -525,14 +525,7 @@ test.describe.serial("profile save with Firestore verification", () => {
     if (hasError) {
       // Get error details if available
       const errorDetails = await page.getByRole("dialog").textContent();
-      console.log("Save error:", errorDetails);
-      console.log("Console errors:", consoleErrors);
       throw new Error(`Profile save failed: ${errorDetails}`);
-    }
-
-    // Print any console errors for debugging
-    if (consoleErrors.length > 0) {
-      console.log("Console errors during save:", consoleErrors);
     }
 
     // Reload page to verify saved data persisted
@@ -564,7 +557,6 @@ test.describe.serial("profile save with Firestore verification", () => {
   test("restore original profile data", async ({ page }: TestArgs) => {
     // Skip if we don't have original values
     if (!originalName) {
-      console.log("Skipping restore - no original name stored");
       return;
     }
 

@@ -7,7 +7,6 @@ import {
   tagNameSchema,
   tagSchema,
 } from "@shared/domains/attributes/tag";
-import { Factory, StringFactory, Characters } from "../../builder";
 import { Forger, Mold, StringMold } from "@lihs-ie/forger-ts";
 import { Image } from "@shared/domains/common/image";
 import { Timeline } from "@shared/domains/common";
@@ -36,7 +35,7 @@ export const TagNameMold = Mold<TagName, TagNameProperties>({
   }),
 });
 
-type TagProperties = {
+export type TagProperties = {
   identifier: TagIdentifier;
   name: TagName;
   logo: Image;
@@ -44,17 +43,14 @@ type TagProperties = {
 };
 
 export const TagMold = Mold<Tag, TagProperties>({
-  pour: (properties: TagProperties): Tag =>
+  pour: (properties) =>
     tagSchema.parse({
       identifier: properties.identifier,
       name: properties.name,
       logo: properties.logo,
       timeline: properties.timeline,
     }),
-  prepare: (
-    overrides: Partial<TagProperties>,
-    seed: number
-  ): TagProperties => ({
+  prepare: (overrides, seed) => ({
     identifier:
       overrides.identifier ?? Forger(TagIdentifierMold).forgeWithSeed(seed),
     name: overrides.name ?? Forger(TagNameMold).forgeWithSeed(seed),

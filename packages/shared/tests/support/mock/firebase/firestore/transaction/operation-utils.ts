@@ -1,4 +1,5 @@
 
+import { MemoryStore } from "../core/memory-store"
 import { SetOptions } from "../../types/firestore"
 import { DocumentReferenceImpl } from "../reference/reference-impl"
 
@@ -6,13 +7,13 @@ export type CommonOperation =
   | {
       type: "set"
       ref: DocumentReferenceImpl
-      data: any
+      data: Record<string, unknown>
       options?: SetOptions | undefined
     }
   | {
       type: "update"
       ref: DocumentReferenceImpl
-      data: any
+      data: Record<string, unknown>
     }
   | {
       type: "delete"
@@ -20,7 +21,7 @@ export type CommonOperation =
     }
 
 export class OperationExecutor {
-  static applyOperation(memoryStore: any, operation: CommonOperation): void {
+  static applyOperation(memoryStore: MemoryStore, operation: CommonOperation): void {
     switch (operation.type) {
       case "set":
         this.applySetOperation(memoryStore, operation)
@@ -37,7 +38,7 @@ export class OperationExecutor {
   }
 
   private static applySetOperation(
-    memoryStore: any,
+    memoryStore: MemoryStore,
     operation: CommonOperation & { type: "set" }
   ): void {
     if (operation.options?.merge || operation.options?.mergeFields) {
@@ -62,7 +63,7 @@ export class OperationExecutor {
   }
 
   private static applyUpdateOperation(
-    memoryStore: any,
+    memoryStore: MemoryStore,
     operation: CommonOperation & { type: "update" }
   ): void {
     const existingData = memoryStore.getDocument(operation.ref.path)
@@ -80,9 +81,9 @@ export class OperationExecutor {
     memoryStore.setDocument(operation.ref.path, updatedData)
   }
 
-  private static setNestedValue(obj: any, path: string, value: any): void {
+  private static setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
     const keys = path.split(".")
-    let current = obj
+    let current: Record<string, unknown> = obj
 
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i]
@@ -94,7 +95,7 @@ export class OperationExecutor {
       ) {
         current[key] = {}
       }
-      current = current[key]
+      current = current[key] as Record<string, unknown>
     }
 
     const lastKey = keys[keys.length - 1]

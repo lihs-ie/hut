@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
-import { Theme, ThemeToggle } from "@shared/components/molecules/toggle/theme";
-import { useState } from "react";
+import { ThemeToggle } from "@shared/components/molecules/toggle/theme";
 
 const meta = {
   component: ThemeToggle,
@@ -9,19 +8,14 @@ const meta = {
 
 export default meta;
 
-export const Default: StoryObj<typeof ThemeToggle> = {
+export const Light: StoryObj<typeof ThemeToggle> = {
   args: {
     value: "light",
   },
-  render: (args) => {
-    const [value, setValue] = useState<Theme>(args.value);
+};
 
-    return (
-      <ThemeToggle
-        {...args}
-        value={value}
-        onToggle={() => setValue(value === "light" ? "dark" : "light")}
-      />
-    );
+export const Dark: StoryObj<typeof ThemeToggle> = {
+  args: {
+    value: "dark",
   },
 };

@@ -4,14 +4,17 @@ import { MemoCreateForm } from "@shared/components/organisms/memo/create/form";
 
 const meta = {
   component: MemoCreateForm,
+  parameters: {
+    nextjs: { appDirectory: true },
+  },
 } satisfies Meta<typeof MemoCreateForm>;
 
 export default meta;
 
 export const Default: StoryObj<typeof MemoCreateForm> = {
   args: {
-    onCreate: async (title, status) => {
-      console.log("Creating memo with title:", title, "and status:", status);
+    persist: async (unvalidated) => {
+      console.log("Persisting memo:", unvalidated);
     },
   },
 };

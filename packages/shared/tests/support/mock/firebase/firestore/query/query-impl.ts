@@ -22,7 +22,7 @@ import {
 import { DocumentEntry, QueryEngine } from "./query-engine"
 
 export class QueryImpl<T = DocumentData> implements Query<T> {
-  readonly type: "query" = "query"
+  readonly type = "query" as const
 
   constructor(
     readonly firestore: FirestoreImpl,
@@ -101,7 +101,7 @@ export class QueryImpl<T = DocumentData> implements Query<T> {
   }
 
   private getCollectionGroupDocuments(
-    memoryStore: any,
+    memoryStore: { getAllDocumentPaths(): string[]; getDocument(path: string): DocumentData | undefined },
     collectionId: string
   ): DocumentEntry[] {
     const allPaths = memoryStore.getAllDocumentPaths()

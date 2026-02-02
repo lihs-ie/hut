@@ -1,10 +1,8 @@
 import {
   ContentType,
-  contentTypeSchema,
   Criteria,
   criteriaSchema,
   Order,
-  orderSchema,
   SearchIndex,
   SearchIndexExcerpt,
   SearchIndexIdentifier,
@@ -100,7 +98,7 @@ export const CriteriaMold = Mold<Criteria, CriteriaProperties>({
       sortBy: properties.sortBy,
       order: properties.order,
     }),
-  prepare: (overrides, seed) => ({
+  prepare: (overrides, _seed) => ({
     freeWord: overrides.freeWord ?? null,
     tags: overrides.tags ?? null,
     type: overrides.type ?? null,
