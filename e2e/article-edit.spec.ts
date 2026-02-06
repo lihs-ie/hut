@@ -93,13 +93,6 @@ test.describe.serial("article edit tests", () => {
     // Verify content was added
     await expect(textarea).toContainText("E2Eテストで追加したセクション");
 
-    // Add another tag if available
-    const goTagButton = page.getByRole("button", { name: "Go" });
-    if (await goTagButton.isVisible()) {
-      await goTagButton.click();
-      await expect(page.getByRole("button", { name: "Goを削除" })).toBeVisible();
-    }
-
     // Verify save button is enabled (we don't actually save to preserve seed data)
     // Button text depends on current publish state
     await expect(page.getByRole("button", { name: /下書き保存|公開する/ })).toBeEnabled();

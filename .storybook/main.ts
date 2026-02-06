@@ -25,7 +25,7 @@ const applyViteConfig: StorybookConfig["viteFinal"] = async (config) => {
 const config: StorybookConfig = {
   stories: [
     "../packages/shared/tests/**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))",
-    "../packages/admin/src/tests/**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))",
+    "../packages/admin/tests/**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))",
   ],
   addons: [
     "@chromatic-com/storybook",

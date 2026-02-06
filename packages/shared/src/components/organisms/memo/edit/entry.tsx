@@ -181,13 +181,14 @@ export const EntryEditor = (props: Props) => {
       <div className={styles.button}>
         <SimpleButton
           type="button"
-          onClick={() =>
-            execute({ text: value, createdAt: new Date() }, props.slug).then(
-              () => {
-                setValue("");
-              }
-            )
-          }
+          onClick={async () => {
+            try {
+              await execute({ text: value, createdAt: new Date() }, props.slug);
+              setValue("");
+            } catch {
+              // Error handling is done by the useServerAction hook
+            }
+          }}
         >
           投稿する
         </SimpleButton>

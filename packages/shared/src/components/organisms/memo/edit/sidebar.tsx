@@ -1,5 +1,5 @@
 import { PublishStatus } from "@shared/domains/common";
-import { MemoEditSidebarPresenter } from "./sidebar.presenter.";
+import { MemoEditSidebarPresenter } from "./sidebar.presenter";
 import {
   Memo,
   MemoSnapshot,

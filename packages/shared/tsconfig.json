@@ -9,13 +9,9 @@
   "include": [
     "src/**/*",
     "tests/**/*",
-    "types/**/*.d.ts",
-    ".storybook/**/*",
-    "tests/stories/components/molecules/logo",
-    "../admin/src/app/admin/_components/templates/admin/admin",
-    "../admin/src/app/admin/_components/organisms/admin",
-    "../admin/src/infrastructure/event.ts",
-    "../admin/src/app/memos/[slug]/edit",
-    "../admin/src/app/memos/new"
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    ".storybook/**/*"
   ]
 }

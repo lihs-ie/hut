@@ -1,0 +1,205 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [main, staging]
+  push:
+    branches: [main, staging]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 20
+  PNPM_VERSION: 9
+  FIREBASE_COMPOSE_FILE: packages/shared/docker/firebase/docker-compose.yml
+  SHARD_TOTAL: 5
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "true"
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
+          E2E_AUTH_ENABLED: "true"
+
+      - name: Archive build artifacts
+        run: |
+          tar -czf admin-build.tar.gz -C packages/admin .next
+          tar -czf reader-build.tar.gz -C packages/reader .next
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: build-artifacts
+          path: |
+            admin-build.tar.gz
+            reader-build.tar.gz
+          retention-days: 1
+
+  e2e:
+    name: E2E Tests (Shard ${{ matrix.shard }}/${{ strategy.job-total }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: build-artifacts
+
+      - name: Extract build artifacts
+        run: |
+          tar -xzf admin-build.tar.gz -C packages/admin
+          tar -xzf reader-build.tar.gz -C packages/reader
+
+      - name: Start Firebase Emulator
+        run: |
+          docker compose -f ${{ env.FIREBASE_COMPOSE_FILE }} up -d
+          echo "Waiting for Firebase UI (port 4000)..."
+          timeout 120 bash -c 'until curl -s http://localhost:4000 > /dev/null; do sleep 5; done'
+          echo "Firebase UI is ready"
+          echo "Waiting for Firestore Emulator (port 8085)..."
+          timeout 60 bash -c 'until curl -s http://localhost:8085 > /dev/null 2>&1; do sleep 2; done'
+          echo "Firestore Emulator is ready"
+
+      - name: Seed test data
+        run: |
+          echo "Seeding test data to Firestore Emulator..."
+          pnpm seed
+          echo "Seed completed"
+
+      - name: Start Admin application
+        run: |
+          pnpm --filter @hut/admin start &
+          timeout 60 bash -c 'until curl -s http://localhost:3001 > /dev/null 2>&1; do sleep 2; done'
+        env:
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "true"
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
+          E2E_AUTH_ENABLED: "true"
+          E2E_AUTH_SECRET: ${{ secrets.E2E_AUTH_SECRET }}
+          OIDC_ALLOWED_EMAILS: '["${{ secrets.E2E_AUTH_EMAIL }}"]'
+
+      - name: Run E2E tests (Shard ${{ matrix.shard }}/${{ env.SHARD_TOTAL }})
+        run: pnpm e2e --shard=${{ matrix.shard }}/${{ env.SHARD_TOTAL }}
+        env:
+          E2E_AUTH_SECRET: ${{ secrets.E2E_AUTH_SECRET }}
+          E2E_AUTH_UID: ${{ secrets.E2E_AUTH_UID }}
+          E2E_AUTH_EMAIL: ${{ secrets.E2E_AUTH_EMAIL }}
+          ADMIN_BASE_URL: http://localhost:3001
+          E2E_AUTH_ENABLED: "true"
+
+      - name: Upload blob report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 1
+
+      - name: Stop Firebase Emulator
+        if: always()
+        run: docker compose -f ${{ env.FIREBASE_COMPOSE_FILE }} down
+
+  e2e-result:
+    name: E2E Result
+    if: ${{ always() }}
+    needs: [e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.e2e.result }}" != "success" ]; then
+            echo "E2E tests failed or were cancelled (result: ${{ needs.e2e.result }})"
+            exit 1
+          fi
+
+  merge-reports:
+    name: Merge E2E Reports
+    if: ${{ !cancelled() }}
+    needs: [e2e]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download blob reports
+        uses: actions/download-artifact@v6
+        with:
+          path: all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - name: Merge reports
+        run: pnpm exec playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload merged report
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

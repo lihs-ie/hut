@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { AdminContentListIndex } from "@/app/admin/_components/templates/admin/content/list";
 import { Forger } from "@lihs-ie/forger-ts";
-import { TagMold } from "../../../../../../../shared/tests/support/molds/domains/attributes";
+import { TagMold } from "../../../../../../shared/tests/support/molds/domains/attributes";
 import { PublishStatus } from "@shared/domains/common";
 import { ContentType } from "@shared/domains/search-token";
 
