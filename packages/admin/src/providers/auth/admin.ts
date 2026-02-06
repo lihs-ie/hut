@@ -108,9 +108,13 @@ const getFirestoreInstance = (): Firestore => {
 
 export const FirebaseAdminProvider = {
   auth: {
-    instance: getAuthInstance(),
+    get instance(): Auth {
+      return getAuthInstance();
+    },
   },
   firestore: {
-    instance: getFirestoreInstance(),
+    get instance(): Firestore {
+      return getFirestoreInstance();
+    },
   },
 } as const;

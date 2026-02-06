@@ -63,7 +63,7 @@ const ALL_CONTENTS: ContentReference[] = [
       "Rustを使ってシステムプログラミングの基礎を学ぶシリーズです。メモリ管理、並行処理、ネットワークプログラミングなどを扱います。",
     tags: ["rust"],
   },
-  // メモ
+  // メモ（publishedのみ - draftは検索インデックスに含めない）
   {
     type: "memo",
     id: MEMO_IDS.memo1,
@@ -71,20 +71,13 @@ const ALL_CONTENTS: ContentReference[] = [
     excerpt: "Go言語ではエラーは値として扱う。goroutineは軽量スレッド。",
     tags: ["go"],
   },
-  {
-    type: "memo",
-    id: MEMO_IDS.memo2,
-    title: "TypeScript設定メモ",
-    excerpt:
-      "strict: trueは必須。noUncheckedIndexedAccessを有効にすると配列アクセスも安全になる。",
-    tags: ["typescript"],
-  },
+  // memo2 "TypeScript設定メモ" は status: "draft" のため検索インデックスに含めない
 ];
 
-// トークン識別子をエンコード（Firestore document IDとして使用可能な形式）
+// トークン識別子（Firestore document IDとしてそのまま使用）
+// Note: インフラ層と同じ形式（エンコードなし）を使用
 function encodeTokenIdentifier(identifier: string): string {
-  // スラッシュやその他の特殊文字をエンコード
-  return encodeURIComponent(identifier);
+  return identifier;
 }
 
 // タグトークンを作成
@@ -112,24 +105,29 @@ async function createTagTokens(): Promise<void> {
     const encodedTokenId = encodeTokenIdentifier(tokenIdentifier);
 
     // トークンドキュメントを作成
-    await createDocument("search-tokens", encodedTokenId, {
-      identifier: tokenIdentifier,
-      type: "tag",
-      value: tagId,
-      createdAt: now,
-      updatedAt: now,
-    });
+    // Note: インフラ層ではcreatedAt/updatedAtをFirestore Timestampとして保存
+    await createDocument(
+      "search-tokens",
+      encodedTokenId,
+      {
+        identifier: tokenIdentifier,
+        type: "tag",
+        value: tagId,
+        createdAt: now,
+        updatedAt: now,
+      },
+      { useTimestamp: true },
+    );
 
     // 参照サブコレクションを作成
     for (const content of contents) {
       const refId = `${content.type}:${content.id}`;
-      const encodedRefId = encodeURIComponent(refId);
 
       await createSubDocument(
         "search-tokens",
         encodedTokenId,
         "refs",
-        encodedRefId,
+        refId,
         {
           identifier: {
             type: content.type,
@@ -138,6 +136,7 @@ async function createTagTokens(): Promise<void> {
           score: 10.0, // タグマッチは高スコア
           updatedAt: now,
         },
+        { useTimestamp: true },
       );
     }
   }
@@ -183,24 +182,29 @@ async function createNgramTokens(): Promise<void> {
     const encodedTokenId = encodeTokenIdentifier(tokenIdentifier);
 
     // トークンドキュメントを作成
-    await createDocument("search-tokens", encodedTokenId, {
-      identifier: tokenIdentifier,
-      type: "ngram",
-      value: ngram,
-      createdAt: now,
-      updatedAt: now,
-    });
+    // Note: インフラ層ではcreatedAt/updatedAtをFirestore Timestampとして保存
+    await createDocument(
+      "search-tokens",
+      encodedTokenId,
+      {
+        identifier: tokenIdentifier,
+        type: "ngram",
+        value: ngram,
+        createdAt: now,
+        updatedAt: now,
+      },
+      { useTimestamp: true },
+    );
 
     // 参照サブコレクションを作成
     for (const { content, score } of contentRefs) {
       const refId = `${content.type}:${content.id}`;
-      const encodedRefId = encodeURIComponent(refId);
 
       await createSubDocument(
         "search-tokens",
         encodedTokenId,
         "refs",
-        encodedRefId,
+        refId,
         {
           identifier: {
             type: content.type,
@@ -209,6 +213,7 @@ async function createNgramTokens(): Promise<void> {
           score,
           updatedAt: now,
         },
+        { useTimestamp: true },
       );
     }
 

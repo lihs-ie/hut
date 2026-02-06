@@ -2,6 +2,7 @@ import {
   Firestore,
   QueryDocumentSnapshot,
   SnapshotOptions,
+  Timestamp,
 } from "firebase/firestore";
 import { FirestoreOperations, mapFirestoreError } from "./common";
 import {
@@ -21,8 +22,8 @@ type PersistedSearchToken = {
   identifier: string;
   type: string;
   value: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 };
 
 type PersistedSearchReference = {
@@ -31,7 +32,7 @@ type PersistedSearchReference = {
     content: string;
   };
   score: number;
-  updatedAt: string;
+  updatedAt: Timestamp;
 };
 
 export const FirebaseSearchTokenRepository = (
@@ -50,8 +51,8 @@ export const FirebaseSearchTokenRepository = (
           identifier: token.identifier,
           type: token.type,
           value: token.value,
-          createdAt: token.timeline.createdAt.toISOString(),
-          updatedAt: token.timeline.updatedAt.toISOString(),
+          createdAt: Timestamp.fromDate(token.timeline.createdAt),
+          updatedAt: Timestamp.fromDate(token.timeline.updatedAt),
         };
       },
       fromFirestore: (
@@ -64,8 +65,8 @@ export const FirebaseSearchTokenRepository = (
           type: data.type,
           value: data.value,
           timeline: {
-            createdAt: new Date(data.createdAt),
-            updatedAt: new Date(data.updatedAt),
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
           },
         } as Omit<SearchToken, "references">;
       },
@@ -79,7 +80,7 @@ export const FirebaseSearchTokenRepository = (
           content: reference.identifier.content,
         },
         score: reference.score,
-        updatedAt: reference.updatedAt.toISOString(),
+        updatedAt: Timestamp.fromDate(reference.updatedAt),
       };
     },
     fromFirestore: (
@@ -93,7 +94,7 @@ export const FirebaseSearchTokenRepository = (
           content: data.identifier.content,
         },
         score: data.score,
-        updatedAt: new Date(data.updatedAt),
+        updatedAt: data.updatedAt.toDate(),
       }).unwrap();
     },
   });
@@ -135,7 +136,7 @@ export const FirebaseSearchTokenRepository = (
 
         if (tokenSnapshot.exists()) {
           transaction.update(tokenDocument, {
-            updatedAt: token.timeline.updatedAt.toISOString(),
+            updatedAt: Timestamp.fromDate(token.timeline.updatedAt),
           });
         } else {
           const tokenWithoutReferences: Omit<SearchToken, "references"> = {

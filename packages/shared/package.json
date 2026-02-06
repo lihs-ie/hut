@@ -14,7 +14,8 @@
   "scripts": {
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "seed": "npx tsx scripts/seed/index.ts"
+    "seed": "npx tsx scripts/seed/index.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@shikijs/rehype": "^3.21.0",
