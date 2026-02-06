@@ -10,7 +10,6 @@
   },
   "include": [
     "src/**/*",
-    "tests/**/*",
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "next.config.ts",
@@ -18,7 +17,6 @@
     "src/app/admin/_components/templates/admin/admin",
     "src/app/admin/_components/organisms/admin",
     "../shared/src/components/atoms/icon/logout.tsx",
-    "../shared/src/components/molecules/button/logout.tsx",
-    "../shared/tests/support"
+    "../shared/src/components/molecules/button/logout.tsx"
   ]
 }

@@ -119,5 +119,67 @@ describe("search-token actions", () => {
 
       await expect(searchByToken(createSearchCondition())).rejects.toThrow();
     });
+
+    it("キャッシュからのDate文字列が正しくDateオブジェクトに復元される", async () => {
+      // unstable_cacheはJSON.stringify/parseを行うため、DateがISO文字列になる
+      // この問題をシミュレートするため、ISO文字列を含むデータを準備
+      const article = Forger(ArticleMold).forgeWithSeed(1);
+      const serializedArticle = JSON.parse(JSON.stringify(article));
+
+      // シリアライズ後、timeline.createdAtとupdatedAtは文字列になっている
+      expect(typeof serializedArticle.timeline.createdAt).toBe("string");
+      expect(typeof serializedArticle.timeline.updatedAt).toBe("string");
+
+      await setupUnwrapWithResolvedValue([serializedArticle]);
+
+      const { searchByToken } = await import("@shared/actions/search-token");
+      const result = await searchByToken(createSearchCondition());
+
+      // Date復元後、Dateオブジェクトになっていることを確認
+      expect(result[0].timeline.createdAt).toBeInstanceOf(Date);
+      expect(result[0].timeline.updatedAt).toBeInstanceOf(Date);
+    });
+
+    it("キャッシュからのMemoのentry.createdAtが正しくDateオブジェクトに復元される", async () => {
+      const memo = Forger(MemoMold).forgeWithSeed(1);
+      const serializedMemo = JSON.parse(JSON.stringify(memo));
+
+      // シリアライズ後、entries[].createdAtも文字列になっている
+      if (serializedMemo.entries.length > 0) {
+        expect(typeof serializedMemo.entries[0].createdAt).toBe("string");
+      }
+
+      await setupUnwrapWithResolvedValue([serializedMemo]);
+
+      const { searchByToken } = await import("@shared/actions/search-token");
+      const result = await searchByToken(createSearchCondition());
+
+      // Date復元後、Dateオブジェクトになっていることを確認
+      expect(result[0].timeline.createdAt).toBeInstanceOf(Date);
+      if ((result[0] as typeof memo).entries.length > 0) {
+        expect((result[0] as typeof memo).entries[0].createdAt).toBeInstanceOf(Date);
+      }
+    });
+
+    it("キャッシュからのSeriesのchapter.timelineが正しくDateオブジェクトに復元される", async () => {
+      const series = Forger(SeriesMold).forgeWithSeed(1);
+      const serializedSeries = JSON.parse(JSON.stringify(series));
+
+      // シリアライズ後、chapters[].timeline.createdAtも文字列になっている
+      if (serializedSeries.chapters.length > 0) {
+        expect(typeof serializedSeries.chapters[0].timeline.createdAt).toBe("string");
+      }
+
+      await setupUnwrapWithResolvedValue([serializedSeries]);
+
+      const { searchByToken } = await import("@shared/actions/search-token");
+      const result = await searchByToken(createSearchCondition());
+
+      // Date復元後、Dateオブジェクトになっていることを確認
+      expect(result[0].timeline.createdAt).toBeInstanceOf(Date);
+      if ((result[0] as typeof series).chapters.length > 0) {
+        expect((result[0] as typeof series).chapters[0].timeline.createdAt).toBeInstanceOf(Date);
+      }
+    });
   });
 });
