@@ -11,5 +11,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true
-  }
+  },
+  "include": ["packages/**/*", "e2e/**/*"],
+  "exclude": ["node_modules", "referendes", "scripts", ".storybook"]
 }
