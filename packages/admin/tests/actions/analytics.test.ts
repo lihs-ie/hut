@@ -25,8 +25,9 @@ const mockLoadPreviousSearchRecords = vi.fn();
 const mockLoadZeroHitSearchRecords = vi.fn();
 const mockLoadAllArticles = vi.fn();
 const mockLoadAllMemos = vi.fn();
+const mockLoadAllTags = vi.fn();
 
-vi.mock("@/actions/analytics-data-loader", () => ({
+vi.mock("@/actions/analytics/loader", () => ({
   loadCurrentPageViews: (...args: unknown[]) =>
     mockLoadCurrentPageViews(...args),
   loadPreviousPageViews: (...args: unknown[]) =>
@@ -47,6 +48,7 @@ vi.mock("@/actions/analytics-data-loader", () => ({
     mockLoadZeroHitSearchRecords(...args),
   loadAllArticles: (...args: unknown[]) => mockLoadAllArticles(...args),
   loadAllMemos: (...args: unknown[]) => mockLoadAllMemos(...args),
+  loadAllTags: (...args: unknown[]) => mockLoadAllTags(...args),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -443,14 +445,20 @@ describe("analytics server actions", () => {
       const articles = [
         buildArticle(ULID_A1, "Tagged Article", [ULID_TAG1, ULID_TAG2]),
       ];
+      const tags = [
+        { identifier: ULID_TAG1, name: "React" },
+        { identifier: ULID_TAG2, name: "Next.js" },
+      ];
       mockLoadCurrentPageViews.mockResolvedValue(pageViews);
       mockLoadAllArticles.mockResolvedValue(articles);
+      mockLoadAllTags.mockResolvedValue(tags);
 
       const { getTagPageViews } = await import("@/actions/analytics");
       const result = await getTagPageViews("30d");
 
       expect(result).toHaveLength(2);
       expect(result[0].value).toBe(2);
+      expect(result[0].label).toBe("React");
     });
   });
 

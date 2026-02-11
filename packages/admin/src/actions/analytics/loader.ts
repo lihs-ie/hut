@@ -11,10 +11,12 @@ import { validateCriteria as validateSearchRecordCriteria } from "@shared/domain
 import { AnalyticsRepositoryProvider } from "@shared/providers/infrastructure/analytics";
 import { ArticleRepositoryProvider } from "@shared/providers/infrastructure/articles";
 import { MemoRepositoryProvider } from "@shared/providers/infrastructure/memo";
+import { TagRepositoryProvider } from "@shared/providers/infrastructure/tag";
 import {
   buildEmptyArticleCriteria,
   buildEmptyMemoCriteria,
 } from "@shared/workflows/analytics/title-resolution";
+import { validateCriteria as validateTagCriteria } from "@shared/domains/attributes/tag";
 
 export const loadCurrentPageViews = cache(async (period: string) => {
   const validatedPeriod = validatePeriod(period).unwrap();
@@ -140,6 +142,16 @@ export const loadAllArticles = cache(async () => {
 export const loadAllMemos = cache(async () => {
   const criteria = buildEmptyMemoCriteria();
   return MemoRepositoryProvider.firebase.search(criteria).match({
+    ok: (result) => result,
+    err: (error) => {
+      throw error;
+    },
+  });
+});
+
+export const loadAllTags = cache(async () => {
+  const criteria = validateTagCriteria({ name: null }).unwrap();
+  return TagRepositoryProvider.firebase.search(criteria).match({
     ok: (result) => result,
     err: (error) => {
       throw error;
