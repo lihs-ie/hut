@@ -68,7 +68,7 @@ fi
 
 # シードデータの投入
 echo -e "\n${YELLOW}[4/4] Seeding test data...${NC}"
-cd packages/shared && pnpm seed && cd ../..
+pnpm seed
 
 echo -e "\n${GREEN}========================================${NC}"
 echo -e "${GREEN}  Setup completed successfully!${NC}"
