@@ -26,6 +26,10 @@ vi.mock("@shared/providers/workflows/search-token", () => ({
   },
 }));
 
+vi.mock("@shared/actions/search-log", () => ({
+  recordSearchLog: vi.fn(),
+}));
+
 /**
  * 共通の検索条件オブジェクトを生成する
  */

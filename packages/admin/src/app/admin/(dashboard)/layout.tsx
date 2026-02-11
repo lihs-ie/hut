@@ -6,6 +6,7 @@ import { MessageSquareIcon } from "@shared/components/atoms/icon/message";
 import { TagIcon } from "@shared/components/atoms/icon/tag";
 import { UserIcon } from "@shared/components/atoms/icon/user";
 import { ShieldIcon } from "@shared/components/atoms/icon/shield";
+import { BarChartIcon } from "@shared/components/atoms/icon/bar-chart";
 
 const navItems: NavItem[] = [
   {
@@ -33,6 +34,11 @@ const navItems: NavItem[] = [
     href: Routes.admin.privacy.edit,
     label: "プライバシーポリシー",
     icon: <ShieldIcon />,
+  },
+  {
+    href: Routes.admin.analytics.dashboard,
+    label: "統計",
+    icon: <BarChartIcon />,
   },
 ];
 

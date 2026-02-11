@@ -1,0 +1,17 @@
+.container {
+  padding: 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+}

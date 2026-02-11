@@ -1,13 +1,3 @@
-/**
- * Feature Test Setup
- *
- * Firebase Emulatorに接続してFeature Testを実行するための設定。
- *
- * 前提条件:
- * - Firebase Emulatorが起動していること (docker-compose up -d)
- * - Firestore Emulator: localhost:8085
- */
-
 import { initializeApp, deleteApp, type FirebaseApp, getApps } from "firebase/app";
 import {
   getFirestore,
@@ -61,22 +51,17 @@ let emulatorConnected = false;
 
 const TEST_APP_NAME = "feature-test-app";
 
-/**
- * Firebase Emulatorに接続したFirestoreインスタンスを取得
- */
 function getTestFirestore(): { firestore: Firestore; app: FirebaseApp } {
   if (appInstance && firestoreInstance) {
     return { firestore: firestoreInstance, app: appInstance };
   }
 
-  // テスト専用のアプリ名で検索
   const existingApps = getApps();
   const existingTestApp = existingApps.find((app) => app.name === TEST_APP_NAME);
 
   if (existingTestApp) {
     appInstance = existingTestApp;
   } else {
-    // テスト専用の新しいアプリを作成
     appInstance = initializeApp(firebaseConfig, TEST_APP_NAME);
   }
 
@@ -94,9 +79,6 @@ function getTestFirestore(): { firestore: Firestore; app: FirebaseApp } {
   return { firestore: firestoreInstance, app: appInstance };
 }
 
-/**
- * Firestore Operationsの取得
- */
 function getTestOperations(): FirestoreOperations {
   return {
     doc,
@@ -125,9 +107,6 @@ function getTestOperations(): FirestoreOperations {
   };
 }
 
-/**
- * 指定されたコレクションのドキュメントをすべて削除
- */
 async function clearCollection(
   firestore: Firestore,
   collectionPath: string
@@ -145,37 +124,31 @@ async function clearCollection(
   }
 }
 
-/**
- * ネストされたドキュメントを削除
- * page-view-counters/{type}/{content}/{dateKey} のようなパスに対応
- * Firestoreの構造: page-view-counters は親コレクション
- */
-async function clearNestedPageViewData(
+async function clearNestedCollection(
   firestore: Firestore,
-  rootCollection: string
+  rootCollection: string,
+  subcollectionNames: string[]
 ): Promise<void> {
-  // ルートコレクションを取得
   const rootCollectionRef = collection(firestore, rootCollection);
   const typeSnapshot = await getDocs(rootCollectionRef);
 
   for (const typeDoc of typeSnapshot.docs) {
-    // typeDoc.ref は page-view-counters/{type} ドキュメント
-    // その下のサブコレクション（content identifiers）を取得
-    // しかしFirestoreではサブコレクションを一覧で取得する標準方法がない
-    // ここではドキュメント削除のみ行う
+    for (const subcollectionName of subcollectionNames) {
+      const subRef = collection(typeDoc.ref, subcollectionName);
+      const subSnapshot = await getDocs(subRef);
+      for (const subDoc of subSnapshot.docs) {
+        await deleteDoc(subDoc.ref);
+      }
+    }
     await deleteDoc(typeDoc.ref);
   }
 }
 
-/**
- * search-tokensコレクションとそのサブコレクション(refs)を削除
- */
 async function clearSearchTokens(firestore: Firestore): Promise<void> {
   const tokensRef = collection(firestore, "search-tokens");
   const tokenSnapshot = await getDocs(tokensRef);
 
   for (const tokenDoc of tokenSnapshot.docs) {
-    // サブコレクション (refs) を削除
     const refsRef = collection(tokenDoc.ref, "refs");
     const refsSnapshot = await getDocs(refsRef);
 
@@ -187,14 +160,10 @@ async function clearSearchTokens(firestore: Firestore): Promise<void> {
       await batch.commit();
     }
 
-    // 親ドキュメントを削除
     await deleteDoc(tokenDoc.ref);
   }
 }
 
-/**
- * テストで使用するコレクションをすべてクリア
- */
 async function clearAllTestData(firestore: Firestore): Promise<void> {
   const collectionsToClean = [
     "articles",
@@ -210,26 +179,33 @@ async function clearAllTestData(firestore: Firestore): Promise<void> {
     "index/tags/name",
   ];
 
-  // ネストされたページビュー関連コレクション
-  const nestedCollections = [
-    "page-view-counters",
-    "page-view-dedup",
+  const analyticsCollections = [
+    "unique-visitor-counters",
+    "unique-visitor-dedup",
+  ];
+
+  const nestedCollectionConfig: Array<{ root: string; subcollections: string[] }> = [
+    { root: "page-view-counters", subcollections: [] },
+    { root: "page-view-dedup", subcollections: [] },
+    { root: "access-logs", subcollections: [] },
+    { root: "search-logs", subcollections: ["records"] },
+    { root: "engagement-logs", subcollections: [] },
   ];
 
   await Promise.all([
     ...collectionsToClean.map((collectionPath) =>
       clearCollection(firestore, collectionPath)
     ),
-    ...nestedCollections.map((rootCollection) =>
-      clearNestedPageViewData(firestore, rootCollection)
+    ...nestedCollectionConfig.map((config) =>
+      clearNestedCollection(firestore, config.root, config.subcollections)
+    ),
+    ...analyticsCollections.map((collectionPath) =>
+      clearCollection(firestore, collectionPath)
     ),
     clearSearchTokens(firestore),
   ]);
 }
 
-/**
- * Feature Test用のロガー（共通利用）
- */
 export const testLogger = Logger(Environment.DEVELOPMENT);
 
 export type FeatureTestContext = {
@@ -238,28 +214,32 @@ export type FeatureTestContext = {
   cleanup: () => Promise<void>;
 };
 
-/**
- * Feature Test用のコンテキストを作成
- */
+async function clearEmulatorData(): Promise<void> {
+  try {
+    await fetch(
+      `http://${EMULATOR_CONFIG.firestoreHost}:${EMULATOR_CONFIG.firestorePort}/emulator/v1/projects/demo-hut/databases/(default)/documents`,
+      { method: "DELETE" },
+    );
+  } catch {
+    return;
+  }
+}
+
 export async function createFeatureTestContext(): Promise<FeatureTestContext> {
   const { firestore } = getTestFirestore();
   const operations = getTestOperations();
 
-  // テスト開始前にデータをクリア
-  await clearAllTestData(firestore);
+  await clearEmulatorData();
 
   return {
     firestore,
     operations,
     cleanup: async () => {
-      await clearAllTestData(firestore);
+      await clearEmulatorData();
     },
   };
 }
 
-/**
- * テスト終了時のクリーンアップ
- */
 export async function cleanupFeatureTest(): Promise<void> {
   if (firestoreInstance) {
     await terminate(firestoreInstance);

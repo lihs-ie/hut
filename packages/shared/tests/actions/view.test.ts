@@ -11,32 +11,53 @@ const mockCookies = {
   set: vi.fn(),
 };
 
+const mockHeaders = {
+  get: vi.fn(),
+};
+
 vi.mock("next/headers", () => ({
   cookies: vi.fn(() => Promise.resolve(mockCookies)),
+  headers: vi.fn(() => Promise.resolve(mockHeaders)),
 }));
 
-const mockTransaction = {
-  get: vi.fn(),
-  set: vi.fn(),
-};
+const pendingAfterCallbacks: Array<Promise<void>> = [];
 
-const mockFirestore = {
-  instance: {},
-  operations: {
-    doc: vi.fn(),
-    runTransaction: vi.fn((_, callback) => callback(mockTransaction)),
-  },
-};
-
-vi.mock("@shared/providers/infrastructure/firebase", () => ({
-  FirebaseProvider: {
-    firestore: mockFirestore,
+vi.mock("next/server", () => ({
+  after: (callback: () => Promise<void>) => {
+    pendingAfterCallbacks.push(callback());
   },
 }));
 
-/**
- * Cookie取得のモック実装を作成する
- */
+const flushAfterCallbacks = async () => {
+  await Promise.all(pendingAfterCallbacks);
+  pendingAfterCallbacks.length = 0;
+};
+
+const mockPageViewRecord = vi.fn();
+const mockUniqueVisitorRecord = vi.fn();
+
+const createMockAsyncResult = () => ({
+  tapError: vi.fn().mockReturnValue(Promise.resolve()),
+});
+
+vi.mock("@shared/providers/workflows/analytics/page-view", () => ({
+  PageViewWorkflowProvider: {
+    record: (...args: unknown[]) => {
+      mockPageViewRecord(...args);
+      return createMockAsyncResult();
+    },
+  },
+}));
+
+vi.mock("@shared/providers/workflows/analytics/unique-visitor", () => ({
+  UniqueVisitorWorkflowProvider: {
+    record: (...args: unknown[]) => {
+      mockUniqueVisitorRecord(...args);
+      return createMockAsyncResult();
+    },
+  },
+}));
+
 function createCookieGetMock(options: {
   adminSession?: string;
   pageViewSession?: string;
@@ -52,30 +73,19 @@ function createCookieGetMock(options: {
   };
 }
 
-/**
- * Firestoreトランザクションのモック実装を作成する
- */
-function setupTransactionMock(options: {
-  isDuplicate: boolean;
-  existingCount?: number;
+function createHeadersGetMock(options: {
+  referer?: string;
+  userAgent?: string;
 }) {
-  mockFirestore.operations.doc.mockReturnValue({});
-  mockFirestore.operations.runTransaction.mockImplementation(
-    async (_, callback) => {
-      const dedupSnapshot = { exists: () => options.isDuplicate };
-      mockTransaction.get.mockResolvedValueOnce(dedupSnapshot);
-
-      if (!options.isDuplicate) {
-        const counterSnapshot = {
-          data: () =>
-            options.existingCount !== undefined ? { count: options.existingCount } : undefined,
-        };
-        mockTransaction.get.mockResolvedValueOnce(counterSnapshot);
-      }
-
-      await callback(mockTransaction);
+  return (name: string) => {
+    if (name === "referer") {
+      return options.referer ?? null;
     }
-  );
+    if (name === "user-agent") {
+      return options.userAgent ?? null;
+    }
+    return null;
+  };
 }
 
 describe("view actions", () => {
@@ -84,79 +94,65 @@ describe("view actions", () => {
     vi.resetModules();
     mockCookies.get.mockReset();
     mockCookies.set.mockReset();
-    mockTransaction.get.mockReset();
-    mockTransaction.set.mockReset();
-    mockFirestore.operations.doc.mockReset();
-    mockFirestore.operations.runTransaction.mockReset();
+    mockHeaders.get.mockReset();
+    mockPageViewRecord.mockReset();
+    mockUniqueVisitorRecord.mockReset();
+    pendingAfterCallbacks.length = 0;
   });
 
   describe("incrementViewCount", () => {
     it("初回訪問時にビューカウントをインクリメントする", async () => {
       const identifier = Forger(SearchReferenceIdentifierMold).forgeWithSeed(1);
       mockCookies.get.mockImplementation(createCookieGetMock({}));
-      setupTransactionMock({ isDuplicate: false });
+      mockHeaders.get.mockImplementation(createHeadersGetMock({}));
 
       const { incrementViewCount } = await import("@shared/actions/view");
       await incrementViewCount(identifier);
+      await flushAfterCallbacks();
 
       expect(mockCookies.set).toHaveBeenCalled();
-      expect(mockTransaction.set).toHaveBeenCalled();
+      expect(mockPageViewRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            reference: identifier,
+          }),
+        }),
+      );
+      expect(mockUniqueVisitorRecord).toHaveBeenCalled();
     });
 
     it("既存のセッションがある場合はcookieを設定しない", async () => {
       const identifier = Forger(SearchReferenceIdentifierMold).forgeWithSeed(2);
       mockCookies.get.mockImplementation(
-        createCookieGetMock({ pageViewSession: "existing-session-id" })
+        createCookieGetMock({ pageViewSession: "existing-session-id" }),
       );
-      setupTransactionMock({ isDuplicate: false, existingCount: 5 });
+      mockHeaders.get.mockImplementation(createHeadersGetMock({}));
 
       const { incrementViewCount } = await import("@shared/actions/view");
       await incrementViewCount(identifier);
+      await flushAfterCallbacks();
 
       expect(mockCookies.set).not.toHaveBeenCalled();
+      expect(mockPageViewRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            sessionKey: "existing-session-id",
+          }),
+        }),
+      );
     });
 
     it("管理者セッションがある場合はカウントしない", async () => {
       const identifier = Forger(SearchReferenceIdentifierMold).forgeWithSeed(3);
       mockCookies.get.mockImplementation(
-        createCookieGetMock({ adminSession: "admin-session" })
+        createCookieGetMock({ adminSession: "admin-session" }),
       );
 
       const { incrementViewCount } = await import("@shared/actions/view");
       await incrementViewCount(identifier);
 
-      expect(mockFirestore.operations.runTransaction).not.toHaveBeenCalled();
-    });
-
-    it("同日の重複訪問はカウントしない", async () => {
-      const identifier = Forger(SearchReferenceIdentifierMold).forgeWithSeed(4);
-      mockCookies.get.mockImplementation(
-        createCookieGetMock({ pageViewSession: "existing-session-id" })
-      );
-      setupTransactionMock({ isDuplicate: true });
-
-      const { incrementViewCount } = await import("@shared/actions/view");
-      await incrementViewCount(identifier);
-
-      expect(mockTransaction.set).not.toHaveBeenCalled();
-    });
-
-    it("既存のカウントがある場合はインクリメントする", async () => {
-      const identifier = Forger(SearchReferenceIdentifierMold).forgeWithSeed(5);
-      mockCookies.get.mockImplementation(createCookieGetMock({}));
-      setupTransactionMock({ isDuplicate: false, existingCount: 10 });
-
-      const { incrementViewCount } = await import("@shared/actions/view");
-      await incrementViewCount(identifier);
-
-      expect(mockTransaction.set).toHaveBeenCalled();
-      const setCall = mockTransaction.set.mock.calls.find(
-        (call) => call[1].count !== undefined
-      );
-      expect(setCall).toBeDefined();
-      if (setCall !== undefined) {
-        expect(setCall[1].count).toBe(11);
-      }
+      expect(mockPageViewRecord).not.toHaveBeenCalled();
+      expect(mockUniqueVisitorRecord).not.toHaveBeenCalled();
     });
 
     it("記事タイプのidentifierを正しく処理する", async () => {
@@ -164,12 +160,19 @@ describe("view actions", () => {
         type: ContentType.ARTICLE,
       });
       mockCookies.get.mockImplementation(createCookieGetMock({}));
-      setupTransactionMock({ isDuplicate: false });
+      mockHeaders.get.mockImplementation(createHeadersGetMock({}));
 
       const { incrementViewCount } = await import("@shared/actions/view");
       await incrementViewCount(identifier);
+      await flushAfterCallbacks();
 
-      expect(mockFirestore.operations.doc).toHaveBeenCalled();
+      expect(mockPageViewRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            reference: identifier,
+          }),
+        }),
+      );
     });
 
     it("メモタイプのidentifierを正しく処理する", async () => {
@@ -177,12 +180,19 @@ describe("view actions", () => {
         type: ContentType.MEMO,
       });
       mockCookies.get.mockImplementation(createCookieGetMock({}));
-      setupTransactionMock({ isDuplicate: false });
+      mockHeaders.get.mockImplementation(createHeadersGetMock({}));
 
       const { incrementViewCount } = await import("@shared/actions/view");
       await incrementViewCount(identifier);
+      await flushAfterCallbacks();
 
-      expect(mockFirestore.operations.doc).toHaveBeenCalled();
+      expect(mockPageViewRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            reference: identifier,
+          }),
+        }),
+      );
     });
 
     it("シリーズタイプのidentifierを正しく処理する", async () => {
@@ -190,12 +200,58 @@ describe("view actions", () => {
         type: ContentType.SERIES,
       });
       mockCookies.get.mockImplementation(createCookieGetMock({}));
-      setupTransactionMock({ isDuplicate: false });
+      mockHeaders.get.mockImplementation(createHeadersGetMock({}));
 
       const { incrementViewCount } = await import("@shared/actions/view");
       await incrementViewCount(identifier);
+      await flushAfterCallbacks();
 
-      expect(mockFirestore.operations.doc).toHaveBeenCalled();
+      expect(mockPageViewRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            reference: identifier,
+          }),
+        }),
+      );
+    });
+
+    it("リファラーとUser-Agentがheadersから取得される", async () => {
+      const identifier = Forger(SearchReferenceIdentifierMold).forgeWithSeed(9);
+      mockCookies.get.mockImplementation(createCookieGetMock({}));
+      mockHeaders.get.mockImplementation(
+        createHeadersGetMock({
+          referer: "https://google.com",
+          userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
+        }),
+      );
+
+      const { incrementViewCount } = await import("@shared/actions/view");
+      await incrementViewCount(identifier);
+      await flushAfterCallbacks();
+
+      expect(mockHeaders.get).toHaveBeenCalledWith("referer");
+      expect(mockHeaders.get).toHaveBeenCalledWith("user-agent");
+      expect(mockPageViewRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            referrer: "https://google.com",
+            userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
+          }),
+        }),
+      );
+    });
+
+    it("PageView と UniqueVisitor のワークフローが並列で呼ばれる", async () => {
+      const identifier = Forger(SearchReferenceIdentifierMold).forgeWithSeed(10);
+      mockCookies.get.mockImplementation(createCookieGetMock({}));
+      mockHeaders.get.mockImplementation(createHeadersGetMock({}));
+
+      const { incrementViewCount } = await import("@shared/actions/view");
+      await incrementViewCount(identifier);
+      await flushAfterCallbacks();
+
+      expect(mockPageViewRecord).toHaveBeenCalledTimes(1);
+      expect(mockUniqueVisitorRecord).toHaveBeenCalledTimes(1);
     });
   });
 });
