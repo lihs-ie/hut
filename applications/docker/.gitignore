@@ -1,0 +1,5 @@
+frontend/data/
+frontend/firebase-debug.log
+frontend/firestore-debug.log
+frontend/ui-debug.log
+frontend/.firebase/

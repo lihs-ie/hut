@@ -1,0 +1,57 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /applications/frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      next:
+        patterns:
+          - "next"
+          - "next-*"
+          - "@next/*"
+          - "eslint-config-next"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      storybook:
+        patterns:
+          - "storybook"
+          - "@storybook/*"
+          - "@chromatic-com/storybook"
+          - "eslint-plugin-storybook"
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@vitejs/*"
+      playwright:
+        patterns:
+          - "@playwright/*"
+      firebase:
+        patterns:
+          - "firebase"
+          - "firebase-admin"
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/node"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: docker
+    directory: /applications/docker/frontend
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3

@@ -12,8 +12,9 @@ node_modules
 
 # testing
 /coverage
-playwright/.auth/
-playwright-report
+applications/frontend/playwright/.auth/
+applications/frontend/playwright-report
+applications/frontend/blob-report
 test-results
 
 # next.js
@@ -46,13 +47,13 @@ next-env.d.ts
 *storybook.log
 storybook-static
 
-referendes
+references
 
 .pnpm-store
 
 # Firebase Emulator
-packages/shared/docker/firebase/data/
-packages/shared/docker/firebase/firebase-debug.log
-packages/shared/docker/firebase/firestore-debug.log
-packages/shared/docker/firebase/ui-debug.log
-packages/shared/docker/firebase/.firebase/
+applications/docker/frontend/data/
+applications/docker/frontend/firebase-debug.log
+applications/docker/frontend/firestore-debug.log
+applications/docker/frontend/ui-debug.log
+applications/docker/frontend/.firebase/
