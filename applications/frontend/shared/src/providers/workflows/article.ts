@@ -11,6 +11,7 @@ import {
   createArticleSearchWorkflow,
   createArticleTerminateWorkflow,
 } from "@shared/workflows/article";
+import { createPassthroughFilter } from "@shared/workflows/common";
 import { ArticleRepositoryProvider } from "../infrastructure/articles";
 import { LoggerProvider } from "../infrastructure/logger";
 import { validateSlug } from "@shared/domains/common";
@@ -22,7 +23,9 @@ export const ArticleWorkflowProvider = {
 
   findBySlug: createArticleFindBySlugWorkflow(validateSlug)(
     LoggerProvider.console,
-  )(ArticleRepositoryProvider.firebase.findBySlug),
+  )(ArticleRepositoryProvider.firebase.findBySlug)(
+    createPassthroughFilter(),
+  ),
 
   search: createArticleSearchWorkflow(validateCriteria)(
     ArticleRepositoryProvider.firebase.search,

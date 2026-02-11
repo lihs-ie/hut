@@ -176,25 +176,15 @@ test.describe("article detail page", () => {
     await expect(notFoundIndicators.first()).toBeVisible();
   });
 
-  test("draft article page renders (admin preview)", async ({
+  test("draft article shows 404 on reader", async ({
     page,
   }: TestArgs) => {
-    // nextjs-app-router is a draft article
-    // Draft articles may be accessible for preview purposes
     await page.goto("/articles/nextjs-app-router");
 
-    // Verify page loads (either shows content or 404)
     await page.waitForLoadState("networkidle");
 
-    // Check if article title is displayed (draft accessible) or 404 page
-    const articleTitle = page.getByRole("heading", { name: "Next.js App Routerの使い方" }).first();
-    const notFoundIndicators = page.locator("text=/404|not found|見つかりません/i");
-
-    const isTitleVisible = await articleTitle.isVisible().catch(() => false);
-    const isNotFound = await notFoundIndicators.first().isVisible().catch(() => false);
-
-    // Either the article is accessible or shows 404
-    expect(isTitleVisible || isNotFound).toBe(true);
+    const notFoundIndicators = page.locator("text=/404|not found|見つかりません|ページが見つかりません/i");
+    await expect(notFoundIndicators.first()).toBeVisible();
   });
 
   test("image article displays both header and inline images", async ({
