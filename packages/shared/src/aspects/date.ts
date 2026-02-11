@@ -30,3 +30,11 @@ export const determineExperience = (
 
   return Math.round(years * 10) / 10;
 };
+
+const jstOffsetMs = 9 * 60 * 60 * 1000;
+
+/**
+ * Builds a YYYY-MM-DD key in JST.
+ */
+export const getJstDateKey = (date: Date): string =>
+  new Date(date.getTime() + jstOffsetMs).toISOString().slice(0, 10);

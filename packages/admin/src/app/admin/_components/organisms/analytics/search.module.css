@@ -1,0 +1,18 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.rankings {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .rankings {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}

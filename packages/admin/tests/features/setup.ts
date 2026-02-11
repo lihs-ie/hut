@@ -1,14 +1,3 @@
-/**
- * Admin Feature Test Setup
- *
- * Firebase Admin SDKを使用してFeature Testを実行するための設定。
- *
- * 前提条件:
- * - Firebase Emulatorが起動していること (docker-compose up -d)
- * - Firestore Emulator: localhost:8085
- * - Auth Emulator: localhost:9099
- */
-
 import {
   getApps,
   initializeApp,
@@ -31,9 +20,6 @@ const TEST_PROJECT_ID = "demo-hut";
 let appInstance: App | null = null;
 let firestoreInstance: Firestore | null = null;
 
-/**
- * エミュレータ環境変数を設定
- */
 function ensureEmulatorEnvironment(): void {
   if (!process.env.FIRESTORE_EMULATOR_HOST) {
     process.env.FIRESTORE_EMULATOR_HOST = `${EMULATOR_CONFIG.firestoreHost}:${EMULATOR_CONFIG.firestorePort}`;
@@ -43,9 +29,6 @@ function ensureEmulatorEnvironment(): void {
   }
 }
 
-/**
- * Firebase Admin SDKのアプリインスタンスを取得
- */
 function getTestAdminApp(): App {
   if (appInstance) {
     return appInstance;
@@ -69,9 +52,6 @@ function getTestAdminApp(): App {
   return appInstance;
 }
 
-/**
- * Firebase Admin Firestoreインスタンスを取得
- */
 function getTestFirestore(): Firestore {
   if (firestoreInstance) {
     return firestoreInstance;
@@ -81,9 +61,6 @@ function getTestFirestore(): Firestore {
   return firestoreInstance;
 }
 
-/**
- * 指定されたコレクションのドキュメントをすべて削除
- */
 async function clearCollection(
   firestore: Firestore,
   collectionPath: string
@@ -101,9 +78,23 @@ async function clearCollection(
   }
 }
 
-/**
- * テストで使用するコレクションをすべてクリア
- */
+async function clearNestedCollection(
+  firestore: Firestore,
+  rootCollection: string
+): Promise<void> {
+  const rootRef = firestore.collection(rootCollection);
+  const snapshot = await rootRef.get();
+
+  const batch = firestore.batch();
+  snapshot.docs.forEach((document) => {
+    batch.delete(document.ref);
+  });
+
+  if (snapshot.docs.length > 0) {
+    await batch.commit();
+  }
+}
+
 async function clearAllTestData(firestore: Firestore): Promise<void> {
   const collectionsToClean = [
     "articles",
@@ -117,18 +108,29 @@ async function clearAllTestData(firestore: Firestore): Promise<void> {
     "index/memos/slug",
     "index/series/slug",
     "index/tags/name",
+    "unique-visitor-counters",
+    "unique-visitor-dedup",
+    "rate-limits",
   ];
 
-  await Promise.all(
-    collectionsToClean.map((collectionPath) =>
+  const nestedCollections = [
+    "page-view-counters",
+    "page-view-dedup",
+    "access-logs",
+    "search-logs",
+    "engagement-logs",
+  ];
+
+  await Promise.all([
+    ...collectionsToClean.map((collectionPath) =>
       clearCollection(firestore, collectionPath)
-    )
-  );
+    ),
+    ...nestedCollections.map((rootCollection) =>
+      clearNestedCollection(firestore, rootCollection)
+    ),
+  ]);
 }
 
-/**
- * Feature Test用のロガー
- */
 export const testLogger = Logger(Environment.DEVELOPMENT);
 
 export type AdminFeatureTestContext = {
@@ -136,9 +138,6 @@ export type AdminFeatureTestContext = {
   cleanup: () => Promise<void>;
 };
 
-/**
- * Admin Feature Test用のコンテキストを作成
- */
 export async function createAdminFeatureTestContext(): Promise<AdminFeatureTestContext> {
   const firestore = getTestFirestore();
 
@@ -152,9 +151,6 @@ export async function createAdminFeatureTestContext(): Promise<AdminFeatureTestC
   };
 }
 
-/**
- * テスト終了時のクリーンアップ
- */
 export async function cleanupAdminFeatureTest(): Promise<void> {
   if (firestoreInstance) {
     await firestoreInstance.terminate();

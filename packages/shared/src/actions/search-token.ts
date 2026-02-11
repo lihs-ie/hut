@@ -9,6 +9,7 @@ import { Memo, MemoEntry } from "@shared/domains/memo";
 import { UnvalidatedCriteria } from "@shared/domains/search-token";
 import { Chapter, Series } from "@shared/domains/series";
 import { SearchTokenWorkflowProvider } from "@shared/providers/workflows/search-token";
+import { recordSearchLog } from "@shared/actions/search-log";
 
 /**
  * キャッシュから取得した検索結果のDateフィールドを復元する。
@@ -105,5 +106,12 @@ export const searchByToken = async (
     { revalidate: 3600, tags: ["search-token"] }
   )();
 
-  return restoreSearchResultDates(cachedResults as CachedSearchResult[]);
+  const results = restoreSearchResultDates(
+    cachedResults as CachedSearchResult[],
+  );
+
+  // 検索ログを非同期で記録（検索結果の返却をブロックしない）
+  void recordSearchLog(unvalidated, results.length);
+
+  return results;
 };
