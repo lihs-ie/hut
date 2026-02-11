@@ -1,6 +1,7 @@
 import { enforceLoginRateLimit } from "@/actions/rate-limit";
+import { isE2EAuthAvailable } from "@/aspects/e2e";
 import { NextRequest, NextResponse } from "next/server";
-import { resolveIP } from "./aspects/ip-address";
+import { resolveIP } from "@/aspects/ip-address";
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|logo).*)"],
@@ -17,6 +18,15 @@ export async function proxy(request: NextRequest) {
   const isE2EAuthEndpoint = pathname === "/api/e2e/auth";
 
   if (isE2EAuthEndpoint) {
+    const availability = isE2EAuthAvailable({
+      e2eAuthEnabled: process.env.E2E_AUTH_ENABLED,
+      useFirebaseEmulator: process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR,
+    });
+
+    if (!availability.available) {
+      return new NextResponse("Not found", { status: 404 });
+    }
+
     return NextResponse.next();
   }
 
