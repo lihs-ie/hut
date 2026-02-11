@@ -12,6 +12,7 @@ import {
   loadZeroHitSearchRecords,
   loadAllArticles,
   loadAllMemos,
+  loadAllTags,
 } from "./analytics/loader";
 import { validatePeriodComparison } from "@shared/domains/analytics/common";
 import type {
@@ -169,11 +170,14 @@ export async function getContentRanking(period: string): Promise<RankedItem[]> {
 }
 
 export async function getTagPageViews(period: string): Promise<RankedItem[]> {
-  const [pageViews, articles] = await Promise.all([
+  const [pageViews, articles, tags] = await Promise.all([
     loadCurrentPageViews(period),
     loadAllArticles(),
+    loadAllTags(),
   ]);
-  return aggregateByTag(pageViews, buildArticleTagMap(articles));
+  const ranking = aggregateByTag(pageViews, buildArticleTagMap(articles));
+  const tagNameMap = new Map(tags.map((tag) => [tag.identifier, tag.name]));
+  return resolveRankedItemTitles(ranking, tagNameMap);
 }
 
 export async function getContentTypeComparison(
