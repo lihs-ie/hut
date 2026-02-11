@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@google-cloud/pubsub": "^5.2.2",
+    "@google-cloud/pubsub": "^5.2.3",
     "@hut/shared": "workspace:*",
     "@next/mdx": "^16.1.1",
     "@simplewebauthn/browser": "^13.2.2",
