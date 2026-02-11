@@ -190,7 +190,6 @@ export const getErrorDetail = (error: unknown): ErrorDetail | null => {
   return createErrorDetail("UnknownError", String(error), 500, error);
 };
 
-// AsyncResultをNext.jsのエラーハンドリングに対応させてunwrapする
 export async function unwrapForNextJs<T, E>(
   asyncResult: AsyncResult<T, E>
 ): Promise<T> {

@@ -2,11 +2,14 @@ import { findBySlug } from "@shared/actions/memo";
 import { findAllTags } from "@shared/actions/tag";
 import { MDXRenderer } from "@shared/components/global/mdx";
 import { MemoIndex } from "@shared/components/templates/memo";
+import { incrementViewCount } from "@shared/actions/view";
+import { ContentType } from "@shared/domains/search-token/reference";
 import type { Metadata } from "next";
 
 type Props = {
   params: Promise<{ slug: string }>;
 };
+
 const generateExcerpt = (entries: { text: string }[]): string => {
   if (entries.length === 0) return "";
   const firstEntry = entries[0].text;
@@ -21,8 +24,6 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
   const tags = await findAllTags(memo.tags);
 
   const description = generateExcerpt(memo.entries);
-  // const url = `https://your-domain.com/memos/${slug}`; TODO: ドメイン取得後対応
-
   return {
     title: memo.title,
     description: description || `${memo.title}についてのメモです`,
@@ -31,7 +32,6 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       type: "article",
       title: memo.title,
       description,
-      // url,
       publishedTime: memo.timeline.createdAt.toISOString(),
       modifiedTime: memo.timeline.updatedAt.toISOString(),
     },
@@ -40,14 +40,12 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       title: memo.title,
       description,
     },
-    alternates: {
-      // canonical: url,
-    },
   };
 };
 
 export default async function MemoDetailPage(props: Props) {
   const params = await props.params;
+  const memo = await findBySlug(params.slug);
 
   return (
     <MemoIndex
@@ -55,6 +53,11 @@ export default async function MemoDetailPage(props: Props) {
       findAllTags={findAllTags}
       findBySlug={findBySlug}
       renderer={MDXRenderer}
+      incrementViewCount={incrementViewCount}
+      tracking={{
+        contentType: ContentType.MEMO,
+        contentIdentifier: memo.identifier,
+      }}
     />
   );
 }

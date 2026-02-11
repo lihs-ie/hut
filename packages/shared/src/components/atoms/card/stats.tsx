@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import styles from "./stats.module.css";
 
-export type Props = {
+type Props = {
   title: string;
   value: string | number;
   icon?: ReactNode;

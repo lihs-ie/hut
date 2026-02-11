@@ -1,15 +1,8 @@
-/**
- * Firestore Emulator テストデータ作成スクリプト
- *
- * 使用方法:
- *   pnpm seed
- *
- * 前提条件:
- *   - Firebase Emulatorが起動していること (port 8085)
- */
-
 import {
   BASE_URL,
+  FIRESTORE_EMULATOR_HOST,
+  PROJECT_ID,
+  DATABASE_ID,
   clearCollection,
   TAG_IDS,
   ARTICLE_IDS,
@@ -24,9 +17,21 @@ import { seedMemos } from "./memo";
 import { seedAdmin } from "./admin";
 import { seedSearchTokens } from "./search-token";
 import { seedSiteDocument } from "./site-document";
+import { seedAnalytics } from "./analytics";
 
 async function clearAllData(): Promise<void> {
   console.log("\n=== Clearing existing data ===");
+
+  const emulatorClearUrl = `${FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents`;
+  try {
+    const response = await fetch(emulatorClearUrl, { method: "DELETE" });
+    if (response.ok) {
+      console.log("Cleared all Firestore emulator data");
+      return;
+    }
+  } catch {
+  }
+
   await clearCollection("tags");
   await clearCollection("articles");
   await clearCollection("series");
@@ -34,11 +39,18 @@ async function clearAllData(): Promise<void> {
   await clearCollection("admin");
   await clearCollection("search-tokens");
   await clearCollection("site-documents");
-  // インデックスコレクションのクリア
   await clearCollection("index/tags/name");
   await clearCollection("index/articles/slug");
   await clearCollection("index/memos/slug");
   await clearCollection("index/series/slug");
+  await clearCollection("page-view-counters");
+  await clearCollection("page-view-dedup");
+  await clearCollection("access-logs");
+  await clearCollection("unique-visitor-counters");
+  await clearCollection("unique-visitor-dedup");
+  await clearCollection("engagement-logs");
+  await clearCollection("search-logs");
+  await clearCollection("rate-limits");
 }
 
 async function main(): Promise<void> {
@@ -46,10 +58,8 @@ async function main(): Promise<void> {
   console.log(`Target: ${BASE_URL}`);
 
   try {
-    // 既存データをクリア
     await clearAllData();
 
-    // データを作成
     await seedTags();
     await seedArticles();
     await seedSeries();
@@ -57,6 +67,7 @@ async function main(): Promise<void> {
     await seedAdmin();
     await seedSearchTokens();
     await seedSiteDocument();
+    await seedAnalytics();
 
     console.log("\n=== Seed completed successfully ===");
     console.log("\nCreated IDs:");
@@ -66,6 +77,7 @@ async function main(): Promise<void> {
     console.log("Memos:", MEMO_IDS);
     console.log("Admin:", ADMIN_ID);
     console.log("SiteDocument:", "site-document");
+    console.log("Analytics:", "seeded");
   } catch (error) {
     console.error("Seed failed:", error);
     process.exit(1);

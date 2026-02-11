@@ -24,5 +24,8 @@ export const Routes = {
     privacy: {
       edit: "/admin/privacy/edit",
     },
+    analytics: {
+      dashboard: "/admin/analytics",
+    },
   },
 } as const;

@@ -1,5 +1,5 @@
 import type { Preview, Decorator } from "@storybook/nextjs-vite";
-import "@shared/global.css";
+import "../src/global.css";
 import { nuqsDecorator } from "./decorator/nuqs";
 
 const withTheme: Decorator = (Story, context) => {

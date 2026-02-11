@@ -11,7 +11,11 @@ export type EventType =
   | "series.persisted"
   | "series.terminated"
   | "tag.persisted"
-  | "tag.terminated";
+  | "tag.terminated"
+  | "analytics.pageView.recorded"
+  | "analytics.uniqueVisitor.recorded"
+  | "analytics.engagement.recorded"
+  | "analytics.search.recorded";
 
 export type Event<T extends EventType, P> = {
   identifier: string;
