@@ -1,0 +1,43 @@
+{
+  "name": "@hut/frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:reader": "pnpm --filter @hut/reader dev",
+    "dev:admin": "pnpm --filter @hut/admin dev",
+    "build": "pnpm -r build",
+    "lint": "eslint shared/ reader/ admin/ e2e/",
+    "test": "vitest run --project unit",
+    "typecheck": "pnpm --filter @hut/shared typecheck && pnpm --filter @hut/reader typecheck && pnpm --filter @hut/admin typecheck",
+    "e2e": "playwright test",
+    "storybook": "storybook dev -p 6006 -c .storybook"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^4.1.3",
+    "@playwright/test": "^1.58.1",
+    "@storybook/addon-a11y": "^10.2.3",
+    "@storybook/addon-docs": "^10.2.3",
+    "@storybook/addon-onboarding": "^10.2.3",
+    "@storybook/addon-vitest": "^10.2.3",
+    "@storybook/nextjs-vite": "^10.2.3",
+    "@types/node": "^20.19.30",
+    "@types/react": "^19.2.10",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/browser-playwright": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.6",
+    "eslint-plugin-storybook": "^0.12.0",
+    "next": "16.1.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "storybook": "^10.2.3",
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^6.0.5",
+    "tsx": "^4.19.0",
+    "vitest": "^4.0.18"
+  }
+}

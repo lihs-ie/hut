@@ -12,9 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: 20
-  PNPM_VERSION: 9
-  FIREBASE_COMPOSE_FILE: packages/shared/docker/firebase/docker-compose.yml
+  FIREBASE_COMPOSE_FILE: applications/docker/docker-compose.yaml
+  FRONTEND_DIR: applications/frontend
   SHARD_TOTAL: 5
 
 jobs:
@@ -26,19 +25,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-frontend
 
       - name: Build
         run: pnpm build
+        working-directory: ${{ env.FRONTEND_DIR }}
         env:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "true"
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
@@ -46,8 +37,8 @@ jobs:
 
       - name: Archive build artifacts
         run: |
-          tar -czf admin-build.tar.gz -C packages/admin .next
-          tar -czf reader-build.tar.gz -C packages/reader .next
+          tar -czf admin-build.tar.gz -C applications/frontend/admin .next
+          tar -czf reader-build.tar.gz -C applications/frontend/reader .next
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v6
@@ -71,31 +62,24 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-frontend
 
       - name: Cache Playwright browsers
         uses: actions/cache@v5
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: playwright-${{ runner.os }}-${{ hashFiles('applications/frontend/pnpm-lock.yaml') }}
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium
+        working-directory: ${{ env.FRONTEND_DIR }}
 
       - name: Install Playwright dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium
+        working-directory: ${{ env.FRONTEND_DIR }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v6
@@ -104,8 +88,8 @@ jobs:
 
       - name: Extract build artifacts
         run: |
-          tar -xzf admin-build.tar.gz -C packages/admin
-          tar -xzf reader-build.tar.gz -C packages/reader
+          tar -xzf admin-build.tar.gz -C applications/frontend/admin
+          tar -xzf reader-build.tar.gz -C applications/frontend/reader
 
       - name: Start Firebase Emulator
         run: |
@@ -120,13 +104,15 @@ jobs:
       - name: Seed test data
         run: |
           echo "Seeding test data to Firestore Emulator..."
-          pnpm seed
+          pnpm exec tsx ../scripts/seed/index.ts
           echo "Seed completed"
+        working-directory: ${{ env.FRONTEND_DIR }}
 
       - name: Start Admin application
         run: |
           pnpm --filter @hut/admin start &
           timeout 60 bash -c 'until curl -s http://localhost:3001 > /dev/null 2>&1; do sleep 2; done'
+        working-directory: ${{ env.FRONTEND_DIR }}
         env:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "true"
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
@@ -136,6 +122,7 @@ jobs:
 
       - name: Run E2E tests (Shard ${{ matrix.shard }}/${{ env.SHARD_TOTAL }})
         run: pnpm e2e --shard=${{ matrix.shard }}/${{ env.SHARD_TOTAL }}
+        working-directory: ${{ env.FRONTEND_DIR }}
         env:
           E2E_AUTH_SECRET: ${{ secrets.E2E_AUTH_SECRET }}
           E2E_AUTH_UID: ${{ secrets.E2E_AUTH_UID }}
@@ -148,7 +135,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: blob-report-${{ matrix.shard }}
-          path: blob-report/
+          path: applications/frontend/blob-report/
           retention-days: 1
 
       - name: Stop Firebase Emulator
@@ -176,30 +163,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-frontend
 
       - name: Download blob reports
         uses: actions/download-artifact@v6
         with:
-          path: all-blob-reports
+          path: ${{ env.FRONTEND_DIR }}/all-blob-reports
           pattern: blob-report-*
           merge-multiple: true
 
       - name: Merge reports
         run: pnpm exec playwright merge-reports --reporter html ./all-blob-reports
+        working-directory: ${{ env.FRONTEND_DIR }}
 
       - name: Upload merged report
         uses: actions/upload-artifact@v6
         with:
           name: playwright-report
-          path: playwright-report/
+          path: applications/frontend/playwright-report/
           retention-days: 7
