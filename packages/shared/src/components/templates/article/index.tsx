@@ -11,6 +11,11 @@ import {
 import { Sidebar } from "@shared/components/organisms/article/sidebar";
 import { Title } from "@shared/components/organisms/common/title";
 import { Tag } from "@shared/domains/attributes/tag";
+import { EngagementTracker } from "@shared/components/organisms/tracker";
+import type {
+  ContentType,
+  SearchReferenceIdentifier,
+} from "@shared/domains/search-token/reference";
 
 export type Props = {
   slug: string;
@@ -18,11 +23,18 @@ export type Props = {
     renderer: MarkdownRenderer;
     findBySlug: (slug: string) => Promise<Article>;
     findAllTags: (identifiers: string[]) => Promise<Tag[]>;
+    incrementViewCount: (identifier: SearchReferenceIdentifier) => Promise<void>;
   };
   sidebar: {
     createTableOfContents: (slug: string) => Promise<Node[]>;
   };
+  tracking?: {
+    contentType: ContentType;
+    contentIdentifier: string;
+  };
 };
+
+const ARTICLE_CONTENT_ELEMENT_ID = "article-content";
 
 export const ArticleIndex = async (props: Props) => (
   <div className={styles.container}>
@@ -34,13 +46,14 @@ export const ArticleIndex = async (props: Props) => (
         timelineOf={(content) => content.timeline}
       />
     </Suspense>
-    <div className={styles.content}>
+    <div id={ARTICLE_CONTENT_ELEMENT_ID} className={styles.content}>
       <Suspense fallback={<ArticleContentSkeleton />}>
         <ArticleComponent
           slug={props.slug}
           renderer={props.article.renderer}
           findBySlug={props.article.findBySlug}
           findAllTags={props.article.findAllTags}
+          incrementViewCount={props.article.incrementViewCount}
         />
       </Suspense>
       <div className={styles.sidebar}>
@@ -52,5 +65,12 @@ export const ArticleIndex = async (props: Props) => (
         </Suspense>
       </div>
     </div>
+    {props.tracking && (
+      <EngagementTracker
+        contentType={props.tracking.contentType}
+        contentIdentifier={props.tracking.contentIdentifier}
+        contentElementId={ARTICLE_CONTENT_ELEMENT_ID}
+      />
+    )}
   </div>
 );
