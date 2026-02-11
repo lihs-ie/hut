@@ -5,6 +5,7 @@ import {
   isOidcPermissionDeniedError,
   isUserDisabledError,
 } from "@/aspects/auth/oidc";
+import { isE2EAuthAvailable } from "@/aspects/e2e";
 import { type Auth as AdminAuth } from "firebase-admin/auth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -97,14 +98,8 @@ const resolveIdentityToolkitBaseUrl = (useEmulator: boolean): string =>
 /**
  * Check whether an error is a Firebase Admin error.
  */
-const isFirebaseAdminError = (error: unknown): error is FirebaseAdminError => {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof (error as { code?: unknown }).code === "string"
-  );
-};
+const isFirebaseAdminError = (error: unknown): error is FirebaseAdminError =>
+  isRecord(error) && typeof error.code === "string";
 
 /**
  * Check whether the error indicates a missing user.
@@ -218,7 +213,12 @@ const resolveAuthFailureStatus = (error: unknown): number => {
  * Handle E2E authentication for Playwright.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (process.env.E2E_AUTH_ENABLED !== "true") {
+  const availability = isE2EAuthAvailable({
+    e2eAuthEnabled: process.env.E2E_AUTH_ENABLED,
+    useFirebaseEmulator: process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR,
+  });
+
+  if (!availability.available) {
     return new NextResponse("Not found", { status: 404 });
   }
 
