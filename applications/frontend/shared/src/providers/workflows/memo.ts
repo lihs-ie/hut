@@ -13,6 +13,7 @@ import {
   createMemoCreateWorkflow,
   createMemoEditWorkflow,
 } from "@shared/workflows/memo";
+import { createPassthroughFilter } from "@shared/workflows/common";
 import { MemoRepositoryProvider } from "../infrastructure/memo";
 import { LoggerProvider } from "../infrastructure/logger";
 import { validateSlug } from "@shared/domains/common";
@@ -24,7 +25,7 @@ export const MemoWorkflowProvider = {
 
   findBySlug: createMemoFindBySlugWorkflow(validateSlug)(
     MemoRepositoryProvider.firebase.findBySlug,
-  )(LoggerProvider.console),
+  )(createPassthroughFilter())(LoggerProvider.console),
 
   search: createMemoSearchWorkflow(validateCriteria)(
     MemoRepositoryProvider.firebase.search,

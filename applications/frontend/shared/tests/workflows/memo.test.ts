@@ -17,7 +17,16 @@ import {
 import { validateSlug } from "@shared/domains/common/slug";
 import { Logger, Environment } from "@shared/aspects/logger";
 import { ok, err } from "@shared/aspects/result";
-import { aggregateNotFoundError, unexpectedError } from "@shared/aspects/error";
+import {
+  aggregateNotFoundError,
+  isAggregateNotFoundError,
+  unexpectedError,
+} from "@shared/aspects/error";
+import { PublishStatus } from "@shared/domains/common";
+import {
+  createPassthroughFilter,
+  createPublishedOnlyFilter,
+} from "@shared/workflows/common";
 import {
   MemoMold,
   MemoIdentifierMold,
@@ -84,7 +93,7 @@ describe("workflows/memo", () => {
 
       const workflow = createMemoFindBySlugWorkflow(validateSlug)(
         findBySlugMock
-      )(mockLogger);
+      )(createPassthroughFilter())(mockLogger);
 
       const result = await workflow(memo.slug).unwrap();
 
@@ -97,7 +106,7 @@ describe("workflows/memo", () => {
 
       const workflow = createMemoFindBySlugWorkflow(validateSlug)(
         findBySlugMock
-      )(mockLogger);
+      )(createPassthroughFilter())(mockLogger);
 
       const result = workflow("Invalid Slug With Spaces");
 
@@ -116,11 +125,56 @@ describe("workflows/memo", () => {
 
       const workflow = createMemoFindBySlugWorkflow(validateSlug)(
         findBySlugMock
-      )(mockLogger);
+      )(createPassthroughFilter())(mockLogger);
 
       const result = await workflow(slug).unwrapError();
 
       expect(result).toEqual(notFoundError);
+    });
+
+    it("createPublishedOnlyFilterでdraft状態のメモはAggregateNotFoundErrorを返す", async () => {
+      const memo = Forger(MemoMold).forgeWithSeed(1, {
+        status: PublishStatus.DRAFT,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(memo).toAsync());
+
+      const workflow = createMemoFindBySlugWorkflow(validateSlug)(
+        findBySlugMock
+      )(createPublishedOnlyFilter("Memo"))(mockLogger);
+
+      const error = await workflow(memo.slug).unwrapError();
+
+      expect(isAggregateNotFoundError(error)).toBe(true);
+    });
+
+    it("createPublishedOnlyFilterでarchived状態のメモはAggregateNotFoundErrorを返す", async () => {
+      const memo = Forger(MemoMold).forgeWithSeed(1, {
+        status: PublishStatus.ARCHIVED,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(memo).toAsync());
+
+      const workflow = createMemoFindBySlugWorkflow(validateSlug)(
+        findBySlugMock
+      )(createPublishedOnlyFilter("Memo"))(mockLogger);
+
+      const error = await workflow(memo.slug).unwrapError();
+
+      expect(isAggregateNotFoundError(error)).toBe(true);
+    });
+
+    it("createPublishedOnlyFilterでpublished状態のメモは正常に返す", async () => {
+      const memo = Forger(MemoMold).forgeWithSeed(1, {
+        status: PublishStatus.PUBLISHED,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(memo).toAsync());
+
+      const workflow = createMemoFindBySlugWorkflow(validateSlug)(
+        findBySlugMock
+      )(createPublishedOnlyFilter("Memo"))(mockLogger);
+
+      const result = await workflow(memo.slug).unwrap();
+
+      expect(result).toEqual(memo);
     });
   });
 
