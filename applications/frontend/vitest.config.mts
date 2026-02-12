@@ -35,7 +35,7 @@ export default defineConfig({
             "**/features/**",
             "**/infrastructures/**",
             "admin/tests/actions/!(analytics)**",
-            "admin/tests/aspects/**",
+            "admin/tests/aspects/auth/**",
             "admin/tests/components/global/**",
             "admin/tests/infrastructure/**",
           ],
