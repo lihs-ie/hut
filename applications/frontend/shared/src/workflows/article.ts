@@ -26,6 +26,10 @@ import { Slug, ValidateSlug } from "@shared/domains/common";
 import { Logger } from "@shared/aspects/logger";
 import { Command } from "./common";
 
+type ArticleFilter = (
+  article: Article,
+) => Result<Article, AggregateNotFoundError<"Article">>;
+
 type ValidateIdentifier = (
   identifier: string,
 ) => Result<ArticleIdentifier, ValidationError>;
@@ -84,7 +88,8 @@ type FindBySlug = (
 export const createArticleFindBySlugWorkflow =
   (validateSlug: ValidateSlug) =>
   (logger: Logger) =>
-  (findBySlug: FindBySlug): ArticleFindBySlugWorkflow =>
+  (findBySlug: FindBySlug) =>
+  (filter: ArticleFilter): ArticleFindBySlugWorkflow =>
   (command: ArticleFindBySlugCommand) => {
     logger.info("ArticleFindBySlugWorkflow started", {
       slug: command.payload.slug,
@@ -99,6 +104,7 @@ export const createArticleFindBySlugWorkflow =
         logger.warn("Slug validation failed", { error });
       })
       .andThen(findBySlug)
+      .andThen(filter)
       .tap((article) => {
         logger.info("ArticleFindBySlugWorkflow completed", {
           identifier: article.identifier,

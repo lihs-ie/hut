@@ -15,7 +15,16 @@ import {
 import { validateSlug } from "@shared/domains/common/slug";
 import { Logger, Environment } from "@shared/aspects/logger";
 import { ok, err } from "@shared/aspects/result";
-import { aggregateNotFoundError, unexpectedError } from "@shared/aspects/error";
+import {
+  aggregateNotFoundError,
+  isAggregateNotFoundError,
+  unexpectedError,
+} from "@shared/aspects/error";
+import { PublishStatus } from "@shared/domains/common";
+import {
+  createPassthroughFilter,
+  createPublishedOnlyFilter,
+} from "@shared/workflows/common";
 import {
   ArticleMold,
   ArticleIdentifierMold,
@@ -100,7 +109,7 @@ describe("workflows/article", () => {
 
       const workflow = createArticleFindBySlugWorkflow(validateSlug)(
         mockLogger
-      )(findBySlugMock);
+      )(findBySlugMock)(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -118,7 +127,7 @@ describe("workflows/article", () => {
 
       const workflow = createArticleFindBySlugWorkflow(validateSlug)(
         mockLogger
-      )(findBySlugMock);
+      )(findBySlugMock)(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -145,7 +154,7 @@ describe("workflows/article", () => {
 
       const workflow = createArticleFindBySlugWorkflow(validateSlug)(
         mockLogger
-      )(findBySlugMock);
+      )(findBySlugMock)(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -155,6 +164,66 @@ describe("workflows/article", () => {
       const result = await workflow(command).unwrapError();
 
       expect(result).toEqual(notFoundError);
+    });
+
+    it("createPublishedOnlyFilterでdraft状態の記事はAggregateNotFoundErrorを返す", async () => {
+      const article = Forger(ArticleMold).forgeWithSeed(1, {
+        status: PublishStatus.DRAFT,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(article).toAsync());
+
+      const workflow = createArticleFindBySlugWorkflow(validateSlug)(
+        mockLogger
+      )(findBySlugMock)(createPublishedOnlyFilter("Article"));
+
+      const command: Command<{ slug: string }> = {
+        now: new Date(),
+        payload: { slug: article.slug },
+      };
+
+      const error = await workflow(command).unwrapError();
+
+      expect(isAggregateNotFoundError(error)).toBe(true);
+    });
+
+    it("createPublishedOnlyFilterでarchived状態の記事はAggregateNotFoundErrorを返す", async () => {
+      const article = Forger(ArticleMold).forgeWithSeed(1, {
+        status: PublishStatus.ARCHIVED,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(article).toAsync());
+
+      const workflow = createArticleFindBySlugWorkflow(validateSlug)(
+        mockLogger
+      )(findBySlugMock)(createPublishedOnlyFilter("Article"));
+
+      const command: Command<{ slug: string }> = {
+        now: new Date(),
+        payload: { slug: article.slug },
+      };
+
+      const error = await workflow(command).unwrapError();
+
+      expect(isAggregateNotFoundError(error)).toBe(true);
+    });
+
+    it("createPublishedOnlyFilterでpublished状態の記事は正常に返す", async () => {
+      const article = Forger(ArticleMold).forgeWithSeed(1, {
+        status: PublishStatus.PUBLISHED,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(article).toAsync());
+
+      const workflow = createArticleFindBySlugWorkflow(validateSlug)(
+        mockLogger
+      )(findBySlugMock)(createPublishedOnlyFilter("Article"));
+
+      const command: Command<{ slug: string }> = {
+        now: new Date(),
+        payload: { slug: article.slug },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result).toEqual(article);
     });
   });
 

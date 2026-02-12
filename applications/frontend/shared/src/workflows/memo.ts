@@ -30,6 +30,10 @@ import {
 import { Command } from "./common";
 import { ValidateSlug } from "@shared/domains/common";
 
+type MemoFilter = (
+  memo: Memo,
+) => Result<Memo, AggregateNotFoundError<"Memo">>;
+
 type ValidateIdentifier = (
   identifier: string,
 ) => Result<MemoIdentifier, ValidationError>;
@@ -85,6 +89,7 @@ export type MemoFindBySlugWorkflow = (
 export const createMemoFindBySlugWorkflow =
   (validate: (slug: string) => Result<MemoSlug, ValidationError>) =>
   (findBySlug: FindBySlug) =>
+  (filter: MemoFilter) =>
   (logger: Logger): MemoFindBySlugWorkflow =>
   (slug: string) => {
     logger.info("MemoFindBySlugWorkflow started", { slug });
@@ -98,6 +103,7 @@ export const createMemoFindBySlugWorkflow =
         logger.warn("Validation failed", { error });
       })
       .andThen(findBySlug)
+      .andThen(filter)
       .tap((memo) => {
         logger.info("MemoFindBySlugWorkflow completed", {
           identifier: memo.identifier,

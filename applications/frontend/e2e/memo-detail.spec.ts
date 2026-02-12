@@ -149,49 +149,23 @@ test.describe("memo detail page", () => {
     await expect(notFoundIndicators.first()).toBeVisible();
   });
 
-  test("draft memo page renders (admin preview)", async ({ page }: TestArgs) => {
-    // typescript-config is a draft memo
+  test("draft memo shows 404 on reader", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${draftMemo.slug}`);
 
-    // Verify page loads
     await page.waitForLoadState("networkidle");
 
-    // Check if memo title is displayed (draft accessible) or 404 page
-    const memoTitle = page
-      .getByRole("heading", { name: draftMemo.title })
-      .first();
-    const notFoundIndicators = page.locator("text=/404|not found|見つかりません/i");
-
-    const isTitleVisible = await memoTitle.isVisible().catch(() => false);
-    const isNotFound = await notFoundIndicators
-      .first()
-      .isVisible()
-      .catch(() => false);
-
-    // Either the memo is accessible or shows 404
-    expect(isTitleVisible || isNotFound).toBe(true);
+    const notFoundIndicators = page.locator("text=/404|not found|見つかりません|ページが見つかりません/i");
+    await expect(notFoundIndicators.first()).toBeVisible();
   });
 
-  test("memo with three entries displays all entries", async ({
+  test("draft memo with three entries shows 404 on reader", async ({
     page,
   }: TestArgs) => {
-    // Draft memo has 3 entries, but if not accessible, skip check
     await page.goto(`/memos/${draftMemo.slug}`);
     await page.waitForLoadState("networkidle");
 
-    const memoTitle = page
-      .getByRole("heading", { name: draftMemo.title })
-      .first();
-    const isTitleVisible = await memoTitle.isVisible().catch(() => false);
-
-    if (isTitleVisible) {
-      // Check for all three entries
-      await expect(page.locator("code", { hasText: "strict: true" })).toBeVisible();
-      await expect(
-        page.locator("code", { hasText: "noUncheckedIndexedAccess" }),
-      ).toBeVisible();
-      await expect(page.locator("code", { hasText: "paths" })).toBeVisible();
-    }
+    const notFoundIndicators = page.locator("text=/404|not found|見つかりません|ページが見つかりません/i");
+    await expect(notFoundIndicators.first()).toBeVisible();
   });
 
   test("entry text is rendered as prose", async ({ page }: TestArgs) => {
