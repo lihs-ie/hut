@@ -77,19 +77,6 @@
   color: var(--muted-foreground);
 }
 
-.author {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.author-avatar {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  overflow: hidden;
-}
-
 .stats {
   display: flex;
   align-items: center;
