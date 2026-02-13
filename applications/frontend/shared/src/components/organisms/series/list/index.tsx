@@ -1,16 +1,9 @@
 import { Series } from "@shared/domains/series";
-import {
-  SeriesSummaryCard,
-  Props as SeriesSummaryCardProps,
-} from "@shared/components/molecules/list/card/series/summary";
+import { SeriesSummaryCard } from "@shared/components/molecules/list/card/series/summary";
 import styles from "./index.module.css";
 
 export type Props = {
   seriesList: Series[];
-  author?: {
-    name: string;
-    avatar?: string;
-  };
 };
 
 export const SeriesList = (props: Props) => {
@@ -30,18 +23,17 @@ export const SeriesList = (props: Props) => {
   return (
     <div className={styles.container}>
       <div className={styles.grid}>
-        {props.seriesList.map((series) => {
-          const cardProps: SeriesSummaryCardProps = {
-            slug: series.slug,
-            title: series.title,
-            description: series.description,
-            cover: series.cover,
-            tags: series.tags,
-            chapterCount: series.chapters.length,
-            author: props.author,
-          };
-          return <SeriesSummaryCard key={series.identifier} {...cardProps} />;
-        })}
+        {props.seriesList.map((series) => (
+          <SeriesSummaryCard
+            key={series.identifier}
+            slug={series.slug}
+            title={series.title}
+            description={series.description}
+            cover={series.cover}
+            tags={series.tags}
+            chapterCount={series.chapters.length}
+          />
+        ))}
       </div>
     </div>
   );

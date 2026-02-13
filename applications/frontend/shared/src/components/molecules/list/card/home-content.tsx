@@ -13,9 +13,8 @@ const defaultHref = (slug: Slug, type: ContentType) => {
       return Routes.page.articles.show(slug);
     case ContentType.MEMO:
       return Routes.page.memos.show(slug);
-    // [初期リリース対象外]
-    // case ContentType.SERIES:
-    //   return Routes.page.series.show(slug);
+    case ContentType.SERIES:
+      return Routes.page.series.show(slug);
     default:
       return "#";
   }
@@ -27,9 +26,8 @@ const badgeText = (type: ContentType) => {
       return { text: "記事", variant: "default" as const };
     case ContentType.MEMO:
       return { text: "メモ", variant: "secondary" as const };
-    // [初期リリース対象外]
-    // case ContentType.SERIES:
-    //   return { text: "シリーズ", variant: "outline" as const };
+    case ContentType.SERIES:
+      return { text: "シリーズ", variant: "outline" as const };
     default:
       return { text: "", variant: "default" as const };
   }

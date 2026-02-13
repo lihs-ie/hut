@@ -4,10 +4,6 @@ import styles from "./index.module.css";
 
 export type Props = {
   seriesList: Series[];
-  author?: {
-    name: string;
-    avatar?: string;
-  };
 };
 
 export const SeriesListIndex = (props: Props) => {
@@ -21,7 +17,7 @@ export const SeriesListIndex = (props: Props) => {
           </p>
         </div>
 
-        <SeriesList seriesList={props.seriesList} author={props.author} />
+        <SeriesList seriesList={props.seriesList} />
       </div>
     </div>
   );

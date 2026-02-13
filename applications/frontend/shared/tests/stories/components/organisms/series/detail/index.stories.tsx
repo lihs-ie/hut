@@ -42,18 +42,6 @@ export const Default: StoryObj<typeof SeriesDetail> = {
   args: {
     series,
     slug,
-    author: {
-      name: "mori",
-      avatar: "https://picsum.photos/seed/mori/100/100",
-      bio: "Software Engineer | 最近はClaude Code ×Next.jsでのAI駆動開発を試してます",
-    },
-  },
-};
-
-export const WithoutAuthor: StoryObj<typeof SeriesDetail> = {
-  args: {
-    series,
-    slug,
   },
 };
 
@@ -67,10 +55,6 @@ export const WithCover: StoryObj<typeof SeriesDetail> = {
       chapters: chapterForger.forgeMultiWithSeed(5, 10),
     }),
     slug: slugForger.forge(),
-    author: {
-      name: "TypeScript Expert",
-      bio: "TypeScript contributor",
-    },
   },
 };
 
