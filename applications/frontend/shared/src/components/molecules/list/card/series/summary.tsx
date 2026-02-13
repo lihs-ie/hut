@@ -12,10 +12,6 @@ export type Props = {
   emoji?: string;
   tags: string[];
   chapterCount: number;
-  author?: {
-    name: string;
-    avatar?: string;
-  };
 };
 
 export const SeriesSummaryCard = (props: Props) => {
@@ -46,21 +42,6 @@ export const SeriesSummaryCard = (props: Props) => {
         ))}
       </div>
       <div className={styles.footer}>
-        {props.author && (
-          <div className={styles.author}>
-            {props.author.avatar && (
-              <div className={styles["author-avatar"]}>
-                <Image
-                  src={props.author.avatar}
-                  alt={props.author.name}
-                  width={24}
-                  height={24}
-                />
-              </div>
-            )}
-            <span>{props.author.name}</span>
-          </div>
-        )}
         <div className={styles.stats}>
           <div className={styles.stat}>
             <BookOpenIcon className={styles["stat-icon"]} />
