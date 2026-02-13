@@ -10,9 +10,8 @@ const searchLinks = (type: ContentType) => {
       return Routes.page.articles.index;
     case ContentType.MEMO:
       return Routes.page.memos.index;
-    // [初期リリース対象外]
-    // case ContentType.SERIES:
-    //   return Routes.page.series.index;
+    case ContentType.SERIES:
+      return Routes.page.series.index;
     default:
       return "#";
   }
@@ -31,9 +30,8 @@ const buildHref = (
       return Routes.page.articles.edit(slug);
     case ContentType.MEMO:
       return Routes.page.memos.edit(slug);
-    // [初期リリース対象外]
-    // case ContentType.SERIES:
-    //   return undefined;
+    case ContentType.SERIES:
+      return undefined;
     default:
       return undefined;
   }

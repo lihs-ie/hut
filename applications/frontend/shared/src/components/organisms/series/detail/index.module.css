@@ -11,7 +11,6 @@
   }
 }
 
-/* サイドバー */
 .sidebar {
   width: 100%;
 }
@@ -127,34 +126,6 @@
   }
 }
 
-.author-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid oklch(from var(--border) l c h / 0.5);
-}
-
-.author-avatar {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-
-.author-name {
-  font-weight: 500;
-  font-size: 0.875rem;
-}
-
-@media (min-width: 768px) {
-  .author-name {
-    font-size: 1rem;
-  }
-}
-
 .metadata {
   font-size: 0.875rem;
   color: var(--muted-foreground);
@@ -196,7 +167,6 @@
   }
 }
 
-/* メインコンテンツ */
 .main {
   flex: 1;
   min-width: 0;
@@ -275,7 +245,6 @@
   }
 }
 
-/* チャプター一覧 */
 .chapters-section {
   margin-bottom: 1.5rem;
 }
@@ -416,84 +385,3 @@
   color: var(--accent);
 }
 
-/* 著者カード */
-.author-card {
-  padding: 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--border);
-  background: var(--card);
-}
-
-@media (min-width: 768px) {
-  .author-card {
-    padding: 1.5rem;
-  }
-}
-
-.author-card-title {
-  font-size: 1rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-}
-
-@media (min-width: 768px) {
-  .author-card-title {
-    font-size: 1.125rem;
-  }
-}
-
-.author-card-content {
-  display: flex;
-  gap: 0.75rem;
-}
-
-@media (min-width: 768px) {
-  .author-card-content {
-    gap: 1rem;
-  }
-}
-
-.author-card-avatar {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid var(--border);
-  flex-shrink: 0;
-}
-
-@media (min-width: 768px) {
-  .author-card-avatar {
-    width: 4rem;
-    height: 4rem;
-  }
-}
-
-.author-card-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.author-card-name {
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  font-size: 0.9375rem;
-}
-
-@media (min-width: 768px) {
-  .author-card-name {
-    font-size: 1rem;
-  }
-}
-
-.author-card-bio {
-  font-size: 0.875rem;
-  color: var(--muted-foreground);
-  line-height: 1.5;
-}
-
-@media (min-width: 768px) {
-  .author-card-bio {
-    font-size: 0.9375rem;
-  }
-}
