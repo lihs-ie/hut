@@ -64,7 +64,16 @@ for (const envFile of envFiles) {
   loadEnvFile(envFile);
 }
 
-const baseURL = process.env.ADMIN_BASE_URL ?? "http://localhost:3001";
+const adminBaseURL = process.env.ADMIN_BASE_URL ?? "http://localhost:3001";
+const readerBaseURL = process.env.READER_BASE_URL ?? "http://localhost:3000";
+
+const readerTestFiles = [
+  "**/article-detail.spec.ts",
+  "**/memo-detail.spec.ts",
+  "**/home.spec.ts",
+  "**/public-pages.spec.ts",
+  "**/search.spec.ts",
+];
 
 export default defineConfig({
   testDir: "./e2e",
@@ -74,14 +83,26 @@ export default defineConfig({
   reporter: process.env.CI ? "blob" : "list",
   globalSetup: "./playwright/global-setup.ts",
   use: {
-    baseURL,
     trace: "on-first-retry",
-    storageState: "playwright/.auth/admin.json",
+    ...devices["Desktop Chrome"],
   },
   projects: [
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: "admin",
+      use: {
+        baseURL: adminBaseURL,
+        storageState: "playwright/.auth/admin.json",
+      },
+      testIgnore: readerTestFiles,
+    },
+    {
+      name: "reader",
+      use: {
+        baseURL: readerBaseURL,
+        storageState: undefined,
+      },
+      testMatch: readerTestFiles,
+      dependencies: ["admin"],
     },
   ],
 });

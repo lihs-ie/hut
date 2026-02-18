@@ -62,3 +62,7 @@ services:
       pubsub-emulator:
         condition: service_healthy
     restart: unless-stopped
+
+networks:
+  default:
+    name: hut-firebase-emulator_default

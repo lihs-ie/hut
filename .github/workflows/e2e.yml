@@ -120,6 +120,15 @@ jobs:
           E2E_AUTH_SECRET: ${{ secrets.E2E_AUTH_SECRET }}
           OIDC_ALLOWED_EMAILS: '["${{ secrets.E2E_AUTH_EMAIL }}"]'
 
+      - name: Start Reader application
+        run: |
+          pnpm --filter @hut/reader start &
+          timeout 60 bash -c 'until curl -s http://localhost:3000 > /dev/null 2>&1; do sleep 2; done'
+        working-directory: ${{ env.FRONTEND_DIR }}
+        env:
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "true"
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
+
       - name: Run E2E tests (Shard ${{ matrix.shard }}/${{ env.SHARD_TOTAL }})
         run: pnpm e2e --shard=${{ matrix.shard }}/${{ env.SHARD_TOTAL }}
         working-directory: ${{ env.FRONTEND_DIR }}
@@ -128,6 +137,7 @@ jobs:
           E2E_AUTH_UID: ${{ secrets.E2E_AUTH_UID }}
           E2E_AUTH_EMAIL: ${{ secrets.E2E_AUTH_EMAIL }}
           ADMIN_BASE_URL: http://localhost:3001
+          READER_BASE_URL: http://localhost:3000
           E2E_AUTH_ENABLED: "true"
 
       - name: Upload blob report
