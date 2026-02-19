@@ -11,5 +11,7 @@ export default withMDX(
         hostname: "**",
       },
     ],
+    dangerouslyAllowLocalIP:
+      process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true",
   }),
 );

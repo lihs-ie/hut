@@ -44,10 +44,9 @@ type PreProps = React.HTMLAttributes<HTMLPreElement> & {
 };
 
 const extractLanguage = (children: React.ReactNode): string | null => {
-  if (!React.isValidElement(children)) return null;
+  if (!React.isValidElement<{ className?: string }>(children)) return null;
 
-  const childProps = children.props as { className?: string };
-  const className = childProps.className || "";
+  const className = children.props.className ?? "";
   const match = className.match(/language-(\w+)/);
 
   return match ? match[1] : null;
@@ -80,7 +79,7 @@ const mdxComponents = {
   h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h2 {...props} />,
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
     <Image
-      src={props.src as string}
+      src={typeof props.src === "string" ? props.src : ""}
       alt={props.alt ?? ""}
       width={800}
       height={450}
@@ -97,7 +96,6 @@ export const MDXRenderer: MarkdownRenderer = (
   <MDXRemote source={content} options={options} components={mdxComponents} />
 );
 
-// 目次
 export type Heading = {
   level: number;
   text: string;
