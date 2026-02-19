@@ -1,0 +1,115 @@
+cabal-version: 3.0
+name:          search-token-worker
+version:       0.1.0.0
+build-type:    Simple
+
+library
+  hs-source-dirs: src
+  exposed-modules:
+    Aspects.Log
+    Domain.Common
+    Domain.Event
+    Domain.Ngram
+    Domain.SearchToken
+    UseCase.EventHandler
+    Infrastructure.Firestore
+  build-depends:
+    base >= 4.17 && < 5,
+    containers,
+    time ^>= 1.14,
+    gogol-firestore ^>= 1.0.0,
+    gogol          ^>= 1.0.0,
+    gogol-core     ^>= 1.0.0,
+    resourcet,
+    lens,
+    text ^>= 2.1.4,
+    unordered-containers,
+    mtl,
+    bytestring,
+    http-types
+  default-extensions: OverloadedRecordDot DuplicateRecordFields
+  default-language: GHC2021
+  ghc-options: -Wall
+
+executable app
+  main-is:       Main.hs
+  hs-source-dirs: app
+  other-modules:
+    API.Request
+    API.Handlers.Event
+    API.Handlers.Health
+    API.Server
+  build-depends:
+    base >= 4.17 && < 5,
+    search-token-worker,
+    servant-server >= 0.20 && < 0.21,
+    warp >= 3.3 && < 3.5,
+    aeson >= 2.1 && < 2.3,
+    gogol-firestore ^>= 1.0.0,
+    gogol          ^>= 1.0.0,
+    gogol-core     ^>= 1.0.0,
+    resourcet,
+    lens,
+    text ^>= 2.1.4,
+    bytestring,
+    base64-bytestring,
+    time ^>= 1.14,
+    dotenv >= 0.12 && < 0.13,
+    envy >= 2.1 && < 2.2,
+    mtl
+  default-extensions: OverloadedRecordDot DuplicateRecordFields
+  default-language: GHC2021
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+
+test-suite spec
+  type:   exitcode-stdio-1.0
+  hs-source-dirs: test app
+  main-is: Spec.hs
+  other-modules:
+    Unit.Domain.NgramSpec
+    Unit.Domain.CommonSpec
+    Unit.Domain.EventSpec
+    Unit.Domain.SearchTokenSpec
+    Unit.UseCase.EventHandlerSpec
+    Unit.Infrastructure.FirestoreSpec
+    Unit.API.RequestSpec
+    Unit.API.ServerSpec
+    Feature.EventSpec
+    Support.Mock.Domain.SearchToken
+    Support.Helper.Domain.Event
+    Support.Helper.Infrastructure.Firestore
+    Support.Helper.API.Request
+    API.Request
+    API.Handlers.Event
+    API.Handlers.Health
+    API.Server
+  build-depends:
+    base >= 4.17 && < 5,
+    hspec >= 2.11 && < 2.12,
+    hspec-discover >= 2.11 && < 2.12,
+    QuickCheck >= 2.14,
+    search-token-worker,
+    text ^>= 2.1.4,
+    containers,
+    time ^>= 1.14,
+    mtl,
+    gogol          ^>= 1.0.0,
+    gogol-core     ^>= 1.0.0,
+    gogol-firestore ^>= 1.0.0,
+    lens,
+    resourcet,
+    http-client,
+    bytestring,
+    aeson >= 2.1 && < 2.3,
+    base64-bytestring,
+    hspec-wai >= 0.11 && < 0.12,
+    servant-server >= 0.20 && < 0.21,
+    http-types >= 0.12,
+    warp >= 3.3 && < 3.5,
+    wai,
+    wai-extra
+  build-tool-depends:
+    hspec-discover:hspec-discover
+  default-extensions: OverloadedRecordDot DuplicateRecordFields DataKinds
+  default-language: GHC2021
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
