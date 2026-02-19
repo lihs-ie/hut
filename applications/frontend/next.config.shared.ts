@@ -3,6 +3,7 @@ import type { RemotePattern } from "next/dist/shared/lib/image-config";
 
 type Options = {
   readonly additionalRemotePatterns?: ReadonlyArray<RemotePattern>;
+  readonly dangerouslyAllowLocalIP?: boolean;
 };
 
 export const createBaseNextConfig = (options?: Options): NextConfig => {
@@ -23,6 +24,9 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
     transpilePackages: ["@hut/shared"],
     images: {
       remotePatterns,
+      ...(options?.dangerouslyAllowLocalIP !== undefined && {
+        dangerouslyAllowLocalIP: options.dangerouslyAllowLocalIP,
+      }),
     },
   };
 };
