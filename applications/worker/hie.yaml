@@ -1,0 +1,8 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:search-token-worker"
+    - path: "app"
+      component: "exe:app"
+    - path: "test"
+      component: "test:spec"
