@@ -82,7 +82,7 @@ jobs:
         working-directory: ${{ env.FRONTEND_DIR }}
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: build-artifacts
 
@@ -176,7 +176,7 @@ jobs:
       - uses: ./.github/actions/setup-frontend
 
       - name: Download blob reports
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: ${{ env.FRONTEND_DIR }}/all-blob-reports
           pattern: blob-report-*
