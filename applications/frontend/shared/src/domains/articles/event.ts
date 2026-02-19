@@ -12,14 +12,14 @@ export type ArticleCreatedEvent = Event<
 export const createArticleCreatedEvent = (
   article: ArticleSnapshot,
   occurredAt: Date,
-): ArticleCreatedEvent =>
-  ({
-    identifier: ulid(),
-    occurredAt,
-    payload: {
-      snapshot: article,
-    },
-  }) as ArticleCreatedEvent;
+): ArticleCreatedEvent => ({
+  identifier: ulid(),
+  type: "article.created",
+  occurredAt,
+  payload: {
+    snapshot: article,
+  },
+});
 
 export type ArticleEditedEvent = Event<
   "article.edited",
@@ -33,15 +33,15 @@ export const createArticleEditedEvent = (
   next: ArticleSnapshot,
   before: ArticleSnapshot,
   occurredAt: Date,
-): ArticleEditedEvent =>
-  ({
-    identifier: ulid(),
-    occurredAt,
-    payload: {
-      next,
-      before,
-    },
-  }) as ArticleEditedEvent;
+): ArticleEditedEvent => ({
+  identifier: ulid(),
+  type: "article.edited",
+  occurredAt,
+  payload: {
+    next,
+    before,
+  },
+});
 
 export type ArticleTerminatedEvent = Event<
   "article.terminated",
@@ -52,14 +52,14 @@ export type ArticleTerminatedEvent = Event<
 
 export const createArticleTerminatedEvent = (
   article: ArticleIdentifier,
-): ArticleTerminatedEvent =>
-  ({
-    identifier: ulid(),
-    occurredAt: new Date(),
-    payload: {
-      article,
-    },
-  }) as ArticleTerminatedEvent;
+): ArticleTerminatedEvent => ({
+  identifier: ulid(),
+  type: "article.terminated",
+  occurredAt: new Date(),
+  payload: {
+    article,
+  },
+});
 
 export type ArticleEvent =
   | ArticleCreatedEvent
