@@ -37,7 +37,7 @@ services:
     image: dipjyotimetia/pubsub-emulator:latest
     container_name: hut-pubsub-emulator
     ports:
-      - "8086:8085"  # PubSub emulator
+      - "8086:8085" # PubSub emulator
     environment:
       - PUBSUB_PROJECT=demo-hut
       - PUBSUB_TOPIC=events
@@ -54,7 +54,7 @@ services:
     image: echocode/gcp-pubsub-emulator-ui:latest
     container_name: hut-pubsub-ui
     ports:
-      - "8680:8680"  # PubSub UI
+      - "8680:8680" # PubSub UI
     environment:
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - GCP_PROJECT_IDS=demo-hut
@@ -63,6 +63,63 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  search-token-worker:
+    build:
+      context: worker
+      dockerfile: Dockerfile
+    container_name: search-token-worker
+    working_dir: /var/www/app
+    command: sh -c "cabal update && cabal run app"
+    ports:
+      - "8000:8080"
+    environment:
+      - FIREBASE_PROJECT_ID=demo-hut
+      - FIRESTORE_EMULATOR_HOST=firebase-emulator:8085
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+    volumes:
+      - ../worker:/var/www/app
+      - worker-cabal-store:/root/.cabal/store
+      - worker-cabal-packages:/root/.cabal/packages
+      - worker-dist:/var/www/app/dist-newstyle
+      - ~/.config/gcloud/application_default_credentials.json:/root/.config/gcloud/application_default_credentials.json:ro
+    depends_on:
+      firebase-emulator:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_healthy
+    networks:
+      - firebase-emulator-net
+    restart: unless-stopped
+
+  pubsub-push-init:
+    image: curlimages/curl:latest
+    container_name: hut-pubsub-push-init
+    depends_on:
+      pubsub-emulator:
+        condition: service_healthy
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        echo "Waiting for search-token-worker..."
+        until curl -sf http://search-token-worker:8080/health > /dev/null 2>&1; do
+          sleep 5
+        done
+        echo "Creating push subscription..."
+        curl -s -X PUT "http://pubsub-emulator:8085/v1/projects/demo-hut/subscriptions/events-worker" \
+          -H "Content-Type: application/json" \
+          -d '{"topic":"projects/demo-hut/topics/events","pushConfig":{"pushEndpoint":"http://search-token-worker:8080/events"}}'
+        echo ""
+        echo "Push subscription created."
+    networks:
+      - firebase-emulator-net
+    restart: "no"
+
+volumes:
+  worker-cabal-store:
+  worker-cabal-packages:
+  worker-dist:
+
 networks:
-  default:
+  firebase-emulator-net:
+    external: true
     name: hut-firebase-emulator_default
