@@ -7,12 +7,13 @@ import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
 import { useImageDropzone } from "@shared/components/global/hooks/use-image-dropzone";
 import { ContentType } from "@shared/domains/common/image-upload";
+import { ImageIdentifier } from "@shared/domains/image";
 import styles from "./markdown-editor.module.css";
 
 export type ImageUploadConfig = {
   enabled: boolean;
   contentType: ContentType;
-  slug: string;
+  reference: string;
   uploadAction: (file: File | Blob, path: string) => Promise<string>;
 };
 
@@ -21,6 +22,8 @@ export type Props = {
   onChange: (value: string) => void;
   placeholder?: string;
   imageUpload?: ImageUploadConfig;
+  onImageUploaded?: (imageIdentifier: ImageIdentifier, url: string) => void;
+  onUploadingChange?: (uploading: boolean) => void;
 };
 
 export const MarkdownEditor = (props: Props) => {
@@ -34,6 +37,10 @@ export const MarkdownEditor = (props: Props) => {
   const imageUploadHook = useImageUpload({
     uploadAction: props.imageUpload?.uploadAction ?? (async () => ""),
   });
+
+  useEffect(() => {
+    props.onUploadingChange?.(imageUploadHook.isUploading);
+  }, [props, imageUploadHook.isUploading]);
 
   const insertTextAtCursor = useCallback(
     (text: string) => {
@@ -73,15 +80,16 @@ export const MarkdownEditor = (props: Props) => {
       const result = await imageUploadHook.uploadImage(
         file,
         props.imageUpload.contentType,
-        props.imageUpload.slug,
+        props.imageUpload.reference,
       );
 
       result.match({
-        ok: ({ url, placeholder }) => {
+        ok: ({ url, placeholder, imageIdentifier }) => {
           replacePlaceholder(
             placeholderId,
             `![${placeholder.altText}](${url})`,
           );
+          props.onImageUploaded?.(imageIdentifier, url);
         },
         err: (uploadError) => {
           const message =
@@ -95,7 +103,7 @@ export const MarkdownEditor = (props: Props) => {
         },
       });
     },
-    [props.imageUpload, imageUploadHook, replacePlaceholder],
+    [props, imageUploadHook, replacePlaceholder],
   );
 
   const processFiles = useCallback(

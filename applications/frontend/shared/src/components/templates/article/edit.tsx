@@ -3,7 +3,7 @@
 import styles from "./edit.module.css";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ulid } from "ulid";
 import { PublishStatus } from "@shared/domains/common";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
@@ -26,6 +26,8 @@ import { TagIcon } from "@shared/components/atoms/icon/tag";
 import { CrossIcon } from "@shared/components/atoms/icon/cross";
 import { ok } from "@shared/aspects/result";
 import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+import { ImageIdentifier } from "@shared/domains/image";
+import { extractImageUrls } from "@shared/domains/common/markdown";
 
 const MarkdownEditor = dynamic(
   () =>
@@ -80,6 +82,9 @@ export const ArticleEdit = (props: Props) => {
     props.initial?.status ?? PublishStatus.DRAFT,
   );
   const [tags, setTags] = useState<TagIdentifier[]>(props.initial?.tags ?? []);
+  const [images, setImages] = useState<ImageIdentifier[]>(props.initial?.images ?? []);
+  const [isEditorUploading, setIsEditorUploading] = useState(false);
+  const imageUrlToIdentifierMap = useRef<Map<string, ImageIdentifier>>(new Map());
 
   const handleTitleChange = useCallback((newTitle: string) => {
     setTitle(newTitle);
@@ -110,9 +115,26 @@ export const ArticleEdit = (props: Props) => {
           setTags(frontmatterTags as TagIdentifier[]);
         }
       }
+
+      const currentUrls = extractImageUrls(newContent);
+      const removedIdentifiers: ImageIdentifier[] = [];
+      imageUrlToIdentifierMap.current.forEach((identifier, url) => {
+        if (!currentUrls.has(url)) {
+          removedIdentifiers.push(identifier);
+          imageUrlToIdentifierMap.current.delete(url);
+        }
+      });
+      if (removedIdentifiers.length > 0) {
+        setImages((previous) => previous.filter((id) => !removedIdentifiers.includes(id)));
+      }
     },
     [title, slug, tags],
   );
+
+  const handleImageUploaded = useCallback((imageIdentifier: ImageIdentifier, url: string) => {
+    imageUrlToIdentifierMap.current.set(url, imageIdentifier);
+    setImages((previous) => [...previous, imageIdentifier]);
+  }, []);
 
   const handleTagsChange = useCallback(
     (newTags: TagIdentifier[]) => {
@@ -138,6 +160,7 @@ export const ArticleEdit = (props: Props) => {
           status: status ?? PublishStatus.DRAFT,
           tags,
           slug,
+          images,
           timeline: {
             createdAt: props.initial?.timeline.createdAt ?? new Date(),
             updatedAt: new Date(),
@@ -171,6 +194,7 @@ export const ArticleEdit = (props: Props) => {
           }
           persist={execute}
           isLoading={isLoading}
+          isUploading={isEditorUploading}
         />
       </div>
 
@@ -182,9 +206,11 @@ export const ArticleEdit = (props: Props) => {
             imageUpload={{
               enabled: slug.length > 0,
               contentType: "article",
-              slug,
+              reference: identifier,
               uploadAction: props.uploadImage,
             }}
+            onImageUploaded={handleImageUploaded}
+            onUploadingChange={setIsEditorUploading}
           />
           <div className={styles.tags}>
             <div className={styles["tags-header"]}>

@@ -172,12 +172,6 @@ export const SeriesMold = Mold<Series, SeriesProperties>({
   }),
 });
 
-export const SeriesIdentifierFactory = SeriesIdentifierMold;
-export const SeriesTitleFactory = SeriesTitleMold;
-export const SeriesDescriptionFactory = SeriesDescriptionMold;
-export const SeriesSlugFactory = SeriesSlugMold;
-export const ChapterFactory = ChapterMold;
-export const SeriesFactory = SeriesMold;
 
 export type SeriesRepositoryMoldProperties = {
   instances: Series[];

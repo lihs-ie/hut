@@ -12,13 +12,15 @@ import {
 import {
   validateImageFile,
   generateUploadPath,
-  generateImageFileName,
+  generateImageObjectName,
   ContentType,
-  SupportedImageMimeType,
 } from "@shared/domains/common/image-upload";
 import {
+  ImageIdentifier,
+  imageIdentifierSchema,
+} from "@shared/domains/image";
+import {
   compressImageToWebP,
-  getCompressedFileName,
   CompressedImage,
 } from "./use-image-compression";
 
@@ -46,6 +48,12 @@ export type UploadError = {
   uploadId?: string;
 };
 
+export type UploadResult = {
+  url: string;
+  placeholder: PlaceholderInfo;
+  imageIdentifier: ImageIdentifier;
+};
+
 export type UseImageUploadReturn = {
   uploads: UploadState[];
   isUploading: boolean;
@@ -55,10 +63,10 @@ export type UseImageUploadReturn = {
   uploadImage: (
     file: File,
     contentType: ContentType,
-    slug: string,
+    reference: string,
   ) => Promise<
     Result<
-      { url: string; placeholder: PlaceholderInfo },
+      UploadResult,
       ValidationError | UnexpectedError
     >
   >;
@@ -92,10 +100,10 @@ export const useImageUpload = (
     async (
       file: File,
       contentType: ContentType,
-      slug: string,
+      reference: string,
     ): Promise<
       Result<
-        { url: string; placeholder: PlaceholderInfo },
+        UploadResult,
         ValidationError | UnexpectedError
       >
     > => {
@@ -166,19 +174,10 @@ export const useImageUpload = (
 
         updateUploadState(uploadId, { status: "uploading", progress: 50 });
 
-        const compressedFileName = getCompressedFileName(
-          file.name,
-          file.type as SupportedImageMimeType,
-        );
-        const fileName = generateImageFileName(
-          compressedFileName,
-          compressed.mimeType === "image/gif" ? "gif" : "webp",
-        );
-        const path = generateUploadPath(
-          contentType,
-          { primary: slug },
-          fileName,
-        );
+        const imageIdentifier = imageIdentifierSchema.parse(uploadId);
+        const extension = compressed.mimeType === "image/gif" ? "gif" : "webp";
+        const objectName = generateImageObjectName(uploadId, extension);
+        const path = generateUploadPath(contentType, reference, objectName);
 
         try {
           const url = await options.uploadAction(compressed.blob, path);
@@ -191,7 +190,7 @@ export const useImageUpload = (
 
           abortControllers.current.delete(uploadId);
 
-          return ok({ url, placeholder });
+          return ok({ url, placeholder, imageIdentifier });
         } catch (uploadErr) {
           const message =
             uploadErr instanceof Error

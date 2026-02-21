@@ -26,39 +26,27 @@ export type ContentType = (typeof CONTENT_TYPES)[number];
 export const imageUploadPathSchema = z.string().brand("ImageUploadPath");
 export type ImageUploadPath = z.infer<typeof imageUploadPathSchema>;
 
-export const generateImageFileName = (
-  originalName: string,
+export const generateImageObjectName = (
+  imageIdentifier: string,
   extension: string,
-): string => {
-  const timestamp = Date.now();
-  const sanitized = originalName
-    .replace(/\.[^.]+$/, "")
-    .replace(/[^a-zA-Z0-9_-]/g, "_")
-    .slice(0, 50);
-  return `${timestamp}_${sanitized}.${extension}`;
-};
+): string => `${imageIdentifier}.${extension}`;
 
 export const generateUploadPath = (
   contentType: ContentType,
-  identifiers: { primary: string; secondary?: string },
-  fileName: string,
+  reference: string,
+  imageObjectName: string,
 ): ImageUploadPath => {
   switch (contentType) {
     case "article":
       return imageUploadPathSchema.parse(
-        `articles/${identifiers.primary}/${fileName}`,
+        `articles/${reference}/${imageObjectName}`,
       );
     case "memo":
       return imageUploadPathSchema.parse(
-        `memos/${identifiers.primary}/${fileName}`,
+        `memos/${reference}/${imageObjectName}`,
       );
     case "chapter":
-      if (!identifiers.secondary) {
-        throw new Error("Chapter requires secondary identifier (chapterId)");
-      }
-      return imageUploadPathSchema.parse(
-        `series/${identifiers.primary}/chapters/${identifiers.secondary}/${fileName}`,
-      );
+      throw new Error("Chapter upload requires separate handling");
   }
 };
 

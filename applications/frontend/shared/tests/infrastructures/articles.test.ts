@@ -5,15 +5,15 @@ import {
   clearFirestore,
   type Firestore,
 } from "../support/mock/firebase/firestore";
-import { Builder } from "../support/molds";
+import { Forger } from "@lihs-ie/forger-ts";
 import {
-  ArticleFactory,
-  ArticleIdentifierFactory,
-  SlugFactory,
+  ArticleMold,
+  ArticleIdentifierMold,
+  SlugMold,
 } from "../support/molds/domains/article/common";
 import { PublishStatus } from "@shared/domains/common";
-import { TagIdentifier } from "@shared/domains/attributes/tag";
 import { TagIdentifierMold } from "../support/molds/domains/attributes/tag";
+import type { TagIdentifier } from "@shared/domains/attributes/tag";
 import {
   isAggregateNotFoundError,
   isDuplicationError,
@@ -37,14 +37,10 @@ describe("infrastructures/articles", () => {
 
   const getOperations = () => operations as FirestoreOperations;
 
-  // テスト用のTagIdentifier定数
-  const createTagIdentifier = (seed: number): TagIdentifier =>
-    Builder(TagIdentifierMold).buildWith(seed);
-
   const TestTags = {
-    TYPESCRIPT: createTagIdentifier(1001),
-    REACT: createTagIdentifier(1002),
-    RUST: createTagIdentifier(1003),
+    TYPESCRIPT: Forger(TagIdentifierMold).forgeWithSeed(1001),
+    REACT: Forger(TagIdentifierMold).forgeWithSeed(1002),
+    RUST: Forger(TagIdentifierMold).forgeWithSeed(1003),
   };
 
   const createCriteria = (params: {
@@ -68,7 +64,7 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article = Builder(ArticleFactory).buildWith(1);
+        const article = Forger(ArticleMold).forgeWithSeed(1);
 
         const result = await repository.persist(article).unwrap();
 
@@ -84,11 +80,12 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article = Builder(ArticleFactory).buildWith(2);
+        const article = Forger(ArticleMold).forgeWithSeed(2);
 
         await repository.persist(article).unwrap();
 
-        const updatedArticle = Builder(ArticleFactory).duplicate(article, {
+        const updatedArticle = Forger(ArticleMold).forgeWithSeed(0, {
+          ...article,
           title: "Updated Title" as typeof article.title,
         });
 
@@ -105,13 +102,14 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article = Builder(ArticleFactory).buildWith(3);
+        const article = Forger(ArticleMold).forgeWithSeed(3);
 
         await repository.persist(article).unwrap();
 
         clearFirestore(firestore);
 
-        const updatedArticle = Builder(ArticleFactory).duplicate(article, {
+        const updatedArticle = Forger(ArticleMold).forgeWithSeed(0, {
+          ...article,
           title: "Updated Title" as typeof article.title,
         });
 
@@ -129,7 +127,7 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article = Builder(ArticleFactory).buildWith(4);
+        const article = Forger(ArticleMold).forgeWithSeed(4);
 
         await repository.persist(article).unwrap();
 
@@ -137,7 +135,7 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const duplicateArticle = Builder(ArticleFactory).buildWith(5, {
+        const duplicateArticle = Forger(ArticleMold).forgeWithSeed(5, {
           identifier: article.identifier,
         });
 
@@ -157,7 +155,7 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article = Builder(ArticleFactory).buildWith(10);
+        const article = Forger(ArticleMold).forgeWithSeed(10);
 
         await repository.persist(article).unwrap();
 
@@ -175,7 +173,7 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const identifier = Builder(ArticleIdentifierFactory).buildWith(11);
+        const identifier = Forger(ArticleIdentifierMold).forgeWithSeed(11);
 
         const result = await repository.find(identifier).match({
           ok: () => null,
@@ -193,10 +191,10 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const targetSlug = Builder(SlugFactory).buildWith(12, {
+        const targetSlug = Forger(SlugMold).forgeWithSeed(12, {
           value: "find-by-slug-test",
         });
-        const article = Builder(ArticleFactory).buildWith(13, {
+        const article = Forger(ArticleMold).forgeWithSeed(13, {
           slug: targetSlug,
         });
 
@@ -213,7 +211,7 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const nonExistentSlug = Builder(SlugFactory).buildWith(14, {
+        const nonExistentSlug = Forger(SlugMold).forgeWithSeed(14, {
           value: "non-existent-slug",
         });
 
@@ -233,7 +231,7 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const articles = Builder(ArticleFactory).buildListWith(3, 20).toArray();
+        const articles = Forger(ArticleMold).forgeMultiWithSeed(3, 20);
 
         for (const article of articles) {
           await repository.persist(article).unwrap();
@@ -261,11 +259,11 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article = Builder(ArticleFactory).buildWith(25);
+        const article = Forger(ArticleMold).forgeWithSeed(25);
 
         await repository.persist(article).unwrap();
 
-        const nonExistentId = Builder(ArticleIdentifierFactory).buildWith(26);
+        const nonExistentId = Forger(ArticleIdentifierMold).forgeWithSeed(26);
         const identifiers = [article.identifier, nonExistentId];
 
         const result = await repository.ofIdentifiers(identifiers).match({
@@ -284,7 +282,7 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const articles = Builder(ArticleFactory).buildListWith(5, 30).toArray();
+        const articles = Forger(ArticleMold).forgeMultiWithSeed(5, 30);
 
         for (const article of articles) {
           await repository.persist(article).unwrap();
@@ -301,13 +299,13 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const targetSlug = Builder(SlugFactory).buildWith(40, {
+        const targetSlug = Forger(SlugMold).forgeWithSeed(40, {
           value: "target-slug",
         });
-        const article1 = Builder(ArticleFactory).buildWith(41, {
+        const article1 = Forger(ArticleMold).forgeWithSeed(41, {
           slug: targetSlug,
         });
-        const article2 = Builder(ArticleFactory).buildWith(42);
+        const article2 = Forger(ArticleMold).forgeWithSeed(42);
 
         await repository.persist(article1).unwrap();
         await repository.persist(article2).unwrap();
@@ -324,10 +322,10 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article1 = Builder(ArticleFactory).buildWith(50, {
+        const article1 = Forger(ArticleMold).forgeWithSeed(50, {
           status: PublishStatus.PUBLISHED,
         });
-        const article2 = Builder(ArticleFactory).buildWith(51, {
+        const article2 = Forger(ArticleMold).forgeWithSeed(51, {
           status: PublishStatus.DRAFT,
         });
 
@@ -346,10 +344,10 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article1 = Builder(ArticleFactory).buildWith(60, {
+        const article1 = Forger(ArticleMold).forgeWithSeed(60, {
           tags: [TestTags.TYPESCRIPT, TestTags.REACT],
         });
-        const article2 = Builder(ArticleFactory).buildWith(61, {
+        const article2 = Forger(ArticleMold).forgeWithSeed(61, {
           tags: [TestTags.RUST],
         });
 
@@ -367,10 +365,10 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article1 = Builder(ArticleFactory).buildWith(70, {
+        const article1 = Forger(ArticleMold).forgeWithSeed(70, {
           title: "TypeScript入門" as typeof article1.title,
         });
-        const article2 = Builder(ArticleFactory).buildWith(71, {
+        const article2 = Forger(ArticleMold).forgeWithSeed(71, {
           title: "Python入門" as typeof article2.title,
         });
 
@@ -389,11 +387,11 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article1 = Builder(ArticleFactory).buildWith(80, {
+        const article1 = Forger(ArticleMold).forgeWithSeed(80, {
           content:
             "This article is about JavaScript" as typeof article1.content,
         });
-        const article2 = Builder(ArticleFactory).buildWith(81, {
+        const article2 = Forger(ArticleMold).forgeWithSeed(81, {
           content: "This article is about Rust" as typeof article2.content,
         });
 
@@ -411,10 +409,10 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article1 = Builder(ArticleFactory).buildWith(90, {
+        const article1 = Forger(ArticleMold).forgeWithSeed(90, {
           excerpt: "Learn about GraphQL" as typeof article1.excerpt,
         });
-        const article2 = Builder(ArticleFactory).buildWith(91, {
+        const article2 = Forger(ArticleMold).forgeWithSeed(91, {
           excerpt: "Learn about REST" as typeof article2.excerpt,
         });
 
@@ -432,15 +430,15 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article1 = Builder(ArticleFactory).buildWith(100, {
+        const article1 = Forger(ArticleMold).forgeWithSeed(100, {
           status: PublishStatus.PUBLISHED,
           tags: [TestTags.TYPESCRIPT],
         });
-        const article2 = Builder(ArticleFactory).buildWith(101, {
+        const article2 = Forger(ArticleMold).forgeWithSeed(101, {
           status: PublishStatus.DRAFT,
           tags: [TestTags.TYPESCRIPT],
         });
-        const article3 = Builder(ArticleFactory).buildWith(102, {
+        const article3 = Forger(ArticleMold).forgeWithSeed(102, {
           status: PublishStatus.PUBLISHED,
           tags: [TestTags.RUST],
         });
@@ -466,11 +464,11 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const slug = Builder(SlugFactory).buildWith(200, {
+        const slug = Forger(SlugMold).forgeWithSeed(200, {
           value: "duplicate-slug",
         });
-        const article1 = Builder(ArticleFactory).buildWith(201, { slug });
-        const article2 = Builder(ArticleFactory).buildWith(202, { slug });
+        const article1 = Forger(ArticleMold).forgeWithSeed(201, { slug });
+        const article2 = Forger(ArticleMold).forgeWithSeed(202, { slug });
 
         await repository.persist(article1).unwrap();
 
@@ -488,24 +486,25 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const slug1 = Builder(SlugFactory).buildWith(210, {
+        const slug1 = Forger(SlugMold).forgeWithSeed(210, {
           value: "slug-one",
         });
-        const slug2 = Builder(SlugFactory).buildWith(211, {
+        const slug2 = Forger(SlugMold).forgeWithSeed(211, {
           value: "slug-two",
         });
 
-        const article1 = Builder(ArticleFactory).buildWith(212, {
+        const article1 = Forger(ArticleMold).forgeWithSeed(212, {
           slug: slug1,
         });
-        const article2 = Builder(ArticleFactory).buildWith(213, {
+        const article2 = Forger(ArticleMold).forgeWithSeed(213, {
           slug: slug2,
         });
 
         await repository.persist(article1).unwrap();
         await repository.persist(article2).unwrap();
 
-        const updatedArticle2 = Builder(ArticleFactory).duplicate(article2, {
+        const updatedArticle2 = Forger(ArticleMold).forgeWithSeed(0, {
+          ...article2,
           slug: slug1,
         });
 
@@ -523,15 +522,15 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const slug = Builder(SlugFactory).buildWith(220, {
+        const slug = Forger(SlugMold).forgeWithSeed(220, {
           value: "reusable-slug",
         });
-        const article1 = Builder(ArticleFactory).buildWith(221, { slug });
+        const article1 = Forger(ArticleMold).forgeWithSeed(221, { slug });
 
         await repository.persist(article1).unwrap();
         await repository.terminate(article1.identifier).unwrap();
 
-        const article2 = Builder(ArticleFactory).buildWith(222, { slug });
+        const article2 = Forger(ArticleMold).forgeWithSeed(222, { slug });
         const result = await repository.persist(article2).unwrap();
 
         expect(result).toBeUndefined();
@@ -542,20 +541,21 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const oldSlug = Builder(SlugFactory).buildWith(230, {
+        const oldSlug = Forger(SlugMold).forgeWithSeed(230, {
           value: "old-slug",
         });
-        const newSlug = Builder(SlugFactory).buildWith(231, {
+        const newSlug = Forger(SlugMold).forgeWithSeed(231, {
           value: "new-slug",
         });
 
-        const article = Builder(ArticleFactory).buildWith(232, {
+        const article = Forger(ArticleMold).forgeWithSeed(232, {
           slug: oldSlug,
         });
 
         await repository.persist(article).unwrap();
 
-        const updatedArticle = Builder(ArticleFactory).duplicate(article, {
+        const updatedArticle = Forger(ArticleMold).forgeWithSeed(0, {
+          ...article,
           slug: newSlug,
         });
 
@@ -574,7 +574,7 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const article = Builder(ArticleFactory).buildWith(110);
+        const article = Forger(ArticleMold).forgeWithSeed(110);
 
         await repository.persist(article).unwrap();
 
@@ -596,7 +596,7 @@ describe("infrastructures/articles", () => {
           firestore,
           getOperations(),
         );
-        const identifier = Builder(ArticleIdentifierFactory).buildWith(111);
+        const identifier = Forger(ArticleIdentifierMold).forgeWithSeed(111);
 
         const result = await repository.terminate(identifier).match({
           ok: () => null,

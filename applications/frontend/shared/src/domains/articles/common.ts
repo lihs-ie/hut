@@ -16,6 +16,7 @@ import {
   timelineSchema,
 } from "../common";
 import { tagIdentifierSchema } from "../attributes/tag";
+import { imageIdentifierSchema } from "../image/identifier";
 
 export const articleIdentifierSchema = z.ulid().brand("ArticleIdentifier");
 
@@ -71,6 +72,7 @@ export const articleSchema = z
     slug: slugSchema,
     status: publishStatusSchema,
     tags: z.array(tagIdentifierSchema),
+    images: z.array(imageIdentifierSchema),
     timeline: timelineSchema,
   })
   .brand("Article");
@@ -95,6 +97,7 @@ export type UnvalidatedArticle = {
   slug: string;
   status: string;
   tags: string[];
+  images: string[];
   timeline: {
     createdAt: Date;
     updatedAt: Date;
@@ -142,6 +145,7 @@ export const articleSnapshotSchema = z
     slug: slugSchema,
     status: publishStatusSchema,
     tags: z.array(tagIdentifierSchema),
+    images: z.array(imageIdentifierSchema),
     timeline: timelineSchema,
   })
   .brand("ArticleSnapshot");
@@ -157,6 +161,7 @@ export const toSnapshot = (article: Article): ArticleSnapshot =>
     slug: article.slug,
     status: article.status,
     tags: article.tags,
+    images: article.images,
     timeline: article.timeline,
   }) as ArticleSnapshot;
 

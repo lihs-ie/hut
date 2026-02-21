@@ -5,11 +5,10 @@ import {
   clearFirestore,
   type Firestore,
 } from "../support/mock/firebase/firestore";
-import { Builder } from "../support/molds";
+import { Forger } from "@lihs-ie/forger-ts";
 import {
-  SeriesFactory,
-  SeriesIdentifierFactory,
-  SeriesSlugFactory,
+  SeriesMold,
+  SeriesIdentifierMold,
   SeriesSlugMold,
 } from "../support/molds/domains/series/common";
 import {
@@ -46,7 +45,7 @@ describe("infrastructures/series", () => {
     describe("persist", () => {
       it("新しいシリーズを保存できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const series = Builder(SeriesFactory).buildWith(1);
+        const series = Forger(SeriesMold).forgeWithSeed(1);
 
         const result = await repository.persist(series).unwrap();
 
@@ -59,11 +58,12 @@ describe("infrastructures/series", () => {
 
       it("既存のシリーズを更新できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const series = Builder(SeriesFactory).buildWith(2);
+        const series = Forger(SeriesMold).forgeWithSeed(2);
 
         await repository.persist(series).unwrap();
 
-        const updatedSeries = Builder(SeriesFactory).duplicate(series, {
+        const updatedSeries = Forger(SeriesMold).forgeWithSeed(0, {
+          ...series,
           title: "Updated Series Title" as typeof series.title,
         });
 
@@ -77,13 +77,14 @@ describe("infrastructures/series", () => {
 
       it("存在しないシリーズを更新しようとするとエラーになる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const series = Builder(SeriesFactory).buildWith(3);
+        const series = Forger(SeriesMold).forgeWithSeed(3);
 
         await repository.persist(series).unwrap();
 
         clearFirestore(firestore);
 
-        const updatedSeries = Builder(SeriesFactory).duplicate(series, {
+        const updatedSeries = Forger(SeriesMold).forgeWithSeed(0, {
+          ...series,
           title: "Updated Title" as typeof series.title,
         });
 
@@ -98,7 +99,7 @@ describe("infrastructures/series", () => {
 
       it("重複するシリーズを作成しようとするとエラーになる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const series = Builder(SeriesFactory).buildWith(4);
+        const series = Forger(SeriesMold).forgeWithSeed(4);
 
         await repository.persist(series).unwrap();
 
@@ -106,7 +107,7 @@ describe("infrastructures/series", () => {
           firestore,
           getOperations(),
         );
-        const duplicateSeries = Builder(SeriesFactory).buildWith(5, {
+        const duplicateSeries = Forger(SeriesMold).forgeWithSeed(5, {
           identifier: series.identifier,
         });
 
@@ -123,7 +124,7 @@ describe("infrastructures/series", () => {
     describe("find", () => {
       it("存在するシリーズを取得できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const series = Builder(SeriesFactory).buildWith(10);
+        const series = Forger(SeriesMold).forgeWithSeed(10);
 
         await repository.persist(series).unwrap();
 
@@ -137,7 +138,7 @@ describe("infrastructures/series", () => {
 
       it("存在しないシリーズを取得しようとするとエラーになる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const identifier = Builder(SeriesIdentifierFactory).buildWith(11);
+        const identifier = Forger(SeriesIdentifierMold).forgeWithSeed(11);
 
         const result = await repository.find(identifier).match({
           ok: () => null,
@@ -152,10 +153,10 @@ describe("infrastructures/series", () => {
     describe("findBySlug", () => {
       it("slugでシリーズを取得できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const targetSlug = Builder(SeriesSlugFactory).buildWith(12, {
+        const targetSlug = Forger(SeriesSlugMold).forgeWithSeed(12, {
           value: "find-by-slug-test",
         });
-        const series = Builder(SeriesFactory).buildWith(13, {
+        const series = Forger(SeriesMold).forgeWithSeed(13, {
           slug: targetSlug,
         });
 
@@ -169,7 +170,7 @@ describe("infrastructures/series", () => {
 
       it("存在しないslugで検索するとエラーになる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const nonExistentSlug = Builder(SeriesSlugFactory).buildWith(14, {
+        const nonExistentSlug = Forger(SeriesSlugMold).forgeWithSeed(14, {
           value: "non-existent-slug",
         });
 
@@ -186,9 +187,8 @@ describe("infrastructures/series", () => {
     describe("ofIdentifiers", () => {
       it("複数のシリーズを取得できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const seriesList = Builder(SeriesFactory)
-          .buildListWith(3, 20)
-          .toArray();
+        const seriesList = Forger(SeriesMold)
+          .forgeMultiWithSeed(3, 20);
 
         for (const series of seriesList) {
           await repository.persist(series).unwrap();
@@ -210,11 +210,11 @@ describe("infrastructures/series", () => {
 
       it("存在しないシリーズが含まれるとエラーになる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const series = Builder(SeriesFactory).buildWith(25);
+        const series = Forger(SeriesMold).forgeWithSeed(25);
 
         await repository.persist(series).unwrap();
 
-        const nonExistentIdentifier = Builder(SeriesIdentifierFactory).buildWith(26);
+        const nonExistentIdentifier = Forger(SeriesIdentifierMold).forgeWithSeed(26);
         const identifiers = [series.identifier, nonExistentIdentifier];
 
         const result = await repository.ofIdentifiers(identifiers, true).match({
@@ -230,9 +230,8 @@ describe("infrastructures/series", () => {
     describe("search", () => {
       it("全てのシリーズを取得できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const seriesList = Builder(SeriesFactory)
-          .buildListWith(5, 30)
-          .toArray();
+        const seriesList = Forger(SeriesMold)
+          .forgeMultiWithSeed(5, 30);
 
         for (const series of seriesList) {
           await repository.persist(series).unwrap();
@@ -246,17 +245,17 @@ describe("infrastructures/series", () => {
 
       it("タイトルでシリーズを検索できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const series1 = Builder(SeriesFactory).buildWith(40, {
+        const series1 = Forger(SeriesMold).forgeWithSeed(40, {
           title: "typescript-series" as typeof series1.title,
         });
-        const series2 = Builder(SeriesFactory).buildWith(41, {
+        const series2 = Forger(SeriesMold).forgeWithSeed(41, {
           title: "rust-series" as typeof series2.title,
         });
 
         await repository.persist(series1).unwrap();
         await repository.persist(series2).unwrap();
 
-        const searchSlug = Builder(SeriesSlugMold).buildWith(1000, { value: "typescript" });
+        const searchSlug = Forger(SeriesSlugMold).forgeWithSeed(1000, { value: "typescript" });
         const criteria = createCriteria({ slug: searchSlug });
         const found = await repository.search(criteria).unwrap();
 
@@ -266,13 +265,13 @@ describe("infrastructures/series", () => {
 
       it("大文字小文字を区別しない検索ができる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const series = Builder(SeriesFactory).buildWith(50, {
+        const series = Forger(SeriesMold).forgeWithSeed(50, {
           title: "javascript-basics" as typeof series.title,
         });
 
         await repository.persist(series).unwrap();
 
-        const searchSlug = Builder(SeriesSlugMold).buildWith(1001, { value: "javascript" });
+        const searchSlug = Forger(SeriesSlugMold).forgeWithSeed(1001, { value: "javascript" });
         const criteria = createCriteria({ slug: searchSlug });
         const found = await repository.search(criteria).unwrap();
 
@@ -282,13 +281,13 @@ describe("infrastructures/series", () => {
 
       it("マッチしない検索語では空の配列を返す", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const series = Builder(SeriesFactory).buildWith(55, {
+        const series = Forger(SeriesMold).forgeWithSeed(55, {
           title: "react-tutorial" as typeof series.title,
         });
 
         await repository.persist(series).unwrap();
 
-        const searchSlug = Builder(SeriesSlugMold).buildWith(1002, { value: "angular" });
+        const searchSlug = Forger(SeriesSlugMold).forgeWithSeed(1002, { value: "angular" });
         const criteria = createCriteria({ slug: searchSlug });
         const found = await repository.search(criteria).unwrap();
 
@@ -299,11 +298,11 @@ describe("infrastructures/series", () => {
     describe("slug uniqueness", () => {
       it("同じslugで新しいシリーズを作成しようとするとエラーになる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const slug = Builder(SeriesSlugFactory).buildWith(200, {
+        const slug = Forger(SeriesSlugMold).forgeWithSeed(200, {
           value: "duplicate-slug",
         });
-        const series1 = Builder(SeriesFactory).buildWith(201, { slug });
-        const series2 = Builder(SeriesFactory).buildWith(202, { slug });
+        const series1 = Forger(SeriesMold).forgeWithSeed(201, { slug });
+        const series2 = Forger(SeriesMold).forgeWithSeed(202, { slug });
 
         await repository.persist(series1).unwrap();
 
@@ -318,20 +317,21 @@ describe("infrastructures/series", () => {
 
       it("シリーズ更新時に他のシリーズと同じslugに変更しようとするとエラーになる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const slug1 = Builder(SeriesSlugFactory).buildWith(210, {
+        const slug1 = Forger(SeriesSlugMold).forgeWithSeed(210, {
           value: "slug-one",
         });
-        const slug2 = Builder(SeriesSlugFactory).buildWith(211, {
+        const slug2 = Forger(SeriesSlugMold).forgeWithSeed(211, {
           value: "slug-two",
         });
 
-        const series1 = Builder(SeriesFactory).buildWith(212, { slug: slug1 });
-        const series2 = Builder(SeriesFactory).buildWith(213, { slug: slug2 });
+        const series1 = Forger(SeriesMold).forgeWithSeed(212, { slug: slug1 });
+        const series2 = Forger(SeriesMold).forgeWithSeed(213, { slug: slug2 });
 
         await repository.persist(series1).unwrap();
         await repository.persist(series2).unwrap();
 
-        const updatedSeries2 = Builder(SeriesFactory).duplicate(series2, {
+        const updatedSeries2 = Forger(SeriesMold).forgeWithSeed(0, {
+          ...series2,
           slug: slug1,
         });
 
@@ -346,15 +346,15 @@ describe("infrastructures/series", () => {
 
       it("シリーズ削除後に同じslugで新しいシリーズを作成できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const slug = Builder(SeriesSlugFactory).buildWith(220, {
+        const slug = Forger(SeriesSlugMold).forgeWithSeed(220, {
           value: "reusable-slug",
         });
-        const series1 = Builder(SeriesFactory).buildWith(221, { slug });
+        const series1 = Forger(SeriesMold).forgeWithSeed(221, { slug });
 
         await repository.persist(series1).unwrap();
         await repository.terminate(series1.identifier).unwrap();
 
-        const series2 = Builder(SeriesFactory).buildWith(222, { slug });
+        const series2 = Forger(SeriesMold).forgeWithSeed(222, { slug });
         const result = await repository.persist(series2).unwrap();
 
         expect(result).toBeUndefined();
@@ -362,18 +362,19 @@ describe("infrastructures/series", () => {
 
       it("同じシリーズのslugを変更できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const oldSlug = Builder(SeriesSlugFactory).buildWith(230, {
+        const oldSlug = Forger(SeriesSlugMold).forgeWithSeed(230, {
           value: "old-slug",
         });
-        const newSlug = Builder(SeriesSlugFactory).buildWith(231, {
+        const newSlug = Forger(SeriesSlugMold).forgeWithSeed(231, {
           value: "new-slug",
         });
 
-        const series = Builder(SeriesFactory).buildWith(232, { slug: oldSlug });
+        const series = Forger(SeriesMold).forgeWithSeed(232, { slug: oldSlug });
 
         await repository.persist(series).unwrap();
 
-        const updatedSeries = Builder(SeriesFactory).duplicate(series, {
+        const updatedSeries = Forger(SeriesMold).forgeWithSeed(0, {
+          ...series,
           slug: newSlug,
         });
 
@@ -389,7 +390,7 @@ describe("infrastructures/series", () => {
     describe("terminate", () => {
       it("シリーズを削除できる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const series = Builder(SeriesFactory).buildWith(60);
+        const series = Forger(SeriesMold).forgeWithSeed(60);
 
         await repository.persist(series).unwrap();
 
@@ -408,7 +409,7 @@ describe("infrastructures/series", () => {
 
       it("存在しないシリーズを削除しようとするとエラーになる", async () => {
         const repository = FirebaseSeriesRepository(firestore, getOperations());
-        const identifier = Builder(SeriesIdentifierFactory).buildWith(61);
+        const identifier = Forger(SeriesIdentifierMold).forgeWithSeed(61);
 
         const result = await repository.terminate(identifier).match({
           ok: () => null,

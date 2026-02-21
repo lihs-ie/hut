@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { Builder } from "../support/molds";
 import {
   AdminMold,
   AdminRepositoryMold,
@@ -18,22 +17,12 @@ import type { Admin } from "@shared/domains/user";
 
 type BrandedTechnologyCategory = ReturnType<typeof technologyCategorySchema.parse>;
 
-// Branded型のカテゴリを作成するヘルパー
 const parseTechnologyCategory = (category: TechnologyCategory): BrandedTechnologyCategory =>
   technologyCategorySchema.parse(category);
 
 type TechnologyStackMap = Map<BrandedTechnologyCategory, TechnologyStack[]>;
 
 describe("infrastructures/admin (with mock repository)", () => {
-  const createRepository = (
-    admins: Admin[] = [],
-    onPersist?: (admin: Admin) => void,
-  ) =>
-    Forger(AdminRepositoryMold).forgeWithSeed(1, {
-      instancies: admins,
-      onPersist,
-    });
-
   const createTechnologyStackMap = (
     stacks: Partial<Record<TechnologyCategory, { count: number; seed: number }>>,
   ): TechnologyStackMap => {
@@ -52,8 +41,8 @@ describe("infrastructures/admin (with mock repository)", () => {
   describe("AdminRepository", () => {
     describe("persist", () => {
       it("新しい管理者を保存できる", async () => {
-        const repository = createRepository();
-        const admin = Builder(AdminMold).buildWith(1);
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [] });
+        const admin = Forger(AdminMold).forgeWithSeed(1);
 
         const result = await repository.persist(admin).unwrap();
 
@@ -65,16 +54,18 @@ describe("infrastructures/admin (with mock repository)", () => {
       });
 
       it("既存の管理者を更新できる", async () => {
-        const admin = Builder(AdminMold).buildWith(2);
-        const repository = createRepository([admin]);
+        const admin = Forger(AdminMold).forgeWithSeed(2);
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [admin] });
 
-        const newName = Builder(AdminNameMold).buildWith(100, {
+        const newName = Forger(AdminNameMold).forgeWithSeed(100, {
           value: "UpdatedName",
         });
-        const newProfile = Builder(ProfileMold).duplicate(admin.profile, {
+        const newProfile = Forger(ProfileMold).forgeWithSeed(0, {
+          ...admin.profile,
           name: newName,
         });
-        const updatedAdmin = Builder(AdminMold).duplicate(admin, {
+        const updatedAdmin = Forger(AdminMold).forgeWithSeed(0, {
+          ...admin,
           profile: newProfile,
         });
 
@@ -87,17 +78,19 @@ describe("infrastructures/admin (with mock repository)", () => {
       });
 
       it("プロフィール全体を更新できる", async () => {
-        const admin = Builder(AdminMold).buildWith(3);
-        const repository = createRepository([admin]);
+        const admin = Forger(AdminMold).forgeWithSeed(3);
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [admin] });
 
-        const newEmail = Builder(MailAddressMold).buildWith(101, {
+        const newEmail = Forger(MailAddressMold).forgeWithSeed(101, {
           value: "new-email@example.com",
         });
-        const newProfile = Builder(ProfileMold).duplicate(admin.profile, {
+        const newProfile = Forger(ProfileMold).forgeWithSeed(0, {
+          ...admin.profile,
           email: newEmail,
           bio: "Updated bio text",
         });
-        const updatedAdmin = Builder(AdminMold).duplicate(admin, {
+        const updatedAdmin = Forger(AdminMold).forgeWithSeed(0, {
+          ...admin,
           profile: newProfile,
         });
 
@@ -112,19 +105,21 @@ describe("infrastructures/admin (with mock repository)", () => {
 
       it("キャリア情報を更新できる", async () => {
         const initialCareers = Forger(CareerMold).forgeMultiWithSeed(2, 10);
-        const initialProfile = Builder(ProfileMold).buildWith(4, {
+        const initialProfile = Forger(ProfileMold).forgeWithSeed(4, {
           careers: initialCareers,
         });
-        const admin = Builder(AdminMold).buildWith(5, {
+        const admin = Forger(AdminMold).forgeWithSeed(5, {
           profile: initialProfile,
         });
-        const repository = createRepository([admin]);
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [admin] });
 
         const newCareers = Forger(CareerMold).forgeMultiWithSeed(3, 20);
-        const newProfile = Builder(ProfileMold).duplicate(admin.profile, {
+        const newProfile = Forger(ProfileMold).forgeWithSeed(0, {
+          ...admin.profile,
           careers: newCareers,
         });
-        const updatedAdmin = Builder(AdminMold).duplicate(admin, {
+        const updatedAdmin = Forger(AdminMold).forgeWithSeed(0, {
+          ...admin,
           profile: newProfile,
         });
 
@@ -141,22 +136,24 @@ describe("infrastructures/admin (with mock repository)", () => {
           1,
           30,
         );
-        const initialProfile = Builder(ProfileMold).buildWith(6, {
+        const initialProfile = Forger(ProfileMold).forgeWithSeed(6, {
           externalServices: initialServices,
         });
-        const admin = Builder(AdminMold).buildWith(7, {
+        const admin = Forger(AdminMold).forgeWithSeed(7, {
           profile: initialProfile,
         });
-        const repository = createRepository([admin]);
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [admin] });
 
         const newServices = Forger(ExternalServiceMold).forgeMultiWithSeed(
           3,
           40,
         );
-        const newProfile = Builder(ProfileMold).duplicate(admin.profile, {
+        const newProfile = Forger(ProfileMold).forgeWithSeed(0, {
+          ...admin.profile,
           externalServices: newServices,
         });
-        const updatedAdmin = Builder(AdminMold).duplicate(admin, {
+        const updatedAdmin = Forger(AdminMold).forgeWithSeed(0, {
+          ...admin,
           profile: newProfile,
         });
 
@@ -172,22 +169,24 @@ describe("infrastructures/admin (with mock repository)", () => {
         const initialTechStacks = createTechnologyStackMap({
           [TechnologyCategory.FRONTEND]: { count: 2, seed: 50 },
         });
-        const initialProfile = Builder(ProfileMold).buildWith(8, {
+        const initialProfile = Forger(ProfileMold).forgeWithSeed(8, {
           techStacks: initialTechStacks,
         });
-        const admin = Builder(AdminMold).buildWith(9, {
+        const admin = Forger(AdminMold).forgeWithSeed(9, {
           profile: initialProfile,
         });
-        const repository = createRepository([admin]);
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [admin] });
 
         const newTechStacks = createTechnologyStackMap({
           [TechnologyCategory.FRONTEND]: { count: 3, seed: 60 },
           [TechnologyCategory.BACKEND]: { count: 2, seed: 70 },
         });
-        const newProfile = Builder(ProfileMold).duplicate(admin.profile, {
+        const newProfile = Forger(ProfileMold).forgeWithSeed(0, {
+          ...admin.profile,
           techStacks: newTechStacks,
         });
-        const updatedAdmin = Builder(AdminMold).duplicate(admin, {
+        const updatedAdmin = Forger(AdminMold).forgeWithSeed(0, {
+          ...admin,
           profile: newProfile,
         });
 
@@ -201,9 +200,12 @@ describe("infrastructures/admin (with mock repository)", () => {
 
       it("onPersistコールバックが呼ばれる", async () => {
         let persistedAdmin: Admin | undefined;
-        const admin = Builder(AdminMold).buildWith(10);
-        const repository = createRepository([], (callbackAdmin) => {
-          persistedAdmin = callbackAdmin;
+        const admin = Forger(AdminMold).forgeWithSeed(10);
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, {
+          instancies: [],
+          onPersist: (callbackAdmin) => {
+            persistedAdmin = callbackAdmin;
+          },
         });
 
         await repository.persist(admin).unwrap();
@@ -217,8 +219,8 @@ describe("infrastructures/admin (with mock repository)", () => {
 
     describe("find", () => {
       it("存在する管理者を取得できる", async () => {
-        const admin = Builder(AdminMold).buildWith(20);
-        const repository = createRepository([admin]);
+        const admin = Forger(AdminMold).forgeWithSeed(20);
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [admin] });
 
         const found = await repository.find().unwrap();
 
@@ -229,7 +231,7 @@ describe("infrastructures/admin (with mock repository)", () => {
       });
 
       it("存在しない管理者を取得しようとするとエラーになる", async () => {
-        const repository = createRepository();
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [] });
 
         const error = await extractError(repository.find());
 
@@ -239,9 +241,9 @@ describe("infrastructures/admin (with mock repository)", () => {
 
       it("キャリア情報も含めて取得できる", async () => {
         const careers = Forger(CareerMold).forgeMultiWithSeed(3, 80);
-        const profile = Builder(ProfileMold).buildWith(21, { careers });
-        const admin = Builder(AdminMold).buildWith(22, { profile });
-        const repository = createRepository([admin]);
+        const profile = Forger(ProfileMold).forgeWithSeed(21, { careers });
+        const admin = Forger(AdminMold).forgeWithSeed(22, { profile });
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [admin] });
 
         const found = await repository.find().unwrap();
 
@@ -253,9 +255,9 @@ describe("infrastructures/admin (with mock repository)", () => {
           2,
           90,
         );
-        const profile = Builder(ProfileMold).buildWith(23, { externalServices });
-        const admin = Builder(AdminMold).buildWith(24, { profile });
-        const repository = createRepository([admin]);
+        const profile = Forger(ProfileMold).forgeWithSeed(23, { externalServices });
+        const admin = Forger(AdminMold).forgeWithSeed(24, { profile });
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [admin] });
 
         const found = await repository.find().unwrap();
 
@@ -267,9 +269,9 @@ describe("infrastructures/admin (with mock repository)", () => {
           [TechnologyCategory.FRONTEND]: { count: 2, seed: 100 },
           [TechnologyCategory.BACKEND]: { count: 3, seed: 110 },
         });
-        const profile = Builder(ProfileMold).buildWith(25, { techStacks });
-        const admin = Builder(AdminMold).buildWith(26, { profile });
-        const repository = createRepository([admin]);
+        const profile = Forger(ProfileMold).forgeWithSeed(25, { techStacks });
+        const admin = Forger(AdminMold).forgeWithSeed(26, { profile });
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [admin] });
 
         const found = await repository.find().unwrap();
 
@@ -295,13 +297,13 @@ describe("infrastructures/admin (with mock repository)", () => {
           [TechnologyCategory.BACKEND]: { count: 5, seed: 150 },
         });
 
-        const profile = Builder(ProfileMold).buildWith(50, {
+        const profile = Forger(ProfileMold).forgeWithSeed(50, {
           careers,
           externalServices,
           techStacks,
         });
-        const admin = Builder(AdminMold).buildWith(51, { profile });
-        const repository = createRepository();
+        const admin = Forger(AdminMold).forgeWithSeed(51, { profile });
+        const repository = Forger(AdminRepositoryMold).forgeWithSeed(1, { instancies: [] });
 
         await repository.persist(admin).unwrap();
 
