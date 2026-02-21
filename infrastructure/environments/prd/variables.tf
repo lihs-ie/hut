@@ -27,3 +27,8 @@ variable "worker_container_image" {
   description = "Container image URL for the general worker Cloud Run service"
   type        = string
 }
+
+variable "authorized_members" {
+  description = "List of IAM members authorized to invoke Cloud Run services (e.g. user:example@gmail.com)"
+  type        = list(string)
+}

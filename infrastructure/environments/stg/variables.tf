@@ -23,12 +23,22 @@ variable "admin_container_image" {
   type        = string
 }
 
-variable "image_cleanup_worker_container_image" {
-  description = "Container image URL for the image cleanup worker Cloud Run service"
-  type        = string
-}
-
 variable "worker_container_image" {
   description = "Container image URL for the general worker Cloud Run service"
   type        = string
+}
+
+variable "authorized_members" {
+  description = "List of IAM members authorized to invoke Cloud Run services (e.g. user:example@gmail.com)"
+  type        = list(string)
+}
+
+variable "github_repository" {
+  description = "GitHub repository in the format 'owner/repo' for Workload Identity Federation"
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$", var.github_repository))
+    error_message = "The github_repository must be in the format 'owner/repo'."
+  }
 }

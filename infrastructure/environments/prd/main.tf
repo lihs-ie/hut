@@ -5,6 +5,16 @@ locals {
     managed_by  = "terraform"
     project     = "hut"
   }
+
+  invoker_bindings = flatten([
+    for member in var.authorized_members : [
+      {
+        key     = "admin-${member}"
+        service = module.cloudrun_admin.service_name
+        member  = member
+      },
+    ]
+  ])
 }
 
 resource "google_project_iam_custom_role" "storage_object_delete" {
@@ -23,6 +33,8 @@ resource "google_project_iam_custom_role" "storage_object_delete" {
 module "iam" {
   source = "../../modules/iam"
 
+  depends_on = [google_project_iam_custom_role.storage_object_delete]
+
   project_id = var.project_id
 
   service_accounts = {
@@ -40,7 +52,7 @@ module "iam" {
       description  = "Service account for the PRD image cleanup worker"
       roles = [
         "roles/datastore.user",
-        google_project_iam_custom_role.storage_object_delete.id,
+        "projects/${var.project_id}/roles/storageObjectDelete",
         "roles/eventarc.eventReceiver",
       ]
     }
@@ -161,7 +173,7 @@ module "cloudrun_admin" {
   service_name          = "lihs-hut-landlord"
   container_image       = var.admin_container_image
   service_account_email = module.iam.service_account_emails["hut-prd-admin"]
-  allow_unauthenticated = true
+  allow_unauthenticated = false
 
   environment_variables = {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID = var.project_id
@@ -241,6 +253,16 @@ module "cloudrun_worker" {
   }
 
   labels = local.common_labels
+}
+
+resource "google_cloud_run_v2_service_iam_member" "invoker" {
+  for_each = { for binding in local.invoker_bindings : binding.key => binding }
+
+  project  = var.project_id
+  location = var.region
+  name     = each.value.service
+  role     = "roles/run.invoker"
+  member   = each.value.member
 }
 
 module "eventarc_image_cleanup" {

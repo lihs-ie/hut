@@ -18,6 +18,11 @@ variable "provider_id" {
 variable "github_repository" {
   description = "GitHub repository in the format 'owner/repo' for attribute condition"
   type        = string
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$", var.github_repository))
+    error_message = "The github_repository must be in the format 'owner/repo'."
+  }
 }
 
 variable "service_account_id" {

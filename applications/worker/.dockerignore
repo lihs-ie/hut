@@ -6,3 +6,4 @@ test
 .gitignore
 .gitkeep
 hie.yaml
+cabal.project.local

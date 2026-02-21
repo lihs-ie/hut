@@ -118,7 +118,7 @@ jobs:
 
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy "${{ steps.vars.outputs.service_name }}" \
+          gcloud run services update "${{ steps.vars.outputs.service_name }}" \
             --image "${image}" \
             --region "${REGION}" \
             --project "${{ secrets.GCP_PROJECT_ID }}"

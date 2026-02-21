@@ -5,6 +5,21 @@ locals {
     managed_by  = "terraform"
     project     = "hut"
   }
+
+  invoker_bindings = flatten([
+    for member in var.authorized_members : [
+      {
+        key     = "reader-${member}"
+        service = module.cloudrun_reader.service_name
+        member  = member
+      },
+      {
+        key     = "admin-${member}"
+        service = module.cloudrun_admin.service_name
+        member  = member
+      },
+    ]
+  ])
 }
 
 module "iam" {
@@ -248,6 +263,16 @@ module "cloudrun_worker" {
   labels = local.common_labels
 }
 
+resource "google_cloud_run_v2_service_iam_member" "invoker" {
+  for_each = { for binding in local.invoker_bindings : binding.key => binding }
+
+  project  = var.project_id
+  location = var.region
+  name     = each.value.service
+  role     = "roles/run.invoker"
+  member   = each.value.member
+}
+
 module "eventarc_worker" {
   source = "../../modules/eventarc_trigger"
 
@@ -265,32 +290,5 @@ module "github_actions_iam" {
   source = "../../modules/github_actions_iam"
 
   project_id        = var.project_id
-  github_repository = "lihs-ie/hut"
-}
-
-locals {
-  invoker_bindings = flatten([
-    for member in var.authorized_members : [
-      {
-        key     = "reader-${member}"
-        service = module.cloudrun_reader.service_name
-        member  = member
-      },
-      {
-        key     = "admin-${member}"
-        service = module.cloudrun_admin.service_name
-        member  = member
-      },
-    ]
-  ])
-}
-
-resource "google_cloud_run_v2_service_iam_member" "invoker" {
-  for_each = { for binding in local.invoker_bindings : binding.key => binding }
-
-  project  = var.project_id
-  location = var.region
-  name     = each.value.service
-  role     = "roles/run.invoker"
-  member   = each.value.member
+  github_repository = var.github_repository
 }
