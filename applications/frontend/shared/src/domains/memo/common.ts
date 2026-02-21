@@ -11,6 +11,7 @@ import {
   ValidationError,
 } from "@shared/aspects/error";
 import { tagIdentifierSchema } from "../attributes/tag";
+import { imageIdentifierSchema } from "../image/identifier";
 
 export const memoIdentifierSchema = z.ulid().brand("MemoIdentifier");
 
@@ -74,6 +75,7 @@ export const memoSchema = z
     entries: z.array(entrySchema),
     tags: z.array(tagIdentifierSchema),
     status: publishStatusSchema,
+    images: z.array(imageIdentifierSchema),
     timeline: timelineSchema,
   })
   .brand("Memo");
@@ -97,6 +99,7 @@ export type UnvalidatedMemo = {
   slug: string;
   entries: UnvalidatedEntry[];
   tags: string[];
+  images: string[];
   status: string;
   timeline: {
     createdAt: Date;
@@ -140,6 +143,7 @@ export const memoSnapshotSchema = z
     slug: slugSchema,
     entries: z.array(entrySchema),
     tags: z.array(tagIdentifierSchema),
+    images: z.array(imageIdentifierSchema),
     status: publishStatusSchema,
     timeline: timelineSchema,
   })
@@ -154,6 +158,7 @@ export const toSnapshot = (memo: Memo): MemoSnapshot =>
     slug: memo.slug,
     entries: memo.entries,
     tags: memo.tags,
+    images: memo.images,
     status: memo.status,
     timeline: memo.timeline,
   }) as MemoSnapshot;

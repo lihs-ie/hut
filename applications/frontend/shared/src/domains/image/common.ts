@@ -11,10 +11,10 @@ import z from "zod";
 import { ContentType, contentTypeSchema } from "../search-index";
 import { articleIdentifierSchema } from "../articles";
 import { memoIdentifierSchema } from "../memo";
+import { ImageIdentifier, imageIdentifierSchema } from "./identifier";
 
-export const imageIdentifier = z.ulid().brand("ImageIdentifier");
-
-export type ImageIdentifier = z.infer<typeof imageIdentifier>;
+export type { ImageIdentifier } from "./identifier";
+export { imageIdentifierSchema } from "./identifier";
 
 export const imageTypeSchema = z
   .enum(["png", "jpeg", "gif", "webp"])
@@ -47,7 +47,7 @@ export const UploadStatus = {
 
 export const imageSchema = z
   .object({
-    identifier: imageIdentifier,
+    identifier: imageIdentifierSchema,
     type: imageTypeSchema,
     url: imageURLSchema.nullable(),
     uploadStatus: uploadStatusSchema,

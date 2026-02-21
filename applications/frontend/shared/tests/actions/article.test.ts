@@ -39,6 +39,7 @@ tags: []
         slug: "test-slug",
         status: PublishStatus.DRAFT,
         tags: [],
+        images: [],
         timeline: { createdAt: new Date(), updatedAt: new Date() },
       };
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Forger } from "@lihs-ie/forger-ts";
 import {
-  imageIdentifier,
+  imageIdentifierSchema,
   imageTypeSchema,
   ImageType,
   imageURLSchema,
@@ -30,9 +30,9 @@ describe("domains/image/common", () => {
   describe("imageIdentifier", () => {
     describeIdentifierSchema(
       "ImageIdentifier",
-      imageIdentifier,
+      imageIdentifierSchema,
       () => Forger(ImageIdentifierMold).forge(),
-      (count) => Forger(ImageIdentifierMold).forgeMulti(count)
+      (count) => Forger(ImageIdentifierMold).forgeMulti(count),
     );
   });
 
@@ -46,7 +46,7 @@ describe("domains/image/common", () => {
         JPEG: ImageType.JPEG,
         GIF: ImageType.GIF,
         WEBP: ImageType.WEBP,
-      }
+      },
     );
 
     it("Forgerで生成したタイプは有効", () => {
@@ -66,7 +66,7 @@ describe("domains/image/common", () => {
 
       it("HTTPSのURLは有効", () => {
         const result = imageURLSchema.safeParse(
-          "https://example.com/image.png"
+          "https://example.com/image.png",
         );
         expect(result.success).toBe(true);
       });
@@ -99,7 +99,7 @@ describe("domains/image/common", () => {
         PENDING: UploadStatus.PENDING,
         COMPLETED: UploadStatus.COMPLETED,
         FAILED: UploadStatus.FAILED,
-      }
+      },
     );
 
     it("Forgerで生成したステータスは有効", () => {

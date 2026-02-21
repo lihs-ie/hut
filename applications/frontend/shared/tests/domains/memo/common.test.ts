@@ -143,6 +143,7 @@ describe("domains/memo/common", () => {
         slug: "test-slug",
         entries: [],
         tags: [],
+        images: [],
         status: "draft",
         timeline: { createdAt: new Date(), updatedAt: new Date() },
         ...overrides,
@@ -168,6 +169,7 @@ describe("domains/memo/common", () => {
         slug: "test-memo",
         entries: [],
         tags: [],
+        images: [],
         status: "draft",
         timeline: Forger(TimelineMold).forge(),
       });
@@ -181,6 +183,7 @@ describe("domains/memo/common", () => {
         slug: "",
         entries: [],
         tags: [],
+        images: [],
         status: "invalid",
         timeline: Forger(TimelineMold).forge(),
       });
