@@ -25,4 +25,8 @@ resource "google_eventarc_trigger" "this" {
   service_account = var.service_account_email
 
   labels = var.labels
+
+  lifecycle {
+    ignore_changes = [transport]
+  }
 }

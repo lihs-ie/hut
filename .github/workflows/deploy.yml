@@ -23,7 +23,7 @@ on:
         type: string
 
 env:
-  REGION: us-east1
+  REGION: asia-northeast1
 
 jobs:
   deploy:
