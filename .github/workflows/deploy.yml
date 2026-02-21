@@ -1,0 +1,124 @@
+name: Deploy to Cloud Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      application:
+        description: "Application to deploy"
+        required: true
+        type: choice
+        options:
+          - reader
+          - admin
+          - search-token-worker
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - stg
+      tag:
+        description: "Image tag (defaults to git SHA)"
+        required: false
+        type: string
+
+env:
+  REGION: asia-northeast1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${REGION}-docker.pkg.dev
+
+      - name: Set deployment variables
+        id: vars
+        run: |
+          TAG="${{ inputs.tag }}"
+          if [ -z "${TAG}" ]; then
+            TAG="${{ github.sha }}"
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+
+          case "${{ inputs.application }}" in
+            reader)
+              echo "service_name=stg-lihs-hut" >> "${GITHUB_OUTPUT}"
+              echo "dockerfile=applications/frontend/Dockerfile" >> "${GITHUB_OUTPUT}"
+              echo "context=applications/frontend" >> "${GITHUB_OUTPUT}"
+              echo "app_type=frontend" >> "${GITHUB_OUTPUT}"
+              echo "app_name=reader" >> "${GITHUB_OUTPUT}"
+              echo "app_port=3000" >> "${GITHUB_OUTPUT}"
+              ;;
+            admin)
+              echo "service_name=stg-lihs-hut-landlord" >> "${GITHUB_OUTPUT}"
+              echo "dockerfile=applications/frontend/Dockerfile" >> "${GITHUB_OUTPUT}"
+              echo "context=applications/frontend" >> "${GITHUB_OUTPUT}"
+              echo "app_type=frontend" >> "${GITHUB_OUTPUT}"
+              echo "app_name=admin" >> "${GITHUB_OUTPUT}"
+              echo "app_port=3001" >> "${GITHUB_OUTPUT}"
+              ;;
+            search-token-worker)
+              echo "service_name=stg-worker" >> "${GITHUB_OUTPUT}"
+              echo "dockerfile=applications/worker/Dockerfile" >> "${GITHUB_OUTPUT}"
+              echo "context=applications/worker" >> "${GITHUB_OUTPUT}"
+              echo "app_type=worker" >> "${GITHUB_OUTPUT}"
+              echo "app_name=search-token-worker" >> "${GITHUB_OUTPUT}"
+              echo "app_port=8080" >> "${GITHUB_OUTPUT}"
+              ;;
+          esac
+
+      - name: Build Docker image
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-stg/${{ inputs.application }}:${{ steps.vars.outputs.tag }}"
+
+          BUILD_ARGS=()
+
+          if [ "${{ steps.vars.outputs.app_type }}" = "frontend" ]; then
+            BUILD_ARGS+=(
+              --build-arg "APP_NAME=${{ steps.vars.outputs.app_name }}"
+              --build-arg "APP_PORT=${{ steps.vars.outputs.app_port }}"
+              --build-arg "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}"
+            )
+
+            if [ "${{ steps.vars.outputs.app_name }}" = "admin" ]; then
+              BUILD_ARGS+=(
+                --build-arg "NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}"
+                --build-arg "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}"
+                --build-arg "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}"
+                --build-arg "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}"
+                --build-arg "NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID }}"
+              )
+            fi
+          fi
+
+          docker build \
+            -f "${{ steps.vars.outputs.dockerfile }}" \
+            "${BUILD_ARGS[@]}" \
+            -t "${IMAGE}" \
+            "${{ steps.vars.outputs.context }}"
+
+          echo "image=${IMAGE}" >> "${GITHUB_ENV}"
+
+      - name: Push Docker image
+        run: docker push "${image}"
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run services update "${{ steps.vars.outputs.service_name }}" \
+            --image "${image}" \
+            --region "${REGION}" \
+            --project "${{ secrets.GCP_PROJECT_ID }}"
