@@ -20,6 +20,7 @@ import {
 } from "@shared/domains/memo";
 import { validateSlug } from "@shared/domains/common/slug";
 import { PublishStatus } from "@shared/domains/common";
+import { createPassthroughFilter } from "@shared/workflows/common";
 import { FirebaseMemoRepository } from "@shared/infrastructures/memos";
 import {
   createFeatureTestContext,
@@ -43,6 +44,7 @@ function toMemoPayload(memo: Memo) {
       slug: memo.slug,
       entries: memo.entries,
       tags: memo.tags,
+      images: memo.images,
       status: memo.status,
       timeline: memo.timeline,
     },
@@ -144,7 +146,7 @@ describe("Feature: Memo Workflow (実DB接続)", () => {
 
       const findBySlugWorkflow = createMemoFindBySlugWorkflow(validateSlug)(
         repository.findBySlug
-      )(testLogger);
+      )(createPassthroughFilter())(testLogger);
 
       const result = await findBySlugWorkflow(slug).unwrap();
 

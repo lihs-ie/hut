@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Builder } from "../support/molds";
+import { Forger } from "@lihs-ie/forger-ts";
 import {
   SearchTokenMold,
   SearchTokenIdentifierMold,
@@ -8,19 +8,14 @@ import {
   SearchTokenRepositoryMold,
 } from "../support/molds/domains/search-token/common";
 import { isAggregateNotFoundError } from "@shared/aspects/error";
-import { Forger } from "@lihs-ie/forger-ts";
 import { extractError } from "../support/helpers";
-import type { SearchToken } from "@shared/domains/search-token";
 
 describe("infrastructures/search-token (with mock repository)", () => {
-  const createRepository = (tokens: SearchToken[] = []) =>
-    Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: tokens });
-
   describe("SearchTokenRepository", () => {
     describe("persist", () => {
       it("新しい検索トークンを保存できる", async () => {
-        const repository = createRepository();
-        const token = Builder(SearchTokenMold).buildWith(1);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [] });
+        const token = Forger(SearchTokenMold).forgeWithSeed(1);
 
         const result = await repository.persist(token).unwrap();
 
@@ -33,13 +28,12 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("既存の検索トークンを更新できる", async () => {
-        const token = Builder(SearchTokenMold).buildWith(2);
-        const repository = createRepository([token]);
+        const token = Forger(SearchTokenMold).forgeWithSeed(2);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [token] });
 
-        const newReferences = Builder(SearchReferenceMold)
-          .buildListWith(5, 100)
-          .toArray();
-        const updatedToken = Builder(SearchTokenMold).duplicate(token, {
+        const newReferences = Forger(SearchReferenceMold).forgeMultiWithSeed(5, 100);
+        const updatedToken = Forger(SearchTokenMold).forgeWithSeed(0, {
+          ...token,
           references: newReferences,
         });
 
@@ -52,11 +46,9 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("参照情報も一緒に保存できる", async () => {
-        const references = Builder(SearchReferenceMold)
-          .buildListWith(3, 10)
-          .toArray();
-        const token = Builder(SearchTokenMold).buildWith(3, { references });
-        const repository = createRepository();
+        const references = Forger(SearchReferenceMold).forgeMultiWithSeed(3, 10);
+        const token = Forger(SearchTokenMold).forgeWithSeed(3, { references });
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [] });
 
         const result = await repository.persist(token).unwrap();
 
@@ -67,18 +59,15 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("参照情報を更新できる", async () => {
-        const initialReferences = Builder(SearchReferenceMold)
-          .buildListWith(2, 20)
-          .toArray();
-        const token = Builder(SearchTokenMold).buildWith(4, {
+        const initialReferences = Forger(SearchReferenceMold).forgeMultiWithSeed(2, 20);
+        const token = Forger(SearchTokenMold).forgeWithSeed(4, {
           references: initialReferences,
         });
-        const repository = createRepository([token]);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [token] });
 
-        const newReferences = Builder(SearchReferenceMold)
-          .buildListWith(4, 30)
-          .toArray();
-        const updatedToken = Builder(SearchTokenMold).duplicate(token, {
+        const newReferences = Forger(SearchReferenceMold).forgeMultiWithSeed(4, 30);
+        const updatedToken = Forger(SearchTokenMold).forgeWithSeed(0, {
+          ...token,
           references: newReferences,
         });
 
@@ -89,15 +78,14 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("参照情報を削除できる", async () => {
-        const initialReferences = Builder(SearchReferenceMold)
-          .buildListWith(3, 40)
-          .toArray();
-        const token = Builder(SearchTokenMold).buildWith(5, {
+        const initialReferences = Forger(SearchReferenceMold).forgeMultiWithSeed(3, 40);
+        const token = Forger(SearchTokenMold).forgeWithSeed(5, {
           references: initialReferences,
         });
-        const repository = createRepository([token]);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [token] });
 
-        const updatedToken = Builder(SearchTokenMold).duplicate(token, {
+        const updatedToken = Forger(SearchTokenMold).forgeWithSeed(0, {
+          ...token,
           references: [],
         });
 
@@ -110,8 +98,8 @@ describe("infrastructures/search-token (with mock repository)", () => {
 
     describe("find", () => {
       it("存在する検索トークンを取得できる", async () => {
-        const token = Builder(SearchTokenMold).buildWith(10);
-        const repository = createRepository([token]);
+        const token = Forger(SearchTokenMold).forgeWithSeed(10);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [token] });
 
         const found = await repository.find(token.identifier).unwrap();
 
@@ -121,8 +109,8 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("存在しない検索トークンを取得しようとするとエラーになる", async () => {
-        const repository = createRepository();
-        const identifier = Builder(SearchTokenIdentifierMold).buildWith(11);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [] });
+        const identifier = Forger(SearchTokenIdentifierMold).forgeWithSeed(11);
 
         const error = await extractError(repository.find(identifier));
 
@@ -131,11 +119,9 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("参照情報も含めて取得できる", async () => {
-        const references = Builder(SearchReferenceMold)
-          .buildListWith(2, 50)
-          .toArray();
-        const token = Builder(SearchTokenMold).buildWith(12, { references });
-        const repository = createRepository([token]);
+        const references = Forger(SearchReferenceMold).forgeMultiWithSeed(2, 50);
+        const token = Forger(SearchTokenMold).forgeWithSeed(12, { references });
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [token] });
 
         const found = await repository.find(token.identifier).unwrap();
 
@@ -145,8 +131,8 @@ describe("infrastructures/search-token (with mock repository)", () => {
 
     describe("ofIdentifiers", () => {
       it("複数の検索トークンを取得できる", async () => {
-        const tokens = Builder(SearchTokenMold).buildListWith(3, 20).toArray();
-        const repository = createRepository(tokens);
+        const tokens = Forger(SearchTokenMold).forgeMultiWithSeed(3, 20);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: tokens });
 
         const identifiers = tokens.map((token) => token.identifier);
         const found = await repository.ofIdentifiers(identifiers).unwrap();
@@ -155,7 +141,7 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("空の配列を渡すと空の配列を返す", async () => {
-        const repository = createRepository();
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [] });
 
         const found = await repository.ofIdentifiers([]).unwrap();
 
@@ -163,11 +149,11 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("存在しない検索トークンはスキップされる (throwOnMissing=false)", async () => {
-        const token = Builder(SearchTokenMold).buildWith(30);
-        const repository = createRepository([token]);
+        const token = Forger(SearchTokenMold).forgeWithSeed(30);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [token] });
 
         const nonExistentIdentifier =
-          Builder(SearchTokenIdentifierMold).buildWith(31);
+          Forger(SearchTokenIdentifierMold).forgeWithSeed(31);
         const identifiers = [token.identifier, nonExistentIdentifier];
 
         const found = await repository
@@ -179,11 +165,11 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("存在しない検索トークンがあるとエラーになる (throwOnMissing=true)", async () => {
-        const token = Builder(SearchTokenMold).buildWith(35);
-        const repository = createRepository([token]);
+        const token = Forger(SearchTokenMold).forgeWithSeed(35);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [token] });
 
         const nonExistentIdentifier =
-          Builder(SearchTokenIdentifierMold).buildWith(36);
+          Forger(SearchTokenIdentifierMold).forgeWithSeed(36);
         const identifiers = [token.identifier, nonExistentIdentifier];
 
         const error = await extractError(
@@ -197,23 +183,21 @@ describe("infrastructures/search-token (with mock repository)", () => {
 
     describe("search", () => {
       it("検索トークンを検索できる", async () => {
-        const tokens = Builder(SearchTokenMold).buildListWith(5, 40).toArray();
-        const repository = createRepository(tokens);
+        const tokens = Forger(SearchTokenMold).forgeMultiWithSeed(5, 40);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: tokens });
 
-        const criteria = Builder(SearchTokenCriteriaMold).buildWith(50);
+        const criteria = Forger(SearchTokenCriteriaMold).forgeWithSeed(50);
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(5);
       });
 
       it("参照情報も含めて検索結果に含まれる", async () => {
-        const references = Builder(SearchReferenceMold)
-          .buildListWith(2, 80)
-          .toArray();
-        const token = Builder(SearchTokenMold).buildWith(81, { references });
-        const repository = createRepository([token]);
+        const references = Forger(SearchReferenceMold).forgeMultiWithSeed(2, 80);
+        const token = Forger(SearchTokenMold).forgeWithSeed(81, { references });
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [token] });
 
-        const criteria = Builder(SearchTokenCriteriaMold).buildWith(82);
+        const criteria = Forger(SearchTokenCriteriaMold).forgeWithSeed(82);
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(1);
@@ -223,8 +207,8 @@ describe("infrastructures/search-token (with mock repository)", () => {
 
     describe("terminate", () => {
       it("検索トークンを削除できる", async () => {
-        const token = Builder(SearchTokenMold).buildWith(100);
-        const repository = createRepository([token]);
+        const token = Forger(SearchTokenMold).forgeWithSeed(100);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [token] });
 
         const result = await repository.terminate(token.identifier).unwrap();
 
@@ -237,11 +221,9 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("参照情報も一緒に削除される", async () => {
-        const references = Builder(SearchReferenceMold)
-          .buildListWith(3, 110)
-          .toArray();
-        const token = Builder(SearchTokenMold).buildWith(111, { references });
-        const repository = createRepository([token]);
+        const references = Forger(SearchReferenceMold).forgeMultiWithSeed(3, 110);
+        const token = Forger(SearchTokenMold).forgeWithSeed(111, { references });
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [token] });
 
         const result = await repository.terminate(token.identifier).unwrap();
 
@@ -254,8 +236,8 @@ describe("infrastructures/search-token (with mock repository)", () => {
       });
 
       it("存在しない検索トークンを削除しようとするとエラーになる", async () => {
-        const repository = createRepository();
-        const identifier = Builder(SearchTokenIdentifierMold).buildWith(120);
+        const repository = Forger(SearchTokenRepositoryMold).forgeWithSeed(1, { instances: [] });
+        const identifier = Forger(SearchTokenIdentifierMold).forgeWithSeed(120);
 
         const error = await extractError(repository.terminate(identifier));
 

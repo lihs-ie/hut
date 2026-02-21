@@ -24,12 +24,11 @@ import {
 } from "@shared/aspects/error";
 import { Forger, Mold, StringMold } from "@lihs-ie/forger-ts";
 import { TagIdentifier } from "@shared/domains/attributes/tag";
-import {
-  SlugMold,
-  SlugProperties,
-} from "../common/slug";
+import { SlugMold, SlugProperties } from "../common/slug";
 import { PublishStatusMold } from "../common/status";
 import { PublishStatus } from "@shared/domains/common";
+import { ImageIdentifier } from "@shared/domains/image";
+import { ImageIdentifierMold } from "../image";
 
 export type MemoIdentifierProperties = {
   value: string;
@@ -83,6 +82,7 @@ export type MemoProperties = {
   slug: MemoSlug;
   entries: MemoEntry[];
   tags: TagIdentifier[];
+  images: ImageIdentifier[];
   status: PublishStatus;
   timeline: Timeline;
 };
@@ -95,6 +95,7 @@ export const MemoMold = Mold<Memo, MemoProperties>({
       slug: properties.slug,
       entries: properties.entries,
       tags: properties.tags,
+      images: properties.images,
       status: properties.status,
       timeline: properties.timeline,
     }),
@@ -106,15 +107,14 @@ export const MemoMold = Mold<Memo, MemoProperties>({
     entries:
       overrides.entries ?? Forger(MemoEntryMold).forgeMultiWithSeed(3, seed),
     tags: overrides.tags ?? [],
+    images:
+      overrides.images ??
+      Forger(ImageIdentifierMold).forgeMultiWithSeed(5, seed),
     status: overrides.status ?? Forger(PublishStatusMold).forgeWithSeed(seed),
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
 });
 
-export const MemoIdentifierFactory = MemoIdentifierMold;
-export const MemoEntryFactory = MemoEntryMold;
-export const MemoSlugFactory = MemoSlugMold;
-export const MemoFactory = MemoMold;
 
 export type MemoRepositoryMoldProperties = {
   instances: Memo[];
@@ -131,7 +131,7 @@ export const MemoRepositoryMold = Mold<
       properties.instances.map((memo): [MemoIdentifier, Memo] => [
         memo.identifier,
         memo,
-      ])
+      ]),
     );
 
     const persist: MemoRepository["persist"] = (memo: Memo) =>
@@ -143,7 +143,7 @@ export const MemoRepositoryMold = Mold<
 
           resolve();
         }),
-        (error) => unexpectedError("Failed to persist memo.", error)
+        (error) => unexpectedError("Failed to persist memo.", error),
       );
 
     const find: MemoRepository["find"] = (identifier) =>
@@ -155,12 +155,12 @@ export const MemoRepositoryMold = Mold<
               reject(
                 aggregateNotFoundError(
                   "Memo",
-                  `Memo with identifier ${identifier} not found.`
-                )
-              )
+                  `Memo with identifier ${identifier} not found.`,
+                ),
+              ),
           );
         }),
-        (error) => error as AggregateNotFoundError<"Memo">
+        (error) => error as AggregateNotFoundError<"Memo">,
       );
 
     const terminate: MemoRepository["terminate"] = (identifier) =>
@@ -179,12 +179,12 @@ export const MemoRepositoryMold = Mold<
               reject(
                 aggregateNotFoundError(
                   "Memo",
-                  `Memo with identifier ${identifier} not found.`
-                )
-              )
+                  `Memo with identifier ${identifier} not found.`,
+                ),
+              ),
           );
         }),
-        (error) => error as AggregateNotFoundError<"Memo">
+        (error) => error as AggregateNotFoundError<"Memo">,
       );
 
     const findBySlug: MemoRepository["findBySlug"] = (slug) =>
@@ -198,17 +198,17 @@ export const MemoRepositoryMold = Mold<
             reject(
               aggregateNotFoundError(
                 "Memo",
-                `Memo with slug ${slug} not found.`
-              )
+                `Memo with slug ${slug} not found.`,
+              ),
             );
           }
         }),
-        (error) => error as AggregateNotFoundError<"Memo"> | UnexpectedError
+        (error) => error as AggregateNotFoundError<"Memo"> | UnexpectedError,
       );
 
     const ofIdentifiers: MemoRepository["ofIdentifiers"] = (
       identifiers,
-      throwOnMissing = false
+      throwOnMissing = false,
     ) =>
       fromPromise<Memo[], UnexpectedError | AggregateNotFoundError<"Memo">>(
         new Promise((resolve, reject) => {
@@ -222,8 +222,8 @@ export const MemoRepositoryMold = Mold<
                 reject(
                   aggregateNotFoundError(
                     "Memo",
-                    `Memo with identifier ${identifier} not found.`
-                  )
+                    `Memo with identifier ${identifier} not found.`,
+                  ),
                 );
                 return;
               }
@@ -237,7 +237,7 @@ export const MemoRepositoryMold = Mold<
 
           resolve(memos);
         }),
-        (error) => error as UnexpectedError | AggregateNotFoundError<"Memo">
+        (error) => error as UnexpectedError | AggregateNotFoundError<"Memo">,
       );
 
     const search: MemoRepository["search"] = (criteria: Criteria) =>
@@ -247,7 +247,7 @@ export const MemoRepositoryMold = Mold<
             .filter((_, memo) => {
               if (criteria.tags && criteria.tags.length > 0) {
                 const hasTag = criteria.tags.some((tag) =>
-                  memo.tags.includes(tag)
+                  memo.tags.includes(tag),
                 );
                 if (!hasTag) {
                   return false;
@@ -260,7 +260,7 @@ export const MemoRepositoryMold = Mold<
                   !(
                     memo.title.toLowerCase().includes(keyword) ||
                     memo.entries.some((entry) =>
-                      entry.text.toLowerCase().includes(keyword)
+                      entry.text.toLowerCase().includes(keyword),
                     )
                   )
                 ) {
@@ -274,7 +274,7 @@ export const MemoRepositoryMold = Mold<
 
           resolve(results);
         }),
-        (error) => unexpectedError("Failed to search memos.", error)
+        (error) => unexpectedError("Failed to search memos.", error),
       );
 
     return {

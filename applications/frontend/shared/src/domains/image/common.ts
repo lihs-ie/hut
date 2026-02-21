@@ -11,10 +11,10 @@ import z from "zod";
 import { ContentType, contentTypeSchema } from "../search-index";
 import { articleIdentifierSchema } from "../articles";
 import { memoIdentifierSchema } from "../memo";
+import { ImageIdentifier, imageIdentifierSchema } from "./identifier";
 
-export const imageIdentifier = z.ulid().brand("ImageIdentifier");
-
-export type ImageIdentifier = z.infer<typeof imageIdentifier>;
+export type { ImageIdentifier } from "./identifier";
+export { imageIdentifierSchema } from "./identifier";
 
 export const imageTypeSchema = z
   .enum(["png", "jpeg", "gif", "webp"])
@@ -47,7 +47,7 @@ export const UploadStatus = {
 
 export const imageSchema = z
   .object({
-    identifier: imageIdentifier,
+    identifier: imageIdentifierSchema,
     type: imageTypeSchema,
     url: imageURLSchema.nullable(),
     uploadStatus: uploadStatusSchema,
@@ -73,6 +73,7 @@ export type UnvalidatedImage = {
   type: string;
   uploadStatus: string;
   url: string | null;
+  reference: string;
   content: string;
 };
 
@@ -89,21 +90,21 @@ export const uploaded = (image: Image, url: ImageURL): Image => ({
 export const generateUploadPath = (
   image: Image,
 ): Result<string, ValidationError> => {
-  const resource = (() => {
-    switch (image.content) {
-      case ContentType.ALL:
-        return err(
-          validationError(
-            "content",
-            "Cannot generate upload path for ContentType.ALL",
-          ),
-        );
-      case (ContentType.ARTICLE, ContentType.MEMO, ContentType.SERIES):
-        return `${image.content}s`;
-    }
-  })();
-
-  return ok(`${resource}/${image.reference}/${image.identifier}`);
+  switch (image.content) {
+    case ContentType.ARTICLE:
+    case ContentType.MEMO:
+    case ContentType.SERIES:
+      return ok(
+        `${image.content}s/${image.reference}/${image.identifier}.${image.type}`,
+      );
+    default:
+      return err(
+        validationError(
+          "content",
+          `Cannot generate upload path for content type: ${image.content}`,
+        ),
+      );
+  }
 };
 
 export const criteriaSchema = z

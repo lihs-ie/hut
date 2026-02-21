@@ -60,6 +60,7 @@ export async function seedMemos(): Promise<void> {
         title: memo.title,
         slug: memo.slug,
         tags: memo.tags,
+        images: [],
         entries: memo.entries,
         timeline: {
           createdAt: yesterday,

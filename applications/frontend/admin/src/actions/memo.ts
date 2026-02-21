@@ -7,6 +7,7 @@ import {
   UnvalidatedEntry,
   UnvalidatedMemo,
 } from "@shared/domains/memo";
+import { ImageIdentifier } from "@shared/domains/image";
 import { MemoWorkflowProvider } from "@shared/providers/workflows/memo";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { revalidateTag } from "next/cache";
@@ -26,11 +27,12 @@ export async function create(unvalidated: UnvalidatedMemo): Promise<void> {
 export async function addEntry(
   unvalidated: UnvalidatedEntry,
   slug: string,
+  images: ImageIdentifier[],
 ): Promise<void> {
   await unwrapForNextJs(
     MemoWorkflowProvider.addEntry({
       now: new Date(),
-      payload: { unvalidated, slug },
+      payload: { unvalidated, slug, images },
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 

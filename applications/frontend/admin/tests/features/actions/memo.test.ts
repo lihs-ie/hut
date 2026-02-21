@@ -73,6 +73,7 @@ function memoToUnvalidated(memo: Memo): UnvalidatedMemo {
       createdAt: entry.createdAt,
     })),
     tags: [...memo.tags],
+    images: [...memo.images],
     status: memo.status,
     timeline: {
       createdAt: memo.timeline.createdAt,
@@ -173,7 +174,7 @@ describe("Feature: Memo Actions (実DB接続)", () => {
       )(memoRepository.findBySlug)(memoRepository.persist)(testLogger);
 
       const addEntryResult = await addEntryWorkflow({
-        payload: { slug: memo.slug, unvalidated: unvalidatedEntry },
+        payload: { slug: memo.slug, unvalidated: unvalidatedEntry, images: [] },
         now: new Date(),
       }).match({
         ok: () => ({ success: true }),
@@ -377,6 +378,7 @@ describe("Feature: Memo Actions (実DB接続)", () => {
         slug: "valid-slug",
         entries: [],
         tags: [],
+        images: [],
         status: "published",
         timeline: {
           createdAt: new Date(),
@@ -455,7 +457,7 @@ describe("Feature: Memo Actions (実DB接続)", () => {
       )(memoRepository.findBySlug)(memoRepository.persist)(testLogger);
 
       const result = await addEntryWorkflow({
-        payload: { slug: memo.slug, unvalidated: invalidEntry },
+        payload: { slug: memo.slug, unvalidated: invalidEntry, images: [] },
         now: new Date(),
       }).match({
         ok: () => ({ success: true }),

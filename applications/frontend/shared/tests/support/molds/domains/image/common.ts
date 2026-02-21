@@ -1,7 +1,7 @@
 import {
   Image,
   ImageIdentifier,
-  imageIdentifier,
+  imageIdentifierSchema,
   ImageType,
   ImageURL,
   imageURLSchema,
@@ -30,7 +30,7 @@ export const ImageIdentifierMold = Mold<
   ImageIdentifier,
   ImageIdentifierProperties
 >({
-  pour: (properties) => imageIdentifier.parse(properties.value),
+  pour: (properties) => imageIdentifierSchema.parse(properties.value),
   prepare: (overrides, seed) => ({
     value:
       overrides.value ?? ulid(Forger(DateMold).forgeWithSeed(seed).getTime()),
@@ -59,7 +59,8 @@ export const ImageReferenceMold = Mold<
 >({
   pour: (properties) => properties.value,
   prepare: (overrides, seed) => {
-    const contentType = overrides.contentType ?? (seed % 2 === 0 ? "article" : "memo");
+    const contentType =
+      overrides.contentType ?? (seed % 2 === 0 ? "article" : "memo");
     if (contentType === "article") {
       return {
         value:
@@ -100,7 +101,8 @@ export const ImageMold = Mold<Image, ImageProperties>({
       uploadStatus === UploadStatus.COMPLETED
         ? (overrides.url ?? Forger(ImageURLMold).forgeWithSeed(seed))
         : null;
-    const contentType = overrides.content ?? (seed % 2 === 0 ? "article" : "memo");
+    const contentType =
+      overrides.content ?? (seed % 2 === 0 ? "article" : "memo");
     const reference =
       overrides.reference ??
       Forger(ImageReferenceMold).forgeWithSeed(seed, { contentType });
@@ -136,4 +138,3 @@ export const ImageCriteriaMold = Mold<Criteria, CriteriaProperties>({
     reference: overrides.reference,
   }),
 });
-
