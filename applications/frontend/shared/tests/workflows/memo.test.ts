@@ -263,6 +263,7 @@ describe("workflows/memo", () => {
           slug: string;
           entries: Array<{ text: string; createdAt: Date }>;
           tags: string[];
+          images: string[];
           status: string;
           timeline: { createdAt: Date; updatedAt: Date };
         };
@@ -275,6 +276,7 @@ describe("workflows/memo", () => {
             slug: memo.slug,
             entries: memo.entries,
             tags: memo.tags,
+            images: memo.images,
             status: memo.status,
             timeline: memo.timeline,
           },
@@ -302,6 +304,7 @@ describe("workflows/memo", () => {
           slug: string;
           entries: Array<{ text: string; createdAt: Date }>;
           tags: string[];
+          images: string[];
           status: string;
           timeline: { createdAt: Date; updatedAt: Date };
         };
@@ -314,6 +317,7 @@ describe("workflows/memo", () => {
             slug: "test-slug",
             entries: [],
             tags: [],
+            images: [],
             status: "published",
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           },
@@ -344,6 +348,7 @@ describe("workflows/memo", () => {
           slug: string;
           entries: Array<{ text: string; createdAt: Date }>;
           tags: string[];
+          images: string[];
           status: string;
           timeline: { createdAt: Date; updatedAt: Date };
         };
@@ -356,6 +361,7 @@ describe("workflows/memo", () => {
             slug: memo.slug,
             entries: memo.entries,
             tags: memo.tags,
+            images: memo.images,
             status: memo.status,
             timeline: memo.timeline,
           },
@@ -386,6 +392,7 @@ describe("workflows/memo", () => {
           slug: string;
           entries: Array<{ text: string; createdAt: Date }>;
           tags: string[];
+          images: string[];
           status: string;
           timeline: { createdAt: Date; updatedAt: Date };
         };
@@ -399,6 +406,7 @@ describe("workflows/memo", () => {
             slug: memo.slug,
             entries: memo.entries,
             tags: memo.tags,
+            images: memo.images,
             status: memo.status,
             timeline: memo.timeline,
           },
@@ -429,6 +437,7 @@ describe("workflows/memo", () => {
           slug: string;
           entries: Array<{ text: string; createdAt: Date }>;
           tags: string[];
+          images: string[];
           status: string;
           timeline: { createdAt: Date; updatedAt: Date };
         };
@@ -442,6 +451,7 @@ describe("workflows/memo", () => {
             slug: "test-slug",
             entries: [],
             tags: [],
+            images: [],
             status: "published",
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           },

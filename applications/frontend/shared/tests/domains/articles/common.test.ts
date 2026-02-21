@@ -33,7 +33,7 @@ describe("domains/articles/common", () => {
       "ArticleIdentifier",
       articleIdentifierSchema,
       () => Forger(ArticleIdentifierMold).forge(),
-      (count) => Forger(ArticleIdentifierMold).forgeMulti(count)
+      (count) => Forger(ArticleIdentifierMold).forgeMulti(count),
     );
   });
 
@@ -83,7 +83,9 @@ describe("domains/articles/common", () => {
         const result = contentSchema.safeParse("");
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.error.issues[0].message).toBe("Content must be at least 1 character long");
+          expect(result.error.issues[0].message).toBe(
+            "Content must be at least 1 character long",
+          );
         }
       });
     });
@@ -112,7 +114,9 @@ describe("domains/articles/common", () => {
     });
 
     describe("無効なArticleの検証", () => {
-      const createArticleWithOverrides = (overrides: Record<string, unknown>) => ({
+      const createArticleWithOverrides = (
+        overrides: Record<string, unknown>,
+      ) => ({
         identifier: Forger(ArticleIdentifierMold).forge(),
         title: "Test",
         content: "Content",
@@ -126,21 +130,21 @@ describe("domains/articles/common", () => {
 
       it("identifierが無効な場合は無効", () => {
         const result = articleSchema.safeParse(
-          createArticleWithOverrides({ identifier: "invalid" })
+          createArticleWithOverrides({ identifier: "invalid" }),
         );
         expect(result.success).toBe(false);
       });
 
       it("titleが空の場合は無効", () => {
         const result = articleSchema.safeParse(
-          createArticleWithOverrides({ title: "" })
+          createArticleWithOverrides({ title: "" }),
         );
         expect(result.success).toBe(false);
       });
 
       it("contentが空の場合は無効", () => {
         const result = articleSchema.safeParse(
-          createArticleWithOverrides({ content: "" })
+          createArticleWithOverrides({ content: "" }),
         );
         expect(result.success).toBe(false);
       });
@@ -157,6 +161,7 @@ describe("domains/articles/common", () => {
         slug: "test-article",
         status: "draft",
         tags: [],
+        images: [],
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);
@@ -171,6 +176,7 @@ describe("domains/articles/common", () => {
         slug: "",
         status: "invalid",
         tags: [],
+        images: [],
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -179,7 +185,9 @@ describe("domains/articles/common", () => {
 
   describe("toDraft", () => {
     it("記事のステータスをDRAFTに変更し、他のフィールドは保持する", () => {
-      const article = Forger(ArticleMold).forge({ status: PublishStatus.PUBLISHED });
+      const article = Forger(ArticleMold).forge({
+        status: PublishStatus.PUBLISHED,
+      });
       const draftArticle = toDraft(article);
 
       expect(draftArticle.status).toBe(PublishStatus.DRAFT);
@@ -191,7 +199,9 @@ describe("domains/articles/common", () => {
 
   describe("toPublished", () => {
     it("記事のステータスをPUBLISHEDに変更し、他のフィールドは保持する", () => {
-      const article = Forger(ArticleMold).forge({ status: PublishStatus.DRAFT });
+      const article = Forger(ArticleMold).forge({
+        status: PublishStatus.DRAFT,
+      });
       const publishedArticle = toPublished(article);
 
       expect(publishedArticle.status).toBe(PublishStatus.PUBLISHED);

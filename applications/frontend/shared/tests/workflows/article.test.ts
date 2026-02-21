@@ -301,6 +301,7 @@ describe("workflows/article", () => {
         slug: string;
         status: string;
         tags: string[];
+        images: string[];
         timeline: { createdAt: Date; updatedAt: Date };
       }> = {
         now: new Date(),
@@ -312,6 +313,7 @@ describe("workflows/article", () => {
           slug: article.slug,
           status: article.status,
           tags: article.tags,
+          images: article.images,
           timeline: article.timeline,
         },
       };
@@ -378,6 +380,7 @@ describe("workflows/article", () => {
         slug: string;
         status: string;
         tags: string[];
+        images: string[];
         timeline: { createdAt: Date; updatedAt: Date };
       }> = {
         now: new Date(),
@@ -389,6 +392,7 @@ describe("workflows/article", () => {
           slug: article.slug,
           status: article.status,
           tags: article.tags,
+          images: article.images,
           timeline: article.timeline,
         },
       };

@@ -131,6 +131,7 @@ function buildArticle(identifier: string, title: string, tags: string[]) {
     slug: "test-slug-" + identifier.slice(-6).toLowerCase(),
     status: "published",
     tags,
+    images: [],
     timeline: {
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -147,6 +148,7 @@ function buildMemo(identifier: string, title: string) {
     entries: [{ text: "entry text", createdAt: new Date() }],
     status: "published",
     tags: [],
+    images: [],
     timeline: {
       createdAt: new Date(),
       updatedAt: new Date(),

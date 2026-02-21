@@ -28,6 +28,8 @@ import { Forger, Mold, StringMold } from "@lihs-ie/forger-ts";
 import { TagIdentifier } from "@shared/domains/attributes/tag";
 import { TagIdentifierMold } from "../attributes/tag";
 import { SlugMold, SlugProperties } from "../common/slug";
+import { ImageIdentifier } from "@shared/domains/image";
+import { ImageIdentifierMold } from "../image";
 
 export type ArticleIdentifierProperties = {
   value: string;
@@ -88,6 +90,7 @@ export type ArticleProperties = {
   status: PublishStatus;
   excerpt: ArticleExcerpt;
   tags: TagIdentifier[];
+  images: ImageIdentifier[];
   timeline: Timeline;
 };
 
@@ -101,6 +104,7 @@ export const ArticleMold = Mold<Article, ArticleProperties>({
       slug: properties.slug,
       status: properties.status,
       tags: properties.tags,
+      images: properties.images,
       timeline: properties.timeline,
     }),
   prepare: (overrides, seed) => ({
@@ -113,6 +117,9 @@ export const ArticleMold = Mold<Article, ArticleProperties>({
     tags:
       overrides.tags ?? Forger(TagIdentifierMold).forgeMultiWithSeed(3, seed),
     status: overrides.status ?? Forger(PublishStatusMold).forgeWithSeed(seed),
+    images:
+      overrides.images ??
+      Forger(ImageIdentifierMold).forgeMultiWithSeed(5, seed),
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
 });
