@@ -87,8 +87,6 @@ services:
         condition: service_healthy
       pubsub-emulator:
         condition: service_healthy
-    networks:
-      - firebase-emulator-net
     restart: unless-stopped
 
   pubsub-push-init:
@@ -110,16 +108,9 @@ services:
           -d '{"topic":"projects/demo-hut/topics/events","pushConfig":{"pushEndpoint":"http://search-token-worker:8080/events"}}'
         echo ""
         echo "Push subscription created."
-    networks:
-      - firebase-emulator-net
     restart: "no"
 
 volumes:
   worker-cabal-store:
   worker-cabal-packages:
   worker-dist:
-
-networks:
-  firebase-emulator-net:
-    external: true
-    name: hut-firebase-emulator_default
