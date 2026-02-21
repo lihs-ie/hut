@@ -1,4 +1,4 @@
-FROM node:20-slim AS deps
+FROM node:22-slim AS deps
 
 RUN corepack enable pnpm
 WORKDIR /app
@@ -29,7 +29,7 @@ COPY . .
 
 RUN pnpm --filter @hut/${APP_NAME} build
 
-FROM node:20-slim AS runner
+FROM node:22-slim AS runner
 
 WORKDIR /app
 
