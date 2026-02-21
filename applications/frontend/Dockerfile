@@ -9,9 +9,8 @@ COPY reader/package.json ./reader/
 COPY admin/package.json ./admin/
 
 # pnpm-workspace.yaml references ../scripts which is outside the Docker context.
-# Create a stub package.json to satisfy workspace resolution.
-RUN mkdir -p /scripts && \
-    printf '{"name":"@hut/scripts","version":"0.0.0","private":true,"type":"module","dependencies":{"ulid":"^3.0.2"}}' > /scripts/package.json
+# Override to exclude it; pnpm tolerates the extra importer in the lockfile.
+RUN printf 'packages:\n  - "shared"\n  - "reader"\n  - "admin"\n' > pnpm-workspace.yaml
 
 RUN pnpm install --frozen-lockfile
 
@@ -26,6 +25,9 @@ ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=""
 ARG NEXT_PUBLIC_FIREBASE_APP_ID=""
 
 COPY . .
+
+# Restore workspace fix (COPY overwrites pnpm-workspace.yaml with original)
+RUN printf 'packages:\n  - "shared"\n  - "reader"\n  - "admin"\n' > pnpm-workspace.yaml
 
 RUN pnpm --filter @hut/${APP_NAME} build
 
