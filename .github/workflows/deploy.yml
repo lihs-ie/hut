@@ -120,5 +120,6 @@ jobs:
         run: |
           gcloud run services update "${{ steps.vars.outputs.service_name }}" \
             --image "${image}" \
+            --port "${{ steps.vars.outputs.app_port }}" \
             --region "${REGION}" \
             --project "${{ secrets.GCP_PROJECT_ID }}"
