@@ -115,10 +115,6 @@ export const MemoMold = Mold<Memo, MemoProperties>({
   }),
 });
 
-export const MemoIdentifierFactory = MemoIdentifierMold;
-export const MemoEntryFactory = MemoEntryMold;
-export const MemoSlugFactory = MemoSlugMold;
-export const MemoFactory = MemoMold;
 
 export type MemoRepositoryMoldProperties = {
   instances: Memo[];

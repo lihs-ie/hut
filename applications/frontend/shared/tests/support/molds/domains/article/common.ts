@@ -124,9 +124,6 @@ export const ArticleMold = Mold<Article, ArticleProperties>({
   }),
 });
 
-export const ArticleIdentifierFactory = ArticleIdentifierMold;
-export const ArticleFactory = ArticleMold;
-export const SlugFactory = SlugMold;
 
 export type ArticleRepositoryMold = {
   instances: Article[];
