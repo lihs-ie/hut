@@ -15,10 +15,7 @@ RUN mkdir -p /scripts && \
 
 RUN pnpm install --frozen-lockfile
 
-FROM node:20-slim AS builder
-
-RUN corepack enable pnpm
-WORKDIR /app
+FROM deps AS builder
 
 ARG APP_NAME
 ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID
@@ -28,7 +25,6 @@ ARG NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=""
 ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=""
 ARG NEXT_PUBLIC_FIREBASE_APP_ID=""
 
-COPY --from=deps /app ./
 COPY . .
 
 RUN pnpm --filter @hut/${APP_NAME} build
