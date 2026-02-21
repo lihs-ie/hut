@@ -20,6 +20,7 @@ import {
 } from "../../support/molds/domains/memo";
 import { TimelineMold } from "../../support/molds/domains/common/date";
 import { TagIdentifierMold } from "../../support/molds/domains/attributes/tag";
+import { ImageIdentifierMold } from "../../support/molds/domains/image";
 import {
   describeIdentifierSchema,
   describeStringLengthSchema,
@@ -226,6 +227,40 @@ describe("domains/memo/common", () => {
       addEntry(memo, newEntry);
 
       expect(memo.entries).toHaveLength(0);
+    });
+
+    it("newImagesが渡された場合、imagesにマージされる", () => {
+      const existingImage = Forger(ImageIdentifierMold).forgeWithSeed(1);
+      const newImage = Forger(ImageIdentifierMold).forgeWithSeed(2);
+      const memo = Forger(MemoMold).forge({ images: [existingImage] });
+      const newEntry = Forger(MemoEntryMold).forge();
+      const updatedMemo = addEntry(memo, newEntry, [newImage]);
+
+      expect(updatedMemo.images).toContain(existingImage);
+      expect(updatedMemo.images).toContain(newImage);
+      expect(updatedMemo.images).toHaveLength(2);
+    });
+
+    it("newImagesに重複がある場合は一意にする", () => {
+      const existingImage = Forger(ImageIdentifierMold).forgeWithSeed(1);
+      const newImage = Forger(ImageIdentifierMold).forgeWithSeed(2);
+      const memo = Forger(MemoMold).forge({ images: [existingImage] });
+      const newEntry = Forger(MemoEntryMold).forge();
+      const updatedMemo = addEntry(memo, newEntry, [existingImage, newImage]);
+
+      expect(updatedMemo.images).toHaveLength(2);
+      expect(updatedMemo.images).toContain(existingImage);
+      expect(updatedMemo.images).toContain(newImage);
+    });
+
+    it("newImagesが未指定の場合はimagesが変更されない", () => {
+      const existingImage = Forger(ImageIdentifierMold).forgeWithSeed(1);
+      const memo = Forger(MemoMold).forge({ images: [existingImage] });
+      const newEntry = Forger(MemoEntryMold).forge();
+      const updatedMemo = addEntry(memo, newEntry);
+
+      expect(updatedMemo.images).toHaveLength(1);
+      expect(updatedMemo.images).toContain(existingImage);
     });
   });
 

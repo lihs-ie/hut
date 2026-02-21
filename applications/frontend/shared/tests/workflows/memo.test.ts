@@ -7,14 +7,17 @@ import {
   createMemoCreateWorkflow,
   createMemoEditWorkflow,
   createMemoTerminateWorkflow,
+  createPersistMemoEntryWorkflow,
 } from "@shared/workflows/memo";
 import {
   validateMemoIdentifier,
   validateMemo,
   validateCriteria,
+  validateEntry,
   toSnapshot,
 } from "@shared/domains/memo";
 import { validateSlug } from "@shared/domains/common/slug";
+import { ImageIdentifierMold } from "../support/molds/domains/image";
 import { Logger, Environment } from "@shared/aspects/logger";
 import { ok, err } from "@shared/aspects/result";
 import {
@@ -527,6 +530,72 @@ describe("workflows/memo", () => {
       const result = await workflow(command).unwrapError();
 
       expect(result).toEqual(notFoundError);
+    });
+  });
+
+  describe("createPersistMemoEntryWorkflow", () => {
+    it("有効なエントリーを追加してmemo.editedイベントを返す", async () => {
+      const memo = Forger(MemoMold).forgeWithSeed(1);
+      const findBySlugMock = vi.fn().mockReturnValue(ok(memo).toAsync());
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createPersistMemoEntryWorkflow(validateSlug)(
+        validateEntry,
+      )(findBySlugMock)(persistMock)(mockLogger);
+
+      const command: Command<{
+        slug: string;
+        unvalidated: { text: string; createdAt: Date };
+        images: string[];
+      }> = {
+        now: new Date(),
+        payload: {
+          slug: memo.slug,
+          unvalidated: { text: "test entry", createdAt: new Date() },
+          images: [],
+        },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result.type).toBe("memo.edited");
+      expect(persistMock).toHaveBeenCalled();
+    });
+
+    it("imagesを含むエントリ追加ができる", async () => {
+      const existingImage = Forger(ImageIdentifierMold).forgeWithSeed(1);
+      const newImage = Forger(ImageIdentifierMold).forgeWithSeed(2);
+      const memo = Forger(MemoMold).forgeWithSeed(1, {
+        images: [existingImage],
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(memo).toAsync());
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createPersistMemoEntryWorkflow(validateSlug)(
+        validateEntry,
+      )(findBySlugMock)(persistMock)(mockLogger);
+
+      const command: Command<{
+        slug: string;
+        unvalidated: { text: string; createdAt: Date };
+        images: string[];
+      }> = {
+        now: new Date(),
+        payload: {
+          slug: memo.slug,
+          unvalidated: { text: "test entry", createdAt: new Date() },
+          images: [existingImage, newImage],
+        },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result.type).toBe("memo.edited");
+      expect(persistMock).toHaveBeenCalled();
+
+      const persistedMemo = persistMock.mock.calls[0][0];
+      expect(persistedMemo.images).toContain(existingImage);
+      expect(persistedMemo.images).toContain(newImage);
     });
   });
 });

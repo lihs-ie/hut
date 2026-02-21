@@ -8,7 +8,9 @@ import { SimpleButton } from "@shared/components/atoms/button/simple";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
 import { useImageDropzone } from "@shared/components/global/hooks/use-image-dropzone";
-import { UnvalidatedEntry } from "@shared/domains/memo";
+import { MemoIdentifier, UnvalidatedEntry } from "@shared/domains/memo";
+import { ImageIdentifier } from "@shared/domains/image";
+import { extractImageUrls } from "@shared/domains/common/markdown";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { DropzoneOverlay } from "@shared/components/molecules/overlay/dropzone";
 import { UploadStatus } from "@shared/components/molecules/upload/status";
@@ -19,8 +21,9 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export type Props = {
-  persist: (unvalidated: UnvalidatedEntry, slug: string) => Promise<void>;
+  persist: (unvalidated: UnvalidatedEntry, slug: string, images: ImageIdentifier[]) => Promise<void>;
   slug: string;
+  memoIdentifier: MemoIdentifier;
   uploadAction: (file: File | Blob, path: string) => Promise<string>;
 };
 
@@ -34,7 +37,9 @@ type Tab = (typeof Tab)[keyof typeof Tab];
 export const EntryEditor = (props: Props) => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.MARKDOWN);
   const [value, setValue] = useState("");
+  const [images, setImages] = useState<ImageIdentifier[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const imageUrlToIdentifierMap = useRef<Map<string, ImageIdentifier>>(new Map());
 
   const { execute, error, reset, isError } = useServerAction(props.persist);
 
@@ -55,15 +60,17 @@ export const EntryEditor = (props: Props) => {
       const result = await imageUploadHook.uploadImage(
         file,
         "memo",
-        props.slug
+        props.memoIdentifier
       );
 
       result.match({
-        ok: ({ url, placeholder }) => {
+        ok: ({ url, placeholder, imageIdentifier }) => {
           replacePlaceholder(
             placeholderId,
             `![${placeholder.altText}](${url})`
           );
+          imageUrlToIdentifierMap.current.set(url, imageIdentifier);
+          setImages((previous) => [...previous, imageIdentifier]);
         },
         err: (uploadError) => {
           const message =
@@ -77,8 +84,23 @@ export const EntryEditor = (props: Props) => {
         },
       });
     },
-    [props.slug, imageUploadHook, replacePlaceholder]
+    [props.memoIdentifier, imageUploadHook, replacePlaceholder]
   );
+
+  const handleValueChange = useCallback((newValue: string) => {
+    setValue(newValue);
+    const currentUrls = extractImageUrls(newValue);
+    const removedIdentifiers: ImageIdentifier[] = [];
+    imageUrlToIdentifierMap.current.forEach((identifier, url) => {
+      if (!currentUrls.has(url)) {
+        removedIdentifiers.push(identifier);
+        imageUrlToIdentifierMap.current.delete(url);
+      }
+    });
+    if (removedIdentifiers.length > 0) {
+      setImages((previous) => previous.filter((id) => !removedIdentifiers.includes(id)));
+    }
+  }, []);
 
   const processFiles = useCallback(
     async (files: File[]) => {
@@ -126,7 +148,7 @@ export const EntryEditor = (props: Props) => {
               <Textarea
                 ref={textareaRef}
                 value={value}
-                onChange={setValue}
+                onChange={handleValueChange}
                 onPaste={handlePaste}
                 placeholder="コメントを追加"
                 className={styles.textarea}
@@ -181,16 +203,18 @@ export const EntryEditor = (props: Props) => {
       <div className={styles.button}>
         <SimpleButton
           type="button"
+          disabled={imageUploadHook.isUploading}
           onClick={async () => {
             try {
-              await execute({ text: value, createdAt: new Date() }, props.slug);
+              await execute({ text: value, createdAt: new Date() }, props.slug, images);
               setValue("");
+              setImages([]);
+              imageUrlToIdentifierMap.current.clear();
             } catch {
-              // Error handling is done by the useServerAction hook
             }
           }}
         >
-          投稿する
+          {imageUploadHook.isUploading ? "画像アップロード中..." : "投稿する"}
         </SimpleButton>
       </div>
 

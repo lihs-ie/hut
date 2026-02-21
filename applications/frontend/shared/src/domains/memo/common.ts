@@ -11,7 +11,10 @@ import {
   ValidationError,
 } from "@shared/aspects/error";
 import { tagIdentifierSchema } from "../attributes/tag";
-import { imageIdentifierSchema } from "../image/identifier";
+import {
+  imageIdentifierSchema,
+  ImageIdentifier,
+} from "../image/identifier";
 
 export const memoIdentifierSchema = z.ulid().brand("MemoIdentifier");
 
@@ -82,10 +85,18 @@ export const memoSchema = z
 
 export type Memo = z.infer<typeof memoSchema>;
 
-export const addEntry = (memo: Memo, entry: MemoEntry): Memo => {
+export const addEntry = (
+  memo: Memo,
+  entry: MemoEntry,
+  newImages?: ImageIdentifier[],
+): Memo => {
+  const mergedImages = newImages
+    ? [...new Set([...memo.images, ...newImages])]
+    : memo.images;
   return {
     ...memo,
     entries: [...memo.entries, entry],
+    images: mergedImages,
     timeline: {
       ...memo.timeline,
       updatedAt: entry.createdAt,
