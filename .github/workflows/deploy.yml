@@ -118,8 +118,18 @@ jobs:
 
       - name: Deploy to Cloud Run
         run: |
-          gcloud run services update "${{ steps.vars.outputs.service_name }}" \
-            --image "${image}" \
-            --port "${{ steps.vars.outputs.app_port }}" \
-            --region "${REGION}" \
+          DEPLOY_ARGS=(
+            --image "${image}"
+            --port "${{ steps.vars.outputs.app_port }}"
+            --region "${REGION}"
             --project "${{ secrets.GCP_PROJECT_ID }}"
+          )
+
+          if [ "${{ steps.vars.outputs.app_type }}" = "frontend" ]; then
+            DEPLOY_ARGS+=(
+              --update-env-vars "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}"
+            )
+          fi
+
+          gcloud run services update "${{ steps.vars.outputs.service_name }}" \
+            "${DEPLOY_ARGS[@]}"

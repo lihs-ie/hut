@@ -1,6 +1,7 @@
 **/node_modules
 **/.next
 **/.env
+**/.env.*
 .storybook
 e2e
 **/*.test.ts
