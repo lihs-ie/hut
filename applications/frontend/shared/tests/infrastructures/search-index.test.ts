@@ -10,13 +10,13 @@ import {
   Sort,
   Order,
   type SearchIndex,
-  type Criteria,
 } from "@shared/domains/search-index/common";
-import type { TagIdentifier } from "@shared/domains/attributes/tag";
 import { TagIdentifierMold } from "../support/molds/domains/attributes/tag";
-import { Builder } from "../support/molds";
+import { Forger } from "@lihs-ie/forger-ts";
 import {
   SearchIndexMold,
+  SearchIndexTitleMold,
+  SearchIndexExcerptMold,
   CriteriaMold,
 } from "../support/molds/domains/search-index/common";
 
@@ -32,54 +32,10 @@ describe("infrastructures/search-index", () => {
 
   const getOperations = () => operations as FirestoreOperations;
 
-  const createTagIdentifier = (seed: number): TagIdentifier =>
-    Builder(TagIdentifierMold).buildWith(seed);
-
   const TestTags = {
-    TYPESCRIPT: createTagIdentifier(1001),
-    REACT: createTagIdentifier(1002),
-    RUST: createTagIdentifier(1003),
-  };
-
-  const createSearchIndex = (
-    seed: number,
-    overrides?: Partial<{
-      title: string;
-      excerpt: string;
-      tags: TagIdentifier[];
-      type:
-        | typeof ContentType.ARTICLE
-        | typeof ContentType.MEMO
-        | typeof ContentType.SERIES;
-    }>
-  ): SearchIndex => {
-    return Builder(SearchIndexMold).buildWith(seed, {
-      title: overrides?.title,
-      excerpt: overrides?.excerpt,
-      tags: overrides?.tags ?? [TestTags.TYPESCRIPT],
-      type: overrides?.type ?? ContentType.ARTICLE,
-    });
-  };
-
-  const createCriteria = (params: {
-    freeWord?: string | null;
-    tags?: TagIdentifier[] | null;
-    type?:
-      | typeof ContentType.ALL
-      | typeof ContentType.ARTICLE
-      | typeof ContentType.MEMO
-      | typeof ContentType.SERIES
-      | null;
-    sortBy?: typeof Sort.LATEST | typeof Sort.NEWEST | typeof Sort.OLDEST | null;
-    order?: typeof Order.ASC | typeof Order.DESC | null;
-  }): Criteria => {
-    return Builder(CriteriaMold).buildWith(0, {
-      freeWord: params.freeWord ?? null,
-      tags: params.tags ?? null,
-      type: params.type ?? null,
-      sortBy: params.sortBy ?? null,
-      order: params.order ?? null,
-    });
+    TYPESCRIPT: Forger(TagIdentifierMold).forgeWithSeed(1001),
+    REACT: Forger(TagIdentifierMold).forgeWithSeed(1002),
+    RUST: Forger(TagIdentifierMold).forgeWithSeed(1003),
   };
 
   const generateNgrams = (text: string, min = 2, max = 4): string[] => {
@@ -131,8 +87,8 @@ describe("infrastructures/search-index", () => {
     describe("search", () => {
       it("全ての検索インデックスを取得できる", async () => {
         const firestoreOperations = getOperations();
-        const index1 = createSearchIndex(1);
-        const index2 = createSearchIndex(2);
+        const index1 = Forger(SearchIndexMold).forgeWithSeed(1);
+        const index2 = Forger(SearchIndexMold).forgeWithSeed(2);
 
         await persistSearchIndex(firestore, firestoreOperations, index1);
         await persistSearchIndex(firestore, firestoreOperations, index2);
@@ -141,7 +97,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({});
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0);
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(2);
@@ -149,15 +105,15 @@ describe("infrastructures/search-index", () => {
 
       it("freeWordでタイトルを検索できる", async () => {
         const firestoreOperations = getOperations();
-        const index1 = createSearchIndex(10, {
-          title: "ZZZAlphaZZZ unique keyword",
+        const index1 = Forger(SearchIndexMold).forgeWithSeed(10, {
+          title: Forger(SearchIndexTitleMold).forgeWithSeed(0, { value: "ZZZAlphaZZZ unique keyword" }),
           tags: [TestTags.RUST],
-          excerpt: "記事Aの抜粋",
+          excerpt: Forger(SearchIndexExcerptMold).forgeWithSeed(0, { value: "記事Aの抜粋" }),
         });
-        const index2 = createSearchIndex(11, {
-          title: "YYYBetaYYY different content",
+        const index2 = Forger(SearchIndexMold).forgeWithSeed(11, {
+          title: Forger(SearchIndexTitleMold).forgeWithSeed(0, { value: "YYYBetaYYY different content" }),
           tags: [TestTags.REACT],
-          excerpt: "記事Bの抜粋",
+          excerpt: Forger(SearchIndexExcerptMold).forgeWithSeed(0, { value: "記事Bの抜粋" }),
         });
 
         await persistSearchIndex(firestore, firestoreOperations, index1);
@@ -167,7 +123,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({ freeWord: "Alpha" });
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, { freeWord: "Alpha" });
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(1);
@@ -176,14 +132,14 @@ describe("infrastructures/search-index", () => {
 
       it("freeWordで抜粋を検索できる", async () => {
         const firestoreOperations = getOperations();
-        const index1 = createSearchIndex(20, {
-          title: "記事AAA",
-          excerpt: "ZZZGammaZZZ unique content here",
+        const index1 = Forger(SearchIndexMold).forgeWithSeed(20, {
+          title: Forger(SearchIndexTitleMold).forgeWithSeed(0, { value: "記事AAA" }),
+          excerpt: Forger(SearchIndexExcerptMold).forgeWithSeed(0, { value: "ZZZGammaZZZ unique content here" }),
           tags: [TestTags.RUST],
         });
-        const index2 = createSearchIndex(21, {
-          title: "記事BBB",
-          excerpt: "YYYDeltaYYY different content here",
+        const index2 = Forger(SearchIndexMold).forgeWithSeed(21, {
+          title: Forger(SearchIndexTitleMold).forgeWithSeed(0, { value: "記事BBB" }),
+          excerpt: Forger(SearchIndexExcerptMold).forgeWithSeed(0, { value: "YYYDeltaYYY different content here" }),
           tags: [TestTags.REACT],
         });
 
@@ -194,7 +150,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({ freeWord: "Gamma" });
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, { freeWord: "Gamma" });
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(1);
@@ -203,10 +159,12 @@ describe("infrastructures/search-index", () => {
 
       it("typeで記事を検索できる", async () => {
         const firestoreOperations = getOperations();
-        const articleIndex = createSearchIndex(30, {
+        const articleIndex = Forger(SearchIndexMold).forgeWithSeed(30, {
           type: ContentType.ARTICLE,
         });
-        const memoIndex = createSearchIndex(31, { type: ContentType.MEMO });
+        const memoIndex = Forger(SearchIndexMold).forgeWithSeed(31, {
+          type: ContentType.MEMO,
+        });
 
         await persistSearchIndex(firestore, firestoreOperations, articleIndex);
         await persistSearchIndex(firestore, firestoreOperations, memoIndex);
@@ -215,7 +173,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({ type: ContentType.ARTICLE });
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, { type: ContentType.ARTICLE });
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(1);
@@ -224,10 +182,12 @@ describe("infrastructures/search-index", () => {
 
       it("typeでメモを検索できる", async () => {
         const firestoreOperations = getOperations();
-        const articleIndex = createSearchIndex(40, {
+        const articleIndex = Forger(SearchIndexMold).forgeWithSeed(40, {
           type: ContentType.ARTICLE,
         });
-        const memoIndex = createSearchIndex(41, { type: ContentType.MEMO });
+        const memoIndex = Forger(SearchIndexMold).forgeWithSeed(41, {
+          type: ContentType.MEMO,
+        });
 
         await persistSearchIndex(firestore, firestoreOperations, articleIndex);
         await persistSearchIndex(firestore, firestoreOperations, memoIndex);
@@ -236,7 +196,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({ type: ContentType.MEMO });
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, { type: ContentType.MEMO });
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(1);
@@ -245,10 +205,12 @@ describe("infrastructures/search-index", () => {
 
       it("tagsで検索できる", async () => {
         const firestoreOperations = getOperations();
-        const index1 = createSearchIndex(50, {
+        const index1 = Forger(SearchIndexMold).forgeWithSeed(50, {
           tags: [TestTags.TYPESCRIPT, TestTags.REACT],
         });
-        const index2 = createSearchIndex(51, { tags: [TestTags.RUST] });
+        const index2 = Forger(SearchIndexMold).forgeWithSeed(51, {
+          tags: [TestTags.RUST],
+        });
 
         await persistSearchIndex(firestore, firestoreOperations, index1);
         await persistSearchIndex(firestore, firestoreOperations, index2);
@@ -257,7 +219,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({ tags: [TestTags.TYPESCRIPT] });
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, { tags: [TestTags.TYPESCRIPT] });
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(1);
@@ -266,9 +228,15 @@ describe("infrastructures/search-index", () => {
 
       it("複数のtagsで検索できる", async () => {
         const firestoreOperations = getOperations();
-        const index1 = createSearchIndex(60, { tags: [TestTags.TYPESCRIPT] });
-        const index2 = createSearchIndex(61, { tags: [TestTags.REACT] });
-        const index3 = createSearchIndex(62, { tags: [TestTags.RUST] });
+        const index1 = Forger(SearchIndexMold).forgeWithSeed(60, {
+          tags: [TestTags.TYPESCRIPT],
+        });
+        const index2 = Forger(SearchIndexMold).forgeWithSeed(61, {
+          tags: [TestTags.REACT],
+        });
+        const index3 = Forger(SearchIndexMold).forgeWithSeed(62, {
+          tags: [TestTags.RUST],
+        });
 
         await persistSearchIndex(firestore, firestoreOperations, index1);
         await persistSearchIndex(firestore, firestoreOperations, index2);
@@ -278,7 +246,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, {
           tags: [TestTags.TYPESCRIPT, TestTags.REACT],
         });
         const found = await repository.search(criteria).unwrap();
@@ -288,8 +256,12 @@ describe("infrastructures/search-index", () => {
 
       it("sortByとorderで並び替えできる", async () => {
         const firestoreOperations = getOperations();
-        const index1 = createSearchIndex(70, { title: "古い記事" });
-        const index2 = createSearchIndex(71, { title: "新しい記事" });
+        const index1 = Forger(SearchIndexMold).forgeWithSeed(70, {
+          title: Forger(SearchIndexTitleMold).forgeWithSeed(0, { value: "古い記事" }),
+        });
+        const index2 = Forger(SearchIndexMold).forgeWithSeed(71, {
+          title: Forger(SearchIndexTitleMold).forgeWithSeed(0, { value: "新しい記事" }),
+        });
 
         await persistSearchIndex(firestore, firestoreOperations, index1);
         await persistSearchIndex(firestore, firestoreOperations, index2);
@@ -298,7 +270,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, {
           sortBy: Sort.NEWEST,
           order: Order.DESC,
         });
@@ -309,8 +281,8 @@ describe("infrastructures/search-index", () => {
 
       it("LATESTソートを使用できる", async () => {
         const firestoreOperations = getOperations();
-        const index1 = createSearchIndex(80);
-        const index2 = createSearchIndex(81);
+        const index1 = Forger(SearchIndexMold).forgeWithSeed(80);
+        const index2 = Forger(SearchIndexMold).forgeWithSeed(81);
 
         await persistSearchIndex(firestore, firestoreOperations, index1);
         await persistSearchIndex(firestore, firestoreOperations, index2);
@@ -319,7 +291,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, {
           sortBy: Sort.LATEST,
           order: Order.DESC,
         });
@@ -330,8 +302,8 @@ describe("infrastructures/search-index", () => {
 
       it("OLDESTソートを使用できる", async () => {
         const firestoreOperations = getOperations();
-        const index1 = createSearchIndex(90);
-        const index2 = createSearchIndex(91);
+        const index1 = Forger(SearchIndexMold).forgeWithSeed(90);
+        const index2 = Forger(SearchIndexMold).forgeWithSeed(91);
 
         await persistSearchIndex(firestore, firestoreOperations, index1);
         await persistSearchIndex(firestore, firestoreOperations, index2);
@@ -340,7 +312,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, {
           sortBy: Sort.OLDEST,
           order: Order.ASC,
         });
@@ -351,18 +323,18 @@ describe("infrastructures/search-index", () => {
 
       it("複合条件で検索できる", async () => {
         const firestoreOperations = getOperations();
-        const index1 = createSearchIndex(100, {
-          title: "TypeScript記事",
+        const index1 = Forger(SearchIndexMold).forgeWithSeed(100, {
+          title: Forger(SearchIndexTitleMold).forgeWithSeed(0, { value: "TypeScript記事" }),
           type: ContentType.ARTICLE,
           tags: [TestTags.TYPESCRIPT],
         });
-        const index2 = createSearchIndex(101, {
-          title: "TypeScriptメモ",
+        const index2 = Forger(SearchIndexMold).forgeWithSeed(101, {
+          title: Forger(SearchIndexTitleMold).forgeWithSeed(0, { value: "TypeScriptメモ" }),
           type: ContentType.MEMO,
           tags: [TestTags.TYPESCRIPT],
         });
-        const index3 = createSearchIndex(102, {
-          title: "Rust記事",
+        const index3 = Forger(SearchIndexMold).forgeWithSeed(102, {
+          title: Forger(SearchIndexTitleMold).forgeWithSeed(0, { value: "Rust記事" }),
           type: ContentType.ARTICLE,
           tags: [TestTags.RUST],
         });
@@ -375,7 +347,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, {
           type: ContentType.ARTICLE,
           tags: [TestTags.TYPESCRIPT],
         });
@@ -387,7 +359,9 @@ describe("infrastructures/search-index", () => {
 
       it("空の結果を返すことができる", async () => {
         const firestoreOperations = getOperations();
-        const index = createSearchIndex(110, { title: "React記事" });
+        const index = Forger(SearchIndexMold).forgeWithSeed(110, {
+          title: Forger(SearchIndexTitleMold).forgeWithSeed(0, { value: "React記事" }),
+        });
 
         await persistSearchIndex(firestore, firestoreOperations, index);
 
@@ -395,7 +369,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({ freeWord: "存在しないキーワード" });
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, { freeWord: "存在しないキーワード" });
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(0);
@@ -403,8 +377,8 @@ describe("infrastructures/search-index", () => {
 
       it("freeWordが空文字の場合はngramフィルタを適用しない", async () => {
         const firestoreOperations = getOperations();
-        const index1 = createSearchIndex(120);
-        const index2 = createSearchIndex(121);
+        const index1 = Forger(SearchIndexMold).forgeWithSeed(120);
+        const index2 = Forger(SearchIndexMold).forgeWithSeed(121);
 
         await persistSearchIndex(firestore, firestoreOperations, index1);
         await persistSearchIndex(firestore, firestoreOperations, index2);
@@ -413,7 +387,7 @@ describe("infrastructures/search-index", () => {
           firestore,
           firestoreOperations
         );
-        const criteria = createCriteria({ freeWord: null });
+        const criteria = Forger(CriteriaMold).forgeWithSeed(0, { freeWord: null });
         const found = await repository.search(criteria).unwrap();
 
         expect(found.length).toBe(2);
