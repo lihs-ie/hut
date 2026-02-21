@@ -44,6 +44,7 @@ function toArticlePayload(article: Article) {
     slug: article.slug,
     status: article.status,
     tags: article.tags,
+    images: article.images,
     timeline: article.timeline,
   };
 }
