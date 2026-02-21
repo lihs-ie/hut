@@ -16,6 +16,7 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
   ];
 
   return {
+    output: "standalone",
     turbopack: {
       root: "../..",
     },

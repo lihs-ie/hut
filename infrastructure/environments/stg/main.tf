@@ -7,19 +7,6 @@ locals {
   }
 }
 
-resource "google_project_iam_custom_role" "storage_object_delete" {
-  role_id     = "storageObjectDelete"
-  title       = "Storage Object Delete"
-  description = "Allows listing, reading, and deleting storage objects"
-  project     = var.project_id
-
-  permissions = [
-    "storage.objects.list",
-    "storage.objects.get",
-    "storage.objects.delete",
-  ]
-}
-
 module "iam" {
   source = "../../modules/iam"
 
@@ -40,15 +27,6 @@ module "iam" {
         "roles/datastore.user",
         "roles/pubsub.publisher",
         "roles/secretmanager.secretAccessor",
-      ]
-    }
-    "hut-stg-image-cleanup-worker" = {
-      display_name = "HUT STG Image Cleanup Worker Service Account"
-      description  = "Service account for the STG image cleanup worker"
-      roles = [
-        "roles/datastore.user",
-        google_project_iam_custom_role.storage_object_delete.id,
-        "roles/eventarc.eventReceiver",
       ]
     }
     "hut-stg-worker" = {
@@ -87,7 +65,7 @@ module "firebase_storage" {
 
   project_id  = var.project_id
   bucket_name = "${var.project_id}.firebasestorage.app"
-  location    = var.region
+  location    = "US-EAST1"
 
   labels = local.common_labels
 }
@@ -143,15 +121,6 @@ module "secrets" {
   labels = local.common_labels
 }
 
-module "pubsub_image_events" {
-  source = "../../modules/pubsub"
-
-  project_id = var.project_id
-  topic_name = "image-events"
-
-  labels = local.common_labels
-}
-
 module "pubsub_app_events" {
   source = "../../modules/pubsub"
 
@@ -169,7 +138,7 @@ module "cloudrun_reader" {
   service_name          = "stg-lihs-hut"
   container_image       = var.reader_container_image
   service_account_email = module.iam.service_account_emails["hut-stg-reader"]
-  allow_unauthenticated = true
+  allow_unauthenticated = false
 
   environment_variables = {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID = var.project_id
@@ -214,7 +183,7 @@ module "cloudrun_admin" {
   service_name          = "stg-lihs-hut-landlord"
   container_image       = var.admin_container_image
   service_account_email = module.iam.service_account_emails["hut-stg-admin"]
-  allow_unauthenticated = true
+  allow_unauthenticated = false
 
   environment_variables = {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID = var.project_id
@@ -262,23 +231,6 @@ module "cloudrun_admin" {
   ]
 }
 
-module "cloudrun_image_cleanup_worker" {
-  source = "../../modules/cloudrun_service"
-
-  project_id            = var.project_id
-  region                = var.region
-  service_name          = "stg-image-cleanup-worker"
-  container_image       = var.image_cleanup_worker_container_image
-  service_account_email = module.iam.service_account_emails["hut-stg-image-cleanup-worker"]
-  allow_unauthenticated = false
-
-  environment_variables = {
-    FIREBASE_PROJECT_ID = var.project_id
-  }
-
-  labels = local.common_labels
-}
-
 module "cloudrun_worker" {
   source = "../../modules/cloudrun_service"
 
@@ -296,19 +248,6 @@ module "cloudrun_worker" {
   labels = local.common_labels
 }
 
-module "eventarc_image_cleanup" {
-  source = "../../modules/eventarc_trigger"
-
-  project_id            = var.project_id
-  region                = var.region
-  trigger_name          = "stg-image-cleanup-trigger"
-  pubsub_topic_id       = module.pubsub_image_events.topic_id
-  cloudrun_service_name = module.cloudrun_image_cleanup_worker.service_name
-  service_account_email = module.iam.service_account_emails["hut-stg-image-cleanup-worker"]
-
-  labels = local.common_labels
-}
-
 module "eventarc_worker" {
   source = "../../modules/eventarc_trigger"
 
@@ -320,4 +259,38 @@ module "eventarc_worker" {
   service_account_email = module.iam.service_account_emails["hut-stg-worker"]
 
   labels = local.common_labels
+}
+
+module "github_actions_iam" {
+  source = "../../modules/github_actions_iam"
+
+  project_id        = var.project_id
+  github_repository = "lihs-ie/hut"
+}
+
+locals {
+  invoker_bindings = flatten([
+    for member in var.authorized_members : [
+      {
+        key     = "reader-${member}"
+        service = module.cloudrun_reader.service_name
+        member  = member
+      },
+      {
+        key     = "admin-${member}"
+        service = module.cloudrun_admin.service_name
+        member  = member
+      },
+    ]
+  ])
+}
+
+resource "google_cloud_run_v2_service_iam_member" "invoker" {
+  for_each = { for binding in local.invoker_bindings : binding.key => binding }
+
+  project  = var.project_id
+  location = var.region
+  name     = each.value.service
+  role     = "roles/run.invoker"
+  member   = each.value.member
 }
