@@ -172,6 +172,7 @@ Markdown記法を使えば、テキスト・画像・コードを組み合わせ
       image: article.image,
       status: article.status,
       tags: article.tags,
+      images: [],
       timeline: {
         createdAt: now,
         updatedAt: now,
