@@ -11,6 +11,7 @@ export type Props = {
   onPublishChange: (value: boolean) => void;
   persist: () => Promise<void>;
   isLoading?: boolean;
+  isUploading?: boolean;
 };
 
 export const EditorHeader = (props: Props) => {
@@ -42,15 +43,17 @@ export const EditorHeader = (props: Props) => {
           <button
             type="button"
             onClick={() => props.persist()}
-            disabled={!props.title.trim()}
+            disabled={!props.title.trim() || props.isUploading}
             className={styles["save-button"]}
           >
             <SaveIcon className={styles.icon} />
-            {props.isLoading
-              ? "保存中..."
-              : props.isPublished
-                ? "公開する"
-                : "下書き保存"}
+            {props.isUploading
+              ? "画像アップロード中..."
+              : props.isLoading
+                ? "保存中..."
+                : props.isPublished
+                  ? "公開する"
+                  : "下書き保存"}
           </button>
         </div>
       </div>

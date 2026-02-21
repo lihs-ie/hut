@@ -11,7 +11,9 @@ import {
   validateImage,
   uploaded,
   criteriaSchema,
+  generateUploadPath,
 } from "@shared/domains/image";
+
 import {
   ImageIdentifierMold,
   ImageTypeMold,
@@ -189,12 +191,13 @@ describe("domains/image/common", () => {
   });
 
   describe("validateImage", () => {
-    it("referenceが欠けている場合はerrを返す", () => {
+    it("referenceが無効な場合はerrを返す", () => {
       const result = validateImage({
         identifier: Forger(ImageIdentifierMold).forge(),
         type: "png",
         url: null,
         uploadStatus: "pending",
+        reference: "",
         content: "article",
       });
       expect(result.isErr).toBe(true);
@@ -206,9 +209,56 @@ describe("domains/image/common", () => {
         type: "invalid",
         url: null,
         uploadStatus: "invalid",
+        reference: "invalid",
         content: "article",
       });
       expect(result.isErr).toBe(true);
+    });
+
+    it("有効なUnvalidatedImageでokを返す", () => {
+      const identifier = Forger(ImageIdentifierMold).forge();
+      const reference = Forger(ArticleIdentifierMold).forge();
+      const result = validateImage({
+        identifier,
+        type: "png",
+        url: null,
+        uploadStatus: "pending",
+        reference,
+        content: "article",
+      });
+      expect(result.isOk).toBe(true);
+    });
+  });
+
+  describe("generateUploadPath", () => {
+    it("ARTICLEタイプの場合は正しいパスを生成する", () => {
+      const image = Forger(ImageMold).forge({
+        uploadStatus: UploadStatus.PENDING,
+        url: null,
+        content: "article",
+      });
+      const result = generateUploadPath(image);
+      expect(result.isOk).toBe(true);
+      if (result.isOk) {
+        expect(result.unwrap()).toBe(
+          `articles/${image.reference}/${image.identifier}.${image.type}`,
+        );
+      }
+    });
+
+    it("MEMOタイプの場合は正しいパスを生成する", () => {
+      const image = Forger(ImageMold).forge({
+        uploadStatus: UploadStatus.PENDING,
+        url: null,
+        content: "memo",
+      });
+      const result = generateUploadPath(image);
+      expect(result.isOk).toBe(true);
+      if (result.isOk) {
+        expect(result.unwrap()).toBe(
+          `memos/${image.reference}/${image.identifier}.${image.type}`,
+        );
+      }
     });
   });
 

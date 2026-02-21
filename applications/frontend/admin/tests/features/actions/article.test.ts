@@ -63,6 +63,7 @@ function articleToUnvalidated(article: Article): UnvalidatedArticle {
     slug: article.slug,
     status: article.status,
     tags: [...article.tags],
+    images: [...article.images],
     timeline: {
       createdAt: article.timeline.createdAt,
       updatedAt: article.timeline.updatedAt,
@@ -351,6 +352,7 @@ describe("Feature: Article Actions (実DB接続)", () => {
         slug: "valid-slug",
         status: "published",
         tags: [],
+        images: [],
         timeline: {
           createdAt: new Date(),
           updatedAt: new Date(),

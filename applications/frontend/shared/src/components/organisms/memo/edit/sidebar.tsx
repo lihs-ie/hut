@@ -23,6 +23,7 @@ const changeStatus = (snapshot: MemoSnapshot, edit: Props["edit"]) => {
       slug: snapshot.slug,
       entries: snapshot.entries,
       tags: snapshot.tags,
+      images: snapshot.images,
       status: next,
       timeline: {
         createdAt: snapshot.timeline.createdAt,

@@ -19,6 +19,7 @@ import {
   UnvalidatedEntry,
   UnvalidatedMemo,
 } from "@shared/domains/memo";
+import { ImageIdentifier } from "@shared/domains/image";
 import {
   createMemoCreatedEvent,
   createMemoEditedEvent,
@@ -273,6 +274,7 @@ export const createMemoEditWorkflow =
 type PersistMemoEntryWorkflowCommand = Command<{
   slug: string;
   unvalidated: UnvalidatedEntry;
+  images: ImageIdentifier[];
 }>;
 
 type PersistMemoEntryWorkflow = (
@@ -305,7 +307,9 @@ export const createPersistMemoEntryWorkflow =
       .mapError((error) => (Array.isArray(error) ? error : [error]))
       .toAsync()
       .andThen(([slug, entry]) =>
-        findBySlug(slug).andThen((memo) => ok(addEntry(memo, entry))),
+        findBySlug(slug).andThen((memo) =>
+          ok(addEntry(memo, entry, command.payload.images)),
+        ),
       )
       .andThen((memo) => persist(memo).map(() => memo))
       .map((memo) =>

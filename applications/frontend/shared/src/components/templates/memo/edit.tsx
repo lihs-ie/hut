@@ -1,5 +1,6 @@
 import { MarkdownRenderer } from "@shared/components/global/mdx";
 import { Memo, MemoEntry, UnvalidatedEntry } from "@shared/domains/memo";
+import { ImageIdentifier } from "@shared/domains/image";
 import styles from "./edit.module.css";
 import { MemoEntries } from "@shared/components/organisms/memo/edit/list";
 import { EntryEditor } from "@shared/components/organisms/memo/edit/entry";
@@ -20,41 +21,45 @@ export type Props = {
   uploadAction: (file: File | Blob, path: string) => Promise<string>;
   renderer: MarkdownRenderer;
   getEntries: (slug: string) => Promise<MemoEntry[]>;
-  persistEntry: (unvalidated: UnvalidatedEntry, slug: string) => Promise<void>;
+  persistEntry: (unvalidated: UnvalidatedEntry, slug: string, images: ImageIdentifier[]) => Promise<void>;
   findBySlug: (slug: string) => Promise<Memo>;
   sidebar: SidebarProps;
 };
 
-export const MemoEditIndex = async (props: Props) => (
-  <main className={styles.container}>
-    <Suspense fallback={<ArticleTitleSkeleton />}>
-      <Title
-        find={props.findBySlug}
-        slug={props.slug}
-        titleOf={(memo) => memo.title}
-        timelineOf={(memo) => memo.timeline}
-      />
-    </Suspense>
-    <div className={styles.content}>
-      <div className={styles.entries}>
-        <Suspense fallback={<ArticleContentSkeleton />}>
-          <MemoEntries
-            getEntries={props.getEntries}
-            slug={props.slug}
-            renderer={props.renderer}
-          />
-        </Suspense>
-
-        <EntryEditor
-          persist={props.persistEntry}
+export const MemoEditIndex = async (props: Props) => {
+  const memo = await props.findBySlug(props.slug);
+  return (
+    <main className={styles.container}>
+      <Suspense fallback={<ArticleTitleSkeleton />}>
+        <Title
+          find={props.findBySlug}
           slug={props.slug}
-          uploadAction={props.uploadAction}
+          titleOf={(memo) => memo.title}
+          timelineOf={(memo) => memo.timeline}
         />
-      </div>
+      </Suspense>
+      <div className={styles.content}>
+        <div className={styles.entries}>
+          <Suspense fallback={<ArticleContentSkeleton />}>
+            <MemoEntries
+              getEntries={props.getEntries}
+              slug={props.slug}
+              renderer={props.renderer}
+            />
+          </Suspense>
 
-      <div className={styles.sidebar}>
-        <MemoEditSidebar {...props.sidebar} />
+          <EntryEditor
+            persist={props.persistEntry}
+            slug={props.slug}
+            memoIdentifier={memo.identifier}
+            uploadAction={props.uploadAction}
+          />
+        </div>
+
+        <div className={styles.sidebar}>
+          <MemoEditSidebar {...props.sidebar} />
+        </div>
       </div>
-    </div>
-  </main>
-);
+    </main>
+  );
+};

@@ -5,7 +5,7 @@ import {
   IMAGE_COMPRESSION_CONFIG,
   CONTENT_TYPES,
   imageUploadPathSchema,
-  generateImageFileName,
+  generateImageObjectName,
   generateUploadPath,
   validateImageFile,
   getExtensionFromMimeType,
@@ -74,67 +74,33 @@ describe("domains/common/image-upload", () => {
     });
   });
 
-  describe("generateImageFileName", () => {
-    it("タイムスタンプ付きのファイル名を生成する", () => {
-      const fileName = generateImageFileName("test.png", "png");
-      expect(fileName).toMatch(/^\d+_test\.png$/);
+  describe("generateImageObjectName", () => {
+    it("identifierと拡張子からオブジェクト名を生成する", () => {
+      const objectName = generateImageObjectName("01ABCDEF", "webp");
+      expect(objectName).toBe("01ABCDEF.webp");
     });
 
-    it("拡張子を変更できる", () => {
-      const fileName = generateImageFileName("image.png", "jpg");
-      expect(fileName).toMatch(/^\d+_image\.jpg$/);
-    });
-
-    it("特殊文字をアンダースコアに置換する", () => {
-      const fileName = generateImageFileName("test@file#name.png", "png");
-      expect(fileName).toMatch(/^\d+_test_file_name\.png$/);
-    });
-
-    it("元の拡張子を除去する", () => {
-      const fileName = generateImageFileName("image.png", "webp");
-      expect(fileName).toMatch(/^\d+_image\.webp$/);
-      expect(fileName).not.toContain(".png");
-    });
-
-    it("長いファイル名を50文字に切り詰める", () => {
-      const longName = "a".repeat(100) + ".png";
-      const fileName = generateImageFileName(longName, "png");
-      const nameWithoutTimestampAndExtension = fileName
-        .replace(/^\d+_/, "")
-        .replace(/\.png$/, "");
-      expect(nameWithoutTimestampAndExtension).toHaveLength(50);
-    });
-
-    it("日本語を含むファイル名をサニタイズする", () => {
-      const fileName = generateImageFileName("テスト画像.png", "png");
-      expect(fileName).toMatch(/^\d+_[_]*\.png$/);
+    it("gif拡張子でも正しく生成する", () => {
+      const objectName = generateImageObjectName("01ABCDEF", "gif");
+      expect(objectName).toBe("01ABCDEF.gif");
     });
   });
 
   describe("generateUploadPath", () => {
     it("articleの場合は正しいパスを生成する", () => {
-      const path = generateUploadPath("article", { primary: "123" }, "image.png");
-      expect(path).toBe("articles/123/image.png");
+      const path = generateUploadPath("article", "ref123", "image.webp");
+      expect(path).toBe("articles/ref123/image.webp");
     });
 
     it("memoの場合は正しいパスを生成する", () => {
-      const path = generateUploadPath("memo", { primary: "456" }, "photo.jpg");
-      expect(path).toBe("memos/456/photo.jpg");
+      const path = generateUploadPath("memo", "ref456", "photo.webp");
+      expect(path).toBe("memos/ref456/photo.webp");
     });
 
-    it("chapterの場合はsecondary識別子が必要", () => {
-      const path = generateUploadPath(
-        "chapter",
-        { primary: "series-1", secondary: "chapter-1" },
-        "diagram.webp"
-      );
-      expect(path).toBe("series/series-1/chapters/chapter-1/diagram.webp");
-    });
-
-    it("chapterでsecondaryがない場合はエラーをスローする", () => {
+    it("chapterの場合はエラーをスローする", () => {
       expect(() => {
-        generateUploadPath("chapter", { primary: "series-1" }, "image.png");
-      }).toThrow("Chapter requires secondary identifier (chapterId)");
+        generateUploadPath("chapter", "ref789", "image.webp");
+      }).toThrow("Chapter upload requires separate handling");
     });
   });
 
