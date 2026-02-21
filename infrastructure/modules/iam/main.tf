@@ -1,3 +1,14 @@
+locals {
+  role_bindings = flatten([
+    for account_id, account_config in var.service_accounts : [
+      for role in account_config.roles : {
+        account_id = account_id
+        role       = role
+      }
+    ]
+  ])
+}
+
 resource "google_service_account" "this" {
   for_each = var.service_accounts
 
@@ -13,15 +24,4 @@ resource "google_project_iam_member" "this" {
   project = var.project_id
   role    = each.value.role
   member  = "serviceAccount:${google_service_account.this[each.value.account_id].email}"
-}
-
-locals {
-  role_bindings = flatten([
-    for account_id, account_config in var.service_accounts : [
-      for role in account_config.roles : {
-        account_id = account_id
-        role       = role
-      }
-    ]
-  ])
 }

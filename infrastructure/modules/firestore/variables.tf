@@ -19,3 +19,15 @@ variable "delete_protection" {
   type        = bool
   default     = false
 }
+
+variable "enable_daily_backup" {
+  description = "Whether to enable daily automatic backup of the Firestore database"
+  type        = bool
+  default     = false
+}
+
+variable "backup_retention" {
+  description = "Retention period for Firestore backups in duration format (e.g. 604800s for 7 days)"
+  type        = string
+  default     = "604800s"
+}

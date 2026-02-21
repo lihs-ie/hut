@@ -86,3 +86,9 @@ variable "allow_unauthenticated" {
   type        = bool
   default     = false
 }
+
+variable "labels" {
+  description = "Labels to apply to the Cloud Run service"
+  type        = map(string)
+  default     = {}
+}

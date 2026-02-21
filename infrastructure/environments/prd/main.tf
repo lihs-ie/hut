@@ -7,9 +7,19 @@ locals {
   }
 }
 
-# ---------------------------------------------------------------------------
-# IAM - Service Accounts
-# ---------------------------------------------------------------------------
+resource "google_project_iam_custom_role" "storage_object_delete" {
+  role_id     = "storageObjectDelete"
+  title       = "Storage Object Delete"
+  description = "Allows listing, reading, and deleting storage objects"
+  project     = var.project_id
+
+  permissions = [
+    "storage.objects.list",
+    "storage.objects.get",
+    "storage.objects.delete",
+  ]
+}
+
 module "iam" {
   source = "../../modules/iam"
 
@@ -30,7 +40,7 @@ module "iam" {
       description  = "Service account for the PRD image cleanup worker"
       roles = [
         "roles/datastore.user",
-        "roles/storage.objectAdmin",
+        google_project_iam_custom_role.storage_object_delete.id,
         "roles/eventarc.eventReceiver",
       ]
     }
@@ -45,9 +55,6 @@ module "iam" {
   }
 }
 
-# ---------------------------------------------------------------------------
-# Artifact Registry
-# ---------------------------------------------------------------------------
 module "artifact_registry" {
   source = "../../modules/artifact_registry"
 
@@ -60,21 +67,17 @@ module "artifact_registry" {
   labels = local.common_labels
 }
 
-# ---------------------------------------------------------------------------
-# Firestore
-# ---------------------------------------------------------------------------
 module "firestore" {
   source = "../../modules/firestore"
 
-  project_id        = var.project_id
-  location_id       = var.firestore_location
-  database_name     = "(default)"
-  delete_protection = true
+  project_id          = var.project_id
+  location_id         = var.firestore_location
+  database_name       = "(default)"
+  delete_protection   = true
+  enable_daily_backup = true
+  backup_retention    = "604800s"
 }
 
-# ---------------------------------------------------------------------------
-# Firebase Storage
-# ---------------------------------------------------------------------------
 module "firebase_storage" {
   source = "../../modules/firebase_storage"
 
@@ -86,9 +89,6 @@ module "firebase_storage" {
   labels = local.common_labels
 }
 
-# ---------------------------------------------------------------------------
-# Secret Manager
-# ---------------------------------------------------------------------------
 module "secrets" {
   source = "../../modules/secret_manager"
 
@@ -135,23 +135,11 @@ module "secrets" {
   labels = local.common_labels
 }
 
-# ---------------------------------------------------------------------------
-# Pub/Sub Topics
-# ---------------------------------------------------------------------------
 module "pubsub_image_events" {
   source = "../../modules/pubsub"
 
   project_id = var.project_id
   topic_name = "image-events"
-
-  labels = local.common_labels
-}
-
-module "pubsub_article_events" {
-  source = "../../modules/pubsub"
-
-  project_id = var.project_id
-  topic_name = "article-events"
 
   labels = local.common_labels
 }
@@ -165,9 +153,6 @@ module "pubsub_app_events" {
   labels = local.common_labels
 }
 
-# ---------------------------------------------------------------------------
-# Cloud Run Services (admin + workers only; reader is on Cloudflare Workers)
-# ---------------------------------------------------------------------------
 module "cloudrun_admin" {
   source = "../../modules/cloudrun_service"
 
@@ -182,6 +167,8 @@ module "cloudrun_admin" {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID = var.project_id
     FIREBASE_PROJECT_ID             = var.project_id
   }
+
+  labels = local.common_labels
 
   secret_environment_variables = [
     {
@@ -235,6 +222,8 @@ module "cloudrun_image_cleanup_worker" {
   environment_variables = {
     FIREBASE_PROJECT_ID = var.project_id
   }
+
+  labels = local.common_labels
 }
 
 module "cloudrun_worker" {
@@ -250,11 +239,10 @@ module "cloudrun_worker" {
   environment_variables = {
     FIREBASE_PROJECT_ID = var.project_id
   }
+
+  labels = local.common_labels
 }
 
-# ---------------------------------------------------------------------------
-# Eventarc Triggers
-# ---------------------------------------------------------------------------
 module "eventarc_image_cleanup" {
   source = "../../modules/eventarc_trigger"
 
@@ -280,21 +268,3 @@ module "eventarc_worker" {
 
   labels = local.common_labels
 }
-
-# ---------------------------------------------------------------------------
-# Cloudflare Workers (PRD reader)
-# ---------------------------------------------------------------------------
-# NOTE: The PRD reader is deployed via Wrangler CLI as part of the CI/CD
-# pipeline. The Cloudflare Workers Script resource is managed here for
-# reference and to ensure the account/project binding exists, but the actual
-# deployment (code upload) is handled by Wrangler.
-#
-# Wrangler secrets for the reader are set via:
-#   wrangler secret put NEXT_PUBLIC_FIREBASE_API_KEY
-#   wrangler secret put NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-#   wrangler secret put NEXT_PUBLIC_FIREBASE_PROJECT_ID
-#   wrangler secret put NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-#   wrangler secret put NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-#   wrangler secret put NEXT_PUBLIC_FIREBASE_APP_ID
-#   wrangler secret put NEXT_PUBLIC_SITE_URL
-# ---------------------------------------------------------------------------

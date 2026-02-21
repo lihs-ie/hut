@@ -7,9 +7,19 @@ locals {
   }
 }
 
-# ---------------------------------------------------------------------------
-# IAM - Service Accounts
-# ---------------------------------------------------------------------------
+resource "google_project_iam_custom_role" "storage_object_delete" {
+  role_id     = "storageObjectDelete"
+  title       = "Storage Object Delete"
+  description = "Allows listing, reading, and deleting storage objects"
+  project     = var.project_id
+
+  permissions = [
+    "storage.objects.list",
+    "storage.objects.get",
+    "storage.objects.delete",
+  ]
+}
+
 module "iam" {
   source = "../../modules/iam"
 
@@ -37,7 +47,7 @@ module "iam" {
       description  = "Service account for the STG image cleanup worker"
       roles = [
         "roles/datastore.user",
-        "roles/storage.objectAdmin",
+        google_project_iam_custom_role.storage_object_delete.id,
         "roles/eventarc.eventReceiver",
       ]
     }
@@ -52,9 +62,6 @@ module "iam" {
   }
 }
 
-# ---------------------------------------------------------------------------
-# Artifact Registry
-# ---------------------------------------------------------------------------
 module "artifact_registry" {
   source = "../../modules/artifact_registry"
 
@@ -67,9 +74,6 @@ module "artifact_registry" {
   labels = local.common_labels
 }
 
-# ---------------------------------------------------------------------------
-# Firestore
-# ---------------------------------------------------------------------------
 module "firestore" {
   source = "../../modules/firestore"
 
@@ -78,9 +82,6 @@ module "firestore" {
   database_name = "(default)"
 }
 
-# ---------------------------------------------------------------------------
-# Firebase Storage
-# ---------------------------------------------------------------------------
 module "firebase_storage" {
   source = "../../modules/firebase_storage"
 
@@ -91,9 +92,6 @@ module "firebase_storage" {
   labels = local.common_labels
 }
 
-# ---------------------------------------------------------------------------
-# Secret Manager
-# ---------------------------------------------------------------------------
 module "secrets" {
   source = "../../modules/secret_manager"
 
@@ -145,23 +143,11 @@ module "secrets" {
   labels = local.common_labels
 }
 
-# ---------------------------------------------------------------------------
-# Pub/Sub Topics
-# ---------------------------------------------------------------------------
 module "pubsub_image_events" {
   source = "../../modules/pubsub"
 
   project_id = var.project_id
   topic_name = "image-events"
-
-  labels = local.common_labels
-}
-
-module "pubsub_article_events" {
-  source = "../../modules/pubsub"
-
-  project_id = var.project_id
-  topic_name = "article-events"
 
   labels = local.common_labels
 }
@@ -175,9 +161,6 @@ module "pubsub_app_events" {
   labels = local.common_labels
 }
 
-# ---------------------------------------------------------------------------
-# Cloud Run Services
-# ---------------------------------------------------------------------------
 module "cloudrun_reader" {
   source = "../../modules/cloudrun_service"
 
@@ -191,6 +174,8 @@ module "cloudrun_reader" {
   environment_variables = {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID = var.project_id
   }
+
+  labels = local.common_labels
 
   secret_environment_variables = [
     {
@@ -235,6 +220,8 @@ module "cloudrun_admin" {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID = var.project_id
     FIREBASE_PROJECT_ID             = var.project_id
   }
+
+  labels = local.common_labels
 
   secret_environment_variables = [
     {
@@ -288,6 +275,8 @@ module "cloudrun_image_cleanup_worker" {
   environment_variables = {
     FIREBASE_PROJECT_ID = var.project_id
   }
+
+  labels = local.common_labels
 }
 
 module "cloudrun_worker" {
@@ -303,11 +292,10 @@ module "cloudrun_worker" {
   environment_variables = {
     FIREBASE_PROJECT_ID = var.project_id
   }
+
+  labels = local.common_labels
 }
 
-# ---------------------------------------------------------------------------
-# Eventarc Triggers
-# ---------------------------------------------------------------------------
 module "eventarc_image_cleanup" {
   source = "../../modules/eventarc_trigger"
 
