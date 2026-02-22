@@ -146,13 +146,17 @@ export const SearchFilterPresenter = (props: Props) => {
             onClick={() => setIsFilterExpanded(!isFilterExpanded)}
             aria-expanded={isFilterExpanded}
           >
-            <FilterIcon className={styles["filter-icon"]} />
-            <span>フィルター</span>
-            <ChevronDownIcon
-              className={`${styles.chevron} ${
-                isFilterExpanded ? styles["chevron-expanded"] : ""
-              }`}
-            />
+            <div className={styles.icon}>
+              <FilterIcon className={styles["filter-icon"]} />
+            </div>
+            <span className={styles["filter-text"]}>フィルター</span>
+            <div className={styles.icon}>
+              <ChevronDownIcon
+                className={`${styles.chevron} ${
+                  isFilterExpanded ? styles["chevron-expanded"] : ""
+                  }`}
+                  />
+            </div>
           </button>
 
           {activeFilter && (
