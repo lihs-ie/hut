@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@google-cloud/pubsub": "^5.2.2",
+    "@google-cloud/storage": "^7.14.0",
     "@hut/shared": "workspace:*",
     "@next/mdx": "^16.1.1",
     "@simplewebauthn/browser": "^13.2.2",

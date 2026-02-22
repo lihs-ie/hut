@@ -1,11 +1,13 @@
 "use server";
 
 import { unwrapForNextJs } from "@shared/components/global/next-error";
-import { ImageUploaderProvider } from "@shared/providers/infrastructure/common";
+import { AdminImageUploaderProvider } from "../providers/infrastructure/storage";
 
 export async function uploadImage(
   file: File | Blob,
   path: string,
 ): Promise<string> {
-  return unwrapForNextJs(ImageUploaderProvider.firebase.upload(file, path));
+  return unwrapForNextJs(
+    AdminImageUploaderProvider.firebaseAdmin.upload(file, path),
+  );
 }
