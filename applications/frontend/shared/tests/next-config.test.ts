@@ -1,7 +1,18 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { createBaseNextConfig } from "../../next.config.shared";
 
 describe("next.config.shared", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    delete process.env.IMAGE_REMOTE_PATTERNS;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
   describe("createBaseNextConfig", () => {
     it("デフォルトでは dangerouslyAllowLocalIP が images に含まれない", () => {
       const config = createBaseNextConfig();
@@ -10,43 +21,50 @@ describe("next.config.shared", () => {
       expect(config.images).not.toHaveProperty("dangerouslyAllowLocalIP");
     });
 
-    it("dangerouslyAllowLocalIP: true を渡すと images に反映される", () => {
+    it("useFirebaseEmulator: true を渡すと dangerouslyAllowLocalIP とエミュレーターパターンが反映される", () => {
       const config = createBaseNextConfig({
-        dangerouslyAllowLocalIP: true,
+        useFirebaseEmulator: true,
       });
 
-      expect(config.images).toBeDefined();
       expect(config.images?.dangerouslyAllowLocalIP).toBe(true);
-    });
-
-    it("dangerouslyAllowLocalIP: false を渡すと images に反映される", () => {
-      const config = createBaseNextConfig({
-        dangerouslyAllowLocalIP: false,
-      });
-
-      expect(config.images).toBeDefined();
-      expect(config.images?.dangerouslyAllowLocalIP).toBe(false);
-    });
-
-    it("additionalRemotePatterns と dangerouslyAllowLocalIP を同時に渡した場合、両方正しく反映される", () => {
-      const config = createBaseNextConfig({
-        additionalRemotePatterns: [
-          {
+      expect(config.images?.remotePatterns).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
             protocol: "http",
             hostname: "localhost",
-          },
-        ],
-        dangerouslyAllowLocalIP: true,
+          }),
+        ]),
+      );
+    });
+
+    it("IMAGE_REMOTE_PATTERNS 環境変数からパースしたパターンが remotePatterns に含まれる", () => {
+      process.env.IMAGE_REMOTE_PATTERNS =
+        "https://firebasestorage.googleapis.com";
+
+      const config = createBaseNextConfig();
+
+      expect(config.images?.remotePatterns).toEqual([
+        expect.objectContaining({
+          protocol: "https",
+          hostname: "firebasestorage.googleapis.com",
+        }),
+      ]);
+    });
+
+    it("IMAGE_REMOTE_PATTERNS とエミュレーターパターンを同時に使用できる", () => {
+      process.env.IMAGE_REMOTE_PATTERNS =
+        "https://firebasestorage.googleapis.com";
+
+      const config = createBaseNextConfig({
+        useFirebaseEmulator: true,
       });
 
-      expect(config.images).toBeDefined();
       expect(config.images?.dangerouslyAllowLocalIP).toBe(true);
-
       expect(config.images?.remotePatterns).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             protocol: "https",
-            hostname: "**",
+            hostname: "firebasestorage.googleapis.com",
           }),
           expect.objectContaining({
             protocol: "http",
@@ -54,6 +72,12 @@ describe("next.config.shared", () => {
           }),
         ]),
       );
+    });
+
+    it("IMAGE_REMOTE_PATTERNS が未設定かつエミュレーター無効の場合、remotePatterns は空配列", () => {
+      const config = createBaseNextConfig();
+
+      expect(config.images?.remotePatterns).toEqual([]);
     });
   });
 });
