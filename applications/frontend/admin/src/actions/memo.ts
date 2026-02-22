@@ -8,14 +8,14 @@ import {
   UnvalidatedMemo,
 } from "@shared/domains/memo";
 import { ImageIdentifier } from "@shared/domains/image";
-import { MemoWorkflowProvider } from "@shared/providers/workflows/memo";
+import { AdminMemoWorkflowProvider } from "@/providers/workflows/memo";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { revalidateTag } from "next/cache";
 import { EventBrokerProvider } from "@/providers/domain/event";
 
 export async function create(unvalidated: UnvalidatedMemo): Promise<void> {
   await unwrapForNextJs(
-    MemoWorkflowProvider.create({
+    AdminMemoWorkflowProvider.create({
       now: new Date(),
       payload: { unvalidated },
     }).andThen(EventBrokerProvider.pubSub.publish),
@@ -30,7 +30,7 @@ export async function addEntry(
   images: ImageIdentifier[],
 ): Promise<void> {
   await unwrapForNextJs(
-    MemoWorkflowProvider.addEntry({
+    AdminMemoWorkflowProvider.addEntry({
       now: new Date(),
       payload: { unvalidated, slug, images },
     }).andThen(EventBrokerProvider.pubSub.publish),
@@ -44,7 +44,7 @@ export async function edit(
   before: MemoSnapshot,
 ): Promise<void> {
   await unwrapForNextJs(
-    MemoWorkflowProvider.edit({
+    AdminMemoWorkflowProvider.edit({
       now: new Date(),
       payload: { unvalidated, before },
     }).andThen(EventBrokerProvider.pubSub.publish),
@@ -57,7 +57,7 @@ export async function search(
   unvalidated: UnvalidatedCriteria,
 ): Promise<Memo[]> {
   return await unwrapForNextJs(
-    MemoWorkflowProvider.search({
+    AdminMemoWorkflowProvider.search({
       now: new Date(),
       payload: unvalidated,
     }),
@@ -66,7 +66,7 @@ export async function search(
 
 export async function terminate(identifier: string): Promise<void> {
   await unwrapForNextJs(
-    MemoWorkflowProvider.terminate({
+    AdminMemoWorkflowProvider.terminate({
       now: new Date(),
       payload: { identifier },
     }).andThen(EventBrokerProvider.pubSub.publish),
