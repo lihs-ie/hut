@@ -729,7 +729,7 @@ describe("infrastructure/firestore-adapter", () => {
             ...innerDocRef,
             doc: vi.fn().mockReturnValue({
               ...innerDocRef,
-              set: vi.fn().mockImplementation((data: unknown, options?: unknown) => {
+              set: vi.fn().mockImplementation((data: unknown, _options?: unknown) => {
                 const firestoreData = converter.toFirestore(data);
                 capturedData = firestoreData;
                 return Promise.resolve(undefined);
