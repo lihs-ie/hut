@@ -17,7 +17,9 @@ export const MemoTitleCard = (props: Props) => (
     <h2 className={styles.title}>{props.title}</h2>
     <div className={styles.timeline}>
       <ModestText>
-        <ClockIcon className={styles.icon} />
+        <div className={styles.icon}>
+          <ClockIcon />
+        </div>
         &nbsp;{formatDateTime(props.timeline.createdAt)}
       </ModestText>
     </div>

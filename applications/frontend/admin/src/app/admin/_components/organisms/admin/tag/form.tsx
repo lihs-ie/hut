@@ -95,7 +95,9 @@ export const TagEditForm = (props: Props) => {
               "削除中..."
             ) : (
               <>
-                <Trash2Icon className={styles.icon} />
+                <div className={styles.icon}>
+                  <Trash2Icon className={styles.icon} />
+                </div>
                 タグを削除
               </>
             )}
