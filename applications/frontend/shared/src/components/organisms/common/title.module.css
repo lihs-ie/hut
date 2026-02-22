@@ -37,14 +37,9 @@
   color: var(--muted-foreground);
 }
 
-.clockIcon {
+.icon {
   width: 1rem;
   height: 1rem;
-}
-
-.icon {
-  width: 1.25rem;
-  height: 1.25rem;
 }
 
 .tags {
