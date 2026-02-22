@@ -71,7 +71,7 @@ export const MarkdownPreview = (props: Props) => {
                   }
                   return <p>{children}</p>;
                 },
-                code({ className, children, ...rest }) {
+                code({ className, children, ref: _ref, ...rest }) {
                   const match = /language-(\w+)/.exec(className || "");
                   const language = match ? match[1] : "";
                   const isInline = !match;
