@@ -38,5 +38,6 @@ variable "deployer_roles" {
     "roles/run.developer",
     "roles/artifactregistry.writer",
     "roles/iam.serviceAccountUser",
+    "roles/datastore.user",
   ]
 }
