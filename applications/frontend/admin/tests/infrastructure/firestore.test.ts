@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Timestamp as AdminTimestamp } from "firebase-admin/firestore";
 import { Timestamp as ClientTimestamp } from "firebase/firestore";
-import { createAdminFirestoreAdapter } from "@/infrastructure/firestore-adapter";
-import type { AdminFirestoreCompatible } from "@/infrastructure/firestore-adapter";
+import { createAdminFirestoreAdapter } from "@/infrastructure/firestore";
+import type { AdminFirestoreCompatible } from "@/infrastructure/firestore";
 
 type MockDocumentSnapshot = {
   exists: boolean;
