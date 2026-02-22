@@ -7,7 +7,6 @@ vi.mock("@shared/components/molecules/chart/bar", () => ({
   BarChartPanel: (props: Record<string, unknown>) => (
     <div data-testid="bar-chart">
       <span data-testid="title">{String(props.title)}</span>
-      <span data-testid="layout">{String(props.layout)}</span>
     </div>
   ),
 }));

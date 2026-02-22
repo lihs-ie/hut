@@ -20,7 +20,6 @@ export const AccessSourceSection = async (props: Props) => {
       <BarChartPanel
         title="リファラー分析"
         data={referrerRanking}
-        layout="horizontal"
         axisLabel={{ x: "PV数", y: "リファラー" }}
       />
       <PieChartPanel title="デバイス比率" data={deviceDistribution} />
