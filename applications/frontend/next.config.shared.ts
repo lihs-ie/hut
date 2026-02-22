@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 import type { RemotePattern } from "next/dist/shared/lib/image-config";
-import { parseImageRemotePatterns } from "./config/image-remote-pattern";
+import { parseImageRemotePatterns } from "./shared/src/config/image-remote-pattern";
 
 type Options = {
   readonly useFirebaseEmulator?: boolean;
