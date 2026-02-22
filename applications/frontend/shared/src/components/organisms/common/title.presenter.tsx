@@ -17,16 +17,16 @@ export const TitlePresenter = (props: Props) => (
       <div className={styles.meta}>
         <div className={styles.publishedDate}>
           <ModestText>
-            <ClockIcon className={styles.clockIcon} />
-            <span>
-              投稿日時：{formatDate(props.timeline.createdAt)}
-            </span>
+            <div className={styles.icon}>
+              <ClockIcon />
+            </div>
+            投稿日時：{formatDate(props.timeline.createdAt)}
           </ModestText>
           <ModestText>
-            <ClockIcon className={styles.clockIcon} />
-            <span>
+            <div className={styles.icon}>
+              <ClockIcon />
+            </div>
               最終更新日時：{formatDate(props.timeline.updatedAt)}
-            </span>
           </ModestText>
         </div>
       </div>
