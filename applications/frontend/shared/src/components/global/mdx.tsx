@@ -1,5 +1,4 @@
 import { MDXRemote, MDXRemoteProps } from "next-mdx-remote/rsc";
-import Image from "next/image";
 import rehypeShiki from "@shikijs/rehype";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
@@ -7,6 +6,7 @@ import React from "react";
 import styles from "./mdx.module.css";
 import { remarkLinkCard } from "@shared/plugins/remark-link-card";
 import { LinkCard } from "@shared/components/molecules/card/link";
+import { ContentImage } from "@shared/components/atoms/image/content";
 
 export type MarkdownRenderer = (content: string) => React.ReactNode;
 
@@ -78,11 +78,9 @@ const mdxComponents = {
   h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h1 {...props} />,
   h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h2 {...props} />,
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-    <Image
+    <ContentImage
       src={typeof props.src === "string" ? props.src : ""}
       alt={props.alt ?? ""}
-      width={800}
-      height={450}
     />
   ),
   pre: CodeBlock,
