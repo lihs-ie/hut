@@ -11,6 +11,7 @@ import styles from "./markdown-preview.module.css";
 import codeBlockStyles from "@shared/components/global/mdx.module.css";
 import { stripFrontmatter } from "@shared/components/global/matter";
 import { LinkCardClient } from "@shared/components/molecules/card/link.client";
+import { ContentImage } from "@shared/components/atoms/image/content";
 import React from "react";
 
 const languageLabels: Record<string, string> = {
@@ -48,6 +49,16 @@ export const MarkdownPreview = (props: Props) => {
               remarkPlugins={[remarkGfm, remarkBreaks]}
               rehypePlugins={[rehypeSlug]}
               components={{
+                img: (
+                  imageProps: React.ImgHTMLAttributes<HTMLImageElement>
+                ) => (
+                  <ContentImage
+                    src={
+                      typeof imageProps.src === "string" ? imageProps.src : ""
+                    }
+                    alt={imageProps.alt ?? ""}
+                  />
+                ),
                 p({ children }) {
                   if (React.Children.count(children) === 1) {
                     const child = React.Children.toArray(children)[0];
