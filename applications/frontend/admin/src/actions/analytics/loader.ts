@@ -8,153 +8,99 @@ import { criteriaSchema as pageViewCriteriaSchema } from "@shared/domains/analyt
 import { validateCriteria as validateEngagementCriteria } from "@shared/domains/analytics/engagement";
 import { validateCriteria as validateUniqueVisitorCriteria } from "@shared/domains/analytics/unique-visitor";
 import { validateCriteria as validateSearchRecordCriteria } from "@shared/domains/analytics/search-record";
-import { AnalyticsRepositoryProvider } from "@shared/providers/infrastructure/analytics";
-import { ArticleRepositoryProvider } from "@shared/providers/infrastructure/articles";
-import { MemoRepositoryProvider } from "@shared/providers/infrastructure/memo";
-import { TagRepositoryProvider } from "@shared/providers/infrastructure/tag";
+import { AdminAnalyticsRepositoryProvider } from "@/providers/infrastructure/analytics";
+import { AdminArticleRepositoryProvider } from "@/providers/infrastructure/articles";
+import { AdminMemoRepositoryProvider } from "@/providers/infrastructure/memo";
+import { AdminTagRepositoryProvider } from "@/providers/infrastructure/tag";
 import {
   buildEmptyArticleCriteria,
   buildEmptyMemoCriteria,
 } from "@shared/workflows/analytics/title-resolution";
 import { validateCriteria as validateTagCriteria } from "@shared/domains/attributes/tag";
+import type { DateRange, Period } from "@shared/domains/analytics/common";
+import type { AsyncResult } from "@shared/aspects/result";
+import type { UnexpectedError } from "@shared/aspects/error";
+
+const resolveDateRangeFromPeriod = (
+  period: string,
+  resolver: (period: Period) => DateRange,
+): DateRange => {
+  const validatedPeriod = validatePeriod(period).unwrap();
+  return resolver(validatedPeriod);
+};
+
+const searchAndUnwrap = <T>(
+  asyncResult: AsyncResult<T, UnexpectedError>,
+): Promise<T> => asyncResult.unwrap();
 
 export const loadCurrentPageViews = cache(async (period: string) => {
-  const validatedPeriod = validatePeriod(period).unwrap();
-  const dateRange = resolveDateRange(validatedPeriod);
+  const dateRange = resolveDateRangeFromPeriod(period, resolveDateRange);
   const criteria = pageViewCriteriaSchema.parse({ dateRange });
-  return AnalyticsRepositoryProvider.pageView.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.pageView.search(criteria));
 });
 
 export const loadPreviousPageViews = cache(async (period: string) => {
-  const validatedPeriod = validatePeriod(period).unwrap();
-  const dateRange = resolvePreviousDateRange(validatedPeriod);
+  const dateRange = resolveDateRangeFromPeriod(period, resolvePreviousDateRange);
   const criteria = pageViewCriteriaSchema.parse({ dateRange });
-  return AnalyticsRepositoryProvider.pageView.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.pageView.search(criteria));
 });
 
 export const loadCurrentEngagement = cache(async (period: string) => {
-  const validatedPeriod = validatePeriod(period).unwrap();
-  const dateRange = resolveDateRange(validatedPeriod);
+  const dateRange = resolveDateRangeFromPeriod(period, resolveDateRange);
   const criteria = validateEngagementCriteria({ dateRange }).unwrap();
-  return AnalyticsRepositoryProvider.engagementRecord.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.engagementRecord.search(criteria));
 });
 
 export const loadPreviousEngagement = cache(async (period: string) => {
-  const validatedPeriod = validatePeriod(period).unwrap();
-  const dateRange = resolvePreviousDateRange(validatedPeriod);
+  const dateRange = resolveDateRangeFromPeriod(period, resolvePreviousDateRange);
   const criteria = validateEngagementCriteria({ dateRange }).unwrap();
-  return AnalyticsRepositoryProvider.engagementRecord.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.engagementRecord.search(criteria));
 });
 
 export const loadCurrentUniqueVisitors = cache(async (period: string) => {
-  const validatedPeriod = validatePeriod(period).unwrap();
-  const dateRange = resolveDateRange(validatedPeriod);
+  const dateRange = resolveDateRangeFromPeriod(period, resolveDateRange);
   const criteria = validateUniqueVisitorCriteria({ dateRange }).unwrap();
-  return AnalyticsRepositoryProvider.uniqueVisitor.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.uniqueVisitor.search(criteria));
 });
 
 export const loadPreviousUniqueVisitors = cache(async (period: string) => {
-  const validatedPeriod = validatePeriod(period).unwrap();
-  const dateRange = resolvePreviousDateRange(validatedPeriod);
+  const dateRange = resolveDateRangeFromPeriod(period, resolvePreviousDateRange);
   const criteria = validateUniqueVisitorCriteria({ dateRange }).unwrap();
-  return AnalyticsRepositoryProvider.uniqueVisitor.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.uniqueVisitor.search(criteria));
 });
 
 export const loadCurrentSearchRecords = cache(async (period: string) => {
-  const validatedPeriod = validatePeriod(period).unwrap();
-  const dateRange = resolveDateRange(validatedPeriod);
+  const dateRange = resolveDateRangeFromPeriod(period, resolveDateRange);
   const criteria = validateSearchRecordCriteria({ dateRange }).unwrap();
-  return AnalyticsRepositoryProvider.searchRecord.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.searchRecord.search(criteria));
 });
 
 export const loadPreviousSearchRecords = cache(async (period: string) => {
-  const validatedPeriod = validatePeriod(period).unwrap();
-  const dateRange = resolvePreviousDateRange(validatedPeriod);
+  const dateRange = resolveDateRangeFromPeriod(period, resolvePreviousDateRange);
   const criteria = validateSearchRecordCriteria({ dateRange }).unwrap();
-  return AnalyticsRepositoryProvider.searchRecord.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.searchRecord.search(criteria));
 });
 
 export const loadZeroHitSearchRecords = cache(async (period: string) => {
-  const validatedPeriod = validatePeriod(period).unwrap();
-  const dateRange = resolveDateRange(validatedPeriod);
+  const dateRange = resolveDateRangeFromPeriod(period, resolveDateRange);
   const criteria = validateSearchRecordCriteria({
     dateRange,
     hasResults: false,
   }).unwrap();
-  return AnalyticsRepositoryProvider.searchRecord.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.searchRecord.search(criteria));
 });
 
 export const loadAllArticles = cache(async () => {
   const criteria = buildEmptyArticleCriteria();
-  return ArticleRepositoryProvider.firebase.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminArticleRepositoryProvider.firebase.search(criteria));
 });
 
 export const loadAllMemos = cache(async () => {
   const criteria = buildEmptyMemoCriteria();
-  return MemoRepositoryProvider.firebase.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminMemoRepositoryProvider.firebase.search(criteria));
 });
 
 export const loadAllTags = cache(async () => {
   const criteria = validateTagCriteria({ name: null }).unwrap();
-  return TagRepositoryProvider.firebase.search(criteria).match({
-    ok: (result) => result,
-    err: (error) => {
-      throw error;
-    },
-  });
+  return searchAndUnwrap(AdminTagRepositoryProvider.firebase.search(criteria));
 });

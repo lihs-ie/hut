@@ -11,9 +11,15 @@ export const setSessionCookie = async (
 ): Promise<void> => {
   const store = await cookies();
 
+  const secure =
+    options.secure ??
+    (process.env.DISABLE_SECURE_COOKIE === "true"
+      ? false
+      : process.env.NODE_ENV === "production");
+
   store.set("admin_session", identifier, {
     httpOnly: true,
-    secure: options.secure ?? process.env.NODE_ENV === "production",
+    secure,
     sameSite: "strict",
     maxAge: options.maxAge ?? 60 * 60 * 24,
     path: "/",

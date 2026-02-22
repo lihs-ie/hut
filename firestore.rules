@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Content collections - public read, authenticated write
+    match /articles/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /memos/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /series/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /tags/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /site-documents/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /search-index/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /search-tokens/{tokenId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+
+      match /refs/{refId} {
+        allow read: if true;
+        allow write: if request.auth != null;
+      }
+    }
+
+    match /admin/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Slug index documents
+    match /index/{path=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Analytics collections - public read/write for tracking
+    match /access-logs/{contentType}/{contentId}/{document} {
+      allow read, write: if true;
+    }
+
+    match /engagement-logs/{contentType}/{contentId}/{document} {
+      allow read, write: if true;
+    }
+
+    match /unique-visitor-dedup/{document} {
+      allow read, write: if true;
+    }
+
+    match /page-view-dedup/{document} {
+      allow read, write: if true;
+    }
+
+    match /search-logs/{dateKey}/records/{document} {
+      allow read, write: if true;
+    }
+
+    match /rate-limits/{document} {
+      allow read, write: if true;
+    }
+  }
+}
