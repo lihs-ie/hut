@@ -305,3 +305,13 @@ module "github_actions_iam" {
   project_id        = var.project_id
   github_repository = var.github_repository
 }
+
+module "billing_export" {
+  source = "../../modules/billing_export"
+
+  project_id                      = var.project_id
+  location                        = var.billing_export_location
+  billing_account_service_account = var.billing_export_service_account
+
+  labels = local.common_labels
+}
