@@ -42,3 +42,13 @@ variable "github_repository" {
     error_message = "The github_repository must be in the format 'owner/repo'."
   }
 }
+
+variable "billing_export_service_account" {
+  description = "Service account email used by GCP Billing to write export data to BigQuery"
+  type        = string
+}
+
+variable "billing_export_location" {
+  description = "Geographic location for the billing export BigQuery dataset"
+  type        = string
+}
