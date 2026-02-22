@@ -25,6 +25,7 @@ on:
 jobs:
   migrate:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     permissions:
       contents: read
       id-token: write
@@ -52,4 +53,4 @@ jobs:
         working-directory: applications/scripts
         run: npx tsx migrate/${{ inputs.migration }}.ts ${{ inputs.dry_run && '--dry-run' || '' }}
         env:
-          FIREBASE_PROJECT_ID: ${{ inputs.environment == 'stg' && secrets.GCP_PROJECT_ID_STG || secrets.GCP_PROJECT_ID_PRD }}
+          FIREBASE_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
