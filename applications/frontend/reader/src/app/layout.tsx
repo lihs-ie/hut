@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Hut",
-    template: "%s | Hut",
+    default: "hut",
+    template: "%s | hut",
   },
   description:
     "個人的な技術学習記事やメモを公開するためのプラットフォームです。",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     type: "website",
 
     locale: "ja_JP",
-    siteName: "Hut",
+    siteName: "hut",
   },
   twitter: {
     card: "summary_large_image",
