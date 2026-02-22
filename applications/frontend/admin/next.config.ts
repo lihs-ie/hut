@@ -5,13 +5,7 @@ const withMDX = MDX({ extension: /\.mdx?$/ });
 
 export default withMDX(
   createBaseNextConfig({
-    additionalRemotePatterns: [
-      {
-        protocol: "http",
-        hostname: "**",
-      },
-    ],
-    dangerouslyAllowLocalIP:
+    useFirebaseEmulator:
       process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true",
   }),
 );
