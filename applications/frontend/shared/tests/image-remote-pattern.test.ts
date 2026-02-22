@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseImageRemotePatterns } from "../../config/image-remote-pattern";
+import { parseImageRemotePatterns } from "@shared/config/image-remote-pattern";
 
 describe("parseImageRemotePatterns", () => {
   describe("正常系", () => {
