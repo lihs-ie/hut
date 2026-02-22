@@ -27,6 +27,7 @@ vi.mock("firebase/auth", () => {
 
   return {
     GoogleAuthProvider,
+    signInWithPopup: vi.fn(),
     signInWithRedirect: vi.fn(),
     getRedirectResult: vi.fn(),
     signOut: vi.fn(),
@@ -229,6 +230,122 @@ describe("aspects/auth/oidc", () => {
 
         const oidcAuth = createOIDCAuth(mockAuth as Auth, defaultConfig);
         const error = await oidcAuth.startRedirect().unwrapError();
+
+        expect(isNetworkError(error)).toBe(true);
+      });
+    });
+
+    describe("startPopup", () => {
+      it("popup 成功時に OidcUser を返す", async () => {
+        const mockUser = createMockUser({
+          uid: "popup-user-123",
+          email: "admin@example.com",
+          displayName: "Admin User",
+          photoURL: "https://example.com/admin.jpg",
+        });
+        vi.mocked(mockFirebaseAuth.signInWithPopup).mockResolvedValue(
+          createMockUserCredential(mockUser) as ReturnType<typeof mockFirebaseAuth.signInWithPopup> extends Promise<infer T> ? T : never
+        );
+
+        const config: OidcAuthConfig = { allowedEmails: ["admin@example.com"] };
+        const oidcAuth = createOIDCAuth(mockAuth as Auth, config);
+        const result = await oidcAuth.startPopup().unwrap();
+
+        expect(result).toEqual({
+          uid: "popup-user-123",
+          email: "admin@example.com",
+          displayName: "Admin User",
+          photoURL: "https://example.com/admin.jpg",
+        });
+      });
+
+      it("allowedEmails が空の場合は全てのメールを許可する", async () => {
+        const mockUser = createMockUser({ email: "anyone@example.com" });
+        vi.mocked(mockFirebaseAuth.signInWithPopup).mockResolvedValue(
+          createMockUserCredential(mockUser) as ReturnType<typeof mockFirebaseAuth.signInWithPopup> extends Promise<infer T> ? T : never
+        );
+
+        const oidcAuth = createOIDCAuth(mockAuth as Auth, defaultConfig);
+        const result = await oidcAuth.startPopup().unwrap();
+
+        expect(result.email).toBe("anyone@example.com");
+      });
+
+      it("許可されていないメールアドレスの場合はエラーを返す", async () => {
+        const mockUser = createMockUser({ email: "notallowed@example.com" });
+        vi.mocked(mockFirebaseAuth.signInWithPopup).mockResolvedValue(
+          createMockUserCredential(mockUser) as ReturnType<typeof mockFirebaseAuth.signInWithPopup> extends Promise<infer T> ? T : never
+        );
+        vi.mocked(mockFirebaseAuth.signOut).mockResolvedValue(undefined);
+
+        const config: OidcAuthConfig = { allowedEmails: ["admin@example.com"] };
+        const oidcAuth = createOIDCAuth(mockAuth as Auth, config);
+        const error = await oidcAuth.startPopup().unwrapError();
+
+        expect(isOidcPermissionDeniedError(error)).toBe(true);
+        expect(mockFirebaseAuth.signOut).toHaveBeenCalled();
+      });
+
+      it("Google 以外のプロバイダーの場合はエラーを返す", async () => {
+        const mockUser = createMockUser();
+        vi.mocked(mockFirebaseAuth.signInWithPopup).mockResolvedValue(
+          createMockUserCredential(mockUser, "facebook.com") as ReturnType<typeof mockFirebaseAuth.signInWithPopup> extends Promise<infer T> ? T : never
+        );
+        vi.mocked(mockFirebaseAuth.signOut).mockResolvedValue(undefined);
+
+        const oidcAuth = createOIDCAuth(mockAuth as Auth, defaultConfig);
+        const error = await oidcAuth.startPopup().unwrapError();
+
+        expect(isInvalidCredentialError(error)).toBe(true);
+        expect(mockFirebaseAuth.signOut).toHaveBeenCalled();
+      });
+
+      it("メールアドレスがない場合はエラーを返す", async () => {
+        const mockUser = createMockUser({ email: null });
+        vi.mocked(mockFirebaseAuth.signInWithPopup).mockResolvedValue(
+          createMockUserCredential(mockUser) as ReturnType<typeof mockFirebaseAuth.signInWithPopup> extends Promise<infer T> ? T : never
+        );
+        vi.mocked(mockFirebaseAuth.signOut).mockResolvedValue(undefined);
+
+        const oidcAuth = createOIDCAuth(mockAuth as Auth, defaultConfig);
+        const error = await oidcAuth.startPopup().unwrapError();
+
+        expect(isInvalidCredentialError(error)).toBe(true);
+        expect(error.message).toBe("Missing email in Firebase user");
+      });
+
+      it("popup がユーザーによって閉じられた場合は UserCancelledError を返す", async () => {
+        vi.mocked(mockFirebaseAuth.signInWithPopup).mockRejectedValue({
+          code: "auth/popup-closed-by-user",
+          message: "Popup closed by user",
+        });
+
+        const oidcAuth = createOIDCAuth(mockAuth as Auth, defaultConfig);
+        const error = await oidcAuth.startPopup().unwrapError();
+
+        expect(isUserCancelledError(error)).toBe(true);
+      });
+
+      it("popup リクエストがキャンセルされた場合は UserCancelledError を返す", async () => {
+        vi.mocked(mockFirebaseAuth.signInWithPopup).mockRejectedValue({
+          code: "auth/cancelled-popup-request",
+          message: "Cancelled popup request",
+        });
+
+        const oidcAuth = createOIDCAuth(mockAuth as Auth, defaultConfig);
+        const error = await oidcAuth.startPopup().unwrapError();
+
+        expect(isUserCancelledError(error)).toBe(true);
+      });
+
+      it("Firebase エラーを OidcAuthError にマッピングする", async () => {
+        vi.mocked(mockFirebaseAuth.signInWithPopup).mockRejectedValue({
+          code: "auth/network-request-failed",
+          message: "Network error",
+        });
+
+        const oidcAuth = createOIDCAuth(mockAuth as Auth, defaultConfig);
+        const error = await oidcAuth.startPopup().unwrapError();
 
         expect(isNetworkError(error)).toBe(true);
       });

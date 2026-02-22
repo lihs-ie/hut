@@ -5,7 +5,7 @@
 module Main (main) where
 
 import API.Server (api, server)
-import Configuration.Dotenv (defaultConfig, loadFile)
+import Configuration.Dotenv (defaultConfig, loadFile, onMissingFile)
 import Control.Lens ((&), (.~), (<&>))
 import Data.ByteString.Char8 qualified as BS
 import Gogol (envScopes, newEnv, override, serviceHost, servicePort, serviceSecure)
@@ -40,7 +40,7 @@ parseEmulatorHost raw =
 
 main :: IO ()
 main = do
-  loadFile defaultConfig
+  onMissingFile (loadFile defaultConfig) (pure ())
   result <- decodeEnv :: IO (Either String AppConfig)
   case result of
     Left message -> putStrLn ("Configuration error: " <> message)

@@ -11,6 +11,7 @@ import {
   User,
   getRedirectResult as getFirebaseRedirectResult,
   onAuthStateChanged as onFirebaseAuthStateChanged,
+  signInWithPopup,
   signInWithRedirect,
   signOut,
   type Unsubscribe,
@@ -278,6 +279,7 @@ const mapAuthError = (error: unknown): OidcAuthError => {
 
 export interface OidcAuth {
   startRedirect: () => AsyncResult<void, OidcAuthError>;
+  startPopup: () => AsyncResult<OidcUser, OidcAuthError>;
   getRedirectResult: () => AsyncResult<OidcUser | null, OidcAuthError>;
   getIdToken: () => AsyncResult<string, OidcAuthError>;
   signOut: () => AsyncResult<void, OidcAuthError>;
@@ -307,6 +309,37 @@ export const createOIDCAuth = (
     }
 
     return fromPromise(signInWithRedirect(auth, provider), mapAuthError);
+  };
+
+  const startPopup = (): AsyncResult<OidcUser, OidcAuthError> => {
+    const normalizedConfig = requireConfig();
+
+    if (normalizedConfig.isErr) {
+      return err(normalizedConfig.unwrapError()).toAsync();
+    }
+
+    return fromPromise(
+      (async () => {
+        const result = await signInWithPopup(auth, provider);
+
+        if (result.providerId !== GoogleAuthProvider.PROVIDER_ID) {
+          await signOut(auth);
+          throw invalidCredentialError(
+            `Unsupported provider: ${result.providerId}`,
+          );
+        }
+
+        const mapped = mapUser(result.user, normalizedConfig.unwrap());
+
+        if (mapped.isErr) {
+          await signOut(auth);
+          throw mapped.unwrapError();
+        }
+
+        return mapped.unwrap();
+      })(),
+      mapAuthError,
+    );
   };
 
   const getRedirectResult = (): AsyncResult<OidcUser | null, OidcAuthError> => {
@@ -420,6 +453,7 @@ export const createOIDCAuth = (
 
   return {
     startRedirect,
+    startPopup,
     getRedirectResult,
     getIdToken,
     signOut: signOutUser,

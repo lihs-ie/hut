@@ -8,12 +8,12 @@ import {
   UnvalidatedArticle,
   UnvalidatedCriteria,
 } from "@shared/domains/articles";
-import { ArticleWorkflowProvider } from "@shared/providers/workflows/article";
+import { AdminArticleWorkflowProvider } from "@/providers/workflows/article";
 import { revalidateTag } from "next/cache";
 
 export async function create(unvalidated: UnvalidatedArticle): Promise<void> {
   await unwrapForNextJs(
-    ArticleWorkflowProvider.create({
+    AdminArticleWorkflowProvider.create({
       payload: unvalidated,
       now: new Date(),
     }).andThen(EventBrokerProvider.pubSub.publish),
@@ -27,7 +27,7 @@ export async function edit(
   before: ArticleSnapshot,
 ): Promise<void> {
   await unwrapForNextJs(
-    ArticleWorkflowProvider.edit({
+    AdminArticleWorkflowProvider.edit({
       payload: { unvalidated, before },
       now: new Date(),
     }).andThen(EventBrokerProvider.pubSub.publish),
@@ -38,7 +38,7 @@ export async function edit(
 
 export async function terminate(identifier: string): Promise<void> {
   await unwrapForNextJs(
-    ArticleWorkflowProvider.terminate({
+    AdminArticleWorkflowProvider.terminate({
       payload: { identifier },
       now: new Date(),
     }).andThen(EventBrokerProvider.pubSub.publish),
@@ -51,7 +51,7 @@ export async function search(
   unvalidated: UnvalidatedCriteria,
 ): Promise<Article[]> {
   return await unwrapForNextJs(
-    ArticleWorkflowProvider.search({
+    AdminArticleWorkflowProvider.search({
       payload: unvalidated,
       now: new Date(),
     }),
