@@ -284,6 +284,73 @@ describe("infrastructures/memos", () => {
         expect(found[0]?.title).toBe("TypeScriptメモ");
       });
 
+      it("statusでPUBLISHEDのメモを検索できる", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const memo1 = Forger(MemoMold).forgeWithSeed(80, {
+          status: PublishStatus.PUBLISHED,
+        });
+        const memo2 = Forger(MemoMold).forgeWithSeed(81, {
+          status: PublishStatus.DRAFT,
+        });
+
+        await repository.persist(memo1).unwrap();
+        await repository.persist(memo2).unwrap();
+
+        const criteria = createCriteria({ status: PublishStatus.PUBLISHED });
+        const found = await repository.search(criteria).unwrap();
+
+        expect(found.length).toBe(1);
+        expect(found[0]?.status).toBe(PublishStatus.PUBLISHED);
+      });
+
+      it("statusでDRAFTのメモを検索できる", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const memo1 = Forger(MemoMold).forgeWithSeed(82, {
+          status: PublishStatus.PUBLISHED,
+        });
+        const memo2 = Forger(MemoMold).forgeWithSeed(83, {
+          status: PublishStatus.DRAFT,
+        });
+
+        await repository.persist(memo1).unwrap();
+        await repository.persist(memo2).unwrap();
+
+        const criteria = createCriteria({ status: PublishStatus.DRAFT });
+        const found = await repository.search(criteria).unwrap();
+
+        expect(found.length).toBe(1);
+        expect(found[0]?.status).toBe(PublishStatus.DRAFT);
+      });
+
+      it("statusとtagsの組み合わせでメモを検索できる", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const memo1 = Forger(MemoMold).forgeWithSeed(84, {
+          status: PublishStatus.PUBLISHED,
+          tags: [TestTags.TYPESCRIPT],
+        });
+        const memo2 = Forger(MemoMold).forgeWithSeed(85, {
+          status: PublishStatus.DRAFT,
+          tags: [TestTags.TYPESCRIPT],
+        });
+        const memo3 = Forger(MemoMold).forgeWithSeed(86, {
+          status: PublishStatus.PUBLISHED,
+          tags: [TestTags.RUST],
+        });
+
+        await repository.persist(memo1).unwrap();
+        await repository.persist(memo2).unwrap();
+        await repository.persist(memo3).unwrap();
+
+        const criteria = createCriteria({
+          status: PublishStatus.PUBLISHED,
+          tags: [TestTags.TYPESCRIPT],
+        });
+        const found = await repository.search(criteria).unwrap();
+
+        expect(found.length).toBe(1);
+        expect(found[0]?.identifier).toBe(memo1.identifier);
+      });
+
       it("freeWordでエントリのテキストを検索できる", async () => {
         const repository = FirebaseMemoRepository(firestore, getOperations());
         const entries1 = [
