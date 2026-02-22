@@ -299,3 +299,13 @@ resource "google_cloud_run_v2_service_iam_member" "worker_invoker" {
   role     = "roles/run.invoker"
   member   = "serviceAccount:${module.iam.service_account_emails["hut-prd-worker"]}"
 }
+
+module "billing_export" {
+  source = "../../modules/billing_export"
+
+  project_id                      = var.project_id
+  location                        = var.billing_export_location
+  billing_account_service_account = var.billing_export_service_account
+
+  labels = local.common_labels
+}
