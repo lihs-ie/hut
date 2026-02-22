@@ -1,6 +1,4 @@
-import {
-  Timestamp as AdminTimestamp,
-} from "firebase-admin/firestore";
+import { Timestamp as AdminTimestamp } from "firebase-admin/firestore";
 import { Timestamp as ClientTimestamp } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
 import type { FirestoreOperations } from "@shared/infrastructures/common";
@@ -18,23 +16,29 @@ const convertTimestamps = (value: unknown): unknown => {
   if (value instanceof AdminTimestamp) {
     return value;
   }
+
   if (isClientTimestamp(value)) {
     const timestamp = value as { toDate: () => Date };
     return AdminTimestamp.fromDate(timestamp.toDate());
   }
+
   if (value instanceof Date) {
     return value;
   }
+
   if (value === null || typeof value !== "object") {
     return value;
   }
+
   if (Array.isArray(value)) {
     return value.map(convertTimestamps);
   }
+
   const result: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(value)) {
     result[key] = convertTimestamps(val);
   }
+
   return result;
 };
 
@@ -48,36 +52,50 @@ const wrapWriteMethods = (target: unknown): unknown => {
       if (typeof value !== "function") {
         return value;
       }
+
       if (prop === "set") {
         return (data: unknown, options?: unknown) => {
           const converted = convertTimestamps(data);
-          return options ? value.call(obj, converted, options) : value.call(obj, converted);
+          return options
+            ? value.call(obj, converted, options)
+            : value.call(obj, converted);
         };
       }
+
       if (prop === "update") {
         return (data: unknown) => value.call(obj, convertTimestamps(data));
       }
+
       if (prop === "add") {
         return (data: unknown) => value.call(obj, convertTimestamps(data));
       }
+
       if (prop === "withConverter") {
         return (converter: unknown) => {
-          if (hasMethod(converter, "toFirestore") && hasMethod(converter, "fromFirestore")) {
+          if (
+            hasMethod(converter, "toFirestore") &&
+            hasMethod(converter, "fromFirestore")
+          ) {
             const wrappedConverter = {
-              toFirestore: (...args: unknown[]) => convertTimestamps(converter.toFirestore(...args)),
-              fromFirestore: (...args: unknown[]) => converter.fromFirestore(...args),
+              toFirestore: (...args: unknown[]) =>
+                convertTimestamps(converter.toFirestore(...args)),
+              fromFirestore: (...args: unknown[]) =>
+                converter.fromFirestore(...args),
             };
             return wrapWriteMethods(value.call(obj, wrappedConverter));
           }
           return wrapWriteMethods(value.call(obj, converter));
         };
       }
+
       if (prop === "doc") {
         return (...args: unknown[]) => wrapWriteMethods(value.apply(obj, args));
       }
+
       if (prop === "collection") {
         return (...args: unknown[]) => wrapWriteMethods(value.apply(obj, args));
       }
+
       return value.bind(obj);
     },
   });
@@ -87,7 +105,9 @@ export type AdminFirestoreCompatible = {
   collection: (path: string) => unknown;
   doc: (path: string) => unknown;
   collectionGroup: (collectionId: string) => unknown;
-  runTransaction: <T>(updateFunction: (transaction: unknown) => Promise<T>) => Promise<T>;
+  runTransaction: <T>(
+    updateFunction: (transaction: unknown) => Promise<T>,
+  ) => Promise<T>;
   batch: () => unknown;
 };
 
@@ -96,13 +116,18 @@ type ConstraintDescriptor = {
   _args: unknown[];
 };
 
-const isConstraintDescriptor = (value: unknown): value is ConstraintDescriptor =>
+const isConstraintDescriptor = (
+  value: unknown,
+): value is ConstraintDescriptor =>
   value !== null &&
   typeof value === "object" &&
   "_type" in value &&
   "_args" in value;
 
-const createConstraint = (type: string, ...args: unknown[]): ConstraintDescriptor => ({
+const createConstraint = (
+  type: string,
+  ...args: unknown[]
+): ConstraintDescriptor => ({
   _type: type,
   _args: args,
 });
@@ -124,10 +149,17 @@ const isQueryLike = (value: unknown): value is QueryLike =>
   "where" in value &&
   typeof (value as Record<string, unknown>).where === "function";
 
-const applyConstraint = (query: QueryLike, constraint: ConstraintDescriptor): QueryLike => {
+const applyConstraint = (
+  query: QueryLike,
+  constraint: ConstraintDescriptor,
+): QueryLike => {
   switch (constraint._type) {
     case "where":
-      return query.where(constraint._args[0], constraint._args[1], constraint._args[2]);
+      return query.where(
+        constraint._args[0],
+        constraint._args[1],
+        constraint._args[2],
+      );
     case "orderBy":
       return query.orderBy(constraint._args[0], constraint._args[1]);
     case "limit":
@@ -145,7 +177,7 @@ const applyConstraint = (query: QueryLike, constraint: ConstraintDescriptor): Qu
     case "and":
     case "or":
       return constraint._args.reduce<QueryLike>(
-        (q, c) => isConstraintDescriptor(c) ? applyConstraint(q, c) : q,
+        (q, c) => (isConstraintDescriptor(c) ? applyConstraint(q, c) : q),
         query,
       );
     default:
@@ -227,7 +259,11 @@ const hasMethod = <M extends string>(
 
 type TransactionLike = {
   get: (ref: DocumentRefLike) => Promise<SnapshotLike>;
-  set: (ref: DocumentRefLike, data: unknown, options?: unknown) => TransactionLike;
+  set: (
+    ref: DocumentRefLike,
+    data: unknown,
+    options?: unknown,
+  ) => TransactionLike;
   update: (ref: DocumentRefLike, data: unknown) => TransactionLike;
   delete: (ref: DocumentRefLike) => TransactionLike;
 };
@@ -242,7 +278,8 @@ const wrapTransaction = (transaction: TransactionLike): TransactionLike => {
   return new Proxy(transaction, {
     get(target, prop) {
       if (prop === "get") {
-        return async (ref: DocumentRefLike) => wrapSnapshot(await target.get(ref));
+        return async (ref: DocumentRefLike) =>
+          wrapSnapshot(await target.get(ref));
       }
       if (prop === "set") {
         return (ref: DocumentRefLike, data: unknown, options?: unknown) => {
@@ -268,8 +305,14 @@ export const createAdminFirestoreAdapter = (
     [path, ...pathSegments].join("/");
 
   const operations = {
-    collection: (_firestore: unknown, path: string, ...pathSegments: string[]) =>
-      wrapWriteMethods(adminFirestore.collection(buildFullPath(path, ...pathSegments))),
+    collection: (
+      _firestore: unknown,
+      path: string,
+      ...pathSegments: string[]
+    ) =>
+      wrapWriteMethods(
+        adminFirestore.collection(buildFullPath(path, ...pathSegments)),
+      ),
 
     doc: (reference: unknown, path?: string, ...pathSegments: string[]) => {
       if (!path) {
@@ -335,7 +378,8 @@ export const createAdminFirestoreAdapter = (
         return queryRef;
       }
       return constraints.reduce<unknown>(
-        (q, constraint) => isQueryLike(q) ? applyConstraint(q, constraint) : q,
+        (q, constraint) =>
+          isQueryLike(q) ? applyConstraint(q, constraint) : q,
         queryRef,
       );
     },
@@ -352,11 +396,13 @@ export const createAdminFirestoreAdapter = (
 
     startAt: (...values: unknown[]) => createConstraint("startAt", ...values),
 
-    startAfter: (...values: unknown[]) => createConstraint("startAfter", ...values),
+    startAfter: (...values: unknown[]) =>
+      createConstraint("startAfter", ...values),
 
     endAt: (...values: unknown[]) => createConstraint("endAt", ...values),
 
-    endBefore: (...values: unknown[]) => createConstraint("endBefore", ...values),
+    endBefore: (...values: unknown[]) =>
+      createConstraint("endBefore", ...values),
 
     and: (...queryConstraints: ConstraintDescriptor[]) =>
       createConstraint("and", ...queryConstraints),
@@ -373,7 +419,9 @@ export const createAdminFirestoreAdapter = (
     ): Promise<T> => {
       return adminFirestore.runTransaction(async (transaction) => {
         if (!isTransactionLike(transaction)) {
-          throw new Error("Admin SDK transaction does not satisfy TransactionLike interface");
+          throw new Error(
+            "Admin SDK transaction does not satisfy TransactionLike interface",
+          );
         }
         return updateFunction(wrapTransaction(transaction));
       });

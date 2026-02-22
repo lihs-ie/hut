@@ -1,4 +1,4 @@
-import { FirebaseAdminSdkAdminRepository } from "../../infrastructure/admin-repository";
+import { FirebaseAdminSdkAdminRepository } from "../../infrastructure/admin";
 import { FirebaseAdminProvider } from "../auth/admin";
 import type { AdminRepository } from "@shared/domains/user";
 
