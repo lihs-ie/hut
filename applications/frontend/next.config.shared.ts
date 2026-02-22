@@ -15,7 +15,12 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
     ...(options?.additionalRemotePatterns ?? []),
   ];
 
+  const allowedOrigins = process.env.SERVER_ACTIONS_ALLOWED_ORIGINS
+    ? process.env.SERVER_ACTIONS_ALLOWED_ORIGINS.split(",")
+    : undefined;
+
   return {
+    output: "standalone",
     turbopack: {
       root: "../..",
     },
@@ -28,5 +33,10 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
         dangerouslyAllowLocalIP: options.dangerouslyAllowLocalIP,
       }),
     },
+    ...(allowedOrigins && {
+      experimental: {
+        serverActions: { allowedOrigins },
+      },
+    }),
   };
 };

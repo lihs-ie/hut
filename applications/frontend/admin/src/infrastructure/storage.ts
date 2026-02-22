@@ -1,8 +1,8 @@
 import { unexpectedError, UnexpectedError } from "@shared/aspects/error";
 import { AsyncResult, fromPromise } from "@shared/aspects/result";
 import { ImageUploader } from "@shared/domains/common/image";
-import { getDownloadURL } from "firebase-admin/storage";
 import type { Bucket } from "@google-cloud/storage";
+import { randomUUID } from "node:crypto";
 
 type BlobLike = {
   arrayBuffer: () => Promise<ArrayBuffer>;
@@ -61,10 +61,17 @@ export const FirebaseAdminStorageImageUploader = (
           throw new Error("Unsupported image input type");
         }
 
+        const downloadToken = randomUUID();
         const file = bucket.file(path);
-        await file.save(buffer, { contentType });
+        await file.save(buffer, {
+          contentType,
+          metadata: {
+            firebaseStorageDownloadTokens: downloadToken,
+          },
+        });
 
-        const downloadUrl = await getDownloadURL(file);
+        const encodedPath = encodeURIComponent(path);
+        const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${downloadToken}`;
         return downloadUrl as R;
       })(),
       mapStorageError,

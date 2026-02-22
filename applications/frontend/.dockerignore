@@ -1,0 +1,11 @@
+**/node_modules
+**/.next
+**/.env
+**/.env.*
+.storybook
+e2e
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/*.stories.tsx

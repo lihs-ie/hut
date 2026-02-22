@@ -3,7 +3,6 @@
 import { useLogin } from "@/app/admin/_components/global/hooks/login";
 import { SimpleCard } from "@shared/components/atoms/card/simple";
 import styles from "./login.module.css";
-import { LoaderIcon } from "@shared/components/atoms/icon/loader";
 import { LockIcon } from "@shared/components/atoms/icon/lock";
 import { GoogleLoginButton } from "@/app/admin/_components/atoms/button/google-login";
 
@@ -15,19 +14,6 @@ export const Login = (props: Props) => {
   const { state, errorMessage, handleGoogleLogin } = useLogin({
     redirectPath: props.redirectURI,
   });
-
-  if (state === "checking") {
-    return (
-      <div className={styles.container}>
-        <SimpleCard className={styles.card}>
-          <div className={styles.loading}>
-            <LoaderIcon className={styles.spinner} />
-            <p className={styles.text}>確認中...</p>
-          </div>
-        </SimpleCard>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.container}>

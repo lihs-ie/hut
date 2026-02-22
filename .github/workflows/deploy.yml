@@ -72,7 +72,7 @@ jobs:
               echo "app_port=3001" >> "${GITHUB_OUTPUT}"
               ;;
             search-token-worker)
-              echo "service_name=stg-worker" >> "${GITHUB_OUTPUT}"
+              echo "service_name=stg-search-token-worker" >> "${GITHUB_OUTPUT}"
               echo "dockerfile=applications/worker/Dockerfile" >> "${GITHUB_OUTPUT}"
               echo "context=applications/worker" >> "${GITHUB_OUTPUT}"
               echo "app_type=worker" >> "${GITHUB_OUTPUT}"
@@ -81,40 +81,36 @@ jobs:
               ;;
           esac
 
-      - name: Build Docker image
-        run: |
-          IMAGE="${REGION}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-stg/${{ inputs.application }}:${{ steps.vars.outputs.tag }}"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-          BUILD_ARGS=()
-
-          if [ "${{ steps.vars.outputs.app_type }}" = "frontend" ]; then
-            BUILD_ARGS+=(
-              --build-arg "APP_NAME=${{ steps.vars.outputs.app_name }}"
-              --build-arg "APP_PORT=${{ steps.vars.outputs.app_port }}"
-              --build-arg "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}"
-              --build-arg "NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}"
-              --build-arg "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}"
-              --build-arg "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}"
-              --build-arg "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}"
-              --build-arg "NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID }}"
-            )
-          fi
-
-          docker build \
-            -f "${{ steps.vars.outputs.dockerfile }}" \
-            "${BUILD_ARGS[@]}" \
-            -t "${IMAGE}" \
-            "${{ steps.vars.outputs.context }}"
-
-          echo "image=${IMAGE}" >> "${GITHUB_ENV}"
-
-      - name: Push Docker image
-        run: docker push "${image}"
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        id: build
+        with:
+          context: ${{ steps.vars.outputs.context }}
+          file: ${{ steps.vars.outputs.dockerfile }}
+          push: true
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-stg/${{ inputs.application }}:${{ steps.vars.outputs.tag }}
+          cache-from: type=gha,scope=${{ inputs.application }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.application }}
+          build-args: |
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('APP_NAME={0}', steps.vars.outputs.app_name) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('APP_PORT={0}', steps.vars.outputs.app_port) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_FIREBASE_PROJECT_ID={0}', secrets.GCP_PROJECT_ID) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_FIREBASE_API_KEY={0}', secrets.FIREBASE_API_KEY) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN={0}', secrets.FIREBASE_AUTH_DOMAIN) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET={0}', secrets.FIREBASE_STORAGE_BUCKET) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID={0}', secrets.FIREBASE_MESSAGING_SENDER_ID) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_FIREBASE_APP_ID={0}', secrets.FIREBASE_APP_ID) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('SERVER_ACTIONS_ALLOWED_ORIGINS={0}', secrets.SERVER_ACTIONS_ALLOWED_ORIGINS) || '' }}
 
       - name: Deploy to Cloud Run
         run: |
+          IMAGE="${REGION}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-stg/${{ inputs.application }}:${{ steps.vars.outputs.tag }}"
+
           DEPLOY_ARGS=(
-            --image "${image}"
+            --image "${IMAGE}"
             --port "${{ steps.vars.outputs.app_port }}"
             --region "${REGION}"
             --project "${{ secrets.GCP_PROJECT_ID }}"

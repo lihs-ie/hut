@@ -31,6 +31,9 @@ export type MailAddress = z.infer<typeof mailAddressSchema>;
 
 export const Role = {
   FULL_STACK: "Full Stack Developer",
+  BACKEND: "Backend Developer",
+  FRONTEND: "Frontend Developer",
+  BACKEND_AND_FRONTEND: "Backend & Frontend Developer",
 } as const;
 
 export const roleSchema = z.enum(Role).brand("Role");
@@ -89,7 +92,10 @@ export type UnvalidatedProfile = {
     type: string;
     user: string;
   }>;
-  techStacks: Map<string, { tag: string; from: Date; continue: boolean; type: string }[]>;
+  techStacks: Map<
+    string,
+    { tag: string; from: Date; continue: boolean; type: string }[]
+  >;
 };
 
 export const validateProfile = (

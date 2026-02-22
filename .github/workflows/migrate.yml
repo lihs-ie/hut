@@ -1,0 +1,56 @@
+name: Run Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration:
+        description: "Migration to run"
+        required: true
+        type: choice
+        options:
+          - initial-data
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - stg
+          - prd
+      dry_run:
+        description: "Dry run (no writes)"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: applications/scripts
+        run: npm install
+
+      - name: Run migration
+        working-directory: applications/scripts
+        run: npx tsx migrate/${{ inputs.migration }}.ts ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}

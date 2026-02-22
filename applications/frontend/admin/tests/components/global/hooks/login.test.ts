@@ -2,9 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ok, err } from "@shared/aspects/result";
 
 const mockPush = vi.fn();
-const mockGetRedirectResult = vi.fn();
+const mockStartPopup = vi.fn();
 const mockGetIdToken = vi.fn();
-const mockStartRedirect = vi.fn();
 const mockLogin = vi.fn();
 
 vi.mock("next/navigation", () => ({
@@ -13,9 +12,8 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/providers/acl/oidc/client", () => ({
   OIDCClientProvider: {
-    getRedirectResult: () => mockGetRedirectResult(),
+    startPopup: () => mockStartPopup(),
     getIdToken: () => mockGetIdToken(),
-    startRedirect: () => mockStartRedirect(),
   },
 }));
 
@@ -58,7 +56,6 @@ interface MockUser {
 describe("hooks/login", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetRedirectResult.mockReturnValue(ok(null).toAsync());
   });
 
   afterEach(() => {
@@ -82,17 +79,21 @@ describe("hooks/login", () => {
       });
     });
 
-    describe("リダイレクト結果の処理ロジック", () => {
-      const handleRedirectResult = async (): Promise<ResultOutcome> => {
-        return mockGetRedirectResult()
-          .mapError((error: unknown) => resolveErrorMessage(error, "認証処理中にエラーが発生しました"))
-          .andThen((user: MockUser | null) => {
-            if (user === null) {
-              return ok<SuccessOutcome, string>({ outcome: "idle" }).toAsync();
-            }
-            return mockGetIdToken()
-              .mapError((error: unknown) => resolveErrorMessage(error, "トークン取得エラー"))
-              .map((): SuccessOutcome => ({ outcome: "loggedIn" }));
+    describe("handleGoogleLogin ロジック（popup フロー）", () => {
+      const handleGoogleLogin = async (): Promise<ResultOutcome> => {
+        return mockStartPopup()
+          .mapError((error: unknown) =>
+            resolveErrorMessage(error, "ログイン処理を開始できませんでした"),
+          )
+          .andThen((_user: MockUser) =>
+            mockGetIdToken()
+              .mapError((error: unknown) =>
+                resolveErrorMessage(error, "認証処理中にエラーが発生しました"),
+              ),
+          )
+          .andThen((idToken: string) => {
+            mockLogin(idToken);
+            return ok<SuccessOutcome, string>({ outcome: "loggedIn" }).toAsync();
           })
           .match({
             ok: (result: SuccessOutcome): ResultOutcome => result,
@@ -100,88 +101,61 @@ describe("hooks/login", () => {
           });
       };
 
-      it("ユーザーがnullの場合はidleに遷移する", async () => {
-        mockGetRedirectResult.mockReturnValue(ok(null).toAsync());
-
-        const result = await handleRedirectResult();
-
-        expect(result).toEqual({ outcome: "idle" });
-      });
-
-      it("ユーザーがいる場合はloggedInに遷移する", async () => {
+      it("popup 成功 → IDトークン取得 → ログイン完了の場合は loggedIn を返す", async () => {
         const mockUser: MockUser = { uid: "test-uid", email: "test@example.com" };
-        mockGetRedirectResult.mockReturnValue(ok(mockUser).toAsync());
+        mockStartPopup.mockReturnValue(ok(mockUser).toAsync());
         mockGetIdToken.mockReturnValue(ok("mock-id-token").toAsync());
         mockLogin.mockResolvedValue(undefined);
 
-        const result = await handleRedirectResult();
+        const result = await handleGoogleLogin();
 
         expect(result).toEqual({ outcome: "loggedIn" });
+        expect(mockLogin).toHaveBeenCalledWith("mock-id-token");
       });
 
-      it("リダイレクト結果がエラーの場合はエラーを返す", async () => {
-        mockGetRedirectResult.mockReturnValue(err({ message: "認証エラー" }).toAsync());
-
-        const result = await handleRedirectResult();
-
-        expect(result).toEqual({ error: "認証エラー" });
-      });
-
-      it("IDトークン取得エラーの場合はエラーを返す", async () => {
-        const mockUser: MockUser = { uid: "test-uid" };
-        mockGetRedirectResult.mockReturnValue(ok(mockUser).toAsync());
-        mockGetIdToken.mockReturnValue(err({ message: "トークン取得エラー" }).toAsync());
-
-        const result = await handleRedirectResult();
-
-        expect(result).toEqual({ error: "トークン取得エラー" });
-      });
-    });
-
-    describe("handleGoogleLogin ロジック", () => {
-      const handleGoogleLogin = async (): Promise<void | ErrorOutcome> => {
-        return mockStartRedirect()
-          .mapError((error: unknown) =>
-            resolveErrorMessage(error, "ログイン処理を開始できませんでした")
-          )
-          .match({
-            ok: (): void => undefined,
-            err: (message: string): ErrorOutcome => ({ error: message }),
-          });
-      };
-
-      it("startRedirect が成功した場合はundefinedを返す", async () => {
-        mockStartRedirect.mockReturnValue(ok(undefined).toAsync());
+      it("popup がエラーの場合はエラーを返す", async () => {
+        mockStartPopup.mockReturnValue(err({ message: "ポップアップエラー" }).toAsync());
 
         const result = await handleGoogleLogin();
 
-        expect(result).toBeUndefined();
+        expect(result).toEqual({ error: "ポップアップエラー" });
       });
 
-      it("startRedirect がエラーの場合はエラーを返す", async () => {
-        mockStartRedirect.mockReturnValue(err({ message: "リダイレクトエラー" }).toAsync());
-
-        const result = await handleGoogleLogin();
-
-        expect(result).toEqual({ error: "リダイレクトエラー" });
-      });
-
-      it("エラーメッセージがない場合はデフォルトメッセージを使用する", async () => {
-        mockStartRedirect.mockReturnValue(err({}).toAsync());
+      it("popup エラーメッセージがない場合はデフォルトメッセージを使用する", async () => {
+        mockStartPopup.mockReturnValue(err({}).toAsync());
 
         const result = await handleGoogleLogin();
 
         expect(result).toEqual({ error: "ログイン処理を開始できませんでした" });
       });
+
+      it("IDトークン取得エラーの場合はエラーを返す", async () => {
+        const mockUser: MockUser = { uid: "test-uid" };
+        mockStartPopup.mockReturnValue(ok(mockUser).toAsync());
+        mockGetIdToken.mockReturnValue(err({ message: "トークン取得エラー" }).toAsync());
+
+        const result = await handleGoogleLogin();
+
+        expect(result).toEqual({ error: "トークン取得エラー" });
+      });
+
+      it("IDトークン取得エラーメッセージがない場合はデフォルトメッセージを使用する", async () => {
+        const mockUser: MockUser = { uid: "test-uid" };
+        mockStartPopup.mockReturnValue(ok(mockUser).toAsync());
+        mockGetIdToken.mockReturnValue(err({}).toAsync());
+
+        const result = await handleGoogleLogin();
+
+        expect(result).toEqual({ error: "認証処理中にエラーが発生しました" });
+      });
     });
 
     describe("LoginState 型", () => {
       it("有効な状態値を検証する", () => {
-        type LoginState = "idle" | "checking" | "loading" | "error";
-        const validStates: LoginState[] = ["idle", "checking", "loading", "error"];
+        type LoginState = "idle" | "loading" | "error";
+        const validStates: LoginState[] = ["idle", "loading", "error"];
 
         expect(validStates).toContain("idle");
-        expect(validStates).toContain("checking");
         expect(validStates).toContain("loading");
         expect(validStates).toContain("error");
       });
