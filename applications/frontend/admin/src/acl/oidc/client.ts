@@ -9,6 +9,7 @@ import { type Auth, type Unsubscribe } from "firebase/auth";
 
 export interface OIDCClientAdaptor {
   startRedirect: () => AsyncResult<void, OidcAuthError>;
+  startPopup: () => AsyncResult<OidcUser, OidcAuthError>;
   getRedirectResult: () => AsyncResult<OidcUser | null, OidcAuthError>;
   getIdToken: () => AsyncResult<string, OidcAuthError>;
   signOut: () => AsyncResult<void, OidcAuthError>;
@@ -26,6 +27,7 @@ export const FirebaseOIDCClientAdaptor = (
 
   return {
     startRedirect: () => oidcAuth.startRedirect(),
+    startPopup: () => oidcAuth.startPopup(),
     getRedirectResult: () => oidcAuth.getRedirectResult(),
     getIdToken: () => oidcAuth.getIdToken(),
     signOut: () => oidcAuth.signOut(),

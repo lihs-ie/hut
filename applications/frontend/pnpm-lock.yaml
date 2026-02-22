@@ -83,9 +83,16 @@ importers:
 
   ../scripts:
     dependencies:
+      firebase-admin:
+        specifier: ^13.0.0
+        version: 13.6.1
       ulid:
         specifier: ^3.0.2
         version: 3.0.2
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
 
   admin:
     dependencies:

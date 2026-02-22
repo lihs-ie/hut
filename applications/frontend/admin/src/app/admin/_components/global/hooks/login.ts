@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OIDCClientProvider } from "@/providers/acl/oidc/client";
 import { login } from "@/actions/auth";
-import { fromPromise, ok } from "@shared/aspects/result";
+import { fromPromise } from "@shared/aspects/result";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 
-export type LoginState = "idle" | "checking" | "loading" | "error";
+export type LoginState = "idle" | "loading" | "error";
 
 export type UseLoginOptions = {
   redirectPath?: string;
@@ -18,8 +18,6 @@ export type UseLoginResult = {
   errorMessage: string | null;
   handleGoogleLogin: () => Promise<void>;
 };
-
-type RedirectOutcome = "idle" | "loggedIn";
 
 const redirectErrorMessage = "認証処理中にエラーが発生しました";
 const startRedirectErrorMessage = "ログイン処理を開始できませんでした";
@@ -37,37 +35,29 @@ const resolveErrorMessage = (error: unknown, fallback: string): string => {
 
 export const useLogin = (options: UseLoginOptions = {}): UseLoginResult => {
   const router = useRouter();
-  const [state, setState] = useState<LoginState>("checking");
+  const [state, setState] = useState<LoginState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { execute: executeLogin } = useServerAction(login);
   const redirectPath = options.redirectPath ?? "/";
 
-  const handleRedirectResult = useCallback(async (): Promise<void> => {
-    await OIDCClientProvider.getRedirectResult()
-      .mapError((error) => resolveErrorMessage(error, redirectErrorMessage))
-      .andThen((user) => {
-        if (user === null) {
-          return ok<RedirectOutcome, string>("idle").toAsync();
-        }
+  const handleGoogleLogin = useCallback(async (): Promise<void> => {
+    setState("loading");
+    setErrorMessage(null);
 
-        setState("loading");
-
-        return OIDCClientProvider.getIdToken()
-          .mapError((error) => resolveErrorMessage(error, redirectErrorMessage))
-          .andThen((idToken) =>
-            fromPromise(executeLogin(idToken), (error) =>
-              resolveErrorMessage(error, redirectErrorMessage),
-            ),
-          )
-          .map((): RedirectOutcome => "loggedIn");
-      })
+    await OIDCClientProvider.startPopup()
+      .mapError((error) => resolveErrorMessage(error, startRedirectErrorMessage))
+      .andThen(() =>
+        OIDCClientProvider.getIdToken().mapError((error) =>
+          resolveErrorMessage(error, redirectErrorMessage),
+        ),
+      )
+      .andThen((idToken) =>
+        fromPromise(executeLogin(idToken), (error) =>
+          resolveErrorMessage(error, redirectErrorMessage),
+        ),
+      )
       .match({
-        ok: (outcome) => {
-          if (outcome === "idle") {
-            setState("idle");
-            return;
-          }
-
+        ok: () => {
           router.push(redirectPath);
         },
         err: (message) => {
@@ -76,27 +66,6 @@ export const useLogin = (options: UseLoginOptions = {}): UseLoginResult => {
         },
       });
   }, [executeLogin, redirectPath, router]);
-
-  useEffect(() => {
-    void handleRedirectResult();
-  }, [handleRedirectResult]);
-
-  const handleGoogleLogin = useCallback(async (): Promise<void> => {
-    setState("loading");
-    setErrorMessage(null);
-
-    await OIDCClientProvider.startRedirect()
-      .mapError((error) =>
-        resolveErrorMessage(error, startRedirectErrorMessage),
-      )
-      .match({
-        ok: () => undefined,
-        err: (message) => {
-          setState("error");
-          setErrorMessage(message);
-        },
-      });
-  }, []);
 
   return { state, errorMessage, handleGoogleLogin };
 };

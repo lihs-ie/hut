@@ -3,7 +3,7 @@ import {
   createPersistProfileWorkflow,
 } from "@shared/workflows/admin";
 import { LoggerProvider } from "@shared/providers/infrastructure/logger";
-import { AdminRepositoryProvider } from "@shared/providers/infrastructure/admin";
+import { AdminRepositoryProvider } from "../infrastructure/admin";
 import { validateProfile } from "@shared/domains/user";
 import { imageSchema } from "@shared/domains/common/image";
 import { ok } from "@shared/aspects/result";

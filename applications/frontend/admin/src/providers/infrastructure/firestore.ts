@@ -1,7 +1,7 @@
 import type { Firestore } from "firebase/firestore";
 import type { FirestoreOperations } from "@shared/infrastructures/common";
 import { FirebaseAdminProvider } from "../auth/admin";
-import { createAdminFirestoreAdapter } from "../../infrastructure/firestore-adapter";
+import { createAdminFirestoreAdapter } from "../../infrastructure/firestore";
 
 let cachedAdapter: { instance: Firestore; operations: FirestoreOperations } | null = null;
 

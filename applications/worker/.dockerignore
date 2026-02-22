@@ -1,0 +1,9 @@
+dist-newstyle
+.claude
+.env
+docs
+test
+.gitignore
+.gitkeep
+hie.yaml
+cabal.project.local
