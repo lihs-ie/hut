@@ -34,6 +34,6 @@
   },
   "devDependencies": {
     "@lihs-ie/forger-ts": "^0.0.2",
-    "@storybook/nextjs-vite": "^10.1.11"
+    "@storybook/nextjs-vite": "^10.2.11"
   }
 }
