@@ -12,7 +12,7 @@ vi.mock("recharts", () => {
     </div>
   );
   const MockBarChart = (props: Record<string, unknown>) => (
-    <div data-testid="recharts-bar-chart" data-data={JSON.stringify(props.data)} data-layout={String(props.layout ?? "horizontal")}>
+    <div data-testid="recharts-bar-chart" data-data={JSON.stringify(props.data)}>
       {props.children as React.ReactNode}
     </div>
   );
@@ -20,10 +20,10 @@ vi.mock("recharts", () => {
     <div data-testid="recharts-bar" data-fill={String(props.fill)} data-datakey={String(props.dataKey)} />
   );
   const MockXAxis = (props: Record<string, unknown>) => (
-    <div data-testid="recharts-xaxis" data-datakey={String(props.dataKey)} data-type={String(props.type ?? "")} />
+    <div data-testid="recharts-xaxis" data-datakey={String(props.dataKey)} />
   );
-  const MockYAxis = (props: Record<string, unknown>) => (
-    <div data-testid="recharts-yaxis" data-datakey={String(props.dataKey ?? "")} data-type={String(props.type ?? "")} />
+  const MockYAxis = () => (
+    <div data-testid="recharts-yaxis" />
   );
   const MockCartesianGrid = () => <div data-testid="recharts-grid" />;
   const MockTooltip = () => <div data-testid="recharts-tooltip" />;
@@ -100,20 +100,11 @@ describe("components/atoms/chart/BarChart", () => {
       expect(bar.dataset.fill).toBe("var(--accent)");
     });
 
-    it("デフォルトのレイアウトはhorizontal", () => {
+    it("XAxisのdataKeyがlabelに設定される", () => {
       const { getByTestId } = render(<BarChart data={sampleData} />);
 
-      const chart = getByTestId("recharts-bar-chart");
-      expect(chart.dataset.layout).toBe("horizontal");
-    });
-
-    it("verticalレイアウトが設定できる", () => {
-      const { getByTestId } = render(
-        <BarChart data={sampleData} layout="vertical" />
-      );
-
-      const chart = getByTestId("recharts-bar-chart");
-      expect(chart.dataset.layout).toBe("vertical");
+      const xAxis = getByTestId("recharts-xaxis");
+      expect(xAxis.dataset.datakey).toBe("label");
     });
   });
 

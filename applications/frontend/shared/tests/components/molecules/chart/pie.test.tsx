@@ -36,9 +36,6 @@ vi.mock("recharts", () => {
       {props.children as React.ReactNode}
     </div>
   );
-  const MockCell = (props: Record<string, unknown>) => (
-    <div data-testid="recharts-cell" data-fill={String(props.fill)} />
-  );
   const MockTooltip = () => <div data-testid="recharts-tooltip" />;
   const MockLegend = () => <div data-testid="recharts-legend" />;
 
@@ -46,7 +43,6 @@ vi.mock("recharts", () => {
     ResponsiveContainer: MockResponsiveContainer,
     PieChart: MockPieChart,
     Pie: MockPie,
-    Cell: MockCell,
     Tooltip: MockTooltip,
     Legend: MockLegend,
   };
