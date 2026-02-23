@@ -611,13 +611,30 @@ test.describe("analytics dashboard", () => {
   test.describe("chart tooltip interactions", () => {
     test("device ratio chart shows tooltip on sector hover", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "デバイス比率");
-      const sector = panel.locator(".recharts-pie-sector").first();
-      await expect(sector).toBeVisible({ timeout: LOAD_TIMEOUT });
 
-      await sector.hover({ force: true });
+      await expect(async () => {
+        const sectorPath = panel.locator(".recharts-pie-sector path").first();
 
-      const tooltip = panel.locator(".recharts-tooltip-wrapper");
-      await expect(tooltip).toBeVisible({ timeout: LOAD_TIMEOUT });
+        const position = await sectorPath.evaluate((element) => {
+          const path = element as SVGPathElement;
+          const length = path.getTotalLength();
+          const svgPoint = path.getPointAtLength(length * 0.1);
+          const ctm = path.getScreenCTM();
+          if (!ctm) {
+            throw new Error("getScreenCTM returned null");
+          }
+          const screenX = svgPoint.x * ctm.a + svgPoint.y * ctm.c + ctm.e;
+          const screenY = svgPoint.x * ctm.b + svgPoint.y * ctm.d + ctm.f;
+          const rect = element.getBoundingClientRect();
+          return {
+            x: Math.round(screenX - rect.left),
+            y: Math.round(screenY - rect.top),
+          };
+        });
+
+        await sectorPath.hover({ force: true, position });
+        await expect(panel.locator(".recharts-tooltip-wrapper")).toBeVisible();
+      }).toPass({ timeout: LOAD_TIMEOUT });
     });
   });
 });
