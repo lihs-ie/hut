@@ -17,3 +17,8 @@ output "artifact_registry_url" {
   description = "The URL of the Artifact Registry repository"
   value       = module.artifact_registry.repository_url
 }
+
+output "billing_export_dataset_id" {
+  description = "The ID of the BigQuery dataset for billing export"
+  value       = module.billing_export.dataset_id
+}

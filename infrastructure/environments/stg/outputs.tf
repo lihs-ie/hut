@@ -27,3 +27,8 @@ output "deployer_service_account_email" {
   description = "Email of the GitHub Actions deployer service account"
   value       = module.github_actions_iam.service_account_email
 }
+
+output "billing_export_dataset_id" {
+  description = "The ID of the BigQuery dataset for billing export"
+  value       = module.billing_export.dataset_id
+}
