@@ -1,9 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
-type TestArgs = {
-  page: Page;
-};
-
 const ANALYTICS_URL = "/admin/analytics";
 const LOAD_TIMEOUT = 30_000;
 
@@ -15,14 +11,14 @@ const navigateWithSingleRetry = async (page: Page, url: string) => {
   }
 };
 
+const getChartPanel = (page: Page, headingName: string) =>
+  page
+    .getByRole("heading", { name: headingName, level: 3 })
+    .locator("../..");
+
 const expectChartVisible = async (page: Page, headingName: string) => {
-  const heading = page.getByRole("heading", { name: headingName, level: 3 });
-
-  await expect(heading).toBeVisible({ timeout: LOAD_TIMEOUT });
-
-  const panel = heading.locator("../..");
+  const panel = getChartPanel(page, headingName);
   const svg = panel.locator("svg.recharts-surface").first();
-
   await expect(svg).toBeVisible({ timeout: LOAD_TIMEOUT });
 };
 
@@ -31,11 +27,6 @@ const expectHeadingVisible = async (page: Page, headingName: string) => {
     page.getByRole("heading", { name: headingName, level: 3 }),
   ).toBeVisible({ timeout: LOAD_TIMEOUT });
 };
-
-const getChartPanel = (page: Page, headingName: string) =>
-  page
-    .getByRole("heading", { name: headingName, level: 3 })
-    .locator("../..");
 
 const ensureChartRendered = async (panel: Locator): Promise<void> => {
   const svg = panel.locator("svg.recharts-surface").first();
@@ -60,11 +51,14 @@ const hoverBarAndGetTooltipText = async (
   return (await tooltip.textContent()) ?? "";
 };
 
+const getSummaryCardLocator = (page: Page, title: string): Locator =>
+  page.getByText(title, { exact: true }).first().locator("../..");
+
 const getSummaryCardValue = async (
   page: Page,
   title: string,
 ): Promise<string> => {
-  const card = page.getByText(title, { exact: true }).first().locator("../..");
+  const card = getSummaryCardLocator(page, title);
   await expect(card).toBeVisible({ timeout: LOAD_TIMEOUT });
   const valueElement = card.locator("div").filter({ hasText: /^[\d:]+$/ });
   const text = await valueElement.first().textContent();
@@ -72,8 +66,7 @@ const getSummaryCardValue = async (
 };
 
 const expectSummaryCardVisible = async (page: Page, title: string) => {
-  const card = page.getByText(title, { exact: true }).first().locator("../..");
-
+  const card = getSummaryCardLocator(page, title);
   await expect(card).toBeVisible({ timeout: LOAD_TIMEOUT });
   await expect(card.getByText("前期間比")).toBeVisible({
     timeout: LOAD_TIMEOUT,
@@ -83,9 +76,7 @@ const expectSummaryCardVisible = async (page: Page, title: string) => {
 test.describe.serial("analytics navigation", () => {
   test.setTimeout(60_000);
 
-  test("sidebar contains analytics navigation link", async ({
-    page,
-  }: TestArgs) => {
+  test("sidebar contains analytics navigation link", async ({ page }: { page: Page }) => {
     await navigateWithSingleRetry(page, "/admin/articles");
 
     await expect(page.getByRole("link", { name: "統計" })).toBeVisible({
@@ -93,9 +84,7 @@ test.describe.serial("analytics navigation", () => {
     });
   });
 
-  test("analytics link navigates to /admin/analytics", async ({
-    page,
-  }: TestArgs) => {
+  test("analytics link navigates to /admin/analytics", async ({ page }: { page: Page }) => {
     await navigateWithSingleRetry(page, "/admin/articles");
 
     const link = page.getByRole("link", { name: "統計" });
@@ -111,27 +100,25 @@ test.describe("analytics dashboard", () => {
   test.describe.configure({ mode: "serial" });
   test.setTimeout(120_000);
 
-  test.beforeEach(async ({ page }: TestArgs) => {
+  test.beforeEach(async ({ page }: { page: Page }) => {
     await navigateWithSingleRetry(page, ANALYTICS_URL);
     await page.waitForLoadState("networkidle");
   });
 
   test.describe("header and period selector", () => {
-    test("page title is displayed", async ({ page }: TestArgs) => {
+    test("page title is displayed", async ({ page }: { page: Page }) => {
       await expect(
         page.getByRole("heading", { name: "統計ダッシュボード", level: 1 }),
       ).toBeVisible({ timeout: LOAD_TIMEOUT });
     });
 
-    test("period selection navigation is displayed", async ({
-      page,
-    }: TestArgs) => {
+    test("period selection navigation is displayed", async ({ page }: { page: Page }) => {
       await expect(
         page.getByRole("navigation", { name: "期間選択" }),
       ).toBeVisible({ timeout: LOAD_TIMEOUT });
     });
 
-    test("four period buttons are displayed", async ({ page }: TestArgs) => {
+    test("four period buttons are displayed", async ({ page }: { page: Page }) => {
       const navigation = page.getByRole("navigation", { name: "期間選択" });
 
       await expect(navigation).toBeVisible({ timeout: LOAD_TIMEOUT });
@@ -145,9 +132,7 @@ test.describe("analytics dashboard", () => {
       await expect(buttons.nth(3)).toHaveText("全期間");
     });
 
-    test("30 days button is active by default", async ({
-      page,
-    }: TestArgs) => {
+    test("30 days button is active by default", async ({ page }: { page: Page }) => {
       const navigation = page.getByRole("navigation", { name: "期間選択" });
 
       await expect(navigation).toBeVisible({ timeout: LOAD_TIMEOUT });
@@ -165,9 +150,7 @@ test.describe("analytics dashboard", () => {
       );
     });
 
-    test("clicking 7 days button updates URL", async ({
-      page,
-    }: TestArgs) => {
+    test("clicking 7 days button updates URL", async ({ page }: { page: Page }) => {
       const navigation = page.getByRole("navigation", { name: "期間選択" });
 
       await expect(navigation).toBeVisible({ timeout: LOAD_TIMEOUT });
@@ -176,9 +159,7 @@ test.describe("analytics dashboard", () => {
       await expect(page).toHaveURL(/period=7d/, { timeout: LOAD_TIMEOUT });
     });
 
-    test("clicking 90 days button updates URL", async ({
-      page,
-    }: TestArgs) => {
+    test("clicking 90 days button updates URL", async ({ page }: { page: Page }) => {
       const navigation = page.getByRole("navigation", { name: "期間選択" });
 
       await expect(navigation).toBeVisible({ timeout: LOAD_TIMEOUT });
@@ -187,9 +168,7 @@ test.describe("analytics dashboard", () => {
       await expect(page).toHaveURL(/period=90d/, { timeout: LOAD_TIMEOUT });
     });
 
-    test("clicking all period button updates URL", async ({
-      page,
-    }: TestArgs) => {
+    test("clicking all period button updates URL", async ({ page }: { page: Page }) => {
       const navigation = page.getByRole("navigation", { name: "期間選択" });
 
       await expect(navigation).toBeVisible({ timeout: LOAD_TIMEOUT });
@@ -200,7 +179,7 @@ test.describe("analytics dashboard", () => {
   });
 
   test.describe("summary cards", () => {
-    test("four summary cards are displayed", async ({ page }: TestArgs) => {
+    test("four summary cards are displayed", async ({ page }: { page: Page }) => {
       const expectedTitles = [
         "総PV",
         "ユニークビジター",
@@ -217,109 +196,81 @@ test.describe("analytics dashboard", () => {
       }
     });
 
-    test("total page views card displays title and value", async ({
-      page,
-    }: TestArgs) => {
+    test("total page views card displays title and value", async ({ page }: { page: Page }) => {
       await expectSummaryCardVisible(page, "総PV");
     });
 
-    test("unique visitors card displays title and value", async ({
-      page,
-    }: TestArgs) => {
+    test("unique visitors card displays title and value", async ({ page }: { page: Page }) => {
       await expectSummaryCardVisible(page, "ユニークビジター");
     });
 
-    test("average dwell time card displays title and value", async ({
-      page,
-    }: TestArgs) => {
+    test("average dwell time card displays title and value", async ({ page }: { page: Page }) => {
       await expectSummaryCardVisible(page, "平均滞在時間");
     });
 
-    test("search count card displays title and value", async ({
-      page,
-    }: TestArgs) => {
+    test("search count card displays title and value", async ({ page }: { page: Page }) => {
       await expectSummaryCardVisible(page, "検索数");
     });
   });
 
   test.describe("page view trend section", () => {
-    test("page view trend chart is displayed", async ({
-      page,
-    }: TestArgs) => {
+    test("page view trend chart is displayed", async ({ page }: { page: Page }) => {
       await expectChartVisible(page, "PV推移");
     });
 
-    test("content type comparison chart is displayed", async ({
-      page,
-    }: TestArgs) => {
+    test("content type comparison chart is displayed", async ({ page }: { page: Page }) => {
       await expectChartVisible(page, "コンテンツタイプ別PV");
     });
   });
 
   test.describe("content ranking section", () => {
-    test("content page view ranking table is displayed", async ({
-      page,
-    }: TestArgs) => {
+    test("content page view ranking table is displayed", async ({ page }: { page: Page }) => {
       await expectHeadingVisible(page, "コンテンツPVランキング");
     });
   });
 
   test.describe("access source section", () => {
-    test("referrer analysis chart is displayed", async ({
-      page,
-    }: TestArgs) => {
+    test("referrer analysis chart is displayed", async ({ page }: { page: Page }) => {
       await expectChartVisible(page, "リファラー分析");
     });
 
-    test("device ratio chart is displayed", async ({ page }: TestArgs) => {
+    test("device ratio chart is displayed", async ({ page }: { page: Page }) => {
       await expectChartVisible(page, "デバイス比率");
     });
   });
 
   test.describe("engagement section", () => {
-    test("average dwell time ranking table is displayed", async ({
-      page,
-    }: TestArgs) => {
+    test("average dwell time ranking table is displayed", async ({ page }: { page: Page }) => {
       await expectHeadingVisible(page, "平均滞在時間ランキング");
     });
 
-    test("scroll depth distribution chart is displayed", async ({
-      page,
-    }: TestArgs) => {
+    test("scroll depth distribution chart is displayed", async ({ page }: { page: Page }) => {
       await expectChartVisible(page, "スクロール深度分布");
     });
   });
 
   test.describe("search analytics section", () => {
-    test("search count trend chart is displayed", async ({
-      page,
-    }: TestArgs) => {
+    test("search count trend chart is displayed", async ({ page }: { page: Page }) => {
       await expectChartVisible(page, "検索回数推移");
     });
 
-    test("search keyword ranking table is displayed", async ({
-      page,
-    }: TestArgs) => {
+    test("search keyword ranking table is displayed", async ({ page }: { page: Page }) => {
       await expectHeadingVisible(page, "検索キーワード");
     });
 
-    test("zero hit keywords table is displayed", async ({
-      page,
-    }: TestArgs) => {
+    test("zero hit keywords table is displayed", async ({ page }: { page: Page }) => {
       await expectHeadingVisible(page, "ゼロヒットキーワード");
     });
   });
 
   test.describe("tag page view section", () => {
-    test("tag page view chart is displayed", async ({ page }: TestArgs) => {
+    test("tag page view chart is displayed", async ({ page }: { page: Page }) => {
       await expectChartVisible(page, "タグ別PV");
     });
   });
 
   test.describe("data validation", () => {
-    test("summary cards render values in correct format", async ({
-      page,
-    }: TestArgs) => {
+    test("summary cards render values in correct format", async ({ page }: { page: Page }) => {
       const cardSpecs = [
         { title: "総PV", pattern: /^\d+$/ },
         { title: "ユニークビジター", pattern: /^\d+$/ },
@@ -328,11 +279,7 @@ test.describe("analytics dashboard", () => {
       ];
 
       for (const spec of cardSpecs) {
-        const card = page
-          .getByText(spec.title, { exact: true })
-          .first()
-          .locator("../..");
-
+        const card = getSummaryCardLocator(page, spec.title);
         await expect(card).toBeVisible({ timeout: LOAD_TIMEOUT });
 
         const valueElement = card
@@ -344,14 +291,8 @@ test.describe("analytics dashboard", () => {
       }
     });
 
-    test("unique visitors card displays positive count from seed data", async ({
-      page,
-    }: TestArgs) => {
-      const card = page
-        .getByText("ユニークビジター", { exact: true })
-        .first()
-        .locator("../..");
-
+    test("unique visitors card displays positive count from seed data", async ({ page }: { page: Page }) => {
+      const card = getSummaryCardLocator(page, "ユニークビジター");
       await expect(card).toBeVisible({ timeout: LOAD_TIMEOUT });
 
       const valueElement = card.locator("div").filter({ hasText: /^\d+$/ });
@@ -362,14 +303,8 @@ test.describe("analytics dashboard", () => {
       expect(Number(text)).toBeGreaterThan(0);
     });
 
-    test("average dwell time card displays time format from seed data", async ({
-      page,
-    }: TestArgs) => {
-      const card = page
-        .getByText("平均滞在時間", { exact: true })
-        .first()
-        .locator("../..");
-
+    test("average dwell time card displays time format from seed data", async ({ page }: { page: Page }) => {
+      const card = getSummaryCardLocator(page, "平均滞在時間");
       await expect(card).toBeVisible({ timeout: LOAD_TIMEOUT });
 
       const valueElement = card
@@ -383,14 +318,8 @@ test.describe("analytics dashboard", () => {
       expect(minutes).toBeGreaterThanOrEqual(0);
     });
 
-    test("search count card displays positive count from seed data", async ({
-      page,
-    }: TestArgs) => {
-      const card = page
-        .getByText("検索数", { exact: true })
-        .first()
-        .locator("../..");
-
+    test("search count card displays positive count from seed data", async ({ page }: { page: Page }) => {
+      const card = getSummaryCardLocator(page, "検索数");
       await expect(card).toBeVisible({ timeout: LOAD_TIMEOUT });
 
       const valueElement = card.locator("div").filter({ hasText: /^\d+$/ });
@@ -401,9 +330,7 @@ test.describe("analytics dashboard", () => {
       expect(Number(text)).toBeGreaterThan(0);
     });
 
-    test("summary cards display trend percentage with label", async ({
-      page,
-    }: TestArgs) => {
+    test("summary cards display trend percentage with label", async ({ page }: { page: Page }) => {
       const summaryTitles = [
         "総PV",
         "ユニークビジター",
@@ -412,11 +339,7 @@ test.describe("analytics dashboard", () => {
       ];
 
       for (const title of summaryTitles) {
-        const card = page
-          .getByText(title, { exact: true })
-          .first()
-          .locator("../..");
-
+        const card = getSummaryCardLocator(page, title);
         await expect(card).toBeVisible({ timeout: LOAD_TIMEOUT });
 
         const trendText = card.getByText(/%/);
@@ -427,9 +350,7 @@ test.describe("analytics dashboard", () => {
       }
     });
 
-    test("dwell time ranking displays items with time values", async ({
-      page,
-    }: TestArgs) => {
+    test("dwell time ranking displays items with time values", async ({ page }: { page: Page }) => {
       const heading = page.getByRole("heading", {
         name: "平均滞在時間ランキング",
         level: 3,
@@ -442,9 +363,7 @@ test.describe("analytics dashboard", () => {
       expect(count).toBeGreaterThan(0);
     });
 
-    test("search keyword ranking displays items with counts", async ({
-      page,
-    }: TestArgs) => {
+    test("search keyword ranking displays items with counts", async ({ page }: { page: Page }) => {
       const heading = page.getByRole("heading", {
         name: "検索キーワード",
         level: 3,
@@ -457,9 +376,7 @@ test.describe("analytics dashboard", () => {
       expect(count).toBeGreaterThan(0);
     });
 
-    test("zero hit keywords ranking displays items with counts", async ({
-      page,
-    }: TestArgs) => {
+    test("zero hit keywords ranking displays items with counts", async ({ page }: { page: Page }) => {
       const heading = page.getByRole("heading", {
         name: "ゼロヒットキーワード",
         level: 3,
@@ -472,32 +389,20 @@ test.describe("analytics dashboard", () => {
       expect(count).toBeGreaterThan(0);
     });
 
-    test("search count trend line chart renders curve path", async ({
-      page,
-    }: TestArgs) => {
-      const heading = page.getByRole("heading", {
-        name: "検索回数推移",
-        level: 3,
-      });
-      await expect(heading).toBeVisible({ timeout: LOAD_TIMEOUT });
+    test("search count trend line chart renders curve path", async ({ page }: { page: Page }) => {
+      const panel = getChartPanel(page, "検索回数推移");
+      await expect(panel.getByRole("heading", { name: "検索回数推移", level: 3 })).toBeVisible({ timeout: LOAD_TIMEOUT });
 
-      const panel = heading.locator("../..");
       const curve = panel.locator(
         "svg.recharts-surface .recharts-line .recharts-line-curve",
       );
       await expect(curve.first()).toBeVisible({ timeout: LOAD_TIMEOUT });
     });
 
-    test("scroll depth bar chart renders data rectangles", async ({
-      page,
-    }: TestArgs) => {
-      const heading = page.getByRole("heading", {
-        name: "スクロール深度分布",
-        level: 3,
-      });
-      await expect(heading).toBeVisible({ timeout: LOAD_TIMEOUT });
+    test("scroll depth bar chart renders data rectangles", async ({ page }: { page: Page }) => {
+      const panel = getChartPanel(page, "スクロール深度分布");
+      await expect(panel.getByRole("heading", { name: "スクロール深度分布", level: 3 })).toBeVisible({ timeout: LOAD_TIMEOUT });
 
-      const panel = heading.locator("../..");
       const rectangles = panel.locator(
         "svg.recharts-surface .recharts-bar-rectangle",
       );
@@ -506,9 +411,7 @@ test.describe("analytics dashboard", () => {
       expect(count).toBeGreaterThan(0);
     });
 
-    test("charts with axis render cartesian grid and ticks", async ({
-      page,
-    }: TestArgs) => {
+    test("charts with axis render cartesian grid and ticks", async ({ page }: { page: Page }) => {
       const chartHeadings = [
         "PV推移",
         "コンテンツタイプ別PV",
@@ -519,13 +422,9 @@ test.describe("analytics dashboard", () => {
       ];
 
       for (const headingName of chartHeadings) {
-        const heading = page.getByRole("heading", {
-          name: headingName,
-          level: 3,
-        });
-        await expect(heading).toBeVisible({ timeout: LOAD_TIMEOUT });
+        const panel = getChartPanel(page, headingName);
+        await expect(panel.getByRole("heading", { name: headingName, level: 3 })).toBeVisible({ timeout: LOAD_TIMEOUT });
 
-        const panel = heading.locator("../..");
         const grid = panel.locator(
           "svg.recharts-surface .recharts-cartesian-grid",
         );
@@ -535,9 +434,7 @@ test.describe("analytics dashboard", () => {
   });
 
   test.describe("exact seed data values", () => {
-    test("summary cards display exact values from seed data", async ({
-      page,
-    }: TestArgs) => {
+    test("summary cards display exact values from seed data", async ({ page }: { page: Page }) => {
       const expectedCards = [
         { title: "総PV", value: "38" },
         { title: "ユニークビジター", value: "38" },
@@ -551,9 +448,7 @@ test.describe("analytics dashboard", () => {
       }
     });
 
-    test("summary cards display +100% trend from seed data", async ({
-      page,
-    }: TestArgs) => {
+    test("summary cards display +100% trend from seed data", async ({ page }: { page: Page }) => {
       const summaryTitles = [
         "総PV",
         "ユニークビジター",
@@ -562,10 +457,7 @@ test.describe("analytics dashboard", () => {
       ];
 
       for (const title of summaryTitles) {
-        const card = page
-          .getByText(title, { exact: true })
-          .first()
-          .locator("../..");
+        const card = getSummaryCardLocator(page, title);
         await expect(card).toBeVisible({ timeout: LOAD_TIMEOUT });
         await expect(card.getByText("+100%")).toBeVisible({
           timeout: LOAD_TIMEOUT,
@@ -573,9 +465,7 @@ test.describe("analytics dashboard", () => {
       }
     });
 
-    test("content type chart bar tooltips show correct values", async ({
-      page,
-    }: TestArgs) => {
+    test("content type chart bar tooltips show correct values", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "コンテンツタイプ別PV");
       const firstBarTooltip = await hoverBarAndGetTooltipText(panel, 0);
       expect(firstBarTooltip).toContain("34");
@@ -584,9 +474,7 @@ test.describe("analytics dashboard", () => {
       expect(secondBarTooltip).toContain("4");
     });
 
-    test("content type chart renders exactly two bars", async ({
-      page,
-    }: TestArgs) => {
+    test("content type chart renders exactly two bars", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "コンテンツタイプ別PV");
       await ensureChartRendered(panel);
       const bars = panel.locator(
@@ -595,9 +483,7 @@ test.describe("analytics dashboard", () => {
       await expect(bars).toHaveCount(2, { timeout: LOAD_TIMEOUT });
     });
 
-    test("referrer analysis chart renders four bars with correct values", async ({
-      page,
-    }: TestArgs) => {
+    test("referrer analysis chart renders four bars with correct values", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "リファラー分析");
       await ensureChartRendered(panel);
 
@@ -610,16 +496,10 @@ test.describe("analytics dashboard", () => {
 
       const expectedValues = ["17", "16", "3", "2"];
       const tooltipValues: string[] = [];
-      const barPaths = panel.locator(
-        "svg.recharts-surface .recharts-bar-rectangle path",
-      );
 
       for (let index = 0; index < barCount; index++) {
-        await barPaths.nth(index).hover({ force: true });
-        const tooltip = panel.locator(".recharts-tooltip-wrapper");
-        await expect(tooltip).toBeVisible({ timeout: LOAD_TIMEOUT });
-        const text = (await tooltip.textContent()) ?? "";
-        tooltipValues.push(text);
+        const tooltipText = await hoverBarAndGetTooltipText(panel, index);
+        tooltipValues.push(tooltipText);
       }
 
       for (const value of expectedValues) {
@@ -628,9 +508,7 @@ test.describe("analytics dashboard", () => {
       }
     });
 
-    test("scroll depth chart renders four bars", async ({
-      page,
-    }: TestArgs) => {
+    test("scroll depth chart renders four bars", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "スクロール深度分布");
       await ensureChartRendered(panel);
       const bars = panel.locator(
@@ -639,18 +517,14 @@ test.describe("analytics dashboard", () => {
       await expect(bars).toHaveCount(4, { timeout: LOAD_TIMEOUT });
     });
 
-    test("scroll depth chart last bar tooltip shows highest value", async ({
-      page,
-    }: TestArgs) => {
+    test("scroll depth chart last bar tooltip shows highest value", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "スクロール深度分布");
       const tooltipText = await hoverBarAndGetTooltipText(panel, 3);
 
       expect(tooltipText).toContain("7");
     });
 
-    test("device ratio chart displays correct legend items", async ({
-      page,
-    }: TestArgs) => {
+    test("device ratio chart displays correct legend items", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "デバイス比率");
       const legend = panel.locator(".recharts-legend-wrapper");
       await expect(legend).toBeVisible({ timeout: LOAD_TIMEOUT });
@@ -661,9 +535,7 @@ test.describe("analytics dashboard", () => {
       expect(legendText).toContain("tablet");
     });
 
-    test("search keyword ranking displays expected keywords and counts", async ({
-      page,
-    }: TestArgs) => {
+    test("search keyword ranking displays expected keywords and counts", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "検索キーワード");
 
       await expect(panel.getByText("TypeScript")).toBeVisible({
@@ -680,9 +552,7 @@ test.describe("analytics dashboard", () => {
       });
     });
 
-    test("zero hit keywords ranking displays expected keywords", async ({
-      page,
-    }: TestArgs) => {
+    test("zero hit keywords ranking displays expected keywords", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "ゼロヒットキーワード");
 
       const expectedKeywords = ["GraphQL", "Rust入門", "Docker"];
@@ -697,9 +567,7 @@ test.describe("analytics dashboard", () => {
       expect(count).toBeGreaterThanOrEqual(3);
     });
 
-    test("dwell time ranking displays values in correct order", async ({
-      page,
-    }: TestArgs) => {
+    test("dwell time ranking displays values in correct order", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "平均滞在時間ランキング");
       await expect(panel).toBeVisible({ timeout: LOAD_TIMEOUT });
 
@@ -718,9 +586,7 @@ test.describe("analytics dashboard", () => {
       }
     });
 
-    test("content page view ranking displays values in correct order", async ({
-      page,
-    }: TestArgs) => {
+    test("content page view ranking displays values in correct order", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "コンテンツPVランキング");
       await expect(panel).toBeVisible({ timeout: LOAD_TIMEOUT });
 
@@ -743,9 +609,7 @@ test.describe("analytics dashboard", () => {
   });
 
   test.describe("chart tooltip interactions", () => {
-    test("device ratio chart shows tooltip on sector hover", async ({
-      page,
-    }: TestArgs) => {
+    test("device ratio chart shows tooltip on sector hover", async ({ page }: { page: Page }) => {
       const panel = getChartPanel(page, "デバイス比率");
       const sector = panel.locator(".recharts-pie-sector").first();
       await expect(sector).toBeVisible({ timeout: LOAD_TIMEOUT });
