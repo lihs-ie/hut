@@ -160,13 +160,12 @@ export const EntryEditor = (props: Props) => {
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm, remarkBreaks]}
                   components={{
-                    code(props) {
-                      const { children, className, ref: _ref, ...rest } = props;
+                    code({ className, children }) {
                       const match = /language-(\w+)/.exec(className || "");
                       const isInline = !match && !className;
 
                       return isInline ? (
-                        <code className={className} {...rest}>
+                        <code className={className}>
                           {children}
                         </code>
                       ) : (
