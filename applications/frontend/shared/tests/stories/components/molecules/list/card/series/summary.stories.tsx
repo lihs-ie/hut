@@ -23,10 +23,6 @@ export const Default: StoryObj<typeof SeriesSummaryCard> = {
     cover: series.cover,
     tags: series.tags,
     chapterCount: series.chapters.length,
-    author: {
-      name: "Author Name",
-      avatar: "https://picsum.photos/seed/author/100/100",
-    },
   },
 };
 
@@ -39,10 +35,6 @@ export const WithEmoji: StoryObj<typeof SeriesSummaryCard> = {
     emoji: "📘",
     tags: ["Next.js", "React", "TypeScript"],
     chapterCount: 12,
-    author: {
-      name: "Author Name",
-      avatar: "https://picsum.photos/seed/author2/100/100",
-    },
   },
 };
 
@@ -65,8 +57,5 @@ export const ManyTags: StoryObj<typeof SeriesSummaryCard> = {
     cover: "https://picsum.photos/seed/cover/200/300",
     tags: ["デザイン", "UI/UX", "CSS", "Tailwind", "Figma"],
     chapterCount: 10,
-    author: {
-      name: "Designer",
-    },
   },
 };

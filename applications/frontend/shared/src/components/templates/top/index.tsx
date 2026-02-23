@@ -1,6 +1,6 @@
 import { Article } from "@shared/domains/articles";
 import { Memo } from "@shared/domains/memo";
-// [初期リリース対象外] import { Series } from "@shared/domains/series";
+import { Series } from "@shared/domains/series";
 import styles from "./index.module.css";
 import { Profile } from "@shared/domains/user";
 import { ContentSection } from "@shared/components/organisms/common/top/search";
@@ -13,7 +13,7 @@ import { Suspense } from "react";
 export type Props = {
   searchArticles: () => Promise<Article[]>;
   searchMemos: () => Promise<Memo[]>;
-  // [初期リリース対象外] searchSeries: () => Promise<Series[]>;
+  searchSeries: () => Promise<Series[]>;
   getProfile: () => Promise<Profile>;
   findAllTags: (identifiers: string[]) => Promise<Tag[]>;
 };
@@ -45,7 +45,6 @@ export const TopIndex = async (props: Props) => {
           hasAllLink
         />
       </Suspense>
-      {/* [初期リリース対象外] シリーズセクション
       <Suspense fallback={<ContentSectionSkeleton count={6} />}>
         <ContentSection
           search={props.searchSeries}
@@ -57,7 +56,6 @@ export const TopIndex = async (props: Props) => {
           hasAllLink
         />
       </Suspense>
-      */}
       <ProfileCard profile={profile} />
     </div>
   );
