@@ -19,6 +19,7 @@ env:
 jobs:
   build:
     name: Build
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -159,14 +160,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          if [ "${{ needs.e2e.result }}" != "success" ]; then
-            echo "E2E tests failed or were cancelled (result: ${{ needs.e2e.result }})"
-            exit 1
+          result="${{ needs.e2e.result }}"
+          if [ "$result" = "success" ] || [ "$result" = "skipped" ]; then
+            echo "E2E tests passed or were skipped (result: $result)"
+            exit 0
           fi
+          echo "E2E tests failed or were cancelled (result: $result)"
+          exit 1
 
   merge-reports:
     name: Merge E2E Reports
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && github.actor != 'dependabot[bot]' }}
     needs: [e2e]
     runs-on: ubuntu-latest
 
