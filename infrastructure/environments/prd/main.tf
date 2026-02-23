@@ -56,9 +56,9 @@ module "iam" {
         "roles/eventarc.eventReceiver",
       ]
     }
-    "hut-prd-worker" = {
-      display_name = "HUT PRD Worker Service Account"
-      description  = "Service account for the PRD general worker"
+    "hut-prd-search-token-worker" = {
+      display_name = "HUT PRD Search Token Worker Service Account"
+      description  = "Service account for the PRD search token worker"
       roles = [
         "roles/datastore.user",
         "roles/eventarc.eventReceiver",
@@ -238,14 +238,14 @@ module "cloudrun_image_cleanup_worker" {
   labels = local.common_labels
 }
 
-module "cloudrun_worker" {
+module "cloudrun_search_token_worker" {
   source = "../../modules/cloudrun_service"
 
   project_id            = var.project_id
   region                = var.region
-  service_name          = "worker"
-  container_image       = var.worker_container_image
-  service_account_email = module.iam.service_account_emails["hut-prd-worker"]
+  service_name          = "search-token-worker"
+  container_image       = var.search_token_worker_container_image
+  service_account_email = module.iam.service_account_emails["hut-prd-search-token-worker"]
   allow_unauthenticated = false
 
   environment_variables = {
@@ -278,26 +278,26 @@ module "eventarc_image_cleanup" {
   labels = local.common_labels
 }
 
-module "eventarc_worker" {
+module "eventarc_search_token_worker" {
   source = "../../modules/eventarc_trigger"
 
   project_id            = var.project_id
   region                = var.region
-  trigger_name          = "prd-worker-trigger"
+  trigger_name          = "prd-search-token-worker-trigger"
   pubsub_topic_id       = module.pubsub_app_events.topic_id
-  cloudrun_service_name = module.cloudrun_worker.service_name
-  service_account_email = module.iam.service_account_emails["hut-prd-worker"]
+  cloudrun_service_name = module.cloudrun_search_token_worker.service_name
+  service_account_email = module.iam.service_account_emails["hut-prd-search-token-worker"]
   destination_path      = "/events"
 
   labels = local.common_labels
 }
 
-resource "google_cloud_run_v2_service_iam_member" "worker_invoker" {
+resource "google_cloud_run_v2_service_iam_member" "search_token_worker_invoker" {
   project  = var.project_id
   location = var.region
-  name     = module.cloudrun_worker.service_name
+  name     = module.cloudrun_search_token_worker.service_name
   role     = "roles/run.invoker"
-  member   = "serviceAccount:${module.iam.service_account_emails["hut-prd-worker"]}"
+  member   = "serviceAccount:${module.iam.service_account_emails["hut-prd-search-token-worker"]}"
 }
 
 module "billing_export" {
