@@ -73,8 +73,8 @@ jobs:
               ;;
             search-token-worker)
               echo "service_name=stg-search-token-worker" >> "${GITHUB_OUTPUT}"
-              echo "dockerfile=applications/worker/Dockerfile" >> "${GITHUB_OUTPUT}"
-              echo "context=applications/worker" >> "${GITHUB_OUTPUT}"
+              echo "dockerfile=applications/search-token-worker/Dockerfile" >> "${GITHUB_OUTPUT}"
+              echo "context=applications/search-token-worker" >> "${GITHUB_OUTPUT}"
               echo "app_type=worker" >> "${GITHUB_OUTPUT}"
               echo "app_name=search-token-worker" >> "${GITHUB_OUTPUT}"
               echo "app_port=8080" >> "${GITHUB_OUTPUT}"

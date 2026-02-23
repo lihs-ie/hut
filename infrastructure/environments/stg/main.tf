@@ -45,9 +45,9 @@ module "iam" {
         "roles/storage.objectAdmin",
       ]
     }
-    "hut-stg-worker" = {
-      display_name = "HUT STG Worker Service Account"
-      description  = "Service account for the STG general worker"
+    "hut-stg-search-token-worker" = {
+      display_name = "HUT STG Search Token Worker Service Account"
+      description  = "Service account for the STG search token worker"
       roles = [
         "roles/datastore.user",
         "roles/eventarc.eventReceiver",
@@ -250,14 +250,14 @@ module "cloudrun_admin" {
   ]
 }
 
-module "cloudrun_worker" {
+module "cloudrun_search_token_worker" {
   source = "../../modules/cloudrun_service"
 
   project_id            = var.project_id
   region                = var.region
   service_name          = "stg-search-token-worker"
-  container_image       = var.worker_container_image
-  service_account_email = module.iam.service_account_emails["hut-stg-worker"]
+  container_image       = var.search_token_worker_container_image
+  service_account_email = module.iam.service_account_emails["hut-stg-search-token-worker"]
   allow_unauthenticated = false
 
   environment_variables = {
@@ -277,26 +277,26 @@ resource "google_cloud_run_v2_service_iam_member" "invoker" {
   member   = each.value.member
 }
 
-module "eventarc_worker" {
+module "eventarc_search_token_worker" {
   source = "../../modules/eventarc_trigger"
 
   project_id            = var.project_id
   region                = var.region
   trigger_name          = "stg-search-token-worker-trigger"
   pubsub_topic_id       = module.pubsub_app_events.topic_id
-  cloudrun_service_name = module.cloudrun_worker.service_name
-  service_account_email = module.iam.service_account_emails["hut-stg-worker"]
+  cloudrun_service_name = module.cloudrun_search_token_worker.service_name
+  service_account_email = module.iam.service_account_emails["hut-stg-search-token-worker"]
   destination_path      = "/events"
 
   labels = local.common_labels
 }
 
-resource "google_cloud_run_v2_service_iam_member" "worker_invoker" {
+resource "google_cloud_run_v2_service_iam_member" "search_token_worker_invoker" {
   project  = var.project_id
   location = var.region
-  name     = module.cloudrun_worker.service_name
+  name     = module.cloudrun_search_token_worker.service_name
   role     = "roles/run.invoker"
-  member   = "serviceAccount:${module.iam.service_account_emails["hut-stg-worker"]}"
+  member   = "serviceAccount:${module.iam.service_account_emails["hut-stg-search-token-worker"]}"
 }
 
 module "github_actions_iam" {

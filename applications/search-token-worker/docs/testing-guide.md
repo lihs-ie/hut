@@ -14,7 +14,7 @@
 ### 2.1 ディレクトリ構造
 
 ```
-applications/worker/
+applications/search-token-worker/
   src/                           # 本番コード
     Aspects/Log.hs
     Domain/Common.hs
