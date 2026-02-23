@@ -65,7 +65,7 @@ services:
 
   search-token-worker:
     build:
-      context: worker
+      context: search-token-worker
       dockerfile: Dockerfile
     container_name: search-token-worker
     working_dir: /var/www/app
@@ -77,7 +77,7 @@ services:
       - FIRESTORE_EMULATOR_HOST=firebase-emulator:8085
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
     volumes:
-      - ../worker:/var/www/app
+      - ../search-token-worker:/var/www/app
       - worker-cabal-store:/root/.cabal/store
       - worker-cabal-packages:/root/.cabal/packages
       - worker-dist:/var/www/app/dist-newstyle

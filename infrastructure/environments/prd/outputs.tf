@@ -8,9 +8,9 @@ output "image_cleanup_worker_service_uri" {
   value       = module.cloudrun_image_cleanup_worker.service_uri
 }
 
-output "worker_service_uri" {
-  description = "The URI of the PRD general worker Cloud Run service"
-  value       = module.cloudrun_worker.service_uri
+output "search_token_worker_service_uri" {
+  description = "The URI of the PRD search token worker Cloud Run service"
+  value       = module.cloudrun_search_token_worker.service_uri
 }
 
 output "artifact_registry_url" {
