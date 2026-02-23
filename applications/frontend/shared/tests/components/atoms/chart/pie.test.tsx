@@ -21,9 +21,6 @@ vi.mock("recharts", () => {
       {props.children as React.ReactNode}
     </div>
   );
-  const MockCell = (props: Record<string, unknown>) => (
-    <div data-testid="recharts-cell" data-fill={String(props.fill)} />
-  );
   const MockTooltip = () => <div data-testid="recharts-tooltip" />;
   const MockLegend = () => <div data-testid="recharts-legend" />;
 
@@ -31,7 +28,6 @@ vi.mock("recharts", () => {
     ResponsiveContainer: MockResponsiveContainer,
     PieChart: MockPieChart,
     Pie: MockPie,
-    Cell: MockCell,
     Tooltip: MockTooltip,
     Legend: MockLegend,
   };
@@ -64,11 +60,15 @@ describe("components/atoms/chart/PieChart", () => {
       expect(pie.dataset.datakey).toBe("value");
     });
 
-    it("データの数だけCellがレンダリングされる", () => {
-      const { getAllByTestId } = render(<PieChart data={sampleData} />);
+    it("データの各要素にfillが設定される", () => {
+      const { getByTestId } = render(<PieChart data={sampleData} />);
 
-      const cells = getAllByTestId("recharts-cell");
-      expect(cells).toHaveLength(3);
+      const pie = getByTestId("recharts-pie");
+      const parsedData = JSON.parse(pie.dataset.data ?? "[]") as Array<{ fill: string }>;
+      expect(parsedData).toHaveLength(3);
+      expect(parsedData[0].fill).toBe("var(--chart-1)");
+      expect(parsedData[1].fill).toBe("var(--chart-2)");
+      expect(parsedData[2].fill).toBe("var(--chart-3)");
     });
   });
 
@@ -89,30 +89,32 @@ describe("components/atoms/chart/PieChart", () => {
       expect(container.dataset.height).toBe("400");
     });
 
-    it("カスタムカラーがCellに適用される", () => {
+    it("カスタムカラーがデータのfillに適用される", () => {
       const dataWithColors = [
         { label: "Desktop", value: 65, color: "#ff0000" },
         { label: "Mobile", value: 30, color: "#00ff00" },
         { label: "Tablet", value: 5, color: "#0000ff" },
       ];
 
-      const { getAllByTestId } = render(
+      const { getByTestId } = render(
         <PieChart data={dataWithColors} />
       );
 
-      const cells = getAllByTestId("recharts-cell");
-      expect(cells[0].dataset.fill).toBe("#ff0000");
-      expect(cells[1].dataset.fill).toBe("#00ff00");
-      expect(cells[2].dataset.fill).toBe("#0000ff");
+      const pie = getByTestId("recharts-pie");
+      const parsedData = JSON.parse(pie.dataset.data ?? "[]") as Array<{ fill: string }>;
+      expect(parsedData[0].fill).toBe("#ff0000");
+      expect(parsedData[1].fill).toBe("#00ff00");
+      expect(parsedData[2].fill).toBe("#0000ff");
     });
 
     it("カラー未指定の場合はデフォルトのチャートカラーが使用される", () => {
-      const { getAllByTestId } = render(<PieChart data={sampleData} />);
+      const { getByTestId } = render(<PieChart data={sampleData} />);
 
-      const cells = getAllByTestId("recharts-cell");
-      expect(cells[0].dataset.fill).toBe("var(--chart-1)");
-      expect(cells[1].dataset.fill).toBe("var(--chart-2)");
-      expect(cells[2].dataset.fill).toBe("var(--chart-3)");
+      const pie = getByTestId("recharts-pie");
+      const parsedData = JSON.parse(pie.dataset.data ?? "[]") as Array<{ fill: string }>;
+      expect(parsedData[0].fill).toBe("var(--chart-1)");
+      expect(parsedData[1].fill).toBe("var(--chart-2)");
+      expect(parsedData[2].fill).toBe("var(--chart-3)");
     });
   });
 

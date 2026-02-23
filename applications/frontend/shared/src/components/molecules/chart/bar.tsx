@@ -19,7 +19,6 @@ type Props = {
   data: Array<{ label: string; value: number }>;
   color?: string;
   height?: number;
-  layout?: "horizontal" | "vertical";
   axisLabel?: { x?: string; y?: string };
 };
 
@@ -30,7 +29,6 @@ export const BarChartPanel = (props: Props) => (
       data={props.data}
       color={props.color}
       height={props.height}
-      layout={props.layout}
       axisLabel={props.axisLabel}
     />
   </div>

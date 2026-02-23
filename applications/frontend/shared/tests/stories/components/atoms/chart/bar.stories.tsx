@@ -26,18 +26,6 @@ export const Default: StoryObj<typeof BarChart> = {
   },
 };
 
-export const Horizontal: StoryObj<typeof BarChart> = {
-  args: {
-    data: [
-      { label: "Google", value: 450 },
-      { label: "Twitter", value: 300 },
-      { label: "Direct", value: 150 },
-      { label: "GitHub", value: 80 },
-    ],
-    layout: "horizontal",
-  },
-};
-
 export const SingleItem: StoryObj<typeof BarChart> = {
   args: {
     data: [{ label: "Article", value: 500 }],
