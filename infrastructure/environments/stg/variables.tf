@@ -23,8 +23,8 @@ variable "admin_container_image" {
   type        = string
 }
 
-variable "worker_container_image" {
-  description = "Container image URL for the general worker Cloud Run service"
+variable "search_token_worker_container_image" {
+  description = "Container image URL for the search token worker Cloud Run service"
   type        = string
 }
 
