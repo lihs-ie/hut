@@ -14,7 +14,7 @@ RUN mkdir -p /etc/apt/keyrings && \
 
 ENV PNPM_HOME="/root/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm
 RUN pnpm add -g firebase-tools@latest
 
 WORKDIR /app
