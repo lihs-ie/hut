@@ -161,7 +161,7 @@ export const EntryEditor = (props: Props) => {
                   remarkPlugins={[remarkGfm, remarkBreaks]}
                   components={{
                     code(props) {
-                      const { children, className, ...rest } = props;
+                      const { children, className, ref: _ref, ...rest } = props;
                       const match = /language-(\w+)/.exec(className || "");
                       const isInline = !match && !className;
 
