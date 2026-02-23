@@ -15,7 +15,7 @@
     "@hut/shared": "workspace:*",
     "@next/mdx": "^16.1.1",
     "@simplewebauthn/browser": "^13.2.2",
-    "@simplewebauthn/server": "^13.2.2",
+    "@simplewebauthn/server": "^13.2.3",
     "firebase": "^12.7.0",
     "firebase-admin": "^13.6.0",
     "next": "16.1.6",
