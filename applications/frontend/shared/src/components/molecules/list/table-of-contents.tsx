@@ -79,9 +79,11 @@ export const TableOfContents = (props: Props) => {
           aria-expanded={isOpen}
         >
           <span className={styles.toggleText}>目次</span>
-          <ChevronDownIcon
-            className={`${styles.toggleIcon} ${isOpen ? styles.rotated : ""}`}
-          />
+          <div className={styles.icon}>
+            <ChevronDownIcon
+              className={`${styles.toggleIcon} ${isOpen ? styles.rotated : ""}`}
+              />
+          </div>
         </button>
 
         {isOpen && (
