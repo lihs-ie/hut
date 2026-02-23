@@ -747,10 +747,10 @@ test.describe("analytics dashboard", () => {
       page,
     }: TestArgs) => {
       const panel = getChartPanel(page, "デバイス比率");
-      const surface = panel.locator("svg.recharts-surface").first();
-      await expect(surface).toBeVisible({ timeout: LOAD_TIMEOUT });
+      const sector = panel.locator(".recharts-pie-sector").first();
+      await expect(sector).toBeVisible({ timeout: LOAD_TIMEOUT });
 
-      await surface.hover({ position: { x: 300, y: 150 } });
+      await sector.hover({ force: true });
 
       const tooltip = panel.locator(".recharts-tooltip-wrapper");
       await expect(tooltip).toBeVisible({ timeout: LOAD_TIMEOUT });
