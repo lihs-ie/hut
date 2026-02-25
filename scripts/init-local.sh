@@ -68,4 +68,4 @@ echo -e "${BLUE}  - Admin:        http://localhost:3001${NC}"
 echo -e "${BLUE}  - Emulator UI:  http://localhost:4000${NC}"
 echo ""
 
-pnpm dev
+cd applications/frontend && pnpm dev

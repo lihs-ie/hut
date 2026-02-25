@@ -6,8 +6,7 @@
   "scripts": {
     "setup": "bash ./scripts/setup.sh",
     "init:local": "bash ./scripts/init-local.sh",
-    "dev:local": "bash ./scripts/dev-local.sh",
-    "dev": "cd applications/frontend && pnpm dev",
+    "dev": "bash ./scripts/dev.sh",
     "dev:reader": "cd applications/frontend && pnpm dev:reader",
     "dev:admin": "cd applications/frontend && pnpm dev:admin",
     "build": "cd applications/frontend && pnpm build",
