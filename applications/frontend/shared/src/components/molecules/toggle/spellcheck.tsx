@@ -18,6 +18,7 @@ export const SpellcheckToggle = (props: Props) => {
       <SimpleSwitch
         checked={props.checked}
         onChange={props.onChange}
+        aria-label="スペルチェック"
       />
     </div>
   );
