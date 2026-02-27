@@ -1,0 +1,31 @@
+.container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  padding: 1.5rem 2rem;
+  line-height: 1.75;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+  color: transparent;
+}
+
+.highlight {
+  background-color: transparent;
+  background-image: linear-gradient(
+    to right,
+    var(--destructive) 50%,
+    transparent 50%
+  );
+  background-size: 4px 2px;
+  background-repeat: repeat-x;
+  background-position: bottom left;
+  color: transparent;
+  padding-bottom: 2px;
+}
