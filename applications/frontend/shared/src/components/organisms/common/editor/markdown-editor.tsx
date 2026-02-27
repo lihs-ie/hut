@@ -20,7 +20,7 @@ export type ImageUploadConfig = {
   uploadAction: (file: File | Blob, path: string) => Promise<string>;
 };
 
-export type Props = {
+type Props = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -28,6 +28,7 @@ export type Props = {
   onImageUploaded?: (imageIdentifier: ImageIdentifier, url: string) => void;
   onUploadingChange?: (uploading: boolean) => void;
   onSave?: () => void;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 };
 
 export const MarkdownEditor = (props: Props) => {

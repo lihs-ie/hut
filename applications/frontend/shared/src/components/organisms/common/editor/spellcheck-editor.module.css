@@ -1,0 +1,12 @@
+.container {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
