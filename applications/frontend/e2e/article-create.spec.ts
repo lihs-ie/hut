@@ -90,7 +90,7 @@ const publishNewArticle = async ({ page }: TestArgs): Promise<void> => {
 
   await page.getByRole("button", { name: "React" }).click();
 
-  const publishCheckbox = page.getByRole("checkbox");
+  const publishCheckbox = page.getByRole("checkbox", { name: "公開" });
   await page.getByPlaceholder("タイトルを入力").scrollIntoViewIfNeeded();
   await publishCheckbox.evaluate((element: HTMLInputElement) => {
     element.click();

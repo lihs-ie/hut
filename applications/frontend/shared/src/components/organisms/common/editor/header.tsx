@@ -47,6 +47,7 @@ export const EditorHeader = (props: Props) => {
             <SimpleSwitch
               checked={props.isPublished}
               onChange={props.onPublishChange}
+              aria-label="公開"
             />
           </div>
 

@@ -31,7 +31,7 @@ test.describe.serial("article edit tests", () => {
     const titleInput = page.getByPlaceholder("タイトルを入力");
     await expect(titleInput).toHaveValue(draftArticleTitle);
 
-    const publishSwitch = page.getByRole("checkbox");
+    const publishSwitch = page.getByRole("checkbox", { name: "公開" });
     await expect(publishSwitch).not.toBeChecked();
 
     await expect(page.getByRole("button", { name: /下書き保存/ })).toBeVisible();
@@ -70,7 +70,7 @@ test.describe.serial("article edit tests", () => {
   test("toggle publish switch changes button", async ({ page }: TestArgs) => {
     await page.goto(`/articles/${draftArticleSlug}/edit`, { waitUntil: "load" });
 
-    const publishSwitch = page.getByRole("checkbox");
+    const publishSwitch = page.getByRole("checkbox", { name: "公開" });
     await expect(publishSwitch).not.toBeChecked();
     await expect(page.getByRole("button", { name: /下書き保存/ })).toBeVisible();
 
