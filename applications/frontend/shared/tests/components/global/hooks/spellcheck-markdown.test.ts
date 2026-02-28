@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   tokenizeMarkdown,
   extractCheckableSegments,
-} from "@shared/domains/common/markdown";
+} from "@shared/components/global/hooks/spellcheck-markdown";
 
-describe("domains/common/markdown tokenize", () => {
+describe("components/global/hooks/spellcheck-markdown", () => {
   describe("tokenizeMarkdown", () => {
     describe("フロントマターの除外", () => {
       it("フロントマターをfrontmatterトークンとして分離する", () => {

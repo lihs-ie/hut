@@ -2,7 +2,7 @@ import type {
   SpellCheckRequest,
   SpellCheckResponse,
   SpellCheckIssue,
-} from "@shared/domains/spellcheck/common";
+} from "./spellcheck-protocol";
 
 type NSpell = {
   correct: (word: string) => boolean;

@@ -7,7 +7,7 @@ import { TextMirror } from "@shared/components/molecules/overlay/mirror";
 import { SuggestionTooltip } from "@shared/components/molecules/tooltip/suggestion";
 import { useSpellcheck } from "@shared/components/global/hooks/use-spellcheck";
 import type { ImageIdentifier } from "@shared/domains/image";
-import type { SpellCheckIssue } from "@shared/domains/spellcheck/common";
+import type { SpellCheckIssue } from "@shared/components/global/workers/spellcheck-protocol";
 import styles from "./spellcheck-editor.module.css";
 
 type Props = {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { SpellCheckIssue } from "@shared/domains/spellcheck/common";
+import type { SpellCheckIssue } from "@shared/components/global/workers/spellcheck-protocol";
 import styles from "./mirror.module.css";
 
 type Props = {

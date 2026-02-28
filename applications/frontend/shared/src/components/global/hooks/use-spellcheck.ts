@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "@shared/components/global/hooks/use-debounce";
-import { extractCheckableSegments } from "@shared/domains/common/markdown";
+import { extractCheckableSegments } from "./spellcheck-markdown";
 import type {
   SpellCheckIssue,
   SpellCheckResponse,
-} from "@shared/domains/spellcheck/common";
+} from "../workers/spellcheck-protocol";
 
 type UseSpellcheckOptions = {
   enabled: boolean;
