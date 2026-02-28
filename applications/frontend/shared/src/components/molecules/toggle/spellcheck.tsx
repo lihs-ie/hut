@@ -1,5 +1,3 @@
-"use client";
-
 import { SimpleSwitch } from "@shared/components/atoms/toggle/simple";
 import styles from "./spellcheck.module.css";
 

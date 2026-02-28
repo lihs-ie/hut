@@ -1,22 +1,20 @@
-"use client";
-
-import { useMemo } from "react";
 import type { SpellCheckIssue } from "@shared/components/global/workers/spellcheck-protocol";
 import styles from "./mirror.module.css";
-
-type Props = {
-  text: string;
-  issues: SpellCheckIssue[];
-  scrollTop: number;
-  scrollLeft: number;
-};
 
 type Segment = {
   text: string;
   highlighted: boolean;
 };
 
-const buildSegments = (
+type Props = {
+  segments: Segment[];
+  scrollTop: number;
+  scrollLeft: number;
+};
+
+export type { Segment };
+
+export const buildSegments = (
   text: string,
   issues: SpellCheckIssue[],
 ): Segment[] => {
@@ -24,7 +22,7 @@ const buildSegments = (
     return [{ text, highlighted: false }];
   }
 
-  const sorted = [...issues].sort((a, b) => a.offset - b.offset);
+  const sorted = issues.toSorted((a, b) => a.offset - b.offset);
   const segments: Segment[] = [];
   let position = 0;
 
@@ -55,11 +53,6 @@ const buildSegments = (
 };
 
 export const TextMirror = (props: Props) => {
-  const segments = useMemo(
-    () => buildSegments(props.text, props.issues),
-    [props.text, props.issues],
-  );
-
   return (
     <div
       className={styles.container}
@@ -67,7 +60,7 @@ export const TextMirror = (props: Props) => {
         transform: `translate(${-props.scrollLeft}px, ${-props.scrollTop}px)`,
       }}
     >
-      {segments.map((segment, index) =>
+      {props.segments.map((segment, index) =>
         segment.highlighted ? (
           <mark key={index} className={styles.highlight}>
             {segment.text}
