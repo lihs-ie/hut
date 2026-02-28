@@ -29,29 +29,15 @@ import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
 import { ImageIdentifier } from "@shared/domains/image";
 import { extractImageUrls } from "@shared/domains/common/markdown";
 
-const MarkdownEditor = dynamic(
+const SpellcheckEditor = dynamic(
   () =>
-    import("@shared/components/organisms/common/editor/markdown-editor").then(
-      (module) => module.MarkdownEditor,
-    ),
+    import(
+      "@shared/components/organisms/common/editor/spellcheck-editor"
+    ).then((module) => module.SpellcheckEditor),
   {
     ssr: false,
     loading: () => (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          minHeight: "100vh",
-          backgroundColor: "var(--muted)",
-          borderRadius: "var(--radius-md)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "var(--muted-foreground)",
-        }}
-      >
-        エディタを読み込み中...
-      </div>
+      <div className={styles.loading}>エディタを読み込み中...</div>
     ),
   },
 );
@@ -84,6 +70,7 @@ export const ArticleEdit = (props: Props) => {
   const [tags, setTags] = useState<TagIdentifier[]>(props.initial?.tags ?? []);
   const [images, setImages] = useState<ImageIdentifier[]>(props.initial?.images ?? []);
   const [isEditorUploading, setIsEditorUploading] = useState(false);
+  const [spellcheckEnabled, setSpellcheckEnabled] = useState(false);
   const imageUrlToIdentifierMap = useRef<Map<string, ImageIdentifier>>(new Map());
 
   const handleTitleChange = useCallback((newTitle: string) => {
@@ -195,12 +182,14 @@ export const ArticleEdit = (props: Props) => {
           persist={execute}
           isLoading={isLoading}
           isUploading={isEditorUploading}
+          spellcheckEnabled={spellcheckEnabled}
+          onSpellcheckChange={setSpellcheckEnabled}
         />
       </div>
 
       <div className={styles.content}>
         <div className={styles.editor}>
-          <MarkdownEditor
+          <SpellcheckEditor
             value={content}
             onChange={handleContentChange}
             imageUpload={{
@@ -211,6 +200,7 @@ export const ArticleEdit = (props: Props) => {
             }}
             onImageUploaded={handleImageUploaded}
             onUploadingChange={setIsEditorUploading}
+            spellcheckEnabled={spellcheckEnabled}
           />
           <div className={styles.tags}>
             <div className={styles["tags-header"]}>

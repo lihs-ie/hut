@@ -17,17 +17,19 @@ export type ImageUploadConfig = {
   uploadAction: (file: File | Blob, path: string) => Promise<string>;
 };
 
-export type Props = {
+type Props = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   imageUpload?: ImageUploadConfig;
   onImageUploaded?: (imageIdentifier: ImageIdentifier, url: string) => void;
   onUploadingChange?: (uploading: boolean) => void;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 };
 
 export const MarkdownEditor = (props: Props) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const internalRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = props.textareaRef ?? internalRef;
   const valueRef = useRef(props.value);
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export const MarkdownEditor = (props: Props) => {
         textarea.focus();
       });
     },
-    [props],
+    [props, textareaRef],
   );
 
   const replacePlaceholder = useCallback(

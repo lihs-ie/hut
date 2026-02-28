@@ -44,7 +44,7 @@ test.describe.serial("article edit tests", () => {
     await expect(titleInput).toHaveValue(draftArticleTitle);
 
     // Verify publish switch is OFF (article is draft)
-    const publishSwitch = page.getByRole("checkbox");
+    const publishSwitch = page.getByRole("checkbox", { name: "公開" });
     await expect(publishSwitch).not.toBeChecked();
 
     // Verify button shows "下書き保存"
@@ -105,7 +105,7 @@ test.describe.serial("article edit tests", () => {
     await page.goto(`/articles/${draftArticleSlug}/edit`);
 
     // Verify it's a draft
-    const publishSwitch = page.getByRole("checkbox");
+    const publishSwitch = page.getByRole("checkbox", { name: "公開" });
     await expect(publishSwitch).not.toBeChecked();
     await expect(page.getByRole("button", { name: /下書き保存/ })).toBeVisible();
 

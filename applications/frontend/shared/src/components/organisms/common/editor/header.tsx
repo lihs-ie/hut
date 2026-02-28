@@ -1,10 +1,11 @@
 import { SaveIcon } from "@shared/components/atoms/icon/save";
 import { SimpleSwitch } from "@shared/components/atoms/toggle/simple";
+import { SpellcheckToggle } from "@shared/components/molecules/toggle/spellcheck";
 import styles from "./header.module.css";
 import { useRouter } from "next/navigation";
 import { BackButton } from "@shared/components/molecules/button/back";
 
-export type Props = {
+type Props = {
   title: string;
   onTitleChange: (title: string) => void;
   isPublished: boolean;
@@ -12,6 +13,8 @@ export type Props = {
   persist: () => Promise<void>;
   isLoading?: boolean;
   isUploading?: boolean;
+  spellcheckEnabled?: boolean;
+  onSpellcheckChange?: (enabled: boolean) => void;
 };
 
 export const EditorHeader = (props: Props) => {
@@ -32,11 +35,19 @@ export const EditorHeader = (props: Props) => {
         </div>
 
         <div className={styles["right-section"]}>
+          {props.onSpellcheckChange && (
+            <SpellcheckToggle
+              checked={props.spellcheckEnabled ?? false}
+              onChange={props.onSpellcheckChange}
+            />
+          )}
+
           <div className={styles["publish-toggle"]}>
             <span className={styles["publish-label"]}>公開</span>
             <SimpleSwitch
               checked={props.isPublished}
               onChange={props.onPublishChange}
+              aria-label="公開"
             />
           </div>
 
