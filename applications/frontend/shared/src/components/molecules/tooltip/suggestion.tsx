@@ -1,5 +1,3 @@
-"use client";
-
 import styles from "./suggestion.module.css";
 
 type Props = {

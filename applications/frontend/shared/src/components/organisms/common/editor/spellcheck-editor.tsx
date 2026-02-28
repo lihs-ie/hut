@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { MarkdownEditor } from "@shared/components/organisms/common/editor/markdown-editor";
 import type { ImageUploadConfig } from "@shared/components/organisms/common/editor/markdown-editor";
-import { TextMirror } from "@shared/components/molecules/overlay/mirror";
+import { TextMirror, buildSegments } from "@shared/components/molecules/overlay/mirror";
 import { SuggestionTooltip } from "@shared/components/molecules/tooltip/suggestion";
 import { useSpellcheck } from "@shared/components/global/hooks/use-spellcheck";
 import type { ImageIdentifier } from "@shared/domains/image";
@@ -35,6 +35,11 @@ export const SpellcheckEditor = (props: Props) => {
   const { issues } = useSpellcheck(props.value, {
     enabled: props.spellcheckEnabled,
   });
+
+  const mirrorSegments = useMemo(
+    () => buildSegments(props.value, issues),
+    [props.value, issues],
+  );
 
   const handleScroll = useCallback(() => {
     const textarea = textareaRef.current;
@@ -74,28 +79,31 @@ export const SpellcheckEditor = (props: Props) => {
     [props.spellcheckEnabled, issues],
   );
 
+  const currentValue = props.value;
+  const onChange = props.onChange;
+
   const handleSuggestionSelect = useCallback(
     (suggestion: string) => {
       if (!tooltip) {
         return;
       }
 
-      const before = props.value.substring(0, tooltip.issue.offset);
-      const after = props.value.substring(
+      const before = currentValue.substring(0, tooltip.issue.offset);
+      const after = currentValue.substring(
         tooltip.issue.offset + tooltip.issue.length,
       );
-      props.onChange(before + suggestion + after);
+      onChange(before + suggestion + after);
       setTooltip(null);
     },
-    [props, tooltip],
+    [currentValue, onChange, tooltip],
   );
 
   const handleChange = useCallback(
     (value: string) => {
       setTooltip(null);
-      props.onChange(value);
+      onChange(value);
     },
-    [props],
+    [onChange],
   );
 
   return (
@@ -107,8 +115,7 @@ export const SpellcheckEditor = (props: Props) => {
       >
         {props.spellcheckEnabled && issues.length > 0 && (
           <TextMirror
-            text={props.value}
-            issues={issues}
+            segments={mirrorSegments}
             scrollTop={scrollTop}
             scrollLeft={scrollLeft}
           />

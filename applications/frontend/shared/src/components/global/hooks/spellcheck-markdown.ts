@@ -197,7 +197,13 @@ export const extractCheckableSegments = (
   text: string,
 ): Array<{ offset: number; text: string }> => {
   const tokens = tokenizeMarkdown(text);
-  return tokens
-    .filter((token) => token.type === "text")
-    .map((token) => ({ offset: token.offset, text: token.content }));
+  return tokens.reduce<Array<{ offset: number; text: string }>>(
+    (segments, token) => {
+      if (token.type === "text") {
+        segments.push({ offset: token.offset, text: token.content });
+      }
+      return segments;
+    },
+    [],
+  );
 };
