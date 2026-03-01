@@ -1,4 +1,4 @@
-FROM node:25.6.1-slim
+FROM node:25.7.0-slim
 
 RUN apt-get update && apt-get install -y \
     wget \
