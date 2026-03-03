@@ -7,6 +7,25 @@ resource "google_firestore_database" "this" {
   delete_protection_state = var.delete_protection ? "DELETE_PROTECTION_ENABLED" : "DELETE_PROTECTION_DISABLED"
 }
 
+resource "google_firebaserules_ruleset" "firestore" {
+  count   = var.rules_file != null ? 1 : 0
+  project = var.project_id
+
+  source {
+    files {
+      name    = "firestore.rules"
+      content = file(var.rules_file)
+    }
+  }
+}
+
+resource "google_firebaserules_release" "firestore" {
+  count        = var.rules_file != null ? 1 : 0
+  project      = var.project_id
+  name         = "cloud.firestore/database/${google_firestore_database.this.name}"
+  ruleset_name = google_firebaserules_ruleset.firestore[0].name
+}
+
 resource "google_firestore_backup_schedule" "daily" {
   count = var.enable_daily_backup ? 1 : 0
 
