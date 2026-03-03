@@ -309,6 +309,7 @@ module "github_actions_iam" {
   deployer_roles = [
     "roles/run.developer",
     "roles/artifactregistry.writer",
+    "roles/iam.serviceAccountUser",
   ]
 }
 
