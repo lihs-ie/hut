@@ -19,7 +19,7 @@
   "dependencies": {
     "@shikijs/rehype": "^4.0.1",
     "@types/mdast": "^4.0.4",
-    "firebase": "^12.7.0",
+    "firebase": "^12.10.0",
     "hash-it": "^7.0.2",
     "react-syntax-highlighter": "^16.1.0",
     "recharts": "^3.7.0",
