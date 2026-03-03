@@ -28,13 +28,8 @@ env:
   REGION: asia-northeast1
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
-    permissions:
-      contents: read
-      id-token: write
-
     steps:
       - name: Validate input combination
         run: |
@@ -47,6 +42,15 @@ jobs:
             exit 1
           fi
 
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
       - name: Checkout
         uses: actions/checkout@v6
 

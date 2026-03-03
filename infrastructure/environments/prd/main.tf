@@ -305,6 +305,11 @@ module "github_actions_iam" {
 
   project_id        = var.project_id
   github_repository = var.github_repository
+
+  deployer_roles = [
+    "roles/run.developer",
+    "roles/artifactregistry.writer",
+  ]
 }
 
 module "billing_export" {
