@@ -11,12 +11,14 @@ on:
           - reader
           - admin
           - search-token-worker
+          - image-cleanup-worker
       environment:
         description: "Target environment"
         required: true
         type: choice
         options:
           - stg
+          - prd
       tag:
         description: "Image tag (defaults to git SHA)"
         required: false
@@ -28,11 +30,23 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     permissions:
       contents: read
       id-token: write
 
     steps:
+      - name: Validate input combination
+        run: |
+          if [ "${{ inputs.application }}" = "reader" ] && [ "${{ inputs.environment }}" = "prd" ]; then
+            echo "::error::reader cannot be deployed to prd environment"
+            exit 1
+          fi
+          if [ "${{ inputs.application }}" = "image-cleanup-worker" ] && [ "${{ inputs.environment }}" = "stg" ]; then
+            echo "::error::image-cleanup-worker cannot be deployed to stg environment"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -54,6 +68,8 @@ jobs:
           fi
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
 
+          ENV="${{ inputs.environment }}"
+
           case "${{ inputs.application }}" in
             reader)
               echo "service_name=hut-stg-reader" >> "${GITHUB_OUTPUT}"
@@ -64,7 +80,11 @@ jobs:
               echo "app_port=3000" >> "${GITHUB_OUTPUT}"
               ;;
             admin)
-              echo "service_name=hut-stg-admin" >> "${GITHUB_OUTPUT}"
+              if [ "${ENV}" = "prd" ]; then
+                echo "service_name=hut-prd-admin" >> "${GITHUB_OUTPUT}"
+              else
+                echo "service_name=hut-stg-admin" >> "${GITHUB_OUTPUT}"
+              fi
               echo "dockerfile=applications/frontend/Dockerfile" >> "${GITHUB_OUTPUT}"
               echo "context=applications/frontend" >> "${GITHUB_OUTPUT}"
               echo "app_type=frontend" >> "${GITHUB_OUTPUT}"
@@ -72,11 +92,23 @@ jobs:
               echo "app_port=3001" >> "${GITHUB_OUTPUT}"
               ;;
             search-token-worker)
-              echo "service_name=stg-search-token-worker" >> "${GITHUB_OUTPUT}"
+              if [ "${ENV}" = "prd" ]; then
+                echo "service_name=search-token-worker" >> "${GITHUB_OUTPUT}"
+              else
+                echo "service_name=stg-search-token-worker" >> "${GITHUB_OUTPUT}"
+              fi
               echo "dockerfile=applications/search-token-worker/Dockerfile" >> "${GITHUB_OUTPUT}"
               echo "context=applications/search-token-worker" >> "${GITHUB_OUTPUT}"
               echo "app_type=worker" >> "${GITHUB_OUTPUT}"
               echo "app_name=search-token-worker" >> "${GITHUB_OUTPUT}"
+              echo "app_port=8080" >> "${GITHUB_OUTPUT}"
+              ;;
+            image-cleanup-worker)
+              echo "service_name=image-cleanup-worker" >> "${GITHUB_OUTPUT}"
+              echo "dockerfile=applications/image-cleanup-worker/Dockerfile" >> "${GITHUB_OUTPUT}"
+              echo "context=applications/image-cleanup-worker" >> "${GITHUB_OUTPUT}"
+              echo "app_type=worker" >> "${GITHUB_OUTPUT}"
+              echo "app_name=image-cleanup-worker" >> "${GITHUB_OUTPUT}"
               echo "app_port=8080" >> "${GITHUB_OUTPUT}"
               ;;
           esac
@@ -91,7 +123,7 @@ jobs:
           context: ${{ steps.vars.outputs.context }}
           file: ${{ steps.vars.outputs.dockerfile }}
           push: true
-          tags: ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-stg/${{ inputs.application }}:${{ steps.vars.outputs.tag }}
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-${{ inputs.environment }}/${{ inputs.application }}:${{ steps.vars.outputs.tag }}
           cache-from: type=gha,scope=${{ inputs.application }}
           cache-to: type=gha,mode=max,scope=${{ inputs.application }}
           build-args: |
@@ -108,7 +140,7 @@ jobs:
 
       - name: Deploy to Cloud Run
         run: |
-          IMAGE="${REGION}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-stg/${{ inputs.application }}:${{ steps.vars.outputs.tag }}"
+          IMAGE="${REGION}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-${{ inputs.environment }}/${{ inputs.application }}:${{ steps.vars.outputs.tag }}"
 
           DEPLOY_ARGS=(
             --image "${IMAGE}"

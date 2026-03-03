@@ -300,6 +300,13 @@ resource "google_cloud_run_v2_service_iam_member" "search_token_worker_invoker" 
   member   = "serviceAccount:${module.iam.service_account_emails["hut-prd-search-token-worker"]}"
 }
 
+module "github_actions_iam" {
+  source = "../../modules/github_actions_iam"
+
+  project_id        = var.project_id
+  github_repository = var.github_repository
+}
+
 module "billing_export" {
   source = "../../modules/billing_export"
 

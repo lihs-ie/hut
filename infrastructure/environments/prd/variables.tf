@@ -33,6 +33,16 @@ variable "authorized_members" {
   type        = list(string)
 }
 
+variable "github_repository" {
+  description = "GitHub repository in the format 'owner/repo' for Workload Identity Federation"
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$", var.github_repository))
+    error_message = "The github_repository must be in the format 'owner/repo'."
+  }
+}
+
 variable "billing_export_service_account" {
   description = "Service account email used by GCP Billing to write export data to BigQuery"
   type        = string
