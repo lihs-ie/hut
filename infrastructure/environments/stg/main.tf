@@ -74,6 +74,7 @@ module "firestore" {
   project_id    = var.project_id
   location_id   = var.firestore_location
   database_name = "(default)"
+  rules_file    = "${path.module}/../../../firestore.rules"
 }
 
 module "firebase_storage" {

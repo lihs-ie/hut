@@ -88,6 +88,7 @@ module "firestore" {
   delete_protection   = true
   enable_daily_backup = true
   backup_retention    = "604800s"
+  rules_file          = "${path.module}/../../../firestore.rules"
 }
 
 module "firebase_storage" {
