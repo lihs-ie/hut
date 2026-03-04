@@ -49,6 +49,9 @@ storybook-static
 
 references
 
+# Terraform secrets
+*.auto.tfvars
+
 .pnpm-store
 
 # Firebase Emulator
