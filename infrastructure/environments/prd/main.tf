@@ -190,8 +190,9 @@ module "cloudrun_admin" {
   allow_unauthenticated = false
 
   environment_variables = {
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID = var.project_id
-    FIREBASE_PROJECT_ID             = var.project_id
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID   = var.project_id
+    FIREBASE_PROJECT_ID               = var.project_id
+    NEXT_PUBLIC_USE_FIREBASE_EMULATOR = "false"
   }
 
   labels = local.common_labels
