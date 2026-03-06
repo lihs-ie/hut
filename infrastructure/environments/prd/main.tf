@@ -43,6 +43,7 @@ module "iam" {
       description  = "Service account for the PRD admin Cloud Run service"
       roles = [
         "roles/datastore.user",
+        "roles/firebaseauth.admin",
         "roles/pubsub.publisher",
         "roles/secretmanager.secretAccessor",
       ]
@@ -88,6 +89,20 @@ module "firestore" {
   delete_protection   = true
   enable_daily_backup = true
   backup_retention    = "604800s"
+  rules_file          = "${path.module}/../../../firestore.rules"
+}
+
+module "identity_platform" {
+  source = "../../modules/identity_platform"
+
+  project_id = var.project_id
+  authorized_domains = [
+    "localhost",
+    "${var.project_id}.firebaseapp.com",
+    "${var.project_id}.web.app",
+  ]
+  oauth_client_id     = var.oauth_client_id
+  oauth_client_secret = var.oauth_client_secret
 }
 
 module "firebase_storage" {
@@ -176,8 +191,9 @@ module "cloudrun_admin" {
   allow_unauthenticated = false
 
   environment_variables = {
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID = var.project_id
-    FIREBASE_PROJECT_ID             = var.project_id
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID   = var.project_id
+    FIREBASE_PROJECT_ID               = var.project_id
+    NEXT_PUBLIC_USE_FIREBASE_EMULATOR = "false"
   }
 
   labels = local.common_labels

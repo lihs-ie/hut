@@ -74,6 +74,20 @@ module "firestore" {
   project_id    = var.project_id
   location_id   = var.firestore_location
   database_name = "(default)"
+  rules_file    = "${path.module}/../../../firestore.rules"
+}
+
+module "identity_platform" {
+  source = "../../modules/identity_platform"
+
+  project_id = var.project_id
+  authorized_domains = [
+    "localhost",
+    "${var.project_id}.firebaseapp.com",
+    "${var.project_id}.web.app",
+  ]
+  oauth_client_id     = var.oauth_client_id
+  oauth_client_secret = var.oauth_client_secret
 }
 
 module "firebase_storage" {
