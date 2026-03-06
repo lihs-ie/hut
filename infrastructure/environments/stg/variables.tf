@@ -43,6 +43,18 @@ variable "github_repository" {
   }
 }
 
+variable "oauth_client_id" {
+  description = "OAuth client ID for Google sign-in (Identity Platform)"
+  type        = string
+  sensitive   = true
+}
+
+variable "oauth_client_secret" {
+  description = "OAuth client secret for Google sign-in (Identity Platform)"
+  type        = string
+  sensitive   = true
+}
+
 variable "billing_export_service_account" {
   description = "Service account email used by GCP Billing to write export data to BigQuery"
   type        = string

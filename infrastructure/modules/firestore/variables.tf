@@ -31,3 +31,9 @@ variable "backup_retention" {
   type        = string
   default     = "604800s"
 }
+
+variable "rules_file" {
+  description = "Path to the Firestore security rules file"
+  type        = string
+  default     = null
+}
