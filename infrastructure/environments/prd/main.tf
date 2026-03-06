@@ -43,6 +43,7 @@ module "iam" {
       description  = "Service account for the PRD admin Cloud Run service"
       roles = [
         "roles/datastore.user",
+        "roles/firebaseauth.admin",
         "roles/pubsub.publisher",
         "roles/secretmanager.secretAccessor",
       ]
