@@ -36,7 +36,7 @@ export default defineConfig({
             "**/infrastructures/**",
             "admin/tests/actions/!(analytics)**",
             "admin/tests/aspects/auth/**",
-            "admin/tests/components/global/**",
+            "admin/tests/components/global/hooks/login.test.ts",
             "admin/tests/infrastructure/event.test.ts",
           ],
           environment: "jsdom",
