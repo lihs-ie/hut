@@ -3,6 +3,12 @@ import { Forger } from "@lihs-ie/forger-ts";
 import { ProfileMold } from "@shared-tests/support/molds/domains/user/common";
 import type { Profile, UnvalidatedCareer } from "@shared/domains/user";
 import type { UnvalidatedTechnologyStack } from "@shared/domains/common/tech";
+import { TechnologyCategory } from "@shared/domains/common/tech";
+import {
+  TechStackWithCategory,
+  buildTechStacksMap,
+  initializeFromProfileWithCategory,
+} from "../../../../src/app/admin/_components/organisms/admin/profile/edit/index.hooks";
 
 vi.mock("@shared/components/global/hooks/use-server-action", () => ({
   useServerAction: (action: () => Promise<unknown>) => ({
@@ -31,6 +37,14 @@ const createEmptyTechStack = (type: "personal" | "work" = "personal"): Unvalidat
   type,
 });
 
+const createEmptyTechStackWithCategory = (category: string = "backend"): TechStackWithCategory => ({
+  tag: "",
+  from: new Date(),
+  continue: false,
+  type: "personal",
+  category,
+});
+
 const createEmptyCareer = (): UnvalidatedCareer => ({
   company: "",
   role: "",
@@ -56,7 +70,7 @@ const initializeFromProfile = (initial: Profile | undefined): {
   },
   techStacks: initial?.techStacks
     ? Array.from(initial.techStacks.entries())
-        .flatMap(([_, stacks]) => stacks)
+        .flatMap(([_category, stacks]) => stacks)
         .map((techStack) => ({
           tag: techStack.tag,
           from: techStack.from,
@@ -123,6 +137,14 @@ describe("hooks/profile-edit", () => {
         expect(newTechStacks).toHaveLength(2);
         expect(newTechStacks[0].tag).toBe("react");
         expect(newTechStacks[1].tag).toBe("");
+      });
+
+      it("新しい技術スタックはデフォルトカテゴリ backend で追加される", () => {
+        const techStacks: TechStackWithCategory[] = [];
+        const newTechStacks = techStacks.concat(createEmptyTechStackWithCategory("backend"));
+
+        expect(newTechStacks).toHaveLength(1);
+        expect(newTechStacks[0].category).toBe("backend");
       });
     });
 
@@ -235,15 +257,104 @@ describe("hooks/profile-edit", () => {
       });
     });
 
-    describe("techStacks の初期化ロジック", () => {
+    describe("techStacks の初期化ロジック（initializeFromProfileWithCategory）", () => {
       it("Map から配列に変換する", () => {
         const initial = Forger(ProfileMold).forgeWithSeed(1);
-        const { techStacks } = initializeFromProfile(initial);
+        const techStacks = initializeFromProfileWithCategory(initial);
 
         const mapEntries = initial.techStacks ? Array.from(initial.techStacks.entries()) : [];
-        const expectedLength = mapEntries.reduce((sum, [_, stacks]) => sum + stacks.length, 0);
+        const expectedLength = mapEntries.reduce((sum, [_category, stacks]) => sum + stacks.length, 0);
 
         expect(techStacks.length).toBe(expectedLength);
+      });
+
+      it("初期プロファイルなしの場合は空配列を返す", () => {
+        const techStacks = initializeFromProfileWithCategory(undefined);
+        expect(techStacks).toEqual([]);
+      });
+
+      it("カテゴリ付きの初期化で各スタックにカテゴリが設定される", () => {
+        const initial = Forger(ProfileMold).forgeWithSeed(2);
+        const techStacks = initializeFromProfileWithCategory(initial);
+
+        techStacks.forEach((stack) => {
+          expect(stack.category).toBeDefined();
+          expect([TechnologyCategory.FRONTEND, TechnologyCategory.BACKEND]).toContain(stack.category);
+        });
+      });
+    });
+
+    describe("techStacks の Map 変換ロジック（buildTechStacksMap）", () => {
+      it("frontend と backend のスタックを正しく Map に変換する", () => {
+        const fromDate = new Date("2020-01-01");
+        const techStacksWithCategory: TechStackWithCategory[] = [
+          { tag: "tag-react", from: fromDate, continue: true, type: "personal", category: TechnologyCategory.FRONTEND },
+          { tag: "tag-vue", from: fromDate, continue: false, type: "business", category: TechnologyCategory.FRONTEND },
+          { tag: "tag-nodejs", from: fromDate, continue: true, type: "business", category: TechnologyCategory.BACKEND },
+        ];
+
+        const techStacksMap = buildTechStacksMap(techStacksWithCategory);
+
+        expect(techStacksMap).toBeInstanceOf(Map);
+        expect(techStacksMap.size).toBe(2);
+
+        const frontendStacks = techStacksMap.get(TechnologyCategory.FRONTEND);
+        expect(frontendStacks).toBeDefined();
+        expect(frontendStacks).toHaveLength(2);
+        expect(frontendStacks?.[0].tag).toBe("tag-react");
+        expect(frontendStacks?.[1].tag).toBe("tag-vue");
+
+        const backendStacks = techStacksMap.get(TechnologyCategory.BACKEND);
+        expect(backendStacks).toBeDefined();
+        expect(backendStacks).toHaveLength(1);
+        expect(backendStacks?.[0].tag).toBe("tag-nodejs");
+      });
+
+      it("空の techStacks は空の Map に変換される", () => {
+        const techStacksWithCategory: TechStackWithCategory[] = [];
+        const techStacksMap = buildTechStacksMap(techStacksWithCategory);
+
+        expect(techStacksMap).toBeInstanceOf(Map);
+        expect(techStacksMap.size).toBe(0);
+      });
+
+      it("単一カテゴリの techStacks は1エントリの Map になる", () => {
+        const techStacksWithCategory: TechStackWithCategory[] = [
+          { tag: "tag-react", from: new Date(), continue: true, type: "personal", category: TechnologyCategory.FRONTEND },
+          { tag: "tag-typescript", from: new Date(), continue: true, type: "personal", category: TechnologyCategory.FRONTEND },
+        ];
+
+        const techStacksMap = buildTechStacksMap(techStacksWithCategory);
+
+        expect(techStacksMap.size).toBe(1);
+        expect(techStacksMap.get(TechnologyCategory.FRONTEND)).toHaveLength(2);
+      });
+
+      it("カテゴリ付きでロードした techStacks を Map に戻したとき元のカテゴリが保持される", () => {
+        const initial = Forger(ProfileMold).forgeWithSeed(3);
+        const techStacksWithCategory = initializeFromProfileWithCategory(initial);
+        const rebuiltMap = buildTechStacksMap(techStacksWithCategory);
+
+        initial.techStacks.forEach((stacks, category) => {
+          const rebuiltStacks = rebuiltMap.get(category);
+          expect(rebuiltStacks).toBeDefined();
+          expect(rebuiltStacks).toHaveLength(stacks.length);
+          stacks.forEach((originalStack, index) => {
+            expect(rebuiltStacks?.[index].tag).toBe(originalStack.tag);
+          });
+        });
+      });
+
+      it("保存時に techStacks が new Map() ではなく実データの Map になる", () => {
+        const fromDate = new Date("2020-01-01");
+        const techStacksWithCategory: TechStackWithCategory[] = [
+          { tag: "tag-react", from: fromDate, continue: true, type: "personal", category: TechnologyCategory.FRONTEND },
+        ];
+
+        const techStacksMap = buildTechStacksMap(techStacksWithCategory);
+
+        expect(techStacksMap.size).toBeGreaterThan(0);
+        expect(techStacksMap.get(TechnologyCategory.FRONTEND)?.[0].tag).toBe("tag-react");
       });
     });
 
