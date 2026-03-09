@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@shikijs/rehype": "^4.0.1",
+    "@shikijs/rehype": "^4.0.2",
     "@types/mdast": "^4.0.4",
     "firebase": "^12.7.0",
     "hash-it": "^7.0.2",
