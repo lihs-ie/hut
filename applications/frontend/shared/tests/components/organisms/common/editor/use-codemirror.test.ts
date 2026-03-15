@@ -82,4 +82,36 @@ describe("useCodeMirror", () => {
       });
     }).not.toThrow();
   });
+
+  it("onPasteコールバックを受け取れる", () => {
+    const onChange = vi.fn();
+    const onPaste = vi.fn();
+    const { result } = renderHook(() =>
+      useCodeMirror({ value: "", onChange, onPaste })
+    );
+
+    expect(result.current.containerRef).toBeDefined();
+  });
+
+  it("replaceTextメソッドを返す", () => {
+    const onChange = vi.fn();
+    const { result } = renderHook(() =>
+      useCodeMirror({ value: "", onChange })
+    );
+
+    expect(typeof result.current.replaceText).toBe("function");
+  });
+
+  it("replaceTextはエディタがない場合でもエラーを投げない", () => {
+    const onChange = vi.fn();
+    const { result } = renderHook(() =>
+      useCodeMirror({ value: "", onChange })
+    );
+
+    expect(() => {
+      act(() => {
+        result.current.replaceText("before", "after");
+      });
+    }).not.toThrow();
+  });
 });

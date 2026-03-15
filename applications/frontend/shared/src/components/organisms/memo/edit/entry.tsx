@@ -2,7 +2,7 @@
 
 import { SimpleCard } from "@shared/components/atoms/card/simple";
 import styles from "./entry.module.css";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { SimpleButton } from "@shared/components/atoms/button/simple";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
@@ -10,6 +10,7 @@ import { useImageDropzone } from "@shared/components/global/hooks/use-image-drop
 import { MemoIdentifier, UnvalidatedEntry } from "@shared/domains/memo";
 import { ImageIdentifier } from "@shared/domains/image";
 import { extractImageUrls } from "@shared/domains/common/markdown";
+import { SUPPORTED_IMAGE_MIME_TYPES, SupportedImageMimeType } from "@shared/domains/common/image-upload";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { DropzoneOverlay } from "@shared/components/molecules/overlay/dropzone";
 import { UploadStatus } from "@shared/components/molecules/upload/status";
@@ -57,18 +58,42 @@ export const EntryEditor = (props: Props) => {
     }
   }, []);
 
-  const { containerRef, insertText } = useCodeMirror({
+  const processFilesRef = useRef<((files: File[]) => Promise<void>) | null>(null);
+
+  const handlePasteFromEditor = useCallback((event: ClipboardEvent) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    const imageFiles: File[] = [];
+    for (const item of Array.from(items)) {
+      if (SUPPORTED_IMAGE_MIME_TYPES.includes(item.type as SupportedImageMimeType)) {
+        const file = item.getAsFile();
+        if (file) imageFiles.push(file);
+      }
+    }
+    if (imageFiles.length > 0) {
+      event.preventDefault();
+      processFilesRef.current?.(imageFiles);
+    }
+  }, []);
+
+  const handleDropFromEditor = useCallback((files: File[]) => {
+    processFilesRef.current?.(files);
+  }, []);
+
+  const { containerRef, insertText, replaceText } = useCodeMirror({
     value,
     onChange: handleValueChange,
     placeholder: "コメントを追加",
+    onPaste: handlePasteFromEditor,
+    onDrop: handleDropFromEditor,
   });
 
   const replacePlaceholder = useCallback(
     (placeholderId: string, replacement: string) => {
       const placeholder = `![uploading...](placeholder-${placeholderId})`;
-      setValue((previous) => previous.replace(placeholder, replacement));
+      replaceText(placeholder, replacement);
     },
-    []
+    [replaceText]
   );
 
   const handleImageUpload = useCallback(
@@ -113,6 +138,10 @@ export const EntryEditor = (props: Props) => {
     },
     [handleImageUpload, insertText]
   );
+
+  useEffect(() => {
+    processFilesRef.current = processFiles;
+  }, [processFiles]);
 
   const { isDragOver, handlers } = useImageDropzone({
     onFilesDropped: processFiles,
