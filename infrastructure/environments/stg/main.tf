@@ -217,11 +217,10 @@ module "cloudrun_admin" {
   allow_unauthenticated = false
 
   environment_variables = {
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID   = var.project_id
-    FIREBASE_PROJECT_ID               = var.project_id
-    DISALLOW_ROBOTS                   = "true"
-    DISABLE_SECURE_COOKIE             = "true"
-    SERVER_ACTIONS_ALLOWED_ORIGINS    = "localhost:8081"
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID = var.project_id
+    FIREBASE_PROJECT_ID             = var.project_id
+    DISALLOW_ROBOTS                 = "true"
+    DISABLE_SECURE_COOKIE           = "true"
   }
 
   labels = local.common_labels
