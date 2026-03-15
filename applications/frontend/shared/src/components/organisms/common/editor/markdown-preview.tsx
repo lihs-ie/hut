@@ -17,7 +17,7 @@ import { stripFrontmatter } from "@shared/components/global/matter";
 import { LinkCardClient } from "@shared/components/molecules/card/link.client";
 import { ContentImage } from "@shared/components/atoms/image/content";
 import React, { useEffect, useRef } from "react";
-import { parseMessageBox, parseAccordion, parseCodeBlockFilename, parseImageWidth } from "./zenn-markdown";
+import { parseMessageBox, parseAccordion, parseCodeBlockFilename, parseImageWidth } from "./markdown-extension";
 
 const escapeHtml = (text: string): string => {
   return text

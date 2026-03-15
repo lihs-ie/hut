@@ -7,9 +7,9 @@ import {
   parseAccordion,
   parseCodeBlockFilename,
   parseImageWidth,
-} from "@shared/components/organisms/common/editor/zenn-markdown";
+} from "@shared/components/organisms/common/editor/markdown-extension";
 
-describe("zenn-markdown", () => {
+describe("markdown-extension", () => {
   describe("parseMessageBox", () => {
     it(":::message ブロックをパースする", () => {
       const input = ":::message\nこれはメッセージです\n:::";
