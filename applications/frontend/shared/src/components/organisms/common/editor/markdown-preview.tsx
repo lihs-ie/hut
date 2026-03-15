@@ -19,6 +19,15 @@ import { ContentImage } from "@shared/components/atoms/image/content";
 import React, { useEffect, useRef } from "react";
 import { parseMessageBox, parseAccordion, parseCodeBlockFilename, parseImageWidth } from "./zenn-markdown";
 
+const escapeHtml = (text: string): string => {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 const languageLabels: Record<string, string> = {
   typescript: "TypeScript",
   ts: "TypeScript",
@@ -64,23 +73,24 @@ export const MarkdownPreview = (props: Props) => {
       const mermaid = module.default;
       mermaid.initialize({ startOnLoad: false, theme: "default" });
 
-      mermaidBlocks.forEach(async (block) => {
+      const renderPromises = Array.from(mermaidBlocks).map(async (block) => {
         const code = block.textContent ?? "";
         if (code.length > 2000) return;
 
-        const container = block.closest("[data-mermaid-container]");
-        if (!container) return;
+        const mermaidContainer = block.closest("[data-mermaid-container]");
+        if (!mermaidContainer) return;
 
         try {
           const { svg } = await mermaid.render(
             `mermaid-${Math.random().toString(36).slice(2)}`,
             code,
           );
-          container.innerHTML = svg;
+          mermaidContainer.innerHTML = svg;
         } catch {
-          container.innerHTML = `<pre>${code}</pre>`;
+          mermaidContainer.innerHTML = `<pre>${escapeHtml(code)}</pre>`;
         }
       });
+      Promise.all(renderPromises);
     });
   }, [processedContent]);
 

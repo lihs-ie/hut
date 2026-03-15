@@ -88,8 +88,9 @@ export const useCodeMirror = (props: UseCodeMirrorProps): UseCodeMirrorReturn =>
           isComposingRef.current = true;
           return false;
         },
-        compositionend: () => {
+        compositionend: (_event, view) => {
           isComposingRef.current = false;
+          onChangeRef.current(view.state.doc.toString());
           return false;
         },
       }),

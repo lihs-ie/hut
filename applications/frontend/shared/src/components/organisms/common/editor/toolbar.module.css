@@ -29,6 +29,11 @@
   border-color: var(--primary);
 }
 
+.button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
 .button:active {
   background-color: var(--primary);
   color: var(--primary-foreground);

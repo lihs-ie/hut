@@ -42,9 +42,24 @@ export const EntryEditor = (props: Props) => {
     uploadAction: props.uploadAction,
   });
 
+  const handleValueChange = useCallback((newValue: string) => {
+    setValue(newValue);
+    const currentUrls = extractImageUrls(newValue);
+    const removedIdentifiers: ImageIdentifier[] = [];
+    imageUrlToIdentifierMap.current.forEach((identifier, url) => {
+      if (!currentUrls.has(url)) {
+        removedIdentifiers.push(identifier);
+        imageUrlToIdentifierMap.current.delete(url);
+      }
+    });
+    if (removedIdentifiers.length > 0) {
+      setImages((previous) => previous.filter((id) => !removedIdentifiers.includes(id)));
+    }
+  }, []);
+
   const { containerRef, insertText } = useCodeMirror({
     value,
-    onChange: setValue,
+    onChange: handleValueChange,
     placeholder: "コメントを追加",
   });
 
@@ -88,21 +103,6 @@ export const EntryEditor = (props: Props) => {
     [props.memoIdentifier, imageUploadHook, replacePlaceholder]
   );
 
-  const handleValueChange = useCallback((newValue: string) => {
-    setValue(newValue);
-    const currentUrls = extractImageUrls(newValue);
-    const removedIdentifiers: ImageIdentifier[] = [];
-    imageUrlToIdentifierMap.current.forEach((identifier, url) => {
-      if (!currentUrls.has(url)) {
-        removedIdentifiers.push(identifier);
-        imageUrlToIdentifierMap.current.delete(url);
-      }
-    });
-    if (removedIdentifiers.length > 0) {
-      setImages((previous) => previous.filter((id) => !removedIdentifiers.includes(id)));
-    }
-  }, []);
-
   const processFiles = useCallback(
     async (files: File[]) => {
       for (const file of files) {
@@ -124,17 +124,19 @@ export const EntryEditor = (props: Props) => {
         <div className={styles.body}>
           <div className={styles.tabs}>
             <button
+              type="button"
               onClick={() => setActiveTab("markdown")}
               className={`${styles.tab} ${
-                activeTab === Tab.MARKDOWN && styles["tab.is-active"]
+                activeTab === Tab.MARKDOWN ? styles.active : ""
               }`}
             >
               Markdown
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab("preview")}
               className={`${styles.tab} ${
-                activeTab === Tab.PREVIEW && styles["tab.is-active"]
+                activeTab === Tab.PREVIEW ? styles.active : ""
               }`}
             >
               Preview
@@ -150,7 +152,7 @@ export const EntryEditor = (props: Props) => {
               {value ? (
                 <EntryPreview value={value} />
               ) : (
-                <p className={styles["preview.empty"]}>
+                <p className={styles.empty}>
                   プレビューするコンテンツがありません
                 </p>
               )}
