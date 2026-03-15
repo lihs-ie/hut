@@ -12,7 +12,7 @@ export type UseCodeMirrorProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   onSave?: () => void;
-  onPaste?: (event: ClipboardEvent) => void;
+  onPaste?: (event: ClipboardEvent) => boolean;
   onDrop?: (files: File[]) => void;
 };
 
@@ -109,14 +109,7 @@ export const useCodeMirror = (props: UseCodeMirrorProps): UseCodeMirrorReturn =>
         paste: (event) => {
           const handler = onPasteRef.current;
           if (!handler) return false;
-          const items = event.clipboardData?.items;
-          if (!items) return false;
-          const hasImage = Array.from(items).some((item) =>
-            item.type.startsWith("image/"),
-          );
-          if (!hasImage) return false;
-          handler(event);
-          return true;
+          return handler(event);
         },
         drop: (event) => {
           const handler = onDropRef.current;

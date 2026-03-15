@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { DropzoneOverlay } from "@shared/components/molecules/overlay/dropzone";
 import { UploadStatus } from "@shared/components/molecules/upload/status";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
 import { useImageDropzone } from "@shared/components/global/hooks/use-image-dropzone";
-import { ContentType, SUPPORTED_IMAGE_MIME_TYPES, SupportedImageMimeType } from "@shared/domains/common/image-upload";
+import { useEditorImageHandler } from "@shared/components/global/hooks/use-editor-image-handler";
+import { ContentType } from "@shared/domains/common/image-upload";
 import { ImageIdentifier } from "@shared/domains/image";
 import { useCodeMirror } from "./use-codemirror";
 import { EditorToolbar } from "./toolbar";
@@ -43,35 +44,16 @@ export const MarkdownEditor = (props: Props) => {
     onUploadingChange?.(imageUploadHook.isUploading);
   }, [onUploadingChange, imageUploadHook.isUploading]);
 
-  const processFilesRef = useRef<((files: File[]) => Promise<void>) | null>(null);
-
-  const handlePasteFromEditor = useCallback((event: ClipboardEvent) => {
-    const items = event.clipboardData?.items;
-    if (!items) return;
-    const imageFiles: File[] = [];
-    for (const item of Array.from(items)) {
-      if (SUPPORTED_IMAGE_MIME_TYPES.includes(item.type as SupportedImageMimeType)) {
-        const file = item.getAsFile();
-        if (file) imageFiles.push(file);
-      }
-    }
-    if (imageFiles.length > 0) {
-      event.preventDefault();
-      processFilesRef.current?.(imageFiles);
-    }
-  }, []);
-
-  const handleDropFromEditor = useCallback((files: File[]) => {
-    processFilesRef.current?.(files);
-  }, []);
+  const { handlePaste, handleDrop, setProcessFiles } =
+    useEditorImageHandler();
 
   const { containerRef, insertText, replaceText, focus } = useCodeMirror({
     value: props.value,
     onChange,
     placeholder: props.placeholder,
     onSave: props.onSave,
-    onPaste: imageUpload?.enabled ? handlePasteFromEditor : undefined,
-    onDrop: imageUpload?.enabled ? handleDropFromEditor : undefined,
+    onPaste: imageUpload?.enabled ? handlePaste : undefined,
+    onDrop: imageUpload?.enabled ? handleDrop : undefined,
   });
 
   const replacePlaceholder = useCallback(
@@ -127,8 +109,8 @@ export const MarkdownEditor = (props: Props) => {
   );
 
   useEffect(() => {
-    processFilesRef.current = processFiles;
-  }, [processFiles]);
+    setProcessFiles(processFiles);
+  }, [processFiles, setProcessFiles]);
 
   const handleImageButtonClick = useCallback(() => {
     const input = document.createElement("input");

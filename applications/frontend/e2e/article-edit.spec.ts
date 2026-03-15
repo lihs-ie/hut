@@ -12,9 +12,6 @@ const multiTagArticleSlug = "react-component-patterns";
 const multiTagArticleTitle = "Reactコンポーネント設計パターン";
 
 test.describe.serial("article edit tests", () => {
-  /**
-   * Test: Existing article data is displayed correctly.
-   */
   test("existing article data is displayed", async ({ page }: TestArgs) => {
     await page.goto(`/articles/${publishedArticleSlug}/edit`);
 
@@ -28,9 +25,6 @@ test.describe.serial("article edit tests", () => {
     await expect(page.getByRole("button", { name: "TypeScriptを削除" })).toBeVisible();
   });
 
-  /**
-   * Test: Draft article shows correct publish switch state.
-   */
   test("draft article shows correct state", async ({ page }: TestArgs) => {
     await page.goto(`/articles/${draftArticleSlug}/edit`);
 
@@ -43,9 +37,6 @@ test.describe.serial("article edit tests", () => {
     await expect(page.getByRole("button", { name: /下書き保存/ })).toBeVisible();
   });
 
-  /**
-   * Test: Remove a tag from article (non-destructive - just verifies UI).
-   */
   test("remove tag from article", async ({ page }: TestArgs) => {
     await page.goto(`/articles/${multiTagArticleSlug}/edit`);
 
@@ -61,9 +52,6 @@ test.describe.serial("article edit tests", () => {
     await expect(page.getByRole("button", { name: "React" })).toBeVisible();
   });
 
-  /**
-   * Test: Edit article content using CodeMirror editor.
-   */
   test("edit article content", async ({ page }: TestArgs) => {
     await page.goto(`/articles/${publishedArticleSlug}/edit`);
 
@@ -79,9 +67,6 @@ test.describe.serial("article edit tests", () => {
     await expect(page.getByRole("button", { name: /下書き保存|公開する/ })).toBeEnabled();
   });
 
-  /**
-   * Test: Toggle publish switch changes button text.
-   */
   test("toggle publish switch changes button", async ({ page }: TestArgs) => {
     await page.goto(`/articles/${draftArticleSlug}/edit`);
 
@@ -105,9 +90,6 @@ test.describe.serial("article edit tests", () => {
     await expect(page.getByRole("button", { name: /下書き保存/ })).toBeVisible();
   });
 
-  /**
-   * Test: Editor toolbar buttons are visible.
-   */
   test("editor toolbar is visible", async ({ page }: TestArgs) => {
     await page.goto(`/articles/${publishedArticleSlug}/edit`);
 
@@ -118,9 +100,6 @@ test.describe.serial("article edit tests", () => {
     await expect(page.getByRole("button", { name: /リンク/ })).toBeVisible();
   });
 
-  /**
-   * Test: Image paste inserts placeholder into editor.
-   */
   test("image paste inserts placeholder into editor", async ({ page }: TestArgs) => {
     await page.goto(`/articles/${publishedArticleSlug}/edit`);
 
@@ -134,7 +113,7 @@ test.describe.serial("article edit tests", () => {
       "base64"
     );
 
-    await page.evaluate(async (imageData) => {
+    await page.evaluate((imageData) => {
       const uint8Array = new Uint8Array(imageData);
       const blob = new Blob([uint8Array], { type: "image/png" });
       const file = new File([blob], "test.png", { type: "image/png" });
@@ -156,9 +135,6 @@ test.describe.serial("article edit tests", () => {
     await expect(editorContent).toContainText("uploading...", { timeout: 5000 });
   });
 
-  /**
-   * Test: Image drag-and-drop inserts placeholder into editor.
-   */
   test("image drag-and-drop inserts placeholder into editor", async ({ page }: TestArgs) => {
     await page.goto(`/articles/${publishedArticleSlug}/edit`);
 
@@ -172,7 +148,7 @@ test.describe.serial("article edit tests", () => {
       "base64"
     );
 
-    await page.evaluate(async (imageData) => {
+    await page.evaluate((imageData) => {
       const uint8Array = new Uint8Array(imageData);
       const blob = new Blob([uint8Array], { type: "image/png" });
       const file = new File([blob], "test.png", { type: "image/png" });
