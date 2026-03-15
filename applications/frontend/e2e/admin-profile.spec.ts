@@ -234,50 +234,48 @@ test.describe.serial("profile edit", () => {
     // Note: We don't save, so data is not affected
   });
 
-  // SKIPPED: CI environment may not have all technology options in seed data
-  // The select options depend on seeded technology data which may not include "React"
-  // This works correctly in local development with proper seed data
-  test.skip("tech stack entry can be edited", async ({ page }: TestArgs) => {
+  test("tech stack entry can be edited", async ({ page }: TestArgs) => {
     await page.goto("/admin/profile/edit");
 
     await page.waitForLoadState("networkidle");
 
-    // Add a new tech stack entry first
     const techStackHeader = page.getByRole("heading", { name: "技術スタック" });
     const addButton = techStackHeader
       .locator("..")
       .getByRole("button", { name: "追加" });
     await addButton.click();
 
-    // Wait for the select element to be visible and stable
-    const techSelect = page
+    const newEntryTechSelect = page
       .locator("select")
-      .filter({ hasText: "選択してください" })
-      .first();
-    await expect(techSelect).toBeVisible({ timeout: 10000 });
+      .filter({ has: page.locator('option[value=""]') })
+      .last();
 
-    // Wait for select to be enabled
-    await expect(techSelect).toBeEnabled({ timeout: 10000 });
+    await expect(newEntryTechSelect).toBeVisible({ timeout: 10000 });
+    await expect(newEntryTechSelect).toBeEnabled({ timeout: 10000 });
 
-    // Wait for options to be loaded
-    await expect(techSelect.locator("option")).toHaveCount(
-      await techSelect.locator("option").count(),
-      { timeout: 15000 },
-    );
+    const availableOptions = await newEntryTechSelect
+      .locator("option:not([value=''])")
+      .all();
+    expect(availableOptions.length).toBeGreaterThan(0);
+    const firstAvailableLabel = await availableOptions[0].textContent();
+    await newEntryTechSelect.selectOption({ label: firstAvailableLabel! }, { timeout: 15000 });
 
-    // Select a technology from dropdown
-    await techSelect.selectOption({ label: "React" }, { timeout: 15000 });
+    const selectedOption = newEntryTechSelect.locator("option:checked");
+    await expect(selectedOption).not.toHaveText("選択してください");
 
-    // Verify selection - check that the selected option has the correct text
-    const selectedOption = techSelect.locator("option:checked");
-    await expect(selectedOption).toHaveText("React");
+    const continueCheckboxes = page.getByLabel("現在も使用中");
+    const newEntryCheckbox = continueCheckboxes.last();
+    await newEntryCheckbox.check();
+    await expect(newEntryCheckbox).toBeChecked();
 
-    // Find and check "現在も使用中" checkbox
-    const continueCheckbox = page.getByLabel("現在も使用中").first();
-    await continueCheckbox.check();
-    await expect(continueCheckbox).toBeChecked();
-
-    // Note: We don't save, so data is not affected
+    const newEntryContainer = newEntryTechSelect.locator("../../../..");
+    const newEntryExperienceSelect = newEntryContainer
+      .locator("select")
+      .filter({ has: page.locator('option', { hasText: "業務" }) });
+    await newEntryExperienceSelect.selectOption({ label: "業務" });
+    const selectedExperienceOption = newEntryExperienceSelect.locator("option:checked");
+    await expect(selectedExperienceOption).toHaveText("業務");
+    await expect(selectedExperienceOption).toHaveAttribute("value", "business");
   });
 
   test("career section is displayed with add button", async ({
@@ -477,16 +475,43 @@ test.describe.serial("profile edit", () => {
 });
 
 /**
+ * Extract array value from Firestore response
+ */
+function extractArrayValue(
+  data: Record<string, unknown>,
+  path: string[],
+): unknown[] | null {
+  let current: unknown = data;
+
+  for (const key of path) {
+    if (typeof current !== "object" || current === null) {
+      return null;
+    }
+    current = (current as Record<string, unknown>)[key];
+  }
+
+  if (
+    typeof current === "object" &&
+    current !== null &&
+    "arrayValue" in current
+  ) {
+    const arrayValue = (current as { arrayValue: { values?: unknown[] } })
+      .arrayValue;
+    return arrayValue.values ?? [];
+  }
+
+  return null;
+}
+
+/**
  * Profile save tests - verify data persistence to Firestore
  * These tests actually save data and verify it in Firestore, then restore original data
  */
 test.describe.serial("profile save with Firestore verification", () => {
-  // Store original values to restore after test
   let originalName: string | null = null;
   let originalBio: string | null = null;
 
   test.beforeAll(async () => {
-    // Get original profile data from Firestore before tests
     const profileData = await getProfileFromFirestore();
     if (profileData) {
       originalName = extractStringValue(profileData, [
@@ -569,6 +594,109 @@ test.describe.serial("profile save with Firestore verification", () => {
       "name",
     ]);
     expect(savedName).toBe(testName);
+  });
+
+  test("save tech stack with business experience type and verify in Firestore", async ({
+    page,
+  }: TestArgs) => {
+    await page.goto("/admin/profile/edit");
+    await page.waitForLoadState("networkidle");
+
+    const profileDataBefore = await getProfileFromFirestore();
+    expect(profileDataBefore).not.toBeNull();
+
+    const backendStacksBefore = extractArrayValue(profileDataBefore!, [
+      "fields",
+      "profile",
+      "mapValue",
+      "fields",
+      "techStacks",
+      "mapValue",
+      "fields",
+      "backend",
+    ]);
+    const initialBackendCount = backendStacksBefore?.length ?? 0;
+
+    const techStackHeader = page.getByRole("heading", { name: "技術スタック" });
+    const addButton = techStackHeader
+      .locator("..")
+      .getByRole("button", { name: "追加" });
+    await addButton.click();
+
+    const newEntryTechSelect = page
+      .locator("select")
+      .filter({ has: page.locator('option[value=""]') })
+      .last();
+
+    await expect(newEntryTechSelect).toBeVisible({ timeout: 10000 });
+    await expect(newEntryTechSelect).toBeEnabled({ timeout: 10000 });
+
+    const availableOptions = await newEntryTechSelect
+      .locator("option:not([value=''])")
+      .all();
+    expect(availableOptions.length).toBeGreaterThan(0);
+    const firstAvailableLabel = await availableOptions[0].textContent();
+    await newEntryTechSelect.selectOption({ label: firstAvailableLabel! }, { timeout: 15000 });
+
+    const selectedOption = newEntryTechSelect.locator("option:checked");
+    await expect(selectedOption).not.toHaveText("選択してください");
+
+    const newEntryContainer = newEntryTechSelect.locator("../../../..");
+    const newEntryExperienceSelect = newEntryContainer
+      .locator("select")
+      .filter({ has: page.locator('option', { hasText: "業務" }) });
+    await newEntryExperienceSelect.selectOption({ label: "業務" });
+    const selectedExperienceOption = newEntryExperienceSelect.locator("option:checked");
+    await expect(selectedExperienceOption).toHaveAttribute("value", "business");
+
+    const updateButton = page.getByRole("button", { name: "更新する" });
+    await updateButton.click();
+
+    await page.waitForTimeout(3000);
+
+    const errorModal = page.getByText("プロフィールの更新に失敗しました");
+    const hasError = await errorModal.isVisible().catch(() => false);
+
+    if (hasError) {
+      const errorDetails = await page.getByRole("dialog").textContent();
+      throw new Error(`Profile save failed: ${errorDetails}`);
+    }
+
+    const profileDataAfter = await getProfileFromFirestore();
+    expect(profileDataAfter).not.toBeNull();
+
+    const backendStacksAfter = extractArrayValue(profileDataAfter!, [
+      "fields",
+      "profile",
+      "mapValue",
+      "fields",
+      "techStacks",
+      "mapValue",
+      "fields",
+      "backend",
+    ]);
+    expect(backendStacksAfter).not.toBeNull();
+    expect(backendStacksAfter!.length).toBe(initialBackendCount + 1);
+
+    const addedStack = backendStacksAfter![
+      backendStacksAfter!.length - 1
+    ] as Record<string, unknown>;
+    const addedStackFields = (
+      addedStack as { mapValue: { fields: Record<string, unknown> } }
+    ).mapValue.fields;
+
+    const tagValue = extractStringValue(
+      { fields: addedStackFields },
+      ["fields", "tag"],
+    );
+    expect(tagValue).not.toBeNull();
+    expect(tagValue).not.toBe("");
+
+    const typeValue = extractStringValue(
+      { fields: addedStackFields },
+      ["fields", "type"],
+    );
+    expect(typeValue).toBe("business");
   });
 
   test("restore original profile data", async ({ page }: TestArgs) => {
