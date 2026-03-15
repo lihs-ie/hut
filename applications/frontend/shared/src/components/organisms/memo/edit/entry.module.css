@@ -43,16 +43,42 @@
 .editor {
   min-height: 120px;
   width: 100%;
-  border: none;
-  padding-left: 0;
-  padding-right: 0;
-  resize: vertical;
-  font-size: 0.875rem;
-  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
-.editor:focus-visible {
+.codemirror-container {
+  min-height: 120px;
+}
+
+.codemirror-container :global(.cm-editor) {
+  min-height: 120px;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background-color: var(--card);
+  color: var(--foreground);
+}
+
+.codemirror-container :global(.cm-editor.cm-focused) {
   outline: none;
+}
+
+.codemirror-container :global(.cm-scroller) {
+  padding: 0.5rem;
+}
+
+.codemirror-container :global(.cm-content) {
+  caret-color: var(--foreground);
+  min-height: 120px;
+}
+
+.codemirror-container :global(.cm-placeholder) {
+  color: var(--muted-foreground);
+}
+
+.codemirror-container :global(.cm-gutters) {
+  display: none;
 }
 
 .button {

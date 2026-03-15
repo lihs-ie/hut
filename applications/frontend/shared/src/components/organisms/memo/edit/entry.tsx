@@ -3,7 +3,6 @@
 import { SimpleCard } from "@shared/components/atoms/card/simple";
 import styles from "./entry.module.css";
 import { useState, useCallback, useRef } from "react";
-import { Textarea } from "@shared/components/atoms/input/textarea";
 import { SimpleButton } from "@shared/components/atoms/button/simple";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
@@ -14,11 +13,8 @@ import { extractImageUrls } from "@shared/domains/common/markdown";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { DropzoneOverlay } from "@shared/components/molecules/overlay/dropzone";
 import { UploadStatus } from "@shared/components/molecules/upload/status";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useCodeMirror } from "@shared/components/organisms/common/editor/use-codemirror";
+import { EntryPreview } from "./preview";
 
 export type Props = {
   persist: (unvalidated: UnvalidatedEntry, slug: string, images: ImageIdentifier[]) => Promise<void>;
@@ -38,13 +34,18 @@ export const EntryEditor = (props: Props) => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.MARKDOWN);
   const [value, setValue] = useState("");
   const [images, setImages] = useState<ImageIdentifier[]>([]);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageUrlToIdentifierMap = useRef<Map<string, ImageIdentifier>>(new Map());
 
   const { execute, error, reset, isError } = useServerAction(props.persist);
 
   const imageUploadHook = useImageUpload({
     uploadAction: props.uploadAction,
+  });
+
+  const { containerRef, insertText } = useCodeMirror({
+    value,
+    onChange: setValue,
+    placeholder: "コメントを追加",
   });
 
   const replacePlaceholder = useCallback(
@@ -106,17 +107,14 @@ export const EntryEditor = (props: Props) => {
     async (files: File[]) => {
       for (const file of files) {
         const placeholderId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        setValue(
-          (previous) =>
-            previous + `\n![uploading...](placeholder-${placeholderId})\n`
-        );
+        insertText(`\n![uploading...](placeholder-${placeholderId})\n`);
         await handleImageUpload(file, placeholderId);
       }
     },
-    [handleImageUpload]
+    [handleImageUpload, insertText]
   );
 
-  const { isDragOver, handlers, handlePaste } = useImageDropzone({
+  const { isDragOver, handlers } = useImageDropzone({
     onFilesDropped: processFiles,
   });
 
@@ -145,43 +143,12 @@ export const EntryEditor = (props: Props) => {
 
           {activeTab === Tab.MARKDOWN ? (
             <div className={styles.editor}>
-              <Textarea
-                ref={textareaRef}
-                value={value}
-                onChange={handleValueChange}
-                onPaste={handlePaste}
-                placeholder="コメントを追加"
-                className={styles.textarea}
-              />
+              <div ref={containerRef} className={styles["codemirror-container"]} />
             </div>
           ) : (
             <div className={`${styles.preview} prose`}>
               {value ? (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm, remarkBreaks]}
-                  components={{
-                    code({ className, children }) {
-                      const match = /language-(\w+)/.exec(className || "");
-                      const isInline = !match && !className;
-
-                      return isInline ? (
-                        <code className={className}>
-                          {children}
-                        </code>
-                      ) : (
-                        <SyntaxHighlighter
-                          style={oneDark}
-                          language={match ? match[1] : "text"}
-                          PreTag="div"
-                        >
-                          {String(children).replace(/\n$/, "")}
-                        </SyntaxHighlighter>
-                      );
-                    },
-                  }}
-                >
-                  {value}
-                </ReactMarkdown>
+                <EntryPreview value={value} />
               ) : (
                 <p className={styles["preview.empty"]}>
                   プレビューするコンテンツがありません
@@ -206,7 +173,7 @@ export const EntryEditor = (props: Props) => {
           onClick={async () => {
             try {
               await execute({ text: value, createdAt: new Date() }, props.slug, images);
-              setValue("");
+              handleValueChange("");
               setImages([]);
               imageUrlToIdentifierMap.current.clear();
             } catch {

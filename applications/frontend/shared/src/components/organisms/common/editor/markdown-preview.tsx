@@ -1,7 +1,11 @@
+"use client";
+
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import remarkMath from "remark-math";
 import rehypeSlug from "rehype-slug";
+import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   oneLight,
@@ -12,7 +16,8 @@ import codeBlockStyles from "@shared/components/global/mdx.module.css";
 import { stripFrontmatter } from "@shared/components/global/matter";
 import { LinkCardClient } from "@shared/components/molecules/card/link.client";
 import { ContentImage } from "@shared/components/atoms/image/content";
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { parseMessageBox, parseAccordion, parseCodeBlockFilename, parseImageWidth } from "./zenn-markdown";
 
 const languageLabels: Record<string, string> = {
   typescript: "TypeScript",
@@ -31,6 +36,14 @@ const languageLabels: Record<string, string> = {
   sql: "SQL",
 };
 
+const preprocessZennMarkdown = (content: string): string => {
+  let processed = parseMessageBox(content);
+  processed = parseAccordion(processed);
+  processed = parseCodeBlockFilename(processed);
+  processed = parseImageWidth(processed);
+  return processed;
+};
+
 export type Props = {
   content: string;
   title: string;
@@ -38,16 +51,48 @@ export type Props = {
 
 export const MarkdownPreview = (props: Props) => {
   const strippedContent = stripFrontmatter(props.content);
+  const processedContent = preprocessZennMarkdown(strippedContent);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mermaidBlocks = containerRef.current?.querySelectorAll(".language-mermaid");
+    if (!mermaidBlocks || mermaidBlocks.length === 0) return;
+
+    import("mermaid").then((module) => {
+      const mermaid = module.default;
+      mermaid.initialize({ startOnLoad: false, theme: "default" });
+
+      mermaidBlocks.forEach(async (block) => {
+        const code = block.textContent ?? "";
+        if (code.length > 2000) return;
+
+        const container = block.closest("[data-mermaid-container]");
+        if (!container) return;
+
+        try {
+          const { svg } = await mermaid.render(
+            `mermaid-${Math.random().toString(36).slice(2)}`,
+            code,
+          );
+          container.innerHTML = svg;
+        } catch {
+          container.innerHTML = `<pre>${code}</pre>`;
+        }
+      });
+    });
+  }, [processedContent]);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} ref={containerRef}>
       <div className={styles.card}>
         {props.title && <h1 className={styles.title}>{props.title}</h1>}
         <div className={`prose ${styles.content}`}>
           {props.content ? (
             <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkBreaks]}
-              rehypePlugins={[rehypeSlug]}
+              remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+              rehypePlugins={[rehypeSlug, rehypeKatex]}
               components={{
                 img: (
                   imageProps: React.ImgHTMLAttributes<HTMLImageElement>
@@ -84,6 +129,16 @@ export const MarkdownPreview = (props: Props) => {
                     );
                   }
 
+                  if (language === "mermaid") {
+                    return (
+                      <div data-mermaid-container="true">
+                        <code className={`language-mermaid ${className ?? ""}`}>
+                          {children}
+                        </code>
+                      </div>
+                    );
+                  }
+
                   const displayLanguage =
                     languageLabels[language] || language || null;
                   const isDark =
@@ -117,7 +172,7 @@ export const MarkdownPreview = (props: Props) => {
                 },
               }}
             >
-              {strippedContent}
+              {processedContent}
             </ReactMarkdown>
           ) : (
             <p className={styles.empty}>コンテンツがありません</p>

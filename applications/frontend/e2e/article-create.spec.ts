@@ -15,7 +15,6 @@ const generateTestSlug = (): string => {
 };
 
 /**
- *
  * Create frontmatter content for a new article.
  */
 const createFrontmatter = (options: {
@@ -36,6 +35,16 @@ tags: [${tagsArray.join(", ")}]
 };
 
 /**
+ * Fill CodeMirror editor with content.
+ */
+const fillCodeMirrorEditor = async (page: Page, content: string): Promise<void> => {
+  const editorContent = page.locator(".cm-content");
+  await editorContent.click();
+  await page.keyboard.press("Control+a");
+  await page.keyboard.type(content);
+};
+
+/**
  * Test: Save a new article as draft.
  */
 const saveNewArticleAsDraft = async ({ page }: TestArgs): Promise<void> => {
@@ -44,32 +53,26 @@ const saveNewArticleAsDraft = async ({ page }: TestArgs): Promise<void> => {
 
   await page.goto(newArticlePath);
 
-  // Enter title in header
   await page.getByPlaceholder("タイトルを入力").fill(testTitle);
 
-  // Edit markdown content with frontmatter
-  const textarea = page.locator("textarea");
   const frontmatter = createFrontmatter({
     title: testTitle,
     excerpt: "E2Eテストで作成した下書き記事です。",
     slug: testSlug,
   });
-  await textarea.fill(
+  await fillCodeMirrorEditor(
+    page,
     frontmatter + "# テスト記事\n\nこれはテスト用の本文です。",
   );
 
-  // Select a tag (TypeScript)
   await page.getByRole("button", { name: "TypeScript" }).click();
 
-  // Verify tag is selected (should show in selected tags section)
   await expect(
     page.getByRole("button", { name: "TypeScriptを削除" }),
   ).toBeVisible();
 
-  // Save as draft
   await page.getByRole("button", { name: /下書き保存/ }).click();
 
-  // Wait for save to complete (draft does not redirect, just wait for button to be enabled again)
   await expect(page.getByRole("button", { name: /下書き保存/ })).toBeEnabled({
     timeout: 10000,
   });
@@ -84,41 +87,33 @@ const publishNewArticle = async ({ page }: TestArgs): Promise<void> => {
 
   await page.goto(newArticlePath);
 
-  // Enter title in header
   await page.getByPlaceholder("タイトルを入力").fill(testTitle);
 
-  // Edit markdown content with frontmatter
-  const textarea = page.locator("textarea");
   const frontmatter = createFrontmatter({
     title: testTitle,
     excerpt: "E2Eテストで作成した公開記事です。",
     slug: testSlug,
   });
-  await textarea.fill(
+  await fillCodeMirrorEditor(
+    page,
     frontmatter + "# 公開テスト記事\n\nこれは公開テスト用の本文です。",
   );
 
-  // Select a tag
   await page.getByRole("button", { name: "React" }).click();
 
-  // Enable publish switch - scroll header into view first, then use JavaScript to check
   const publishCheckbox = page.getByRole("checkbox");
   await page.getByPlaceholder("タイトルを入力").scrollIntoViewIfNeeded();
   await publishCheckbox.evaluate((element: HTMLInputElement) => {
     element.click();
   });
 
-  // Verify checkbox is now checked
   await expect(publishCheckbox).toBeChecked();
 
-  // Verify button text changed to "公開する"
   const publishButton = page.getByRole("button", { name: /公開する/ });
   await expect(publishButton).toBeVisible();
 
-  // Publish the article
   await publishButton.click();
 
-  // Wait for navigation (either to article detail or back to articles list)
   await page.waitForURL(/\/articles\//, { timeout: 15000 });
 };
 
@@ -130,24 +125,18 @@ const saveButtonDisabledWithoutTitle = async ({
 }: TestArgs): Promise<void> => {
   await page.goto(newArticlePath);
 
-  // Verify title input is empty
   const titleInput = page.getByPlaceholder("タイトルを入力");
   await expect(titleInput).toHaveValue("");
 
-  // Verify save button is disabled
   const saveButton = page.getByRole("button", { name: /下書き保存/ });
   await expect(saveButton).toBeDisabled();
 
-  // Enter a title
   await titleInput.fill("テストタイトル");
 
-  // Verify save button is now enabled
   await expect(saveButton).toBeEnabled();
 
-  // Clear the title
   await titleInput.fill("");
 
-  // Verify save button is disabled again
   await expect(saveButton).toBeDisabled();
 };
 
@@ -157,27 +146,21 @@ const saveButtonDisabledWithoutTitle = async ({
 const tagSelectionWorks = async ({ page }: TestArgs): Promise<void> => {
   await page.goto(newArticlePath);
 
-  // Verify available tags section exists
   await expect(page.getByText("クリックして追加")).toBeVisible();
 
-  // Select multiple tags
   await page.getByRole("button", { name: "TypeScript" }).click();
   await page.getByRole("button", { name: "React" }).click();
 
-  // Verify tags are selected (remove buttons visible)
   await expect(
     page.getByRole("button", { name: "TypeScriptを削除" }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Reactを削除" })).toBeVisible();
 
-  // Verify "全て解除" button is visible
   const clearAllButton = page.getByRole("button", { name: "全て解除" });
   await expect(clearAllButton).toBeVisible();
 
-  // Clear all tags
   await clearAllButton.click();
 
-  // Verify tags are cleared (remove buttons should not be visible)
   await expect(
     page.getByRole("button", { name: "TypeScriptを削除" }),
   ).not.toBeVisible();
@@ -185,7 +168,6 @@ const tagSelectionWorks = async ({ page }: TestArgs): Promise<void> => {
     page.getByRole("button", { name: "Reactを削除" }),
   ).not.toBeVisible();
 
-  // Verify available tags are shown again
   await expect(page.getByRole("button", { name: "TypeScript" })).toBeVisible();
 };
 
