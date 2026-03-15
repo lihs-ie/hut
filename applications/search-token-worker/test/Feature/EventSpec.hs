@@ -11,6 +11,7 @@ import Network.Wai.Handler.Warp qualified as Warp
 import Servant (serve)
 import Support.Helper.API.Request
   ( mkArticleCreatedRequestBody,
+    mkArticleCreatedWithTagRequestBody,
     mkArticleTerminatedRequestBody,
     mkPubSubRequestBody,
   )
@@ -70,3 +71,15 @@ spec = around withTestServer $ after_ resetFirestore $ do
       let body = mkPubSubRequestBody (mkArticleCreatedRequestBody 1)
       response <- postJSON port "/events" body
       HTTP.responseStatus response `shouldBe` status200
+
+  describe "shared tag termination" $
+    it "terminating one article does not break another article sharing the same tag" $ \port -> do
+      let sharedTagName = "haskell-shared"
+      createResponse1 <- postJSON port "/events/direct" (mkArticleCreatedWithTagRequestBody 40 sharedTagName)
+      HTTP.responseStatus createResponse1 `shouldBe` status200
+      createResponse2 <- postJSON port "/events/direct" (mkArticleCreatedWithTagRequestBody 41 sharedTagName)
+      HTTP.responseStatus createResponse2 `shouldBe` status200
+      terminateResponse <- postJSON port "/events/direct" (mkArticleTerminatedRequestBody 40)
+      HTTP.responseStatus terminateResponse `shouldBe` status200
+      createResponse3 <- postJSON port "/events/direct" (mkArticleCreatedWithTagRequestBody 42 sharedTagName)
+      HTTP.responseStatus createResponse3 `shouldBe` status200

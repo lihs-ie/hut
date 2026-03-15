@@ -8,7 +8,7 @@ import Domain.Common (Timeline (..))
 import Domain.SearchToken (ContentType (..), SearchToken (..), SearchTokenError (..))
 import Gogol (Env)
 import Gogol.FireStore (CloudPlatform'FullControl)
-import Infrastructure.Firestore (createPersist, createTerminate)
+import Infrastructure.Firestore (createPersist, createTerminate, documentExists)
 import Support.Helper.Infrastructure.Firestore (createEmulatorEnvironment, projectIdentifier, resetFirestore)
 import Test.Hspec
 
@@ -50,6 +50,24 @@ createTagToken seed =
           timeline = Timeline seedTime seedTime
         }
 
+createTagTokenShared :: Int -> String -> SearchToken
+createTagTokenShared seed tagIdentifier =
+  let baseTime = posixSecondsToUTCTime 0
+      offset = secondsToNominalDiffTime (fromIntegral seed)
+      seedTime = addUTCTime offset baseTime
+   in SearchToken
+        { identifier = "tag:" <> tagIdentifier,
+          reference = "article-" <> show seed,
+          contentType = Article,
+          value = tagIdentifier,
+          timeline = Timeline seedTime seedTime
+        }
+
+checkDocumentExists :: TestEnvironment -> String -> IO Bool
+checkDocumentExists environment path = do
+  (result, _) <- runWriterT (documentExists environment path)
+  pure result
+
 spec :: Spec
 spec = beforeAll createEmulatorEnvironment $ after_ resetFirestore $ do
   describe "createPersist" $ do
@@ -88,3 +106,47 @@ spec = beforeAll createEmulatorEnvironment $ after_ resetFirestore $ do
       firstTerminate `shouldSatisfy` isRight
       secondTerminate <- runTerminate environment reference
       secondTerminate `shouldBe` Left NotFound
+
+  describe "shared tag behavior" $ do
+    it "preserves shared token document when only one of two articles is terminated" $ \environment -> do
+      let sharedTag = "shared-haskell"
+          tokenArticle10 = createTagTokenShared 10 sharedTag
+          tokenArticle11 = createTagTokenShared 11 sharedTag
+          reference10 = show Article <> ":" <> "article-10"
+      persistResult10 <- runPersist environment [tokenArticle10]
+      persistResult10 `shouldSatisfy` isRight
+      persistResult11 <- runPersist environment [tokenArticle11]
+      persistResult11 `shouldSatisfy` isRight
+      terminateResult <- runTerminate environment reference10
+      terminateResult `shouldSatisfy` isRight
+      let tokenDocPath = "projects/" <> projectIdentifier <> "/databases/(default)/documents/search-tokens/tag:" <> sharedTag
+      tokenStillExists <- checkDocumentExists environment tokenDocPath
+      tokenStillExists `shouldBe` True
+
+    it "deletes token document when only article is terminated" $ \environment -> do
+      let sharedTag = "only-haskell"
+          tokenArticle20 = createTagTokenShared 20 sharedTag
+          reference20 = show Article <> ":" <> "article-20"
+      persistResult <- runPersist environment [tokenArticle20]
+      persistResult `shouldSatisfy` isRight
+      terminateResult <- runTerminate environment reference20
+      terminateResult `shouldSatisfy` isRight
+      let tokenDocPath = "projects/" <> projectIdentifier <> "/databases/(default)/documents/search-tokens/tag:" <> sharedTag
+      tokenGone <- checkDocumentExists environment tokenDocPath
+      tokenGone `shouldBe` False
+
+    it "preserves remaining ref when one of two articles with shared tag is terminated" $ \environment -> do
+      let sharedTag = "remaining-haskell"
+          tokenArticle30 = createTagTokenShared 30 sharedTag
+          tokenArticle31 = createTagTokenShared 31 sharedTag
+          reference30 = show Article <> ":" <> "article-30"
+          reference31 = show Article <> ":" <> "article-31"
+      persistResult30 <- runPersist environment [tokenArticle30]
+      persistResult30 `shouldSatisfy` isRight
+      persistResult31 <- runPersist environment [tokenArticle31]
+      persistResult31 `shouldSatisfy` isRight
+      terminateResult <- runTerminate environment reference30
+      terminateResult `shouldSatisfy` isRight
+      let refDocPath = "projects/" <> projectIdentifier <> "/databases/(default)/documents/search-tokens/tag:" <> sharedTag <> "/refs/" <> reference31
+      refStillExists <- checkDocumentExists environment refDocPath
+      refStillExists `shouldBe` True
