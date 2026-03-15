@@ -143,21 +143,24 @@ export const EntryEditor = (props: Props) => {
             </button>
           </div>
 
-          {activeTab === Tab.MARKDOWN ? (
-            <div className={styles.editor}>
-              <div ref={containerRef} className={styles["codemirror-container"]} />
-            </div>
-          ) : (
-            <div className={`${styles.preview} prose`}>
-              {value ? (
-                <EntryPreview value={value} />
-              ) : (
-                <p className={styles.empty}>
-                  プレビューするコンテンツがありません
-                </p>
-              )}
-            </div>
-          )}
+          <div
+            className={styles.editor}
+            style={{ display: activeTab === Tab.MARKDOWN ? "block" : "none" }}
+          >
+            <div ref={containerRef} className={styles["codemirror-container"]} />
+          </div>
+          <div
+            className={`${styles.preview} prose`}
+            style={{ display: activeTab === Tab.PREVIEW ? "block" : "none" }}
+          >
+            {value ? (
+              <EntryPreview value={value} />
+            ) : (
+              <p className={styles.empty}>
+                プレビューするコンテンツがありません
+              </p>
+            )}
+          </div>
         </div>
 
         <DropzoneOverlay isActive={isDragOver} />
