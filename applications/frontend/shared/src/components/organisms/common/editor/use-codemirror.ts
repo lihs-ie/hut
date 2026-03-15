@@ -121,6 +121,7 @@ export const useCodeMirror = (props: UseCodeMirrorProps): UseCodeMirrorReturn =>
           );
           if (imageFiles.length === 0) return false;
           event.preventDefault();
+          event.stopPropagation();
           handler(imageFiles);
           return true;
         },
