@@ -90,7 +90,7 @@ export const MarkdownPreview = (props: Props) => {
           mermaidContainer.innerHTML = `<pre>${escapeHtml(code)}</pre>`;
         }
       });
-      Promise.all(renderPromises);
+      void Promise.all(renderPromises);
     });
   }, [processedContent]);
 
