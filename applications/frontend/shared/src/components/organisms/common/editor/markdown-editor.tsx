@@ -30,6 +30,11 @@ export type Props = {
 };
 
 export const MarkdownEditor = (props: Props) => {
+  const onChange = props.onChange;
+  const onUploadingChange = props.onUploadingChange;
+  const onImageUploaded = props.onImageUploaded;
+  const imageUpload = props.imageUpload;
+
   const valueRef = useRef(props.value);
 
   useEffect(() => {
@@ -37,16 +42,16 @@ export const MarkdownEditor = (props: Props) => {
   }, [props.value]);
 
   const imageUploadHook = useImageUpload({
-    uploadAction: props.imageUpload?.uploadAction ?? (async () => ""),
+    uploadAction: imageUpload?.uploadAction ?? (async () => ""),
   });
 
   useEffect(() => {
-    props.onUploadingChange?.(imageUploadHook.isUploading);
-  }, [props, imageUploadHook.isUploading]);
+    onUploadingChange?.(imageUploadHook.isUploading);
+  }, [onUploadingChange, imageUploadHook.isUploading]);
 
   const { containerRef, insertText, focus } = useCodeMirror({
     value: props.value,
-    onChange: props.onChange,
+    onChange,
     placeholder: props.placeholder,
     onSave: props.onSave,
   });
@@ -56,19 +61,19 @@ export const MarkdownEditor = (props: Props) => {
       const placeholder = `![uploading...](placeholder-${placeholderId})`;
       const currentValue = valueRef.current;
       const newValue = currentValue.replace(placeholder, replacement);
-      props.onChange(newValue);
+      onChange(newValue);
     },
-    [props],
+    [onChange],
   );
 
   const handleImageUpload = useCallback(
     async (file: File, placeholderId: string) => {
-      if (!props.imageUpload?.enabled) return;
+      if (!imageUpload?.enabled) return;
 
       const result = await imageUploadHook.uploadImage(
         file,
-        props.imageUpload.contentType,
-        props.imageUpload.reference,
+        imageUpload.contentType,
+        imageUpload.reference,
       );
 
       result.match({
@@ -77,7 +82,7 @@ export const MarkdownEditor = (props: Props) => {
             placeholderId,
             `![${placeholder.altText}](${url})`,
           );
-          props.onImageUploaded?.(imageIdentifier, url);
+          onImageUploaded?.(imageIdentifier, url);
         },
         err: (uploadError) => {
           const message =
@@ -91,7 +96,7 @@ export const MarkdownEditor = (props: Props) => {
         },
       });
     },
-    [props, imageUploadHook, replacePlaceholder],
+    [imageUpload, onImageUploaded, imageUploadHook, replacePlaceholder],
   );
 
   const processFiles = useCallback(
@@ -132,7 +137,7 @@ export const MarkdownEditor = (props: Props) => {
   }, [insertText]);
 
   const { isDragOver, handlers } = useImageDropzone({
-    enabled: props.imageUpload?.enabled,
+    enabled: imageUpload?.enabled,
     onFilesDropped: processFiles,
   });
 
@@ -142,13 +147,13 @@ export const MarkdownEditor = (props: Props) => {
         onBold={handleBold}
         onItalic={handleItalic}
         onLink={handleLink}
-        onImage={props.imageUpload?.enabled ? handleImageButtonClick : undefined}
+        onImage={imageUpload?.enabled ? handleImageButtonClick : undefined}
       />
       <div className={styles["editor-area"]}>
         <div ref={containerRef} className={styles["codemirror-container"]} />
       </div>
 
-      {props.imageUpload?.enabled && (
+      {imageUpload?.enabled && (
         <>
           <DropzoneOverlay isActive={isDragOver} />
           <UploadStatus
