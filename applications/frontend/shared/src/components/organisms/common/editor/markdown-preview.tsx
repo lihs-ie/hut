@@ -80,13 +80,14 @@ export const MarkdownPreview = (props: Props) => {
         const mermaidContainer = block.closest("[data-mermaid-container]");
         if (!mermaidContainer) return;
 
+        const mermaidId = `mermaid-${Math.random().toString(36).slice(2)}`;
+
         try {
-          const { svg } = await mermaid.render(
-            `mermaid-${Math.random().toString(36).slice(2)}`,
-            code,
-          );
+          const { svg } = await mermaid.render(mermaidId, code);
           mermaidContainer.innerHTML = svg;
         } catch {
+          document.getElementById(mermaidId)?.remove();
+          document.getElementById(`d${mermaidId}`)?.remove();
           mermaidContainer.innerHTML = `<pre>${escapeHtml(code)}</pre>`;
         }
       });
