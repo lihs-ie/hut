@@ -140,7 +140,7 @@ test.describe("memo entry preview", () => {
 
     await page.getByRole("button", { name: "Preview" }).click();
 
-    await expect(page.getByText("これはテストテキストです。")).toBeVisible();
+    await expect(page.locator(".prose").getByText("これはテストテキストです。")).toBeVisible();
   });
 
   test("previews inline code", async ({ page }: TestArgs) => {
@@ -236,7 +236,7 @@ test.describe("memo entry preview", () => {
 
     await page.getByRole("button", { name: "Preview" }).click();
 
-    await expect(page.getByText(testContent)).toBeVisible();
+    await expect(page.locator(".prose").getByText(testContent)).toBeVisible();
 
     await page.getByRole("button", { name: "Markdown" }).click();
 
@@ -261,7 +261,7 @@ test.describe("memo entry submission", () => {
 
     await page.waitForLoadState("networkidle");
 
-    await expect(page.getByText(uniqueContent)).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText(uniqueContent).first()).toBeVisible({ timeout: 30000 });
   });
 });
 
