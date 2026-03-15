@@ -117,4 +117,79 @@ test.describe.serial("article edit tests", () => {
     await expect(page.getByRole("button", { name: /斜体/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /リンク/ })).toBeVisible();
   });
+
+  /**
+   * Test: Image paste inserts placeholder into editor.
+   */
+  test("image paste inserts placeholder into editor", async ({ page }: TestArgs) => {
+    await page.goto(`/articles/${publishedArticleSlug}/edit`);
+
+    await expect(page.getByPlaceholder("タイトルを入力")).toHaveValue(publishedArticleTitle);
+
+    const editorContent = page.locator(".cm-content");
+    await editorContent.click();
+
+    const pngBytes = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "base64"
+    );
+
+    await page.evaluate(async (imageData) => {
+      const uint8Array = new Uint8Array(imageData);
+      const blob = new Blob([uint8Array], { type: "image/png" });
+      const file = new File([blob], "test.png", { type: "image/png" });
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+
+      const clipboardEvent = new ClipboardEvent("paste", {
+        clipboardData: dataTransfer,
+        bubbles: true,
+        cancelable: true,
+      });
+
+      const editorElement = document.querySelector(".cm-content");
+      if (editorElement) {
+        editorElement.dispatchEvent(clipboardEvent);
+      }
+    }, Array.from(pngBytes));
+
+    await expect(editorContent).toContainText("uploading...", { timeout: 5000 });
+  });
+
+  /**
+   * Test: Image drag-and-drop inserts placeholder into editor.
+   */
+  test("image drag-and-drop inserts placeholder into editor", async ({ page }: TestArgs) => {
+    await page.goto(`/articles/${publishedArticleSlug}/edit`);
+
+    await expect(page.getByPlaceholder("タイトルを入力")).toHaveValue(publishedArticleTitle);
+
+    const editorContainer = page.locator(".cm-content");
+    await editorContainer.click();
+
+    const pngBytes = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "base64"
+    );
+
+    await page.evaluate(async (imageData) => {
+      const uint8Array = new Uint8Array(imageData);
+      const blob = new Blob([uint8Array], { type: "image/png" });
+      const file = new File([blob], "test.png", { type: "image/png" });
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+
+      const editorWrapper = document.querySelector(".cm-editor")?.parentElement;
+      if (editorWrapper) {
+        const dropEvent = new DragEvent("drop", {
+          dataTransfer,
+          bubbles: true,
+          cancelable: true,
+        });
+        editorWrapper.dispatchEvent(dropEvent);
+      }
+    }, Array.from(pngBytes));
+
+    await expect(editorContainer).toContainText("uploading...", { timeout: 5000 });
+  });
 });

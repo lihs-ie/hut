@@ -12,11 +12,14 @@ export type UseCodeMirrorProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   onSave?: () => void;
+  onPaste?: (event: ClipboardEvent) => void;
+  onDrop?: (files: File[]) => void;
 };
 
 export type UseCodeMirrorReturn = {
   containerRef: React.RefObject<HTMLDivElement | null>;
   insertText: (text: string) => void;
+  replaceText: (searchText: string, replacement: string) => void;
   focus: () => void;
 };
 
@@ -25,6 +28,8 @@ export const useCodeMirror = (props: UseCodeMirrorProps): UseCodeMirrorReturn =>
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(props.onChange);
   const onSaveRef = useRef(props.onSave);
+  const onPasteRef = useRef(props.onPaste);
+  const onDropRef = useRef(props.onDrop);
   const initialValueRef = useRef(props.value);
   const placeholderRef = useRef(props.placeholder);
   const isComposingRef = useRef(false);
@@ -36,6 +41,14 @@ export const useCodeMirror = (props: UseCodeMirrorProps): UseCodeMirrorReturn =>
   useEffect(() => {
     onSaveRef.current = props.onSave;
   }, [props.onSave]);
+
+  useEffect(() => {
+    onPasteRef.current = props.onPaste;
+  }, [props.onPaste]);
+
+  useEffect(() => {
+    onDropRef.current = props.onDrop;
+  }, [props.onDrop]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -93,6 +106,31 @@ export const useCodeMirror = (props: UseCodeMirrorProps): UseCodeMirrorReturn =>
           onChangeRef.current(view.state.doc.toString());
           return false;
         },
+        paste: (event) => {
+          const handler = onPasteRef.current;
+          if (!handler) return false;
+          const items = event.clipboardData?.items;
+          if (!items) return false;
+          const hasImage = Array.from(items).some((item) =>
+            item.type.startsWith("image/"),
+          );
+          if (!hasImage) return false;
+          handler(event);
+          return true;
+        },
+        drop: (event) => {
+          const handler = onDropRef.current;
+          if (!handler) return false;
+          const files = event.dataTransfer?.files;
+          if (!files) return false;
+          const imageFiles = Array.from(files).filter((file) =>
+            file.type.startsWith("image/"),
+          );
+          if (imageFiles.length === 0) return false;
+          event.preventDefault();
+          handler(imageFiles);
+          return true;
+        },
       }),
     ];
 
@@ -146,11 +184,24 @@ export const useCodeMirror = (props: UseCodeMirrorProps): UseCodeMirrorReturn =>
     view.focus();
   }, []);
 
+  const replaceText = useCallback((searchText: string, replacement: string) => {
+    const view = viewRef.current;
+    if (!view) return;
+
+    const content = view.state.doc.toString();
+    const index = content.indexOf(searchText);
+    if (index === -1) return;
+
+    view.dispatch({
+      changes: { from: index, to: index + searchText.length, insert: replacement },
+    });
+  }, []);
+
   const focus = useCallback(() => {
     viewRef.current?.focus();
   }, []);
 
-  return { containerRef, insertText, focus };
+  return { containerRef, insertText, replaceText, focus };
 };
 
 const wrapSelectionInView = (

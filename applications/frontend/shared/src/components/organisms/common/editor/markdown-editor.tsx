@@ -6,7 +6,7 @@ import { UploadStatus } from "@shared/components/molecules/upload/status";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
 import { useImageDropzone } from "@shared/components/global/hooks/use-image-dropzone";
-import { ContentType } from "@shared/domains/common/image-upload";
+import { ContentType, SUPPORTED_IMAGE_MIME_TYPES, SupportedImageMimeType } from "@shared/domains/common/image-upload";
 import { ImageIdentifier } from "@shared/domains/image";
 import { useCodeMirror } from "./use-codemirror";
 import { EditorToolbar } from "./toolbar";
@@ -35,12 +35,6 @@ export const MarkdownEditor = (props: Props) => {
   const onImageUploaded = props.onImageUploaded;
   const imageUpload = props.imageUpload;
 
-  const valueRef = useRef(props.value);
-
-  useEffect(() => {
-    valueRef.current = props.value;
-  }, [props.value]);
-
   const imageUploadHook = useImageUpload({
     uploadAction: imageUpload?.uploadAction ?? (async () => ""),
   });
@@ -49,21 +43,43 @@ export const MarkdownEditor = (props: Props) => {
     onUploadingChange?.(imageUploadHook.isUploading);
   }, [onUploadingChange, imageUploadHook.isUploading]);
 
-  const { containerRef, insertText, focus } = useCodeMirror({
+  const processFilesRef = useRef<((files: File[]) => Promise<void>) | null>(null);
+
+  const handlePasteFromEditor = useCallback((event: ClipboardEvent) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    const imageFiles: File[] = [];
+    for (const item of Array.from(items)) {
+      if (SUPPORTED_IMAGE_MIME_TYPES.includes(item.type as SupportedImageMimeType)) {
+        const file = item.getAsFile();
+        if (file) imageFiles.push(file);
+      }
+    }
+    if (imageFiles.length > 0) {
+      event.preventDefault();
+      processFilesRef.current?.(imageFiles);
+    }
+  }, []);
+
+  const handleDropFromEditor = useCallback((files: File[]) => {
+    processFilesRef.current?.(files);
+  }, []);
+
+  const { containerRef, insertText, replaceText, focus } = useCodeMirror({
     value: props.value,
     onChange,
     placeholder: props.placeholder,
     onSave: props.onSave,
+    onPaste: imageUpload?.enabled ? handlePasteFromEditor : undefined,
+    onDrop: imageUpload?.enabled ? handleDropFromEditor : undefined,
   });
 
   const replacePlaceholder = useCallback(
     (placeholderId: string, replacement: string) => {
       const placeholder = `![uploading...](placeholder-${placeholderId})`;
-      const currentValue = valueRef.current;
-      const newValue = currentValue.replace(placeholder, replacement);
-      onChange(newValue);
+      replaceText(placeholder, replacement);
     },
-    [onChange],
+    [replaceText],
   );
 
   const handleImageUpload = useCallback(
@@ -109,6 +125,10 @@ export const MarkdownEditor = (props: Props) => {
     },
     [handleImageUpload, insertText],
   );
+
+  useEffect(() => {
+    processFilesRef.current = processFiles;
+  }, [processFiles]);
 
   const handleImageButtonClick = useCallback(() => {
     const input = document.createElement("input");
