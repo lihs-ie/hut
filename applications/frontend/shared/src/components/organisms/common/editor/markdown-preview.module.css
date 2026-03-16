@@ -47,3 +47,13 @@
   color: var(--muted-foreground);
   font-style: italic;
 }
+
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) text,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .messageText,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .labelText,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .loopText,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .noteText,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .edgeLabel,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .label {
+  fill: var(--foreground) !important;
+}
