@@ -23,6 +23,11 @@ const imageArticle = {
   tags: ["TypeScript", "React"],
 };
 
+const mermaidArticle = {
+  slug: "mermaid-diagram-test",
+  title: "Mermaid図を使った技術ドキュメント",
+};
+
 /**
  * Article detail page tests
  */
@@ -216,5 +221,44 @@ test.describe("article detail page", () => {
 
     // Check for code content
     await expect(page.getByText("画像とコードの共存テスト")).toBeVisible();
+  });
+
+  test("renders mermaid diagram as SVG", async ({ page }: TestArgs) => {
+    await page.goto(`/articles/${mermaidArticle.slug}`);
+
+    await page.waitForLoadState("networkidle");
+
+    await expect(
+      page.getByRole("heading", { name: mermaidArticle.title }).first(),
+    ).toBeVisible();
+
+    const mermaidSvg = page.locator("svg.mermaid, svg[id^='mermaid']");
+    await expect(mermaidSvg.first()).toBeVisible({ timeout: 10000 });
+  });
+
+  test("mermaid diagram contains expected nodes", async ({ page }: TestArgs) => {
+    await page.goto(`/articles/${mermaidArticle.slug}`);
+
+    await page.waitForLoadState("networkidle");
+
+    const mermaidSvg = page.locator("svg.mermaid, svg[id^='mermaid']");
+    await expect(mermaidSvg.first()).toBeVisible({ timeout: 10000 });
+
+    const svgContent = await mermaidSvg.first().innerHTML();
+    expect(svgContent).toContain("開始");
+    expect(svgContent).toContain("条件分岐");
+    expect(svgContent).toContain("終了");
+  });
+
+  test("mermaid code block is not displayed as raw text", async ({ page }: TestArgs) => {
+    await page.goto(`/articles/${mermaidArticle.slug}`);
+
+    await page.waitForLoadState("networkidle");
+
+    const mermaidSvg = page.locator("svg.mermaid, svg[id^='mermaid']");
+    await expect(mermaidSvg.first()).toBeVisible({ timeout: 10000 });
+
+    const rawMermaidCode = page.locator("pre code").filter({ hasText: "flowchart TD" });
+    await expect(rawMermaidCode).toHaveCount(0);
   });
 });
