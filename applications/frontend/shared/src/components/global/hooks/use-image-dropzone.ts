@@ -51,11 +51,12 @@ export const useImageDropzone = (
 
   const handleDrop = useCallback(
     async (event: DragEvent<HTMLElement>) => {
+      const alreadyHandled = event.defaultPrevented;
       event.preventDefault();
       event.stopPropagation();
       setIsDragOver(false);
 
-      if (!enabled) return;
+      if (alreadyHandled || !enabled) return;
 
       const imageFiles = filterImageFiles(event.dataTransfer.files);
       if (imageFiles.length > 0) {

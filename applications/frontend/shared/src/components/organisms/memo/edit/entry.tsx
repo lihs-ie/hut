@@ -2,23 +2,20 @@
 
 import { SimpleCard } from "@shared/components/atoms/card/simple";
 import styles from "./entry.module.css";
-import { useState, useCallback, useRef } from "react";
-import { Textarea } from "@shared/components/atoms/input/textarea";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { SimpleButton } from "@shared/components/atoms/button/simple";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
 import { useImageDropzone } from "@shared/components/global/hooks/use-image-dropzone";
+import { useEditorImageHandler } from "@shared/components/global/hooks/use-editor-image-handler";
 import { MemoIdentifier, UnvalidatedEntry } from "@shared/domains/memo";
 import { ImageIdentifier } from "@shared/domains/image";
 import { extractImageUrls } from "@shared/domains/common/markdown";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { DropzoneOverlay } from "@shared/components/molecules/overlay/dropzone";
 import { UploadStatus } from "@shared/components/molecules/upload/status";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useCodeMirror } from "@shared/components/organisms/common/editor/use-codemirror";
+import { EntryPreview } from "./preview";
 
 export type Props = {
   persist: (unvalidated: UnvalidatedEntry, slug: string, images: ImageIdentifier[]) => Promise<void>;
@@ -38,7 +35,6 @@ export const EntryEditor = (props: Props) => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.MARKDOWN);
   const [value, setValue] = useState("");
   const [images, setImages] = useState<ImageIdentifier[]>([]);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageUrlToIdentifierMap = useRef<Map<string, ImageIdentifier>>(new Map());
 
   const { execute, error, reset, isError } = useServerAction(props.persist);
@@ -47,12 +43,38 @@ export const EntryEditor = (props: Props) => {
     uploadAction: props.uploadAction,
   });
 
+  const handleValueChange = useCallback((newValue: string) => {
+    setValue(newValue);
+    const currentUrls = extractImageUrls(newValue);
+    const removedIdentifiers: ImageIdentifier[] = [];
+    imageUrlToIdentifierMap.current.forEach((identifier, url) => {
+      if (!currentUrls.has(url)) {
+        removedIdentifiers.push(identifier);
+        imageUrlToIdentifierMap.current.delete(url);
+      }
+    });
+    if (removedIdentifiers.length > 0) {
+      setImages((previous) => previous.filter((id) => !removedIdentifiers.includes(id)));
+    }
+  }, []);
+
+  const { handlePaste, handleDrop, setProcessFiles } =
+    useEditorImageHandler();
+
+  const { containerRef, insertText, replaceText } = useCodeMirror({
+    value,
+    onChange: handleValueChange,
+    placeholder: "コメントを追加",
+    onPaste: handlePaste,
+    onDrop: handleDrop,
+  });
+
   const replacePlaceholder = useCallback(
     (placeholderId: string, replacement: string) => {
       const placeholder = `![uploading...](placeholder-${placeholderId})`;
-      setValue((previous) => previous.replace(placeholder, replacement));
+      replaceText(placeholder, replacement);
     },
-    []
+    [replaceText]
   );
 
   const handleImageUpload = useCallback(
@@ -87,36 +109,22 @@ export const EntryEditor = (props: Props) => {
     [props.memoIdentifier, imageUploadHook, replacePlaceholder]
   );
 
-  const handleValueChange = useCallback((newValue: string) => {
-    setValue(newValue);
-    const currentUrls = extractImageUrls(newValue);
-    const removedIdentifiers: ImageIdentifier[] = [];
-    imageUrlToIdentifierMap.current.forEach((identifier, url) => {
-      if (!currentUrls.has(url)) {
-        removedIdentifiers.push(identifier);
-        imageUrlToIdentifierMap.current.delete(url);
-      }
-    });
-    if (removedIdentifiers.length > 0) {
-      setImages((previous) => previous.filter((id) => !removedIdentifiers.includes(id)));
-    }
-  }, []);
-
   const processFiles = useCallback(
     async (files: File[]) => {
       for (const file of files) {
         const placeholderId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        setValue(
-          (previous) =>
-            previous + `\n![uploading...](placeholder-${placeholderId})\n`
-        );
+        insertText(`\n![uploading...](placeholder-${placeholderId})\n`);
         await handleImageUpload(file, placeholderId);
       }
     },
-    [handleImageUpload]
+    [handleImageUpload, insertText]
   );
 
-  const { isDragOver, handlers, handlePaste } = useImageDropzone({
+  useEffect(() => {
+    setProcessFiles(processFiles);
+  }, [processFiles, setProcessFiles]);
+
+  const { isDragOver, handlers } = useImageDropzone({
     onFilesDropped: processFiles,
   });
 
@@ -126,69 +134,43 @@ export const EntryEditor = (props: Props) => {
         <div className={styles.body}>
           <div className={styles.tabs}>
             <button
+              type="button"
               onClick={() => setActiveTab("markdown")}
               className={`${styles.tab} ${
-                activeTab === Tab.MARKDOWN && styles["tab.is-active"]
+                activeTab === Tab.MARKDOWN ? styles.active : ""
               }`}
             >
               Markdown
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab("preview")}
               className={`${styles.tab} ${
-                activeTab === Tab.PREVIEW && styles["tab.is-active"]
+                activeTab === Tab.PREVIEW ? styles.active : ""
               }`}
             >
               Preview
             </button>
           </div>
 
-          {activeTab === Tab.MARKDOWN ? (
-            <div className={styles.editor}>
-              <Textarea
-                ref={textareaRef}
-                value={value}
-                onChange={handleValueChange}
-                onPaste={handlePaste}
-                placeholder="コメントを追加"
-                className={styles.textarea}
-              />
-            </div>
-          ) : (
-            <div className={`${styles.preview} prose`}>
-              {value ? (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm, remarkBreaks]}
-                  components={{
-                    code({ className, children }) {
-                      const match = /language-(\w+)/.exec(className || "");
-                      const isInline = !match && !className;
-
-                      return isInline ? (
-                        <code className={className}>
-                          {children}
-                        </code>
-                      ) : (
-                        <SyntaxHighlighter
-                          style={oneDark}
-                          language={match ? match[1] : "text"}
-                          PreTag="div"
-                        >
-                          {String(children).replace(/\n$/, "")}
-                        </SyntaxHighlighter>
-                      );
-                    },
-                  }}
-                >
-                  {value}
-                </ReactMarkdown>
-              ) : (
-                <p className={styles["preview.empty"]}>
-                  プレビューするコンテンツがありません
-                </p>
-              )}
-            </div>
-          )}
+          <div
+            className={styles.editor}
+            style={{ display: activeTab === Tab.MARKDOWN ? "block" : "none" }}
+          >
+            <div ref={containerRef} className={styles["codemirror-container"]} />
+          </div>
+          <div
+            className={`${styles.preview} prose`}
+            style={{ display: activeTab === Tab.PREVIEW ? "block" : "none" }}
+          >
+            {value ? (
+              <EntryPreview value={value} />
+            ) : (
+              <p className={styles.empty}>
+                プレビューするコンテンツがありません
+              </p>
+            )}
+          </div>
         </div>
 
         <DropzoneOverlay isActive={isDragOver} />
@@ -206,7 +188,7 @@ export const EntryEditor = (props: Props) => {
           onClick={async () => {
             try {
               await execute({ text: value, createdAt: new Date() }, props.slug, images);
-              setValue("");
+              handleValueChange("");
               setImages([]);
               imageUrlToIdentifierMap.current.clear();
             } catch {

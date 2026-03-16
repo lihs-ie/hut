@@ -61,7 +61,7 @@ export const TechStackItem = (props: Props) => (
             }
           >
             <option value="personal">個人</option>
-            <option value="professional">業務</option>
+            <option value="business">業務</option>
             <option value="both">両方</option>
           </SimpleSelect>
         </div>
