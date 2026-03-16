@@ -1,7 +1,11 @@
+"use client";
+
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import remarkMath from "remark-math";
 import rehypeSlug from "rehype-slug";
+import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   oneLight,
@@ -12,7 +16,17 @@ import codeBlockStyles from "@shared/components/global/mdx.module.css";
 import { stripFrontmatter } from "@shared/components/global/matter";
 import { LinkCardClient } from "@shared/components/molecules/card/link.client";
 import { ContentImage } from "@shared/components/atoms/image/content";
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { parseMessageBox, parseAccordion, parseCodeBlockFilename, parseImageWidth } from "./markdown-extension";
+
+const escapeHtml = (text: string): string => {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
 
 const languageLabels: Record<string, string> = {
   typescript: "TypeScript",
@@ -31,6 +45,14 @@ const languageLabels: Record<string, string> = {
   sql: "SQL",
 };
 
+const preprocessZennMarkdown = (content: string): string => {
+  let processed = parseMessageBox(content);
+  processed = parseAccordion(processed);
+  processed = parseCodeBlockFilename(processed);
+  processed = parseImageWidth(processed);
+  return processed;
+};
+
 export type Props = {
   content: string;
   title: string;
@@ -38,16 +60,50 @@ export type Props = {
 
 export const MarkdownPreview = (props: Props) => {
   const strippedContent = stripFrontmatter(props.content);
+  const processedContent = preprocessZennMarkdown(strippedContent);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mermaidBlocks = containerRef.current?.querySelectorAll(".language-mermaid");
+    if (!mermaidBlocks || mermaidBlocks.length === 0) return;
+
+    import("mermaid").then((module) => {
+      const mermaid = module.default;
+      mermaid.initialize({ startOnLoad: false, theme: "default" });
+
+      const renderPromises = Array.from(mermaidBlocks).map(async (block) => {
+        const code = block.textContent ?? "";
+        if (code.length > 2000) return;
+
+        const mermaidContainer = block.closest("[data-mermaid-container]");
+        if (!mermaidContainer) return;
+
+        const mermaidId = `mermaid-${Math.random().toString(36).slice(2)}`;
+
+        try {
+          const { svg } = await mermaid.render(mermaidId, code);
+          mermaidContainer.innerHTML = svg;
+        } catch {
+          document.getElementById(mermaidId)?.remove();
+          document.getElementById(`d${mermaidId}`)?.remove();
+          mermaidContainer.innerHTML = `<pre>${escapeHtml(code)}</pre>`;
+        }
+      });
+      void Promise.all(renderPromises);
+    });
+  }, [processedContent]);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} ref={containerRef}>
       <div className={styles.card}>
         {props.title && <h1 className={styles.title}>{props.title}</h1>}
         <div className={`prose ${styles.content}`}>
           {props.content ? (
             <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkBreaks]}
-              rehypePlugins={[rehypeSlug]}
+              remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+              rehypePlugins={[rehypeSlug, rehypeKatex]}
               components={{
                 img: (
                   imageProps: React.ImgHTMLAttributes<HTMLImageElement>
@@ -84,6 +140,16 @@ export const MarkdownPreview = (props: Props) => {
                     );
                   }
 
+                  if (language === "mermaid") {
+                    return (
+                      <div data-mermaid-container="true">
+                        <code className={`language-mermaid ${className ?? ""}`}>
+                          {children}
+                        </code>
+                      </div>
+                    );
+                  }
+
                   const displayLanguage =
                     languageLabels[language] || language || null;
                   const isDark =
@@ -117,7 +183,7 @@ export const MarkdownPreview = (props: Props) => {
                 },
               }}
             >
-              {strippedContent}
+              {processedContent}
             </ReactMarkdown>
           ) : (
             <p className={styles.empty}>コンテンツがありません</p>
