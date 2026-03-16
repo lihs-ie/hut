@@ -160,6 +160,42 @@ Markdown記法を使えば、テキスト・画像・コードを組み合わせ
       status: "published",
       tags: [TAG_IDS.typescript, TAG_IDS.react],
     },
+    {
+      id: ARTICLE_IDS.article5,
+      title: "Mermaid図を使った技術ドキュメント",
+      slug: "mermaid-diagram-test",
+      excerpt: "Mermaid記法を使ってフローチャートやシーケンス図を描画するテストです。",
+      content: `---
+title: Mermaid図を使った技術ドキュメント
+excerpt: Mermaid記法を使ってフローチャートやシーケンス図を描画するテストです。
+slug: mermaid-diagram-test
+tags: [${TAG_IDS.typescript}]
+---
+
+# Mermaid図を使った技術ドキュメント
+
+Mermaid記法を使うことで、コード内に図を埋め込むことができます。
+
+## フローチャート
+
+\`\`\`mermaid
+flowchart TD
+    A[開始] --> B{条件分岐}
+    B -->|Yes| C[処理A]
+    B -->|No| D[処理B]
+    C --> E[終了]
+    D --> E
+\`\`\`
+
+## まとめ
+
+Mermaid記法を使えば、テキストベースで図を管理できます。
+`,
+      image:
+        "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800",
+      status: "published",
+      tags: [TAG_IDS.typescript],
+    },
   ];
 
   for (const article of articles) {
@@ -210,5 +246,11 @@ export const ARTICLES_DATA = [
     title: "Markdownで画像を表示するテスト",
     excerpt: "Markdown記法で文中に画像を挿入する方法をテストします。",
     tags: ["typescript", "react"],
+  },
+  {
+    id: "article5",
+    title: "Mermaid図を使った技術ドキュメント",
+    excerpt: "Mermaid記法を使ってフローチャートやシーケンス図を描画するテストです。",
+    tags: ["typescript"],
   },
 ];
