@@ -57,3 +57,17 @@
 :global(.dark) .container :global([data-mermaid-container]) :global(svg) .label {
   fill: var(--foreground) !important;
 }
+
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) line,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .messageLine0,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .messageLine1,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .relation,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .flowchart-link,
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) .transition {
+  stroke: var(--foreground) !important;
+}
+
+:global(.dark) .container :global([data-mermaid-container]) :global(svg) marker path {
+  fill: var(--foreground) !important;
+  stroke: var(--foreground) !important;
+}

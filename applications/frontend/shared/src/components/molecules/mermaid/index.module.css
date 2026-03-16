@@ -15,6 +15,20 @@
   fill: var(--foreground) !important;
 }
 
+:global(.dark) .container :global(svg) line,
+:global(.dark) .container :global(svg) .messageLine0,
+:global(.dark) .container :global(svg) .messageLine1,
+:global(.dark) .container :global(svg) .relation,
+:global(.dark) .container :global(svg) .flowchart-link,
+:global(.dark) .container :global(svg) .transition {
+  stroke: var(--foreground) !important;
+}
+
+:global(.dark) .container :global(svg) marker path {
+  fill: var(--foreground) !important;
+  stroke: var(--foreground) !important;
+}
+
 .fallback {
   padding: 1rem;
   background-color: var(--muted);
