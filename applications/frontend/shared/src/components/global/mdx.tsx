@@ -19,6 +19,7 @@ const mdxOptions: MDXRemoteProps["options"] = {
         rehypeShiki,
         {
           theme: "github-dark",
+          addLanguageClass: true,
         },
       ],
       rehypeSlug,
