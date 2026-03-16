@@ -1,0 +1,13 @@
+.container {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.fallback {
+  padding: 1rem;
+  background-color: var(--muted);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
