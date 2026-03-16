@@ -1,5 +1,5 @@
 .container {
-  height: 100%;
+  height: calc(100dvh - var(--header-height));
   display: flex;
   flex-direction: column;
   background-color: var(--background);
@@ -7,21 +7,23 @@
 
 .content {
   flex: 1;
-  height: 0;
+  min-height: 0;
   display: flex;
   overflow: hidden;
 }
 
 .header {
-  position: sticky;
-  top: var(--header-height);
+  flex-shrink: 0;
 }
 
 .editor {
   width: 100%;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
+  border-right: 1px solid var(--border);
 }
 
 .tags {
@@ -123,6 +125,12 @@
   overflow: hidden;
 }
 
+@media (max-width: 1023px) {
+  .editor {
+    border-right: none;
+  }
+}
+
 @media (min-width: 1024px) {
   .editor {
     width: 50%;
@@ -131,12 +139,11 @@
   .preview {
     display: block;
     width: 50%;
-    border-left: 1px solid var(--border);
   }
 }
 
 .loading {
-  min-height: 100vh;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
