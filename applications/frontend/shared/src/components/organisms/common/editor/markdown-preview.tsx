@@ -69,9 +69,11 @@ export const MarkdownPreview = (props: Props) => {
     const mermaidBlocks = containerRef.current?.querySelectorAll(".language-mermaid");
     if (!mermaidBlocks || mermaidBlocks.length === 0) return;
 
+    const isDark = document.documentElement.classList.contains("dark");
+
     import("mermaid").then((module) => {
       const mermaid = module.default;
-      mermaid.initialize({ startOnLoad: false, theme: "default" });
+      mermaid.initialize({ startOnLoad: false, theme: isDark ? "dark" : "default" });
 
       const renderPromises = Array.from(mermaidBlocks).map(async (block) => {
         const code = block.textContent ?? "";
