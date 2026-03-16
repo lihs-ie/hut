@@ -5,6 +5,16 @@
   overflow-x: auto;
 }
 
+:global(.dark) .container :global(svg) text,
+:global(.dark) .container :global(svg) .messageText,
+:global(.dark) .container :global(svg) .labelText,
+:global(.dark) .container :global(svg) .loopText,
+:global(.dark) .container :global(svg) .noteText,
+:global(.dark) .container :global(svg) .edgeLabel,
+:global(.dark) .container :global(svg) .label {
+  fill: var(--foreground) !important;
+}
+
 .fallback {
   padding: 1rem;
   background-color: var(--muted);
