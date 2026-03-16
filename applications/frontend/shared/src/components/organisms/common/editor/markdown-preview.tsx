@@ -107,14 +107,22 @@ export const MarkdownPreview = (props: Props) => {
               components={{
                 img: (
                   imageProps: React.ImgHTMLAttributes<HTMLImageElement>
-                ) => (
-                  <ContentImage
-                    src={
-                      typeof imageProps.src === "string" ? imageProps.src : ""
-                    }
-                    alt={imageProps.alt ?? ""}
-                  />
-                ),
+                ) => {
+                  const src = typeof imageProps.src === "string" ? imageProps.src : "";
+                  if (!src || src.startsWith("placeholder-")) {
+                    return (
+                      <span style={{ color: "var(--muted-foreground)", fontStyle: "italic" }}>
+                        {imageProps.alt ?? "画像をアップロード中..."}
+                      </span>
+                    );
+                  }
+                  return (
+                    <ContentImage
+                      src={src}
+                      alt={imageProps.alt ?? ""}
+                    />
+                  );
+                },
                 p({ children }) {
                   if (React.Children.count(children) === 1) {
                     const child = React.Children.toArray(children)[0];
