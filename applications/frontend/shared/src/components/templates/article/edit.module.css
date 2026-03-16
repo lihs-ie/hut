@@ -121,6 +121,7 @@
 .preview {
   display: none;
   min-width: 0;
+  flex-direction: column;
 }
 
 @media (max-width: 1023px) {
@@ -135,7 +136,7 @@
   }
 
   .preview {
-    display: block;
+    display: flex;
     width: 50%;
   }
 }
