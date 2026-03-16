@@ -2,6 +2,7 @@
 
 module Support.Helper.API.Request
   ( mkArticleCreatedRequestBody,
+    mkArticleCreatedWithTagRequestBody,
     mkArticleEditedRequestBody,
     mkArticleTerminatedRequestBody,
     mkMemoCreatedRequestBody,
@@ -72,6 +73,23 @@ mkEventJSON seed eventType payload =
 mkArticleCreatedRequestBody :: Int -> LBS.ByteString
 mkArticleCreatedRequestBody seed =
   mkEventJSON seed "article.created" (object ["snapshot" .= mkArticlePayloadJSON seed])
+
+mkArticlePayloadWithTagJSON :: Int -> String -> Value
+mkArticlePayloadWithTagJSON seed tagName =
+  object
+    [ "identifier" .= ("article-" <> show seed),
+      "title" .= ("title-" <> show seed),
+      "content" .= ("content-" <> show seed),
+      "excerpt" .= ("excerpt-" <> show seed),
+      "slug" .= ("slug-" <> show seed),
+      "status" .= ("published" :: String),
+      "tags" .= ([tagName] :: [String]),
+      "timeline" .= mkTimelineJSON seed
+    ]
+
+mkArticleCreatedWithTagRequestBody :: Int -> String -> LBS.ByteString
+mkArticleCreatedWithTagRequestBody seed tagName =
+  mkEventJSON seed "article.created" (object ["snapshot" .= mkArticlePayloadWithTagJSON seed tagName])
 
 mkArticleEditedRequestBody :: Int -> LBS.ByteString
 mkArticleEditedRequestBody seed =
