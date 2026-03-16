@@ -7,6 +7,7 @@ import styles from "./mdx.module.css";
 import { remarkLinkCard } from "@shared/plugins/remark-link-card";
 import { LinkCard } from "@shared/components/molecules/card/link";
 import { ContentImage } from "@shared/components/atoms/image/content";
+import { MermaidRenderer } from "@shared/components/molecules/mermaid";
 
 export type MarkdownRenderer = (content: string) => React.ReactNode;
 
@@ -52,8 +53,25 @@ const extractLanguage = (children: React.ReactNode): string | null => {
   return match ? match[1] : null;
 };
 
+const extractTextContent = (node: React.ReactNode): string => {
+  if (typeof node === "string") return node;
+  if (typeof node === "number") return String(node);
+  if (!node) return "";
+  if (Array.isArray(node)) return node.map(extractTextContent).join("");
+  if (React.isValidElement<{ children?: React.ReactNode }>(node)) {
+    return extractTextContent(node.props.children);
+  }
+  return "";
+};
+
 const CodeBlock = (props: PreProps) => {
   const language = extractLanguage(props.children);
+
+  if (language === "mermaid") {
+    const code = extractTextContent(props.children);
+    return <MermaidRenderer code={code} />;
+  }
+
   const displayLanguage = language
     ? languageLabels[language] || language
     : null;
