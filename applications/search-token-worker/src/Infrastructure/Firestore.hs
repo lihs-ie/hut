@@ -6,6 +6,7 @@
 module Infrastructure.Firestore
   ( createPersist,
     createTerminate,
+    documentExists,
   )
 where
 
@@ -218,8 +219,47 @@ mkDeleteWrite path =
       updateTransforms = Nothing
     }
 
+documentExists :: (AllowRequest FireStoreProjectsDatabasesDocumentsGet scopes) => Env scopes -> String -> WriterT [LogEntry] IO Bool
+documentExists environment path = do
+  result <- liftIO (try (runFirestore environment (newFireStoreProjectsDatabasesDocumentsGet (T.pack path))))
+  pure (either (const False) (const True) (result :: Either SomeException Document))
+
+countRemainingRefs ::
+  (AllowRequest FireStoreProjectsDatabasesDocumentsList scopes) =>
+  Env scopes ->
+  String ->
+  String ->
+  String ->
+  WriterT [LogEntry] IO (Maybe Int)
+countRemainingRefs environment projectID tokenIdentifier currentReference = do
+  now <- liftIO getCurrentTime
+  let tokenDocPath = T.pack (searchTokenPath projectID tokenIdentifier)
+      listRequest = newFireStoreProjectsDatabasesDocumentsList "refs" tokenDocPath
+      currentRefPath = T.pack (referencePath projectID tokenIdentifier currentReference)
+  result <- liftIO (try (runFirestore environment listRequest))
+  case result of
+    Left (exception :: SomeException) -> do
+      tell [LogEntry Error ("Failed to list refs for token " <> tokenIdentifier <> ": " <> formatException exception) now]
+      pure Nothing
+    Right listResponse ->
+      pure (Just (length (filter (\doc -> doc.name /= Just currentRefPath) (fromMaybe [] listResponse.documents))))
+
+tokenDeleteIfNoRemainingRefs ::
+  (AllowRequest FireStoreProjectsDatabasesDocumentsList scopes) =>
+  Env scopes ->
+  String ->
+  String ->
+  String ->
+  WriterT [LogEntry] IO [Write]
+tokenDeleteIfNoRemainingRefs environment projectID reference tokenIdentifier = do
+  remainingCount <- countRemainingRefs environment projectID tokenIdentifier reference
+  pure (case remainingCount of
+    Just 0 -> [mkDeleteWrite (T.pack (searchTokenPath projectID tokenIdentifier))]
+    _ -> [])
+
 createTerminate ::
   ( AllowRequest FireStoreProjectsDatabasesDocumentsGet scopes,
+    AllowRequest FireStoreProjectsDatabasesDocumentsList scopes,
     AllowRequest FireStoreProjectsDatabasesDocumentsBatchWrite scopes
   ) =>
   Env scopes -> String -> TerminateByReference (WriterT [LogEntry] IO)
@@ -229,20 +269,16 @@ createTerminate environment projectID reference = runExceptT $ do
       getRequest = newFireStoreProjectsDatabasesDocumentsGet (T.pack indexPath)
   lift $ tell [LogEntry Info ("Fetching index for reference: " <> reference) now]
   indexDocument <- executeFirestore environment getRequest NotFound ("Index fetch failed for reference: " <> reference <> " - ") now
-  let tokenIdentifiers = extractTokenIdentifiers indexDocument
-      tokenDeletes = map (mkDeleteWrite . T.pack . searchTokenPath projectID . T.unpack) tokenIdentifiers
-      refDeletes = map (\identifier -> mkDeleteWrite (T.pack (referencePath projectID (T.unpack identifier) reference))) tokenIdentifiers
+  let tokenIdentifiers = map T.unpack (extractTokenIdentifiers indexDocument)
+  conditionalTokenDeletes <- lift (mapM (tokenDeleteIfNoRemainingRefs environment projectID reference) tokenIdentifiers)
+  let tokenDeletes = concat conditionalTokenDeletes
+      refDeletes = map (\tokenIdentifier -> mkDeleteWrite (T.pack (referencePath projectID tokenIdentifier reference))) tokenIdentifiers
       indexDeletes = [mkDeleteWrite (T.pack indexPath)]
       allDeletes = tokenDeletes <> refDeletes <> indexDeletes
-      request =
-        BatchWriteRequest
-          { labels = Nothing,
-            writes = Just allDeletes
-          }
       batchRequest =
         newFireStoreProjectsDatabasesDocumentsBatchWrite
           (databasePath projectID)
-          request
+          BatchWriteRequest {labels = Nothing, writes = Just allDeletes}
   lift $ tell [LogEntry Info ("Deleting " <> show (length allDeletes) <> " documents") now]
   _ <- executeFirestore environment batchRequest Unexpected "BatchWrite failed in terminate: " now
   lift $ tell [LogEntry Info "Terminate succeeded" now]
