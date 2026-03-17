@@ -54,6 +54,7 @@ export async function terminate(identifier: string): Promise<void> {
 export async function search(
   unvalidated: UnvalidatedCriteria,
 ): Promise<Article[]> {
+  await requireAdmin();
   return await unwrapForNextJs(
     AdminArticleWorkflowProvider.search({
       payload: unvalidated,

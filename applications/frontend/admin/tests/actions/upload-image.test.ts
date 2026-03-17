@@ -89,6 +89,15 @@ describe("uploadImage - パストラバーサル防止", () => {
       vi.mocked(isAdmin).mockResolvedValue(true);
     });
 
+    it("Content-Typeが空のファイルを拒否する", async () => {
+      const { uploadImage } = await import("@/actions/common");
+      const emptyTypeFile = new Blob(["content"]);
+
+      await expect(
+        uploadImage(emptyTypeFile, "images/articles/test.png"),
+      ).rejects.toThrow();
+    });
+
     it("非画像ファイル (text/plain) を拒否する", async () => {
       const { uploadImage } = await import("@/actions/common");
       const textFile = new Blob(["malicious content"], { type: "text/plain" });
