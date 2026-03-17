@@ -105,10 +105,29 @@ const decodeHTMLEntities = (text: string): string => {
   return decoded;
 };
 
+const PRIVATE_IP_PATTERNS = [
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2[0-9]|3[01])\./,
+  /^192\.168\./,
+  /^169\.254\./,
+  /^0\.0\.0\.0$/,
+  /^::1$/,
+  /^localhost$/i,
+];
+
+const isPrivateHostname = (hostname: string): boolean => {
+  return PRIVATE_IP_PATTERNS.some((pattern) => pattern.test(hostname));
+};
+
 const fetchOGPInternal = async (url: string): Promise<OGPMetadata> => {
   try {
     const parsedUrl = new URL(url);
     if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      return { url };
+    }
+
+    if (isPrivateHostname(parsedUrl.hostname)) {
       return { url };
     }
 
