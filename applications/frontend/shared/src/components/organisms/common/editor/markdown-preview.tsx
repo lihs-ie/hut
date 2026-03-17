@@ -84,7 +84,10 @@ export const MarkdownPreview = (props: Props) => {
 
         try {
           const { svg } = await mermaid.render(mermaidId, code);
-          mermaidContainer.innerHTML = svg;
+          const { default: DOMPurify } = await import("dompurify");
+          mermaidContainer.innerHTML = DOMPurify.sanitize(svg, {
+            USE_PROFILES: { svg: true, svgFilters: true },
+          });
         } catch {
           document.getElementById(mermaidId)?.remove();
           document.getElementById(`d${mermaidId}`)?.remove();

@@ -25,8 +25,12 @@ export const MermaidRenderer = (props: Props) => {
       mermaid
         .render(mermaidId, props.code)
         .then(({ svg }) => {
-          container.innerHTML = svg;
-          setError(null);
+          import("dompurify").then(({ default: DOMPurify }) => {
+            container.innerHTML = DOMPurify.sanitize(svg, {
+              USE_PROFILES: { svg: true, svgFilters: true },
+            });
+            setError(null);
+          });
         })
         .catch(() => {
           document.getElementById(mermaidId)?.remove();
