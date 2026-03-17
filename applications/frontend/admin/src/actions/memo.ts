@@ -12,8 +12,10 @@ import { AdminMemoWorkflowProvider } from "@/providers/workflows/memo";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { revalidateTag } from "next/cache";
 import { EventBrokerProvider } from "@/providers/domain/event";
+import { requireAdmin } from "@/aspects/auth-guard";
 
 export async function create(unvalidated: UnvalidatedMemo): Promise<void> {
+  await requireAdmin();
   await unwrapForNextJs(
     AdminMemoWorkflowProvider.create({
       now: new Date(),
@@ -29,6 +31,7 @@ export async function addEntry(
   slug: string,
   images: ImageIdentifier[],
 ): Promise<void> {
+  await requireAdmin();
   await unwrapForNextJs(
     AdminMemoWorkflowProvider.addEntry({
       now: new Date(),
@@ -43,6 +46,7 @@ export async function edit(
   unvalidated: UnvalidatedMemo,
   before: MemoSnapshot,
 ): Promise<void> {
+  await requireAdmin();
   await unwrapForNextJs(
     AdminMemoWorkflowProvider.edit({
       now: new Date(),
@@ -65,6 +69,8 @@ export async function search(
 }
 
 export async function terminate(identifier: string): Promise<void> {
+  await requireAdmin();
+
   await unwrapForNextJs(
     AdminMemoWorkflowProvider.terminate({
       now: new Date(),

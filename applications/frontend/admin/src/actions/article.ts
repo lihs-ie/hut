@@ -10,8 +10,10 @@ import {
 } from "@shared/domains/articles";
 import { AdminArticleWorkflowProvider } from "@/providers/workflows/article";
 import { revalidateTag } from "next/cache";
+import { requireAdmin } from "@/aspects/auth-guard";
 
 export async function create(unvalidated: UnvalidatedArticle): Promise<void> {
+  await requireAdmin();
   await unwrapForNextJs(
     AdminArticleWorkflowProvider.create({
       payload: unvalidated,
@@ -26,6 +28,7 @@ export async function edit(
   unvalidated: UnvalidatedArticle,
   before: ArticleSnapshot,
 ): Promise<void> {
+  await requireAdmin();
   await unwrapForNextJs(
     AdminArticleWorkflowProvider.edit({
       payload: { unvalidated, before },
@@ -37,6 +40,7 @@ export async function edit(
 }
 
 export async function terminate(identifier: string): Promise<void> {
+  await requireAdmin();
   await unwrapForNextJs(
     AdminArticleWorkflowProvider.terminate({
       payload: { identifier },
