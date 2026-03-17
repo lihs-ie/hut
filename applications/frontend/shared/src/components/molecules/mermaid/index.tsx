@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import styles from "./index.module.css";
+import { sanitizeMermaidSvg } from "./sanitize";
 
 type Props = {
   code: string;
@@ -25,7 +26,7 @@ export const MermaidRenderer = (props: Props) => {
       mermaid
         .render(mermaidId, props.code)
         .then(({ svg }) => {
-          container.innerHTML = svg;
+          container.innerHTML = sanitizeMermaidSvg(svg);
           setError(null);
         })
         .catch(() => {
