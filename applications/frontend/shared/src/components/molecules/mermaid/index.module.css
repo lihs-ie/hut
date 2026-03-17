@@ -1,0 +1,37 @@
+.container {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+:global(.dark) .container :global(svg) text,
+:global(.dark) .container :global(svg) .messageText,
+:global(.dark) .container :global(svg) .labelText,
+:global(.dark) .container :global(svg) .loopText,
+:global(.dark) .container :global(svg) .noteText,
+:global(.dark) .container :global(svg) .edgeLabel,
+:global(.dark) .container :global(svg) .label {
+  fill: var(--foreground) !important;
+}
+
+:global(.dark) .container :global(svg) line,
+:global(.dark) .container :global(svg) .messageLine0,
+:global(.dark) .container :global(svg) .messageLine1,
+:global(.dark) .container :global(svg) .relation,
+:global(.dark) .container :global(svg) .flowchart-link,
+:global(.dark) .container :global(svg) .transition {
+  stroke: var(--foreground) !important;
+}
+
+:global(.dark) .container :global(svg) marker path {
+  fill: var(--foreground) !important;
+  stroke: var(--foreground) !important;
+}
+
+.fallback {
+  padding: 1rem;
+  background-color: var(--muted);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
