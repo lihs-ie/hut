@@ -87,6 +87,10 @@ export const useCodeMirror = (props: UseCodeMirrorProps): UseCodeMirrorReturn =>
       history(),
       markdown({ base: markdownLanguage, codeLanguages: languages }),
       EditorView.lineWrapping,
+      EditorView.theme({
+        "&": { height: "auto" },
+        ".cm-scroller": { overflow: "visible" },
+      }),
       keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
       saveKeymap,
       boldKeymap,

@@ -6,6 +6,9 @@
   border-bottom: 1px solid var(--border);
   background-color: var(--card);
   flex-wrap: wrap;
+  position: sticky;
+  top: calc(var(--header-height) + 4rem);
+  z-index: 30;
 }
 
 .button {
@@ -37,4 +40,10 @@
 .button:active {
   background-color: var(--primary);
   color: var(--primary-foreground);
+}
+
+@media (max-width: 768px) {
+  .container {
+    top: calc(var(--header-height) + 7.75rem);
+  }
 }
