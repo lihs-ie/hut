@@ -156,6 +156,30 @@ describe("Admin Server Actions - 認証チェック", () => {
       expect(AdminArticleWorkflowProvider.terminate).not.toHaveBeenCalled();
     });
 
+    it("未認証の場合 search は UnauthenticatedHttpError を throw する", async () => {
+      const { isAdmin } = await import("@/actions/auth");
+      vi.mocked(isAdmin).mockResolvedValue(false);
+
+      const { AdminArticleWorkflowProvider } = await import(
+        "@/providers/workflows/article"
+      );
+      vi.mocked(AdminArticleWorkflowProvider.search).mockReturnValue(
+        ok([]).toAsync(),
+      );
+
+      const { search } = await import("@/actions/article");
+
+      await expect(
+        search({
+          keyword: "",
+          status: "draft",
+          tags: [],
+        }),
+      ).rejects.toThrow("認証が必要です");
+
+      expect(AdminArticleWorkflowProvider.search).not.toHaveBeenCalled();
+    });
+
     it("認証済みの場合 create はワークフローを呼び出す", async () => {
       const { isAdmin } = await import("@/actions/auth");
       vi.mocked(isAdmin).mockResolvedValue(true);
@@ -231,6 +255,30 @@ describe("Admin Server Actions - 認証チェック", () => {
       );
 
       expect(AdminMemoWorkflowProvider.terminate).not.toHaveBeenCalled();
+    });
+
+    it("未認証の場合 search は UnauthenticatedHttpError を throw する", async () => {
+      const { isAdmin } = await import("@/actions/auth");
+      vi.mocked(isAdmin).mockResolvedValue(false);
+
+      const { AdminMemoWorkflowProvider } = await import(
+        "@/providers/workflows/memo"
+      );
+      vi.mocked(AdminMemoWorkflowProvider.search).mockReturnValue(
+        ok([]).toAsync(),
+      );
+
+      const { search } = await import("@/actions/memo");
+
+      await expect(
+        search({
+          keyword: "",
+          status: "draft",
+          tags: [],
+        }),
+      ).rejects.toThrow("認証が必要です");
+
+      expect(AdminMemoWorkflowProvider.search).not.toHaveBeenCalled();
     });
   });
 

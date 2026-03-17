@@ -29,6 +29,10 @@ describe("OGP fetchOGP - SSRF防止", () => {
       "http://localhost/secret",
       "http://169.254.0.1/secret",
       "http://0.0.0.0/secret",
+      "http://[::1]/secret",
+      "http://[fc00::1]/secret",
+      "http://[fd12::1]/secret",
+      "http://[fe80::1]/secret",
     ];
 
     privateUrls.forEach((url) => {

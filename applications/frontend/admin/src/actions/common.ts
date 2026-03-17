@@ -34,18 +34,15 @@ const validateUploadPath = (path: string): void => {
   }
 };
 
+const isAllowedImageContentType = (
+  contentType: string,
+): contentType is (typeof ALLOWED_IMAGE_CONTENT_TYPES)[number] =>
+  ALLOWED_IMAGE_CONTENT_TYPES.some((allowed) => allowed === contentType);
+
 const validateImageContentType = (file: File | Blob): void => {
   const contentType = file.type;
 
-  if (!contentType) {
-    return;
-  }
-
-  const isAllowed = ALLOWED_IMAGE_CONTENT_TYPES.includes(
-    contentType as (typeof ALLOWED_IMAGE_CONTENT_TYPES)[number],
-  );
-
-  if (!isAllowed) {
+  if (!contentType || !isAllowedImageContentType(contentType)) {
     throw new ValidationHttpError("無効なファイル形式です", [
       {
         message: `許可されているファイル形式: ${ALLOWED_IMAGE_CONTENT_TYPES.join(", ")}`,

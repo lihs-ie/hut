@@ -60,6 +60,7 @@ export async function edit(
 export async function search(
   unvalidated: UnvalidatedCriteria,
 ): Promise<Memo[]> {
+  await requireAdmin();
   return await unwrapForNextJs(
     AdminMemoWorkflowProvider.search({
       now: new Date(),

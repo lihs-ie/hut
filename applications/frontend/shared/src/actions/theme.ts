@@ -20,9 +20,16 @@ export async function toggleTheme() {
   revalidatePath("/", "layout");
 }
 
+const isValidTheme = (value: string): value is Theme =>
+  value === Theme.LIGHT || value === Theme.DARK;
+
 export async function currentTheme(): Promise<Theme> {
   const cookieStore = await cookies();
-  const current = cookieStore.get("theme")?.value as Theme | undefined;
+  const value = cookieStore.get("theme")?.value;
 
-  return current ?? Theme.LIGHT;
+  if (value !== undefined && isValidTheme(value)) {
+    return value;
+  }
+
+  return Theme.LIGHT;
 }
