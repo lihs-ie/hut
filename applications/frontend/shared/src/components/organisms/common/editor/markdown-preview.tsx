@@ -18,6 +18,7 @@ import { LinkCardClient } from "@shared/components/molecules/card/link.client";
 import { ContentImage } from "@shared/components/atoms/image/content";
 import React, { useEffect, useRef } from "react";
 import { parseMessageBox, parseAccordion, parseCodeBlockFilename, parseImageWidth } from "./markdown-extension";
+import { sanitizeMermaidSvg } from "@shared/components/molecules/mermaid/sanitize";
 
 const escapeHtml = (text: string): string => {
   return text
@@ -84,10 +85,7 @@ export const MarkdownPreview = (props: Props) => {
 
         try {
           const { svg } = await mermaid.render(mermaidId, code);
-          const { default: DOMPurify } = await import("dompurify");
-          mermaidContainer.innerHTML = DOMPurify.sanitize(svg, {
-            USE_PROFILES: { svg: true, svgFilters: true },
-          });
+          mermaidContainer.innerHTML = sanitizeMermaidSvg(svg);
         } catch {
           document.getElementById(mermaidId)?.remove();
           document.getElementById(`d${mermaidId}`)?.remove();
