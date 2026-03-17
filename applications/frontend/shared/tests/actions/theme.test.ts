@@ -57,7 +57,11 @@ describe("theme actions", () => {
   });
 
   describe("toggleTheme", () => {
-    const expectedCookieOptions = { path: "/", sameSite: "lax" };
+    const expectedCookieOptions = expect.objectContaining({
+      path: "/",
+      sameSite: "lax",
+      httpOnly: true,
+    });
 
     it("lightからdarkに切り替えできる", async () => {
       mockCookies.get.mockReturnValue({ value: Theme.LIGHT });

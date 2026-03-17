@@ -10,7 +10,12 @@ export async function toggleTheme() {
 
   const next = current === Theme.LIGHT ? Theme.DARK : Theme.LIGHT;
 
-  cookieStore.set("theme", next, { path: "/", sameSite: "lax" });
+  cookieStore.set("theme", next, {
+    path: "/",
+    sameSite: "lax",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  });
 
   revalidatePath("/", "layout");
 }
