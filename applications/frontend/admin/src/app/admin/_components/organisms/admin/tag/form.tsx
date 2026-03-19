@@ -11,6 +11,8 @@ import { VariantButton } from "@shared/components/atoms/button/variant";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ulid } from "ulid";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
+import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+import { useToast } from "@shared/components/molecules/toast";
 
 export type Props = {
   initial?: Tag;
@@ -20,6 +22,7 @@ export type Props = {
 
 export const TagEditForm = (props: Props) => {
   const router = useRouter();
+  const { showToast } = useToast();
 
   const [name, setName] = useState(props.initial?.name || "");
   const [logoSrc, setLogoSrc] = useState<string>(props.initial?.logo || "");
@@ -31,32 +34,41 @@ export const TagEditForm = (props: Props) => {
     reset: resetPersist,
     error: persistError,
     isLoading: isPersisting,
-  } = useServerAction(async (_: FormData) => {
-    await props.persist({
-      identifier: props.initial?.identifier || ulid(),
-      name: name.trim(),
-      logo: logoSrc,
-      timeline: {
-        createdAt: props.initial?.timeline.createdAt || new Date(),
-        updatedAt: new Date(),
-      },
-    });
+  } = useServerAction(
+    async (_: FormData) => {
+      await props.persist({
+        identifier: props.initial?.identifier || ulid(),
+        name: name.trim(),
+        logo: logoSrc,
+        timeline: {
+          createdAt: props.initial?.timeline.createdAt || new Date(),
+          updatedAt: new Date(),
+        },
+      });
 
-    router.push("/admin/tags");
-  });
+      router.push("/admin/tags");
+    },
+    {
+      onSuccess: () =>
+        showToast(props.initial ? "タグを更新しました" : "タグを作成しました"),
+    },
+  );
 
   const {
     execute: terminate,
     reset: resetTerminate,
     error: terminateError,
     isLoading: isTerminating,
-  } = useServerAction(async () => {
-    if (!!props.initial) {
-      await props.terminate(props.initial.identifier);
-      setIsOpenConfirmOpen(false);
-      router.push("/admin/tags");
-    }
-  });
+  } = useServerAction(
+    async () => {
+      if (props.initial) {
+        await props.terminate(props.initial.identifier);
+        setIsOpenConfirmOpen(false);
+        router.push("/admin/tags");
+      }
+    },
+    { onSuccess: () => showToast("タグを削除しました") },
+  );
 
   return (
     <form action={persist} className={styles.container}>
@@ -126,6 +138,7 @@ export const TagEditForm = (props: Props) => {
         message={persistError?.message ?? terminateError?.message ?? ""}
         details={persistError?.details ?? terminateError?.details}
       />
+      {(isPersisting || isTerminating) && <LoadingOverlay />}
     </form>
   );
 };

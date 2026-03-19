@@ -7,6 +7,8 @@ import { ProfileCareerForm } from "./career";
 import styles from "./index.module.css";
 import { Profile, UnvalidatedProfile } from "@shared/domains/user";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
+import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+import { useToast } from "@shared/components/molecules/toast";
 import { Tag } from "@shared/domains/attributes/tag";
 import { useHooks } from "./index.hooks";
 
@@ -17,7 +19,10 @@ export type Props = {
 };
 
 export const ProfileEditForm = (props: Props) => {
-  const hooks = useHooks(props.persist, props.initial);
+  const { showToast } = useToast();
+  const hooks = useHooks(props.persist, props.initial, () =>
+    showToast("プロフィールを更新しました"),
+  );
 
   return (
     <form action={hooks.persist.execute} className={styles.container}>
@@ -65,6 +70,7 @@ export const ProfileEditForm = (props: Props) => {
         }
         details={hooks.persist.error?.details}
       />
+      {hooks.persist.isLoading && <LoadingOverlay />}
     </form>
   );
 };

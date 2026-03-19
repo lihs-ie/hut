@@ -8,9 +8,7 @@ import { useServerAction } from "@shared/components/global/hooks/use-server-acti
 async function executeWithErrorHandling(
   execute: () => Promise<unknown>
 ): Promise<void> {
-  await execute().catch(() => {
-    // エラーをキャッチして無視
-  });
+  await execute().catch(() => {});
 }
 
 describe("hooks/useServerAction", () => {
@@ -223,6 +221,62 @@ describe("hooks/useServerAction", () => {
       expect(result.current.isLoading).toBe(false);
       expect(result.current.isError).toBe(false);
       expect(result.current.isSuccess).toBe(false);
+    });
+  });
+
+  describe("onSuccess コールバック", () => {
+    it("成功時に onSuccess コールバックが呼ばれる", async () => {
+      const mockAction = vi.fn().mockResolvedValue("success");
+      const onSuccess = vi.fn();
+      const { result } = renderHook(() =>
+        useServerAction(mockAction, { onSuccess }),
+      );
+
+      await act(async () => {
+        await result.current.execute();
+      });
+
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it("成功時に onSuccess コールバックに結果が渡される", async () => {
+      const expectedData = { id: 1, name: "test" };
+      const mockAction = vi.fn().mockResolvedValue(expectedData);
+      const onSuccess = vi.fn();
+      const { result } = renderHook(() =>
+        useServerAction(mockAction, { onSuccess }),
+      );
+
+      await act(async () => {
+        await result.current.execute();
+      });
+
+      expect(onSuccess).toHaveBeenCalledWith(expectedData);
+    });
+
+    it("エラー時には onSuccess コールバックが呼ばれない", async () => {
+      const mockAction = vi.fn().mockRejectedValue(new Error("error"));
+      const onSuccess = vi.fn();
+      const { result } = renderHook(() =>
+        useServerAction(mockAction, { onSuccess }),
+      );
+
+      await act(async () => {
+        await executeWithErrorHandling(result.current.execute);
+      });
+
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it("onSuccess が未指定でも正常に動作する", async () => {
+      const mockAction = vi.fn().mockResolvedValue("success");
+      const { result } = renderHook(() => useServerAction(mockAction));
+
+      await act(async () => {
+        await result.current.execute();
+      });
+
+      expect(result.current.isSuccess).toBe(true);
     });
   });
 

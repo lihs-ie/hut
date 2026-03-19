@@ -12,6 +12,8 @@ import { MemoIdentifier, UnvalidatedEntry } from "@shared/domains/memo";
 import { ImageIdentifier } from "@shared/domains/image";
 import { extractImageUrls } from "@shared/domains/common/markdown";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
+import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+import { useToast } from "@shared/components/molecules/toast";
 import { DropzoneOverlay } from "@shared/components/molecules/overlay/dropzone";
 import { UploadStatus } from "@shared/components/molecules/upload/status";
 import { useCodeMirror } from "@shared/components/organisms/common/editor/use-codemirror";
@@ -32,12 +34,16 @@ const Tab = {
 type Tab = (typeof Tab)[keyof typeof Tab];
 
 export const EntryEditor = (props: Props) => {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>(Tab.MARKDOWN);
   const [value, setValue] = useState("");
   const [images, setImages] = useState<ImageIdentifier[]>([]);
   const imageUrlToIdentifierMap = useRef<Map<string, ImageIdentifier>>(new Map());
 
-  const { execute, error, reset, isError } = useServerAction(props.persist);
+  const { execute, error, reset, isError, isLoading } = useServerAction(
+    props.persist,
+    { onSuccess: () => showToast("投稿しました") },
+  );
 
   const imageUploadHook = useImageUpload({
     uploadAction: props.uploadAction,
@@ -199,6 +205,7 @@ export const EntryEditor = (props: Props) => {
         </SimpleButton>
       </div>
 
+      {isLoading && <LoadingOverlay />}
       <ErrorModal
         isOpen={isError}
         onClose={reset}

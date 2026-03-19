@@ -89,6 +89,7 @@ export const buildTechStacksMap = (
 export const useHooks = (
   persistAction: (unvalidated: UnvalidatedProfile) => Promise<void>,
   initial?: Profile,
+  onSuccess?: () => void,
 ): Hooks => {
   const [avatar, setAvatar] = useState<string>(initial?.avatar || "");
   const [basic, setBasic] = useState<Basic>({
@@ -187,6 +188,7 @@ export const useHooks = (
           user: service.user,
         })),
       }),
+    { onSuccess },
   );
 
   return {
