@@ -163,7 +163,7 @@ describe("components/molecules/toast", () => {
         screen.getByText("表示").click();
       });
 
-      const toastContainer = document.querySelector('[class*="container"]');
+      const toastContainer = screen.getByRole("status");
       expect(toastContainer).toBeInTheDocument();
     });
   });

@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, act } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { PublishStatus } from "@shared/domains/common";
 import { ToastProvider } from "@shared/components/molecules/toast";
 
@@ -42,7 +42,7 @@ describe("components/organisms/memo/edit/MemoEditSidebarPresenter", () => {
       closeButton.click();
     });
 
-    const overlay = document.querySelector('[class*="container"]');
+    const overlay = screen.getByRole("status", { name: "読み込み中" });
     expect(overlay).toBeInTheDocument();
   });
 

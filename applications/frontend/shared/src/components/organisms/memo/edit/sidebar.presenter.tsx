@@ -53,7 +53,7 @@ export const MemoEditSidebarPresenter = (props: Props) => {
       setIsPublished(status === PublishStatus.PUBLISHED);
     },
     {
-      onSuccess: (_result) =>
+      onSuccess: () =>
         showToast(
           isPublished ? "下書きに変更しました" : "公開に変更しました",
         ),
