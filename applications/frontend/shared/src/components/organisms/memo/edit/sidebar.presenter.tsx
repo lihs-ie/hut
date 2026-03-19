@@ -14,6 +14,7 @@ import { VariantButton } from "@shared/components/atoms/button/variant";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+import { useToast } from "@shared/components/molecules/toast";
 
 export type Props = {
   initialStatus: PublishStatus;
@@ -22,6 +23,7 @@ export type Props = {
 
 export const MemoEditSidebarPresenter = (props: Props) => {
   const router = useRouter();
+  const { showToast } = useToast();
   const [isPublished, setIsPublished] = useState(
     props.initialStatus === PublishStatus.PUBLISHED,
   );
@@ -32,20 +34,31 @@ export const MemoEditSidebarPresenter = (props: Props) => {
     error: closeError,
     isLoading: isCloseLoading,
     reset: resetClose,
-  } = useServerAction(async (status: PublishStatus) => {
-    await props.changeStatus(status);
-    router.push("/admin/memos");
-  });
+  } = useServerAction(
+    async (status: PublishStatus) => {
+      await props.changeStatus(status);
+      router.push("/admin/memos");
+    },
+    { onSuccess: () => showToast("メモをクローズしました") },
+  );
 
   const {
     execute: executeVisibility,
     error: visibilityError,
     isLoading: isVisibilityLoading,
     reset: resetVisibility,
-  } = useServerAction(async (status: PublishStatus) => {
-    await props.changeStatus(status);
-    setIsPublished(status === PublishStatus.PUBLISHED);
-  });
+  } = useServerAction(
+    async (status: PublishStatus) => {
+      await props.changeStatus(status);
+      setIsPublished(status === PublishStatus.PUBLISHED);
+    },
+    {
+      onSuccess: (_result) =>
+        showToast(
+          isPublished ? "下書きに変更しました" : "公開に変更しました",
+        ),
+    },
+  );
 
   return (
     <aside className={styles.container}>
@@ -86,7 +99,7 @@ export const MemoEditSidebarPresenter = (props: Props) => {
           </div>
         </div>
       </SimpleCard>
-      {isCloseLoading || (isVisibilityLoading && <LoadingOverlay />)}
+      {(isCloseLoading || isVisibilityLoading) && <LoadingOverlay />}
       <ErrorModal
         isOpen={!!closeError || !!visibilityError}
         onClose={() => {

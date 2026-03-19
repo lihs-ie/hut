@@ -2,13 +2,15 @@
 
 import { Textarea } from "@shared/components/atoms/input/textarea";
 import styles from "./form.module.css";
-import { PublishStatus } from "@shared/domains/common";
+import { PublishStatus, publishStatusSchema } from "@shared/domains/common";
 import { useState } from "react";
 import { UnvalidatedMemo } from "@shared/domains/memo";
 import { FormButton } from "@shared/components/atoms/button/form";
 import { DropdownSelect } from "@shared/components/atoms/select/dropdown";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
+import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+import { useToast } from "@shared/components/molecules/toast";
 import { ulid } from "ulid";
 import { useRouter } from "next/navigation";
 import { Routes } from "@shared/config/presentation/route";
@@ -19,14 +21,15 @@ export type Props = {
 
 export const MemoCreateForm = (props: Props) => {
   const router = useRouter();
+  const { showToast } = useToast();
   const [title, setTitle] = useState("");
-  const [status, setStatus] = useState(PublishStatus.DRAFT as PublishStatus);
+  const [status, setStatus] = useState<PublishStatus>(PublishStatus.DRAFT);
 
   const { execute, reset, error, isLoading } = useServerAction(
     async (formData: FormData) => {
       const unvalidated: UnvalidatedMemo = {
         identifier: ulid(),
-        title: formData.get("title") as string,
+        title: String(formData.get("title") ?? ""),
         slug: "test",
         tags: [],
         entries: [],
@@ -42,6 +45,7 @@ export const MemoCreateForm = (props: Props) => {
 
       router.push(Routes.page.memos.edit("test"));
     },
+    { onSuccess: () => showToast("メモを作成しました") },
   );
 
   return (
@@ -66,7 +70,7 @@ export const MemoCreateForm = (props: Props) => {
       <div className={styles.select}>
         <DropdownSelect
           value={status}
-          onChange={(value) => setStatus(value as PublishStatus)}
+          onChange={(value) => setStatus(publishStatusSchema.parse(value))}
           options={[PublishStatus.DRAFT, PublishStatus.PUBLISHED].map(
             (status) => ({
               value: status,
@@ -83,6 +87,7 @@ export const MemoCreateForm = (props: Props) => {
         message={error?.message ?? ""}
         details={error?.details}
       />
+      {isLoading && <LoadingOverlay />}
     </form>
   );
 };

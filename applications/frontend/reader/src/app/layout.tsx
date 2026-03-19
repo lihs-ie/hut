@@ -6,6 +6,8 @@ import { Header } from "@shared/components/organisms/header";
 import { Footer } from "@shared/components/organisms/footer";
 import { currentTheme } from "@shared/actions/theme";
 import { getProfile } from "@shared/actions/admin";
+import { NavigationProvider } from "@shared/components/molecules/navigation/provider";
+import { ToastProvider } from "@shared/components/molecules/toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,9 +53,13 @@ export default async function RootLayout({
     <html lang="ja" className={theme}>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <NuqsAdapter>
-          <Header />
-          <main>{children}</main>
-          <Footer getProfile={getProfile} />
+          <ToastProvider>
+            <NavigationProvider>
+              <Header />
+              <main>{children}</main>
+              <Footer getProfile={getProfile} />
+            </NavigationProvider>
+          </ToastProvider>
         </NuqsAdapter>
       </body>
     </html>

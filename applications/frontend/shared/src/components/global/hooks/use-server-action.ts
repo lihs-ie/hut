@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { ErrorDetail } from "@shared/components/molecules/modal/error";
 
 export type ServerActionError = {
@@ -16,6 +16,10 @@ type ServerActionState<T> = {
   isSuccess: boolean;
 };
 
+type UseServerActionOptions<T> = {
+  onSuccess?: (data: T) => void;
+};
+
 type UseServerActionReturn<
   T,
   TArgs extends unknown[],
@@ -25,18 +29,23 @@ type UseServerActionReturn<
   reset: () => void;
 };
 
+type ErrorWithDetails = Error & {
+  errors: Array<{ field?: string; description?: string }>;
+};
+
+const hasErrors = (error: Error): error is ErrorWithDetails =>
+  "errors" in error && Array.isArray(error.errors);
+
 const parseError = (error: unknown): ServerActionError => {
   if (error instanceof Error) {
-    const errorWithDetails = error as Error & {
-      errors?: Array<{ field?: string; description?: string }>;
-    };
-
     return {
       message: error.message,
-      details: errorWithDetails.errors?.map((error) => ({
-        field: error.field,
-        description: error.description,
-      })),
+      details: hasErrors(error)
+        ? error.errors.map((detail) => ({
+            field: detail.field,
+            description: detail.description,
+          }))
+        : undefined,
     };
   }
 
@@ -49,6 +58,7 @@ const parseError = (error: unknown): ServerActionError => {
 
 export const useServerAction = <T, TArgs extends unknown[]>(
   action: (...arguments_: TArgs) => Promise<T>,
+  options?: UseServerActionOptions<T>,
 ): UseServerActionReturn<T, TArgs> => {
   const [state, setState] = useState<ServerActionState<T>>({
     data: null,
@@ -56,6 +66,16 @@ export const useServerAction = <T, TArgs extends unknown[]>(
     isLoading: false,
     isError: false,
     isSuccess: false,
+  });
+
+  const onSuccessRef = useRef(options?.onSuccess);
+  useEffect(() => {
+    onSuccessRef.current = options?.onSuccess;
+  });
+
+  const actionRef = useRef(action);
+  useEffect(() => {
+    actionRef.current = action;
   });
 
   const execute = useCallback(
@@ -69,7 +89,7 @@ export const useServerAction = <T, TArgs extends unknown[]>(
       });
 
       try {
-        const result = await action(...arguments_);
+        const result = await actionRef.current(...arguments_);
         setState({
           data: result,
           error: null,
@@ -77,6 +97,7 @@ export const useServerAction = <T, TArgs extends unknown[]>(
           isError: false,
           isSuccess: true,
         });
+        onSuccessRef.current?.(result);
         return result;
       } catch (error) {
         const parsedError = parseError(error);
@@ -91,7 +112,7 @@ export const useServerAction = <T, TArgs extends unknown[]>(
         return Promise.reject(parsedError);
       }
     },
-    [action],
+    [],
   );
 
   const clearError = useCallback(() => {
