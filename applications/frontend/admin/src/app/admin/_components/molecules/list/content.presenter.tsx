@@ -4,6 +4,7 @@ import styles from "./content.module.css";
 import { AdminContentCard, Props as Content } from "./card/content";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+import { useToast } from "@shared/components/molecules/toast";
 import { ConfirmModal } from "@shared/components/molecules/modal/confirm";
 import { useState } from "react";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
@@ -16,14 +17,19 @@ export const AdminContentListPresenter = (props: Props) => {
   const [pendingDeleteContent, setPendingDeleteContent] =
     useState<Content | null>(null);
 
+  const { showToast } = useToast();
+
   const {
     execute: executeTerminate,
     error,
     reset,
     isLoading,
-  } = useServerAction(async (content: Content) => {
-    await content.onTerminate();
-  });
+  } = useServerAction(
+    async (content: Content) => {
+      await content.onTerminate();
+    },
+    { onSuccess: () => showToast("コンテンツを削除しました") },
+  );
 
   const handleTerminate = (content: Content) => {
     setPendingDeleteContent(content);

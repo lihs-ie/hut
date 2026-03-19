@@ -21,11 +21,11 @@ type NavigationState = {
 };
 
 export const NavigationProvider = (props: Props) => {
+  const pathname = usePathname();
   const [state, setState] = useState<NavigationState>({
-    trackedPathname: "",
+    trackedPathname: pathname,
     isNavigating: false,
   });
-  const pathname = usePathname();
 
   if (state.trackedPathname !== pathname) {
     setState({ trackedPathname: pathname, isNavigating: false });
