@@ -46,13 +46,13 @@ export const ChapterIndex = async (props: Props) => {
       <div className={styles.wrapper}>
         <div className={styles.layout}>
           <aside className={styles.sidebar}>
-            <div className={styles["sidebar-card"]}>
+            <div className={styles["sidebar-inner"]}>
               <Link href={Routes.page.series.show(props.slug)} className={styles["book-link"]}>
                 <BookOpenIcon className={styles["book-link-icon"]} />
                 {series.title}
               </Link>
 
-              <nav className={styles["nav-list"]}>
+              <nav className={styles["nav-list"]} aria-label="チャプター一覧">
                 {series.chapters.map((chapter, index) => {
                   const isActive = chapter.slug === props.chapterSlug;
                   return (
@@ -61,7 +61,7 @@ export const ChapterIndex = async (props: Props) => {
                       href={Routes.page.series.chapter.show(props.slug, chapter.slug)}
                       className={`${styles["nav-item"]} ${isActive ? styles["nav-item-active"] : ""}`}
                     >
-                      <span className={styles["nav-item-number"]}>{index + 1}</span>
+                      <span className={styles["nav-item-number"]}>{String(index + 1).padStart(2, "0")}</span>
                       <span className={styles["nav-item-title"]}>{chapter.title}</span>
                     </Link>
                   );
@@ -70,22 +70,22 @@ export const ChapterIndex = async (props: Props) => {
             </div>
           </aside>
 
-          <main className={styles.main}>
+          <div className={styles.main}>
             <article>
               <div className={styles["chapter-header"]}>
                 <p className={styles["chapter-label"]}>
-                  Chapter {currentIndex + 1}
+                  Chapter {String(currentIndex + 1).padStart(2, "0")}
                 </p>
                 <h1 className={styles["chapter-title"]}>{currentChapter.title}</h1>
               </div>
 
-              <div className={styles["content-card"]}>
+              <div className={styles["content-body"]}>
                 <Suspense fallback={<ArticleContentSkeleton />}>
                   <div className="prose">{RenderedContent}</div>
                 </Suspense>
               </div>
 
-              <div className={styles.navigation}>
+              <nav className={styles.navigation} aria-label="前後のチャプター">
                 {prevChapter && (
                   <Link
                     href={Routes.page.series.chapter.show(props.slug, prevChapter.slug)}
@@ -93,7 +93,7 @@ export const ChapterIndex = async (props: Props) => {
                   >
                     <ChevronLeftIcon className={styles["nav-button-icon"]} />
                     <div className={styles["nav-button-content"]}>
-                      <span className={styles["nav-button-label"]}>前の章</span>
+                      <span className={styles["nav-button-label"]}>PREV</span>
                       <span className={styles["nav-button-title"]}>
                         {prevChapter.title}
                       </span>
@@ -107,7 +107,7 @@ export const ChapterIndex = async (props: Props) => {
                     className={`${styles["nav-button"]} ${styles["nav-button-next"]}`}
                   >
                     <div className={styles["nav-button-content"]}>
-                      <span className={styles["nav-button-label"]}>次の章</span>
+                      <span className={styles["nav-button-label"]}>NEXT</span>
                       <span className={styles["nav-button-title"]}>
                         {nextChapter.title}
                       </span>
@@ -115,9 +115,9 @@ export const ChapterIndex = async (props: Props) => {
                     <ChevronRightIcon className={styles["nav-button-icon"]} />
                   </Link>
                 )}
-              </div>
+              </nav>
             </article>
-          </main>
+          </div>
         </div>
       </div>
     </div>

@@ -43,7 +43,7 @@ export const SeriesDetail = (props: Props) => {
               >
                 <div className={styles["chapter-content"]}>
                   <div className={styles["chapter-info"]}>
-                    <span className={styles["chapter-number"]}>{index + 1}</span>
+                    <span className={styles["chapter-number"]}>{String(index + 1).padStart(2, "0")}</span>
                     <h3 className={styles["chapter-title"]}>{chapter.title}</h3>
                   </div>
                   <ChevronRightIcon className={styles["chapter-icon"]} />
