@@ -7,15 +7,16 @@
 
 .copy {
   position: absolute;
-  top: 8px;
+  top: 28px;
   right: 8px;
   z-index: 1;
   opacity: 0;
   transition: opacity 0.15s ease;
 }
 
-.container:hover .copy,
-.container:focus-within .copy {
+.pre:hover ~ .copy,
+.pre:focus-within ~ .copy,
+.copy:hover {
   opacity: 1;
 }
 
