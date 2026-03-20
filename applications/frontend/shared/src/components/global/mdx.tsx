@@ -1,6 +1,7 @@
 import { MDXRemote, MDXRemoteProps } from "next-mdx-remote/rsc";
 import rehypeShiki from "@shikijs/rehype";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeSlug from "rehype-slug";
 import React from "react";
 import styles from "./mdx.module.css";
@@ -8,18 +9,32 @@ import { remarkLinkCard } from "@shared/plugins/remark-link-card";
 import { LinkCard } from "@shared/components/molecules/card/link";
 import { ContentImage } from "@shared/components/atoms/image/content";
 import { MermaidRenderer } from "@shared/components/molecules/mermaid";
+import { CopyButton } from "@shared/components/molecules/button/copy";
 
 export type MarkdownRenderer = (content: string) => React.ReactNode;
 
-const mdxOptions: MDXRemoteProps["options"] = {
+export const extractFilenameFromMeta = (meta: string): string | null => {
+  if (!meta.startsWith(":")) return null;
+
+  const filename = meta.slice(1).trim();
+
+  return filename.length > 0 ? filename : null;
+};
+
+export const mdxOptions: MDXRemoteProps["options"] = {
   mdxOptions: {
-    remarkPlugins: [remarkGfm, remarkLinkCard],
+    remarkPlugins: [remarkGfm, remarkBreaks, remarkLinkCard],
     rehypePlugins: [
       [
         rehypeShiki,
         {
           theme: "github-dark",
           addLanguageClass: true,
+          parseMetaString: (meta: string) => {
+            const filename = extractFilenameFromMeta(meta);
+
+            return filename ? { filename } : {};
+          },
         },
       ],
       rehypeSlug,
@@ -43,6 +58,7 @@ const languageLabels: Record<string, string> = {
 
 type PreProps = React.HTMLAttributes<HTMLPreElement> & {
   children?: React.ReactNode;
+  filename?: string;
 };
 
 const extractLanguage = (children: React.ReactNode): string | null => {
@@ -77,16 +93,30 @@ const CodeBlock = (props: PreProps) => {
     ? languageLabels[language] || language
     : null;
 
+  const textContent = extractTextContent(props.children);
+  const hasHeader = displayLanguage || props.filename;
+
   return (
-    <div className={styles["code-block"]}>
-      {displayLanguage && (
-        <div className={styles["code-block-header"]}>
-          <span className={styles["code-block-language"]}>
-            {displayLanguage}
-          </span>
+    <div className={styles.container}>
+      {hasHeader && (
+        <div className={styles.header}>
+          <div className={styles.meta}>
+            {props.filename && (
+              <span className={styles.filename}>{props.filename}</span>
+            )}
+            {!props.filename && displayLanguage && (
+              <span className={styles.language}>{displayLanguage}</span>
+            )}
+          </div>
+          <CopyButton text={textContent} />
         </div>
       )}
-      <pre className={styles["code-block-pre"]} {...props}>
+      {!hasHeader && (
+        <div className={styles.copy}>
+          <CopyButton text={textContent} />
+        </div>
+      )}
+      <pre className={styles.pre} {...props}>
         {props.children}
       </pre>
     </div>
