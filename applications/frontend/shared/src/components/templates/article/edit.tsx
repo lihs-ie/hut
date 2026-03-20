@@ -26,6 +26,7 @@ import { TagIcon } from "@shared/components/atoms/icon/tag";
 import { CrossIcon } from "@shared/components/atoms/icon/cross";
 import { ok } from "@shared/aspects/result";
 import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+import { useToast } from "@shared/components/molecules/toast";
 import { ImageIdentifier } from "@shared/domains/image";
 import { extractImageUrls } from "@shared/domains/common/markdown";
 
@@ -64,6 +65,7 @@ export type Props = {
 
 export const ArticleEdit = (props: Props) => {
   const router = useRouter();
+  const { showToast } = useToast();
 
   const [identifier] = useState(() => props.initial?.identifier ?? ulid());
   const [title, setTitle] = useState<string>(props.initial?.title ?? "");
@@ -179,6 +181,8 @@ export const ArticleEdit = (props: Props) => {
           throw new Error(error.message);
         },
       });
+  }, {
+    onSuccess: () => showToast(props.initial ? "記事を更新しました" : "記事を作成しました"),
   });
 
   return (

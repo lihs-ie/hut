@@ -14,5 +14,13 @@ export const reactAlias: UserConfig["resolve"] = {
       currentDirectory,
       "shared/node_modules/react-dom",
     ),
+    "@testing-library/react": path.resolve(
+      currentDirectory,
+      "shared/node_modules/@testing-library/react",
+    ),
+    "@testing-library/jest-dom": path.resolve(
+      currentDirectory,
+      "shared/node_modules/@testing-library/jest-dom",
+    ),
   },
 };
