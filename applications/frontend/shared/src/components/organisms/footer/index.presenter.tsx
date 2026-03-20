@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavigableLink } from "@shared/components/molecules/link/navigable";
 
 import styles from "./index.module.css";
 import { ExternalServiceType } from "@shared/domains/common/service";
@@ -21,13 +21,13 @@ export const FooterPresenter = async (props: Props) => (
           <h3 className={styles.sectionTitle}>About</h3>
           <ul className={styles.linkList}>
             <li>
-              <Link href="/about">プロフィール</Link>
+              <NavigableLink href="/about">プロフィール</NavigableLink>
             </li>
             <li>
-              <Link href="/about#experience">経歴</Link>
+              <NavigableLink href="/about#experience">経歴</NavigableLink>
             </li>
             <li>
-              <Link href="/about#tech-stack">技術スタック</Link>
+              <NavigableLink href="/about#tech-stack">技術スタック</NavigableLink>
             </li>
           </ul>
         </div>
@@ -36,16 +36,11 @@ export const FooterPresenter = async (props: Props) => (
           <h3 className={styles.sectionTitle}>Content</h3>
           <ul className={styles.linkList}>
             <li>
-              <Link href={Routes.page.articles.index}>記事</Link>
+              <NavigableLink href={Routes.page.articles.index}>記事</NavigableLink>
             </li>
             <li>
-              <Link href={Routes.page.memos.index}>メモ</Link>
+              <NavigableLink href={Routes.page.memos.index}>メモ</NavigableLink>
             </li>
-            {/* [初期リリース対象外]
-            <li>
-              <Link href={Routes.page.series.index}>シリーズ</Link>
-            </li>
-            */}
           </ul>
         </div>
 
@@ -53,7 +48,7 @@ export const FooterPresenter = async (props: Props) => (
           <h3 className={styles.sectionTitle}>Links</h3>
           <ul className={styles.linkList}>
             <li>
-              <Link href="/search">検索</Link>
+              <NavigableLink href="/search">検索</NavigableLink>
             </li>
           </ul>
         </div>
@@ -62,7 +57,7 @@ export const FooterPresenter = async (props: Props) => (
           <h3 className={styles.sectionTitle}>Legal</h3>
           <ul className={styles.linkList}>
             <li>
-              <Link href="/privacy">プライバシーポリシー</Link>
+              <NavigableLink href="/privacy">プライバシーポリシー</NavigableLink>
             </li>
           </ul>
         </div>

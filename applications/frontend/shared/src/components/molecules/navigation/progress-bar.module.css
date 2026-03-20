@@ -1,0 +1,61 @@
+.base {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background-color: var(--primary);
+  z-index: 9999;
+}
+
+.bar {
+  composes: base;
+  width: 0%;
+  animation: progress 4300ms ease-out forwards;
+}
+
+.completing {
+  composes: base;
+  width: 100%;
+  opacity: 0;
+  animation: fadeout 200ms ease-out forwards;
+}
+
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  7% {
+    width: 30%;
+  }
+  30% {
+    width: 60%;
+  }
+  100% {
+    width: 85%;
+  }
+}
+
+@keyframes fadeout {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar,
+  .completing {
+    animation: none;
+  }
+
+  .bar {
+    width: 50%;
+  }
+
+  .completing {
+    width: 100%;
+    opacity: 0;
+  }
+}

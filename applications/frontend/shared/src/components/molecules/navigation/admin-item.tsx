@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import Link from "next/link";
+import { NavigableLink } from "@shared/components/molecules/link/navigable";
 import styles from "./admin-item.module.css";
 
 export type Props = {
@@ -10,11 +10,11 @@ export type Props = {
 };
 
 export const AdminNavItem = (props: Props) => (
-  <Link
+  <NavigableLink
     href={props.href}
     className={`${styles.container} ${props.isActive ? styles.active : ""}`}
   >
     <span className={styles.icon}>{props.icon}</span>
     <span className={styles.label}>{props.label}</span>
-  </Link>
+  </NavigableLink>
 );

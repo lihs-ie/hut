@@ -1,8 +1,15 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { usePathname } from "next/navigation";
-import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+import { TopProgressBar } from "@shared/components/molecules/navigation/progress-bar";
 
 type NavigationContextValue = {
   isNavigating: boolean;
@@ -18,6 +25,8 @@ type Props = {
 type NavigationState = {
   trackedPathname: string;
   isNavigating: boolean;
+  showBar: boolean;
+  completing: boolean;
 };
 
 export const NavigationProvider = (props: Props) => {
@@ -25,20 +34,83 @@ export const NavigationProvider = (props: Props) => {
   const [state, setState] = useState<NavigationState>({
     trackedPathname: pathname,
     isNavigating: false,
+    showBar: false,
+    completing: false,
   });
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   if (state.trackedPathname !== pathname) {
-    setState({ trackedPathname: pathname, isNavigating: false });
+    if (state.showBar) {
+      setState({
+        trackedPathname: pathname,
+        isNavigating: false,
+        showBar: true,
+        completing: true,
+      });
+    } else {
+      setState({
+        trackedPathname: pathname,
+        isNavigating: false,
+        showBar: false,
+        completing: false,
+      });
+    }
   }
 
+  useEffect(() => {
+    if (!state.completing) {
+      return;
+    }
+    completingTimerRef.current = setTimeout(() => {
+      setState((previous) => ({
+        ...previous,
+        showBar: false,
+        completing: false,
+      }));
+    }, 200);
+    return () => {
+      if (completingTimerRef.current !== null) {
+        clearTimeout(completingTimerRef.current);
+      }
+    };
+  }, [state.completing]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [pathname]);
+
   const startNavigation = useCallback(() => {
-    setState((previous) => ({ ...previous, isNavigating: true }));
+    setState((previous) => ({
+      ...previous,
+      isNavigating: true,
+      completing: false,
+    }));
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+    }
+    timerRef.current = setTimeout(() => {
+      setState((previous) => {
+        if (!previous.isNavigating) {
+          return previous;
+        }
+        return { ...previous, showBar: true };
+      });
+    }, 200);
   }, []);
 
   return (
-    <NavigationContext.Provider value={{ isNavigating: state.isNavigating, startNavigation }}>
+    <NavigationContext.Provider
+      value={{ isNavigating: state.isNavigating, startNavigation }}
+    >
       {props.children}
-      {state.isNavigating && <LoadingOverlay />}
+      <TopProgressBar visible={state.showBar} completing={state.completing} />
     </NavigationContext.Provider>
   );
 };
