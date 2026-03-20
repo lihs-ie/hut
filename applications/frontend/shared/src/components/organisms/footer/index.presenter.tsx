@@ -41,6 +41,9 @@ export const FooterPresenter = async (props: Props) => (
             <li>
               <NavigableLink href={Routes.page.memos.index}>メモ</NavigableLink>
             </li>
+            <li>
+              <NavigableLink href={Routes.page.series.index}>シリーズ</NavigableLink>
+            </li>
           </ul>
         </div>
 

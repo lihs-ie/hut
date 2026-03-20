@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Series, SeriesSlug } from "@shared/domains/series";
-import { SimpleBadge } from "@shared/components/atoms/badge/simple";
+import { Tag } from "@shared/domains/attributes/tag";
+import { TagBadgeList } from "@shared/components/organisms/common/list/tag";
 import { Routes } from "@shared/config/presentation/route";
 import { formatDate } from "@shared/aspects/date";
 import styles from "./index.module.css";
@@ -11,6 +12,7 @@ import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
 export type Props = {
   series: Series;
   slug: SeriesSlug;
+  findAllTags: (identifiers: string[]) => Promise<Tag[]>;
   author?: {
     name: string;
     avatar?: string;
@@ -88,9 +90,7 @@ export const SeriesDetail = (props: Props) => {
           )}
 
           <div className={styles["topic-list"]}>
-            {series.tags.map((tag) => (
-              <SimpleBadge key={tag} label={tag} />
-            ))}
+            <TagBadgeList identifiers={series.tags} findAllTags={props.findAllTags} />
           </div>
 
           {series.description && (
