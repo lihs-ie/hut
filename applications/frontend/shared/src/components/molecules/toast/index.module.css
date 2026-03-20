@@ -19,4 +19,40 @@
   pointer-events: auto;
   max-width: 20rem;
   word-break: break-word;
+  animation: enter 300ms cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+}
+
+.exiting {
+  animation: exit 200ms ease-in forwards;
+}
+
+@keyframes enter {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes exit {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .exiting {
+    animation: none;
+  }
 }

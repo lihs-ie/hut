@@ -66,7 +66,7 @@ describe("components/molecules/toast", () => {
       expect(screen.getByText("保存しました")).toBeInTheDocument();
     });
 
-    it("トーストは指定時間後に自動で消える", async () => {
+    it("トーストは指定時間後に exiting 状態になる", async () => {
       const { ToastProvider, useToast } = await import(
         "@shared/components/molecules/toast"
       );
@@ -91,13 +91,57 @@ describe("components/molecules/toast", () => {
         button.click();
       });
 
-      expect(screen.getByText("一時的なメッセージ")).toBeInTheDocument();
+      const toastElement = screen.getByText("一時的なメッセージ");
+      expect(toastElement).toBeInTheDocument();
+      expect(toastElement.className).not.toMatch(/exiting/);
 
       act(() => {
         vi.advanceTimersByTime(3000);
       });
 
-      expect(screen.queryByText("一時的なメッセージ")).not.toBeInTheDocument();
+      expect(screen.getByText("一時的なメッセージ")).toBeInTheDocument();
+      expect(screen.getByText("一時的なメッセージ").className).toMatch(
+        /exiting/,
+      );
+    });
+
+    it("exiting 状態のアニメーション完了後（200ms）にDOMから削除される", async () => {
+      const { ToastProvider, useToast } = await import(
+        "@shared/components/molecules/toast"
+      );
+
+      const TestComponent = () => {
+        const { showToast } = useToast();
+        return (
+          <button type="button" onClick={() => showToast("消えるメッセージ")}>
+            表示
+          </button>
+        );
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>,
+      );
+
+      act(() => {
+        screen.getByText("表示").click();
+      });
+
+      expect(screen.getByText("消えるメッセージ")).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+
+      expect(screen.getByText("消えるメッセージ")).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+
+      expect(screen.queryByText("消えるメッセージ")).not.toBeInTheDocument();
     });
 
     it("複数のトーストを順番に表示できる", async () => {
