@@ -25,9 +25,6 @@ const series = {
   ],
 };
 
-/**
- * シリーズ一覧ページのテスト
- */
 test.describe("series list page", () => {
   test.describe("page structure", () => {
     test("page loads successfully", async ({ page }: TestArgs) => {
@@ -115,9 +112,6 @@ test.describe("series list page", () => {
   });
 });
 
-/**
- * シリーズ詳細ページのテスト
- */
 test.describe("series detail page", () => {
   test.describe("page structure", () => {
     test("page loads successfully", async ({ page }: TestArgs) => {
@@ -259,9 +253,6 @@ test.describe("series detail page", () => {
   });
 });
 
-/**
- * チャプターページのテスト
- */
 test.describe("chapter page", () => {
   const firstChapter = series.chapters[0];
   const secondChapter = series.chapters[1];
