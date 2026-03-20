@@ -236,7 +236,6 @@
 
   .prose pre {
     @apply overflow-x-auto;
-    background: transparent;
     border: none;
     padding: 0;
     margin: 0;

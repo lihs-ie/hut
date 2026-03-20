@@ -1,6 +1,7 @@
 import { MDXRemote, MDXRemoteProps } from "next-mdx-remote/rsc";
 import rehypeShiki from "@shikijs/rehype";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeSlug from "rehype-slug";
 import React from "react";
 import styles from "./mdx.module.css";
@@ -8,12 +9,13 @@ import { remarkLinkCard } from "@shared/plugins/remark-link-card";
 import { LinkCard } from "@shared/components/molecules/card/link";
 import { ContentImage } from "@shared/components/atoms/image/content";
 import { MermaidRenderer } from "@shared/components/molecules/mermaid";
+import { CopyButton } from "@shared/components/molecules/button/copy";
 
 export type MarkdownRenderer = (content: string) => React.ReactNode;
 
-const mdxOptions: MDXRemoteProps["options"] = {
+export const mdxOptions: MDXRemoteProps["options"] = {
   mdxOptions: {
-    remarkPlugins: [remarkGfm, remarkLinkCard],
+    remarkPlugins: [remarkGfm, remarkBreaks, remarkLinkCard],
     rehypePlugins: [
       [
         rehypeShiki,
@@ -26,19 +28,6 @@ const mdxOptions: MDXRemoteProps["options"] = {
     ],
   },
   parseFrontmatter: true,
-};
-
-const languageLabels: Record<string, string> = {
-  typescript: "TypeScript",
-  ts: "TypeScript",
-  go: "Go",
-  rust: "Rust",
-  haskell: "Haskell",
-  hs: "Haskell",
-  shell: "Shell",
-  bash: "Bash",
-  sh: "Shell",
-  sql: "SQL",
 };
 
 type PreProps = React.HTMLAttributes<HTMLPreElement> & {
@@ -73,22 +62,17 @@ const CodeBlock = (props: PreProps) => {
     return <MermaidRenderer code={code} />;
   }
 
-  const displayLanguage = language
-    ? languageLabels[language] || language
-    : null;
+  const textContent = extractTextContent(props.children);
+  const mergedClassName = `${styles.pre} ${props.className ?? ""}`.trim();
 
   return (
-    <div className={styles["code-block"]}>
-      {displayLanguage && (
-        <div className={styles["code-block-header"]}>
-          <span className={styles["code-block-language"]}>
-            {displayLanguage}
-          </span>
-        </div>
-      )}
-      <pre className={styles["code-block-pre"]} {...props}>
+    <div className={styles.container}>
+      <pre {...props} className={mergedClassName} style={undefined}>
         {props.children}
       </pre>
+      <div className={styles.copy}>
+        <CopyButton text={textContent} />
+      </div>
     </div>
   );
 };
