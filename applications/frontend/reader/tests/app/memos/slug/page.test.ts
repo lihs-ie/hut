@@ -2,6 +2,10 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi } from "vitest";
+import {
+  revalidate,
+  generateStaticParams,
+} from "../../../../src/app/memos/[slug]/page";
 
 vi.mock("react", () => ({
   cache: <T extends (...args: unknown[]) => unknown>(fn: T) => fn,
@@ -30,30 +34,18 @@ vi.mock("@shared/actions/view", () => ({
 
 describe("/memos/[slug] page", () => {
   describe("revalidate", () => {
-    it("revalidate が 3600 でexportされている", async () => {
-      const pageModule = await import(
-        "@/app/memos/[slug]/page"
-      );
-
-      expect(pageModule.revalidate).toBe(3600);
+    it("revalidate が 3600 でexportされている", () => {
+      expect(revalidate).toBe(3600);
     });
   });
 
   describe("generateStaticParams", () => {
-    it("generateStaticParams が関数としてexportされている", async () => {
-      const pageModule = await import(
-        "@/app/memos/[slug]/page"
-      );
-
-      expect(typeof pageModule.generateStaticParams).toBe("function");
+    it("generateStaticParams が関数としてexportされている", () => {
+      expect(typeof generateStaticParams).toBe("function");
     });
 
     it("generateStaticParams がslugの配列を返す", async () => {
-      const pageModule = await import(
-        "@/app/memos/[slug]/page"
-      );
-
-      const result = await pageModule.generateStaticParams();
+      const result = await generateStaticParams();
 
       expect(Array.isArray(result)).toBe(true);
       expect(result).toEqual([
