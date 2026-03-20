@@ -73,6 +73,7 @@ const readerTestFiles = [
   "**/home.spec.ts",
   "**/public-pages.spec.ts",
   "**/search.spec.ts",
+  "**/series.spec.ts",
 ];
 
 export default defineConfig({
