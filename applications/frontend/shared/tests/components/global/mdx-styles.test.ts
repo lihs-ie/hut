@@ -30,14 +30,14 @@ describe("components/global/mdx.module.css", () => {
   });
 
   it(".copy がホバー時に表示される（opacity: 1）", () => {
-    expect(css).toContain(".container:hover .copy");
-    const hoverStart = css.indexOf(".container:hover .copy");
+    expect(css).toContain(".pre:hover ~ .copy");
+    const hoverStart = css.indexOf(".pre:hover ~ .copy");
     const hoverSection = css.slice(hoverStart, css.indexOf("}", hoverStart) + 1);
     expect(hoverSection).toContain("opacity: 1");
   });
 
   it(".copy がフォーカス時にも表示される（focus-within）", () => {
-    expect(css).toContain(".container:focus-within .copy");
+    expect(css).toContain(".pre:focus-within ~ .copy");
   });
 
   it(".copy の初期状態が非表示（opacity: 0）", () => {
