@@ -1,9 +1,3 @@
-/**
- * Series Workflow Feature Test
- *
- * Firebase Emulatorを使用してSeriesワークフローの統合テストを行います。
- */
-
 import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 import { Forger } from "@lihs-ie/forger-ts";
 import {
@@ -47,6 +41,7 @@ function toSeriesPayload(series: Series) {
     description: series.description,
     cover: series.cover,
     chapters: series.chapters,
+    status: series.status,
     timeline: series.timeline,
   };
 }
@@ -90,6 +85,8 @@ describe("Feature: Series Workflow (実DB接続)", () => {
       const searchResult = await searchWorkflow({
         slug: null,
         tags: null,
+        status: null,
+        freeWord: null,
       }).unwrap();
 
       expect(searchResult.length).toBeGreaterThanOrEqual(1);
@@ -165,13 +162,13 @@ describe("Feature: Series Workflow (実DB接続)", () => {
         repository.search
       )(testLogger);
 
-      // slugとtagsがnullの場合は全件取得
       const result = await searchWorkflow({
         slug: null,
         tags: null,
+        status: null,
+        freeWord: null,
       }).unwrap();
 
-      // 両方のシリーズが取得できること
       expect(result.length).toBeGreaterThanOrEqual(2);
       expect(
         result.some((series) => series.identifier === series1.identifier)
@@ -230,7 +227,6 @@ describe("Feature: Series Workflow (実DB接続)", () => {
         expect(result.payload.series).toBe(seriesList[index]?.identifier);
       });
 
-      // 永続化されたことを確認
       for (const series of seriesList) {
         const found = await repository.find(series.identifier).unwrap();
         expect(found.identifier).toBe(series.identifier);

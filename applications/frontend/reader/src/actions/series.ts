@@ -13,7 +13,7 @@ export const findBySlug = cache(async (slug: string): Promise<Series> => {
 
 export const searchAllSlugs = cache(async (): Promise<string[]> => {
   const seriesList = await unwrapForNextJs(
-    SeriesWorkflowProvider.search({ slug: null, tags: null }),
+    SeriesWorkflowProvider.search({ slug: null, tags: null, status: null, freeWord: null }),
   );
 
   return seriesList.map((series) => series.slug);

@@ -1,7 +1,3 @@
-/**
- * シリーズシードデータ
- */
-
 import { createDocument, SERIES_IDS, TAG_IDS } from "./common";
 
 export async function seedSeries(): Promise<void> {
@@ -83,6 +79,7 @@ Rustのメモリ管理の仕組みを理解します。
         cover: series.cover,
         tags: series.tags,
         chapters: series.chapters,
+        status: "published",
         timeline: {
           createdAt: now,
           updatedAt: now,
@@ -94,7 +91,6 @@ Rustのメモリ管理の仕組みを理解します。
   }
 }
 
-// シリーズデータをエクスポート（search-tokenで使用）
 export const SERIES_DATA = [
   {
     id: "series1",

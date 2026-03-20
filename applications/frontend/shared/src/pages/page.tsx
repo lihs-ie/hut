@@ -17,7 +17,7 @@ export default async function TopPage() {
           status: PublishStatus.PUBLISHED,
         })
       }
-      searchSeries={async () => searchSeries({ slug: null, tags: null })}
+      searchSeries={async () => searchSeries({ slug: null, tags: null, status: null, freeWord: null })}
       findAllTags={findAllTags}
       getProfile={getProfile}
     />

@@ -1,5 +1,5 @@
 import z from "zod";
-import { Slug, slugSchema } from "../common";
+import { publishStatusSchema, Slug, slugSchema } from "../common";
 import { timelineSchema } from "../common/date";
 import { AsyncResult, err, ok, Result } from "@shared/aspects/result";
 import {
@@ -88,6 +88,7 @@ export const seriesSchema = z
     description: descriptionSchema,
     cover: cover.nullable(),
     chapters: z.array(chapterSchema),
+    status: publishStatusSchema,
     timeline: timelineSchema,
   })
   .brand("Series");
@@ -101,6 +102,7 @@ export type UnvalidatedSeries = {
   tags: string[];
   subTitle: string | null;
   chapters: UnvalidatedChapter[];
+  status: string;
   description?: string;
   cover?: string | null;
   timeline?: {
@@ -161,6 +163,8 @@ export const criteriaSchema = z
   .object({
     slug: slugSchema.nullable(),
     tags: z.array(tagIdentifierSchema).nullable(),
+    status: publishStatusSchema.nullable(),
+    freeWord: z.string().min(1).max(100).nullable(),
   })
   .brand("Criteria");
 
@@ -169,6 +173,8 @@ export type Criteria = z.infer<typeof criteriaSchema>;
 export type UnvalidatedCriteria = {
   slug: string | null;
   tags: string[] | null;
+  status: string | null;
+  freeWord: string | null;
 };
 
 export const validateCriteria = (
