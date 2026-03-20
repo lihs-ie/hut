@@ -67,12 +67,12 @@ const CodeBlock = (props: PreProps) => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.copy}>
-        <CopyButton text={textContent} />
-      </div>
       <pre {...props} className={mergedClassName} style={undefined}>
         {props.children}
       </pre>
+      <div className={styles.copy}>
+        <CopyButton text={textContent} />
+      </div>
     </div>
   );
 };
