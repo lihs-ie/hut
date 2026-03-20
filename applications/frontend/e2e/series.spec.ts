@@ -164,7 +164,9 @@ test.describe("series detail page", () => {
       await page.waitForLoadState("networkidle");
 
       for (const chapter of series.chapters) {
-        await expect(page.getByText(chapter.title).first()).toBeVisible();
+        await expect(
+          page.getByRole("link").filter({ hasText: chapter.title }).first(),
+        ).toBeVisible();
       }
     });
 
