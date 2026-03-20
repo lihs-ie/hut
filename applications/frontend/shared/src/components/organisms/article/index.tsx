@@ -4,6 +4,7 @@ import { ContentPresenter } from "../common/content.presenter";
 import { Tag } from "@shared/domains/attributes/tag";
 import { ContentType } from "@shared/domains/search-token/reference";
 import type { SearchReferenceIdentifier } from "@shared/domains/search-token/reference";
+import { ViewTracker } from "@shared/components/molecules/view-tracker";
 
 export type Props = {
   slug: string;
@@ -13,27 +14,22 @@ export type Props = {
   incrementViewCount: (identifier: SearchReferenceIdentifier) => Promise<void>;
 };
 
-export const revalidate = 3600;
-
 export const Article = async (props: Props) => {
   const article = await props.findBySlug(props.slug);
 
-  try {
-    await props.incrementViewCount({
-      type: ContentType.ARTICLE,
-      content: article.identifier,
-    });
-  } catch (_error) {
-    void _error;
-  }
-
   return (
-    <ContentPresenter
-      target={article}
-      tagOf={(article) => article.tags}
-      contentOf={(article) => article.content}
-      renderer={props.renderer}
-      findAllTags={props.findAllTags}
-    />
+    <>
+      <ViewTracker
+        identifier={{ type: ContentType.ARTICLE, content: article.identifier }}
+        incrementViewCount={props.incrementViewCount}
+      />
+      <ContentPresenter
+        target={article}
+        tagOf={(article) => article.tags}
+        contentOf={(article) => article.content}
+        renderer={props.renderer}
+        findAllTags={props.findAllTags}
+      />
+    </>
   );
 };
