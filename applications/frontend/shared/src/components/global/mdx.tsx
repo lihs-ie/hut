@@ -63,13 +63,14 @@ const CodeBlock = (props: PreProps) => {
   }
 
   const textContent = extractTextContent(props.children);
+  const mergedClassName = `${styles.pre} ${props.className ?? ""}`.trim();
 
   return (
     <div className={styles.container}>
       <div className={styles.copy}>
         <CopyButton text={textContent} />
       </div>
-      <pre className={styles.pre} {...props}>
+      <pre {...props} className={mergedClassName} style={undefined}>
         {props.children}
       </pre>
     </div>
