@@ -181,7 +181,6 @@
 }
 
 .nav-button {
-  flex: 1;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -192,6 +191,13 @@
   color: var(--foreground);
   text-decoration: none;
   transition: all 0.2s;
+  max-width: 50%;
+}
+
+@media (max-width: 639px) {
+  .nav-button {
+    max-width: 100%;
+  }
 }
 
 .nav-button:hover {
@@ -205,6 +211,7 @@
 
 .nav-button-next {
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 .nav-button-content {
@@ -234,11 +241,11 @@
 }
 
 .nav-button-icon {
-  width: 1rem;
-  height: 1rem;
+  max-width: 1rem;
+  max-height: 1rem;
+  min-width: 1rem;
+  min-height: 1rem;
   flex-shrink: 0;
+  display: inline-block;
 }
 
-.nav-placeholder {
-  flex: 1;
-}

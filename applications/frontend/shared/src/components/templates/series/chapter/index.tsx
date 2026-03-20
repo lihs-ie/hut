@@ -86,7 +86,7 @@ export const ChapterIndex = async (props: Props) => {
               </div>
 
               <div className={styles.navigation}>
-                {prevChapter ? (
+                {prevChapter && (
                   <Link
                     href={Routes.page.series.chapter.show(props.slug, prevChapter.slug)}
                     className={`${styles["nav-button"]} ${styles["nav-button-prev"]}`}
@@ -99,11 +99,9 @@ export const ChapterIndex = async (props: Props) => {
                       </span>
                     </div>
                   </Link>
-                ) : (
-                  <div className={styles["nav-placeholder"]} />
                 )}
 
-                {nextChapter ? (
+                {nextChapter && (
                   <Link
                     href={Routes.page.series.chapter.show(props.slug, nextChapter.slug)}
                     className={`${styles["nav-button"]} ${styles["nav-button-next"]}`}
@@ -116,8 +114,6 @@ export const ChapterIndex = async (props: Props) => {
                     </div>
                     <ChevronRightIcon className={styles["nav-button-icon"]} />
                   </Link>
-                ) : (
-                  <div className={styles["nav-placeholder"]} />
                 )}
               </div>
             </article>
