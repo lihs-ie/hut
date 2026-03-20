@@ -13,14 +13,6 @@ import { CopyButton } from "@shared/components/molecules/button/copy";
 
 export type MarkdownRenderer = (content: string) => React.ReactNode;
 
-export const extractFilenameFromMeta = (meta: string): string | null => {
-  if (!meta.startsWith(":")) return null;
-
-  const filename = meta.slice(1).trim();
-
-  return filename.length > 0 ? filename : null;
-};
-
 export const mdxOptions: MDXRemoteProps["options"] = {
   mdxOptions: {
     remarkPlugins: [remarkGfm, remarkBreaks, remarkLinkCard],
@@ -30,11 +22,6 @@ export const mdxOptions: MDXRemoteProps["options"] = {
         {
           theme: "github-dark",
           addLanguageClass: true,
-          parseMetaString: (meta: string) => {
-            const filename = extractFilenameFromMeta(meta);
-
-            return filename ? { filename } : {};
-          },
         },
       ],
       rehypeSlug,
@@ -43,22 +30,8 @@ export const mdxOptions: MDXRemoteProps["options"] = {
   parseFrontmatter: true,
 };
 
-const languageLabels: Record<string, string> = {
-  typescript: "TypeScript",
-  ts: "TypeScript",
-  go: "Go",
-  rust: "Rust",
-  haskell: "Haskell",
-  hs: "Haskell",
-  shell: "Shell",
-  bash: "Bash",
-  sh: "Shell",
-  sql: "SQL",
-};
-
 type PreProps = React.HTMLAttributes<HTMLPreElement> & {
   children?: React.ReactNode;
-  filename?: string;
 };
 
 const extractLanguage = (children: React.ReactNode): string | null => {
@@ -89,33 +62,13 @@ const CodeBlock = (props: PreProps) => {
     return <MermaidRenderer code={code} />;
   }
 
-  const displayLanguage = language
-    ? languageLabels[language] || language
-    : null;
-
   const textContent = extractTextContent(props.children);
-  const hasHeader = displayLanguage || props.filename;
 
   return (
     <div className={styles.container}>
-      {hasHeader && (
-        <div className={styles.header}>
-          <div className={styles.meta}>
-            {props.filename && (
-              <span className={styles.filename}>{props.filename}</span>
-            )}
-            {!props.filename && displayLanguage && (
-              <span className={styles.language}>{displayLanguage}</span>
-            )}
-          </div>
-          <CopyButton text={textContent} />
-        </div>
-      )}
-      {!hasHeader && (
-        <div className={styles.copy}>
-          <CopyButton text={textContent} />
-        </div>
-      )}
+      <div className={styles.copy}>
+        <CopyButton text={textContent} />
+      </div>
       <pre className={styles.pre} {...props}>
         {props.children}
       </pre>
