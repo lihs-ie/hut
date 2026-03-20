@@ -1,4 +1,3 @@
-import { getProfile } from "@shared/actions/admin";
 import { findAllTags } from "@shared/actions/tag";
 import { SeriesIndex } from "@shared/components/templates/series";
 import { slugSchema } from "@shared/domains/common/slug";
@@ -10,18 +9,12 @@ type Props = {
 
 export default async function SeriesDetailPage(props: Props) {
   const params = await props.params;
-  const profile = await getProfile();
 
   return (
     <SeriesIndex
       slug={slugSchema.parse(params.slug)}
       findBySlug={findBySlug}
       findAllTags={findAllTags}
-      author={{
-        name: profile.name,
-        avatar: profile.avatar ?? undefined,
-        bio: profile.bio,
-      }}
     />
   );
 }

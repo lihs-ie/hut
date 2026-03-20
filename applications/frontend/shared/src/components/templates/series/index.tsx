@@ -9,11 +9,6 @@ export type Props = {
   slug: SeriesSlug;
   findBySlug: (slug: string) => Promise<Series>;
   findAllTags: (identifiers: string[]) => Promise<Tag[]>;
-  author?: {
-    name: string;
-    avatar?: string;
-    bio?: string;
-  };
 };
 
 export const SeriesIndex = async (props: Props) => {
@@ -26,7 +21,6 @@ export const SeriesIndex = async (props: Props) => {
           series={series}
           slug={props.slug}
           findAllTags={props.findAllTags}
-          author={props.author}
         />
       </Suspense>
     </div>
