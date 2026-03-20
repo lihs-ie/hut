@@ -1,12 +1,14 @@
 import { SeriesDetail } from "@shared/components/organisms/series/detail";
 import styles from "./index.module.css";
 import { Series, SeriesSlug } from "@shared/domains/series";
+import { Tag } from "@shared/domains/attributes/tag";
 import { Suspense } from "react";
 import { ArticleContentSkeleton } from "@shared/components/molecules/skeleton";
 
 export type Props = {
   slug: SeriesSlug;
   findBySlug: (slug: string) => Promise<Series>;
+  findAllTags: (identifiers: string[]) => Promise<Tag[]>;
   author?: {
     name: string;
     avatar?: string;
@@ -23,6 +25,7 @@ export const SeriesIndex = async (props: Props) => {
         <SeriesDetail
           series={series}
           slug={props.slug}
+          findAllTags={props.findAllTags}
           author={props.author}
         />
       </Suspense>
