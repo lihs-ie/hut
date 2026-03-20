@@ -5,39 +5,6 @@
   overflow: hidden;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 32px;
-  padding: 0 8px;
-  background-color: #323e52;
-  border-radius: 4px 4px 0 0;
-}
-
-.meta {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.filename {
-  font-size: 0.8em;
-  font-weight: 500;
-  color: #e6edf3;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.language {
-  font-size: 0.8em;
-  font-weight: 500;
-  color: #fff;
-  letter-spacing: 0.02em;
-}
-
 .copy {
   position: absolute;
   top: 4px;
@@ -47,7 +14,8 @@
   transition: opacity 0.15s ease;
 }
 
-.container:hover .copy {
+.container:hover .copy,
+.container:focus-within .copy {
   opacity: 1;
 }
 
@@ -61,7 +29,7 @@
   line-height: 1.4;
   background-color: #24292e;
   border: none;
-  border-radius: 0 0 4px 4px;
+  border-radius: 4px;
 }
 
 .pre code {
@@ -75,13 +43,5 @@
     padding: 0.75rem 1rem;
     font-size: 0.8125rem;
     line-height: 1.4;
-  }
-
-  .language {
-    font-size: 0.7em;
-  }
-
-  .filename {
-    font-size: 0.7em;
   }
 }
