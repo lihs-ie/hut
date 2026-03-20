@@ -128,6 +128,8 @@
   width: 100%;
   min-width: 0;
   padding: 2rem 1rem;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
@@ -180,6 +182,7 @@
 
 .content-body {
   margin-bottom: 3rem;
+  overflow-x: auto;
 }
 
 .navigation {
@@ -235,7 +238,12 @@
 
 .nav-button-next {
   justify-content: flex-end;
-  margin-left: auto;
+}
+
+@media (min-width: 640px) {
+  .nav-button-next {
+    margin-left: auto;
+  }
 }
 
 .nav-button-content {
