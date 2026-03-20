@@ -2,6 +2,7 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi } from "vitest";
+import { revalidate } from "../../../src/app/memos/page";
 
 vi.mock("@shared/pages/memos/page", () => ({
   default: vi.fn(),
@@ -9,10 +10,8 @@ vi.mock("@shared/pages/memos/page", () => ({
 
 describe("/memos page", () => {
   describe("revalidate", () => {
-    it("revalidate が 60 でexportされている", async () => {
-      const pageModule = await import("@/app/memos/page");
-
-      expect(pageModule.revalidate).toBe(60);
+    it("revalidate が 60 でexportされている", () => {
+      expect(revalidate).toBe(60);
     });
   });
 });
