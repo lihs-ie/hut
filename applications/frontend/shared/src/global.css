@@ -266,6 +266,20 @@
   .prose img {
     @apply block my-4 max-w-full h-auto rounded-lg;
   }
+
+  @media (max-width: 768px) {
+    .prose h2 {
+      @apply text-xl;
+    }
+
+    .prose h3 {
+      @apply text-lg;
+    }
+
+    .prose h4 {
+      @apply text-base;
+    }
+  }
 }
 
 header {

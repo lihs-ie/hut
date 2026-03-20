@@ -162,6 +162,18 @@
     padding: 0;
   }
 
+  .content h1 {
+    font-size: 1.5rem;
+  }
+
+  .content h2 {
+    font-size: 1.25rem;
+  }
+
+  .content h3 {
+    font-size: 1.125rem;
+  }
+
   .content pre code {
     font-size: 0.8125rem;
     line-height: 1.5;
