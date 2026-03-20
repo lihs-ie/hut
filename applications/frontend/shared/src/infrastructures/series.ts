@@ -35,6 +35,7 @@ type PersistedSeries = {
   description?: string;
   subTitle?: string | null;
   cover: string | null;
+  status: string;
   chapters: Array<{
     title: string;
     content: string;
@@ -72,6 +73,7 @@ export const FirebaseSeriesRepository = (
           slug: series.slug,
           tags: series.tags,
           subTitle: series.subTitle,
+          status: series.status,
           chapters: series.chapters.map((chapter) => ({
             title: chapter.title,
             slug: chapter.slug,
@@ -102,6 +104,7 @@ export const FirebaseSeriesRepository = (
           slug: data.slug,
           tags: data.tags,
           subTitle: data.subTitle || null,
+          status: data.status ?? "published",
           chapters: data.chapters.map((chapter) => ({
             title: chapter.title,
             slug: chapter.slug,
@@ -228,7 +231,23 @@ export const FirebaseSeriesRepository = (
   const search: SeriesRepository["search"] = (criteria: Criteria) => {
     return fromPromise(
       (async () => {
-        const q = operations.query(collection);
+        const constraints = [];
+
+        if (criteria.slug) {
+          constraints.push(operations.where("slug", "==", criteria.slug));
+        }
+
+        if (criteria.status) {
+          constraints.push(operations.where("status", "==", criteria.status));
+        }
+
+        if (criteria.tags && criteria.tags.length > 0) {
+          constraints.push(
+            operations.where("tags", "array-contains-any", criteria.tags),
+          );
+        }
+
+        const q = operations.query(collection, ...constraints);
         const querySnapshot = await operations.getDocs(q);
 
         const seriesList: Series[] = [];
@@ -236,8 +255,8 @@ export const FirebaseSeriesRepository = (
           seriesList.push(doc.data());
         });
 
-        if (criteria.slug) {
-          const keyword = criteria.slug.toLowerCase();
+        if (criteria.freeWord) {
+          const keyword = criteria.freeWord.toLowerCase();
           return seriesList.filter((series) =>
             series.title.toLowerCase().includes(keyword),
           );

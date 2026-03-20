@@ -17,6 +17,7 @@ import {
   ChapterSlug,
   SeriesSlug,
 } from "@shared/domains/series";
+import { PublishStatus } from "@shared/domains/common";
 import { ulid } from "ulid";
 import { DateMold, TimelineMold } from "../common/date";
 import { ImmutableMap, Timeline } from "@shared/domains/common";
@@ -138,6 +139,7 @@ export type SeriesProperties = {
   description: Description;
   cover: Cover | null;
   chapters: Chapter[];
+  status: PublishStatus;
   timeline: Timeline;
 };
 
@@ -152,6 +154,7 @@ export const SeriesMold = Mold<Series, SeriesProperties>({
       description: properties.description,
       cover: properties.cover,
       chapters: properties.chapters,
+      status: properties.status,
       timeline: properties.timeline,
     }),
   prepare: (overrides, seed) => ({
@@ -168,6 +171,7 @@ export const SeriesMold = Mold<Series, SeriesProperties>({
     cover: overrides.cover ?? Forger(SeriesCoverMold).forgeWithSeed(seed),
     chapters:
       overrides.chapters ?? Forger(ChapterMold).forgeMultiWithSeed(3, seed),
+    status: overrides.status ?? PublishStatus.PUBLISHED,
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
 });
@@ -308,6 +312,10 @@ export const SeriesRepositoryMold = Mold<
                 return false;
               }
 
+              if (criteria.status && series.status !== criteria.status) {
+                return false;
+              }
+
               if (criteria.tags && criteria.tags.length > 0) {
                 const hasTag = criteria.tags.some((tag) =>
                   series.tags.includes(tag)
@@ -321,7 +329,13 @@ export const SeriesRepositoryMold = Mold<
             })
             .values();
 
-          resolve(results);
+          const filtered = criteria.freeWord
+            ? results.filter((series) =>
+                series.title.toLowerCase().includes(criteria.freeWord!.toLowerCase())
+              )
+            : results;
+
+          resolve(filtered);
         }),
         (error) => unexpectedError("Failed to search series.", error)
       );

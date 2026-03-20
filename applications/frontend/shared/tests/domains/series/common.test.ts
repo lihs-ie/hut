@@ -17,6 +17,7 @@ import {
   criteriaSchema,
   validateCriteria,
 } from "@shared/domains/series";
+import { PublishStatus } from "@shared/domains/common";
 import {
   SeriesMold,
   SeriesIdentifierMold,
@@ -225,6 +226,23 @@ describe("domains/series/common", () => {
           description: "Description",
           cover: "https://example.com/cover.png",
           chapters: [],
+          status: PublishStatus.PUBLISHED,
+          timeline: Forger(TimelineMold).forge(),
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it("statusがdraftでも有効", () => {
+        const result = seriesSchema.safeParse({
+          identifier: Forger(SeriesIdentifierMold).forge(),
+          title: "Series Title",
+          slug: Forger(SlugMold).forge(),
+          tags: [],
+          subTitle: null,
+          description: "Description",
+          cover: null,
+          chapters: [],
+          status: PublishStatus.DRAFT,
           timeline: Forger(TimelineMold).forge(),
         });
         expect(result.success).toBe(true);
@@ -241,6 +259,7 @@ describe("domains/series/common", () => {
         description: "Description",
         cover: null,
         chapters: [],
+        status: PublishStatus.PUBLISHED,
         timeline: Forger(TimelineMold).forge(),
         ...overrides,
       });
@@ -252,6 +271,11 @@ describe("domains/series/common", () => {
 
       it("titleが空の場合は無効", () => {
         const result = seriesSchema.safeParse(createSeriesWithOverrides({ title: "" }));
+        expect(result.success).toBe(false);
+      });
+
+      it("statusが無効な値の場合は無効", () => {
+        const result = seriesSchema.safeParse(createSeriesWithOverrides({ status: "invalid-status" }));
         expect(result.success).toBe(false);
       });
     });
@@ -268,6 +292,7 @@ describe("domains/series/common", () => {
         description: "説明",
         cover: "https://example.com/cover.png",
         chapters: [],
+        status: "published",
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);
@@ -282,6 +307,7 @@ describe("domains/series/common", () => {
         subTitle: null,
         description: "a".repeat(501),
         chapters: [],
+        status: "published",
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -392,7 +418,7 @@ describe("domains/series/common", () => {
   describe("criteriaSchema", () => {
     describe("有効なCriteriaの検証", () => {
       it("全てnullで有効", () => {
-        const result = criteriaSchema.safeParse({ slug: null, tags: null });
+        const result = criteriaSchema.safeParse({ slug: null, tags: null, status: null, freeWord: null });
         expect(result.success).toBe(true);
       });
 
@@ -400,6 +426,28 @@ describe("domains/series/common", () => {
         const result = criteriaSchema.safeParse({
           slug: Forger(SlugMold).forge(),
           tags: Forger(TagIdentifierMold).forgeMulti(2),
+          status: "published",
+          freeWord: "検索ワード",
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it("statusのみ指定しても有効", () => {
+        const result = criteriaSchema.safeParse({
+          slug: null,
+          tags: null,
+          status: "draft",
+          freeWord: null,
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it("freeWordのみ指定しても有効", () => {
+        const result = criteriaSchema.safeParse({
+          slug: null,
+          tags: null,
+          status: null,
+          freeWord: "キーワード",
         });
         expect(result.success).toBe(true);
       });
@@ -407,7 +455,7 @@ describe("domains/series/common", () => {
 
     describe("無効なCriteriaの検証", () => {
       it("無効なslugの場合は無効", () => {
-        const result = criteriaSchema.safeParse({ slug: "Invalid Slug With Spaces", tags: null });
+        const result = criteriaSchema.safeParse({ slug: "Invalid Slug With Spaces", tags: null, status: null, freeWord: null });
         expect(result.success).toBe(false);
       });
     });
@@ -415,12 +463,17 @@ describe("domains/series/common", () => {
 
   describe("validateCriteria", () => {
     it("有効なCriteriaでokを返す", () => {
-      const result = validateCriteria({ slug: "test-slug", tags: null });
+      const result = validateCriteria({ slug: "test-slug", tags: null, status: null, freeWord: null });
+      expect(result.isOk).toBe(true);
+    });
+
+    it("statusを指定した有効なCriteriaでokを返す", () => {
+      const result = validateCriteria({ slug: null, tags: null, status: "published", freeWord: null });
       expect(result.isOk).toBe(true);
     });
 
     it("無効なCriteriaでerrを返す", () => {
-      const result = validateCriteria({ slug: "Invalid Slug", tags: null });
+      const result = validateCriteria({ slug: "Invalid Slug", tags: null, status: null, freeWord: null });
       expect(result.isErr).toBe(true);
     });
   });
