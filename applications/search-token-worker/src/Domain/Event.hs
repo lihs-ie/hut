@@ -10,6 +10,9 @@ module Domain.Event
     MemoEntry (..),
     MemoCreatedPayload (..),
     MemoEditedPayload (..),
+    SeriesChapter (..),
+    SeriesCreatedPayload (..),
+    SeriesEditedPayload (..),
   )
 where
 
@@ -25,6 +28,9 @@ data EventType
   | ArticleTerminated
   | TagPersisted
   | TagTerminated
+  | SeriesCreated
+  | SeriesEdited
+  | SeriesTerminated
   deriving (Eq, Show, Bounded, Enum)
 
 data ArticleCreatedPayload = ArticleCreatedPayload
@@ -72,6 +78,33 @@ data MemoEditedPayload = MemoEditedPayload
 
 type MemoTerminatePayload = String
 
+data SeriesChapter = SeriesChapter
+  { title :: String,
+    slug :: String,
+    content :: String,
+    timeline :: Timeline
+  }
+  deriving (Eq, Show)
+
+data SeriesCreatedPayload = SeriesCreatedPayload
+  { identifier :: String,
+    title :: String,
+    slug :: String,
+    description :: Maybe String,
+    tags :: [String],
+    chapters :: [SeriesChapter],
+    timeline :: Timeline
+  }
+  deriving (Eq, Show)
+
+data SeriesEditedPayload = SeriesEditedPayload
+  { next :: SeriesCreatedPayload,
+    before :: SeriesCreatedPayload
+  }
+  deriving (Eq, Show)
+
+type SeriesTerminatePayload = String
+
 data EventPayload
   = ArticleCreatedPayload' ArticleCreatedPayload
   | ArticleEditedPayload' ArticleEditedPayload
@@ -79,6 +112,9 @@ data EventPayload
   | MemoCreatedPayload' MemoCreatedPayload
   | MemoEditedPayload' MemoEditedPayload
   | MemoTerminatePayload' MemoTerminatePayload
+  | SeriesCreatedPayload' SeriesCreatedPayload
+  | SeriesEditedPayload' SeriesEditedPayload
+  | SeriesTerminatePayload' SeriesTerminatePayload
   deriving (Eq, Show)
 
 data Event = Event

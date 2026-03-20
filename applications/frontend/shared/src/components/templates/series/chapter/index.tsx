@@ -6,6 +6,7 @@ import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
 import { MarkdownRenderer } from "@shared/components/global/mdx";
 import { ArticleContentSkeleton } from "@shared/components/molecules/skeleton";
 import { Series, SeriesSlug, ChapterSlug } from "@shared/domains/series";
+import { Routes } from "@shared/config/presentation/route";
 import styles from "./index.module.css";
 
 export type Props = {
@@ -44,10 +45,9 @@ export const ChapterIndex = async (props: Props) => {
     <div className={styles.container}>
       <div className={styles.wrapper}>
         <div className={styles.layout}>
-          {/* サイドバー - 目次 */}
           <aside className={styles.sidebar}>
             <div className={styles["sidebar-card"]}>
-              <Link href={`/series/${props.slug}`} className={styles["book-link"]}>
+              <Link href={Routes.page.series.show(props.slug)} className={styles["book-link"]}>
                 <BookOpenIcon className={styles["book-link-icon"]} />
                 {series.title}
               </Link>
@@ -58,7 +58,7 @@ export const ChapterIndex = async (props: Props) => {
                   return (
                     <Link
                       key={chapter.slug}
-                      href={`/series/${props.slug}/chapters/${chapter.slug}`}
+                      href={Routes.page.series.chapter.show(props.slug, chapter.slug)}
                       className={`${styles["nav-item"]} ${isActive ? styles["nav-item-active"] : ""}`}
                     >
                       <span className={styles["nav-item-number"]}>{index + 1}</span>
@@ -70,7 +70,6 @@ export const ChapterIndex = async (props: Props) => {
             </div>
           </aside>
 
-          {/* メインコンテンツ */}
           <main className={styles.main}>
             <article>
               <div className={styles["chapter-header"]}>
@@ -80,18 +79,16 @@ export const ChapterIndex = async (props: Props) => {
                 <h1 className={styles["chapter-title"]}>{currentChapter.title}</h1>
               </div>
 
-              {/* 本文 */}
               <div className={styles["content-card"]}>
                 <Suspense fallback={<ArticleContentSkeleton />}>
                   <div className="prose">{RenderedContent}</div>
                 </Suspense>
               </div>
 
-              {/* ナビゲーション */}
               <div className={styles.navigation}>
                 {prevChapter ? (
                   <Link
-                    href={`/series/${props.slug}/chapters/${prevChapter.slug}`}
+                    href={Routes.page.series.chapter.show(props.slug, prevChapter.slug)}
                     className={`${styles["nav-button"]} ${styles["nav-button-prev"]}`}
                   >
                     <ChevronLeftIcon className={styles["nav-button-icon"]} />
@@ -108,7 +105,7 @@ export const ChapterIndex = async (props: Props) => {
 
                 {nextChapter ? (
                   <Link
-                    href={`/series/${props.slug}/chapters/${nextChapter.slug}`}
+                    href={Routes.page.series.chapter.show(props.slug, nextChapter.slug)}
                     className={`${styles["nav-button"]} ${styles["nav-button-next"]}`}
                   >
                     <div className={styles["nav-button-content"]}>

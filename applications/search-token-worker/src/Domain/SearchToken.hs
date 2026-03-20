@@ -9,11 +9,12 @@ where
 
 import Domain.Common
 
-data ContentType = Article | Memo deriving (Eq)
+data ContentType = Article | Memo | Series deriving (Eq)
 
 instance Show ContentType where
   show Article = "article"
   show Memo = "memo"
+  show Series = "series"
 
 type Reference = String
 
