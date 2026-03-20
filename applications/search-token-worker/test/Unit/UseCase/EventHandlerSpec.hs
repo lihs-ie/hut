@@ -12,6 +12,9 @@ import Support.Helper.Domain.Event
     createMemoCreatedEvent,
     createMemoEditedEvent,
     createMemoTerminateEvent,
+    createSeriesCreatedEvent,
+    createSeriesEditedEvent,
+    createSeriesTerminateEvent,
   )
 import Support.Mock.Domain.SearchToken (createMockPersist, createMockTerminateByReference)
 import Test.Hspec
@@ -191,4 +194,85 @@ spec = do
       context "failure" $ do
         it "returns Left when terminate fails" $ do
           (result, _, _) <- runHandle (Right ()) (Left Unexpected) (createMemoTerminateEvent 1)
+          result `shouldSatisfy` isLeft
+
+    context "SeriesCreated" $ do
+      context "successfully" $ do
+        it "returns Right" $ do
+          (result, _, _) <- runHandle (Right ()) (Right ()) (createSeriesCreatedEvent 1)
+          result `shouldSatisfy` isRight
+
+        it "calls persist with tokens" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createSeriesCreatedEvent 1)
+          persisted `shouldSatisfy` (not . null)
+
+        it "persists tokens with Series contentType" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createSeriesCreatedEvent 1)
+          all (\token -> token.contentType == Series) persisted `shouldBe` True
+
+        it "persists tokens with correct reference" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createSeriesCreatedEvent 1)
+          all (\token -> token.reference == "series-1") persisted `shouldBe` True
+
+        it "persists ngram tokens" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createSeriesCreatedEvent 1)
+          any (\token -> take 6 token.identifier == "ngram:") persisted `shouldBe` True
+
+        it "persists tag tokens" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createSeriesCreatedEvent 1)
+          any (\token -> take 4 token.identifier == "tag:") persisted `shouldBe` True
+
+        it "does not call terminate" $ do
+          (_, _, terminated) <- runHandle (Right ()) (Right ()) (createSeriesCreatedEvent 1)
+          terminated `shouldBe` []
+
+      context "failure" $ do
+        it "returns Left when persist fails" $ do
+          (result, _, _) <- runHandle (Left Unexpected) (Right ()) (createSeriesCreatedEvent 1)
+          result `shouldSatisfy` isLeft
+
+    context "SeriesEdited" $ do
+      context "successfully" $ do
+        it "returns Right" $ do
+          (result, _, _) <- runHandle (Right ()) (Right ()) (createSeriesEditedEvent 1)
+          result `shouldSatisfy` isRight
+
+        it "calls persist with tokens" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createSeriesEditedEvent 1)
+          persisted `shouldSatisfy` (not . null)
+
+        it "persists tokens with Series contentType" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createSeriesEditedEvent 1)
+          all (\token -> token.contentType == Series) persisted `shouldBe` True
+
+        it "persists tokens with next payload reference" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createSeriesEditedEvent 1)
+          all (\token -> token.reference == "series-2") persisted `shouldBe` True
+
+        it "does not call terminate" $ do
+          (_, _, terminated) <- runHandle (Right ()) (Right ()) (createSeriesEditedEvent 1)
+          terminated `shouldBe` []
+
+      context "failure" $ do
+        it "returns Left when persist fails" $ do
+          (result, _, _) <- runHandle (Left Unexpected) (Right ()) (createSeriesEditedEvent 1)
+          result `shouldSatisfy` isLeft
+
+    context "SeriesTerminated" $ do
+      context "successfully" $ do
+        it "returns Right" $ do
+          (result, _, _) <- runHandle (Right ()) (Right ()) (createSeriesTerminateEvent 1)
+          result `shouldSatisfy` isRight
+
+        it "calls terminate with correct reference" $ do
+          (_, _, terminated) <- runHandle (Right ()) (Right ()) (createSeriesTerminateEvent 1)
+          terminated `shouldBe` ["series:series-1"]
+
+        it "does not call persist" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createSeriesTerminateEvent 1)
+          persisted `shouldBe` []
+
+      context "failure" $ do
+        it "returns Left when terminate fails" $ do
+          (result, _, _) <- runHandle (Right ()) (Left Unexpected) (createSeriesTerminateEvent 1)
           result `shouldSatisfy` isLeft

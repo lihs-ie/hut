@@ -15,54 +15,54 @@
   text-decoration: none !important;
 }
 
-.chaptersSection {
+.chapters-section {
   margin-bottom: 1.5rem;
 }
 
 @media (min-width: 768px) {
-  .chaptersSection {
+  .chapters-section {
     margin-bottom: 2rem;
   }
 }
 
-.chaptersTitle {
+.chapters-title {
   font-size: 1.25rem;
   font-weight: bold;
   margin-bottom: 1rem;
 }
 
 @media (min-width: 768px) {
-  .chaptersTitle {
+  .chapters-title {
     font-size: 1.5rem;
     margin-bottom: 1.5rem;
   }
 }
 
-.chapterList {
+.chapter-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
 @media (min-width: 768px) {
-  .chapterList {
+  .chapter-list {
     gap: 0.75rem;
   }
 }
 
-.chapterCard {
+.chapter-card {
   padding: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 @media (min-width: 768px) {
-  .chapterCard {
+  .chapter-card {
     padding: 1rem;
   }
 }
 
-.chapterCard:hover {
+.chapter-card:hover {
   border-color: var(--accent);
   background: var(--card);
 }
@@ -83,7 +83,7 @@
   }
 }
 
-.chapterNumber {
+.chapter-number {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,14 +98,14 @@
 }
 
 @media (min-width: 768px) {
-  .chapterNumber {
+  .chapter-number {
     width: 2.5rem;
     height: 2.5rem;
     font-size: 1rem;
   }
 }
 
-.chapterTitle {
+.chapter-title {
   font-weight: 500;
   font-size: 0.9375rem;
   transition: color 0.2s;
@@ -116,12 +116,12 @@
 }
 
 @media (min-width: 768px) {
-  .chapterTitle {
+  .chapter-title {
     font-size: 1rem;
   }
 }
 
-.chapterCard:hover .chapterTitle {
+.chapter-card:hover .chapter-title {
   color: var(--accent);
 }
 
@@ -140,6 +140,6 @@
   }
 }
 
-.chapterCard:hover .chapterIcon {
+.chapter-card:hover .chapter-icon {
   color: var(--accent);
 }

@@ -12,7 +12,7 @@ import Data.ByteString.Base64 qualified as B64
 import Data.ByteString.Char8 qualified as BS
 import Data.Time (UTCTime)
 import Domain.Common (Timeline (Timeline, createdAt, updatedAt))
-import Domain.Event (ArticleCreatedPayload (..), ArticleEditedPayload (..), Event (..), EventPayload (ArticleCreatedPayload', ArticleEditedPayload', ArticleTerminatePayload', MemoCreatedPayload', MemoEditedPayload', MemoTerminatePayload'), EventType (ArticleCreated, ArticleEdited, ArticleTerminated, MemoCreated, MemoEdited, MemoTerminated), MemoCreatedPayload (..), MemoEditedPayload (..), MemoEntry (MemoEntry, createdAt, text))
+import Domain.Event (ArticleCreatedPayload (..), ArticleEditedPayload (..), Event (..), EventPayload (ArticleCreatedPayload', ArticleEditedPayload', ArticleTerminatePayload', MemoCreatedPayload', MemoEditedPayload', MemoTerminatePayload', SeriesCreatedPayload', SeriesEditedPayload', SeriesTerminatePayload'), EventType (ArticleCreated, ArticleEdited, ArticleTerminated, MemoCreated, MemoEdited, MemoTerminated, SeriesCreated, SeriesEdited, SeriesTerminated), MemoCreatedPayload (..), MemoEditedPayload (..), MemoEntry (MemoEntry, createdAt, text), SeriesChapter (..), SeriesCreatedPayload (..), SeriesEditedPayload (..))
 import GHC.Generics (Generic)
 
 data TimelineRequest = TimelineRequest
@@ -87,6 +87,36 @@ newtype MemoTerminatedPayloadRequest = MemoTerminatedPayloadRequest
 
 instance FromJSON MemoTerminatedPayloadRequest
 
+data SeriesChapterRequest = SeriesChapterRequest
+  { title :: String,
+    slug :: String,
+    content :: String,
+    timeline :: TimelineRequest
+  }
+  deriving (Generic)
+
+instance FromJSON SeriesChapterRequest
+
+data SeriesPayloadRequest = SeriesPayloadRequest
+  { identifier :: String,
+    title :: String,
+    slug :: String,
+    description :: Maybe String,
+    tags :: [String],
+    chapters :: [SeriesChapterRequest],
+    timeline :: TimelineRequest
+  }
+  deriving (Generic)
+
+instance FromJSON SeriesPayloadRequest
+
+newtype SeriesTerminatedPayloadRequest = SeriesTerminatedPayloadRequest
+  { series :: String
+  }
+  deriving (Generic)
+
+instance FromJSON SeriesTerminatedPayloadRequest
+
 data EventRequest = EventRequest
   { identifier :: String,
     occurredAt :: UTCTime,
@@ -132,6 +162,27 @@ toMemoCreatedPayload request =
       entries = map toMemoEntry request.entries,
       tags = request.tags,
       status = request.status,
+      timeline = toTimeline request.timeline
+    }
+
+toSeriesChapter :: SeriesChapterRequest -> SeriesChapter
+toSeriesChapter request =
+  SeriesChapter
+    { title = request.title,
+      slug = request.slug,
+      content = request.content,
+      timeline = toTimeline request.timeline
+    }
+
+toSeriesCreatedPayload :: SeriesPayloadRequest -> SeriesCreatedPayload
+toSeriesCreatedPayload request =
+  SeriesCreatedPayload
+    { identifier = request.identifier,
+      title = request.title,
+      slug = request.slug,
+      description = request.description,
+      tags = request.tags,
+      chapters = map toSeriesChapter request.chapters,
       timeline = toTimeline request.timeline
     }
 
@@ -189,6 +240,25 @@ toDomain request = case request.eventType of
   "memo.terminated" -> do
     (wrapper :: MemoTerminatedPayloadRequest) <- parsePayload request.payload
     Right $ makeEvent request MemoTerminated (MemoTerminatePayload' wrapper.memo)
+  "series.created" -> do
+    (wrapper :: SnapshotPayloadRequest SeriesPayloadRequest) <- parsePayload request.payload
+    Right $ makeEvent request SeriesCreated (SeriesCreatedPayload' (toSeriesCreatedPayload wrapper.snapshot))
+  "series.edited" ->
+    ( \payload' ->
+        makeEvent
+          request
+          SeriesEdited
+          ( SeriesEditedPayload'
+              SeriesEditedPayload
+                { next = toSeriesCreatedPayload payload'.next,
+                  before = toSeriesCreatedPayload payload'.before
+                }
+          )
+    )
+      <$> (parsePayload request.payload :: Either String (EditedPayloadRequest SeriesPayloadRequest))
+  "series.terminated" -> do
+    (wrapper :: SeriesTerminatedPayloadRequest) <- parsePayload request.payload
+    Right $ makeEvent request SeriesTerminated (SeriesTerminatePayload' wrapper.series)
   _ -> Left ("Unknown event type: " <> request.eventType)
 
 newtype PubSubMessage = PubSubMessage

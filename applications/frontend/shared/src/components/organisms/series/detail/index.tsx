@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Series, SeriesSlug } from "@shared/domains/series";
 import { SimpleBadge } from "@shared/components/atoms/badge/simple";
+import { Routes } from "@shared/config/presentation/route";
+import { formatDate } from "@shared/aspects/date";
 import styles from "./index.module.css";
 import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
@@ -19,10 +21,6 @@ export type Props = {
 export const SeriesDetail = (props: Props) => {
   const series = props.series;
   const firstChapter = series.chapters[0];
-
-  const formatDate = (date: Date) => {
-    return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
-  };
 
   return (
     <div className={styles.container}>
@@ -70,7 +68,7 @@ export const SeriesDetail = (props: Props) => {
 
               {firstChapter && (
                 <Link
-                  href={`/series/${props.slug}/chapters/${firstChapter.slug}`}
+                  href={Routes.page.series.chapter.show(props.slug, firstChapter.slug)}
                   className={styles["read-button"]}
                 >
                   <BookOpenIcon className={styles["button-icon"]} />
@@ -82,7 +80,6 @@ export const SeriesDetail = (props: Props) => {
         </div>
       </aside>
 
-      {/* メインコンテンツ */}
       <main className={styles.main}>
         <div className={styles.header}>
           <h1 className={styles["main-title"]}>{series.title}</h1>
@@ -101,14 +98,13 @@ export const SeriesDetail = (props: Props) => {
           )}
         </div>
 
-        {/* チャプター一覧 */}
         <div className={styles["chapters-section"]}>
           <h2 className={styles["chapters-title"]}>目次</h2>
           <div className={styles["chapter-list"]}>
             {series.chapters.map((chapter, index) => (
               <Link
                 key={chapter.slug}
-                href={`/series/${props.slug}/chapters/${chapter.slug}`}
+                href={Routes.page.series.chapter.show(props.slug, chapter.slug)}
                 className={styles["chapter-card"]}
               >
                 <div className={styles["chapter-content"]}>
@@ -123,7 +119,6 @@ export const SeriesDetail = (props: Props) => {
           </div>
         </div>
 
-        {/* 著者情報 */}
         {props.author && (
           <div className={styles["author-card"]}>
             <h3 className={styles["author-card-title"]}>著者について</h3>

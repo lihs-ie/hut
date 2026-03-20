@@ -12,6 +12,12 @@ describe("config/routes", () => {
     });
   });
 
+  describe("admin.series", () => {
+    it("series.listのパスが/admin/seriesである", () => {
+      expect(Routes.admin.series.list).toBe("/admin/series");
+    });
+  });
+
   describe("既存ルートとの整合性", () => {
     it("admin.dashboardが存在する", () => {
       expect(Routes.admin.dashboard).toBe("/admin");

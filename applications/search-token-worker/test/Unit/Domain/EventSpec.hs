@@ -12,6 +12,9 @@ import Domain.Event
     MemoCreatedPayload (..),
     MemoEditedPayload (..),
     MemoEntry (..),
+    SeriesChapter (..),
+    SeriesCreatedPayload (..),
+    SeriesEditedPayload (..),
   )
 import Test.Hspec
 
@@ -27,7 +30,10 @@ spec = do
           (ArticleEdited, "ArticleEdited"),
           (ArticleTerminated, "ArticleTerminated"),
           (TagPersisted, "TagPersisted"),
-          (TagTerminated, "TagTerminated")
+          (TagTerminated, "TagTerminated"),
+          (SeriesCreated, "SeriesCreated"),
+          (SeriesEdited, "SeriesEdited"),
+          (SeriesTerminated, "SeriesTerminated")
         ]
         $ \(eventType, expected) ->
           it ("returns " <> expected) $ do
@@ -44,7 +50,10 @@ spec = do
                               ArticleEdited,
                               ArticleTerminated,
                               TagPersisted,
-                              TagTerminated
+                              TagTerminated,
+                              SeriesCreated,
+                              SeriesEdited,
+                              SeriesTerminated
                             ]
 
     context "Eq" $ do
@@ -167,6 +176,73 @@ spec = do
       actual.next `shouldBe` next'
       actual.before `shouldBe` before'
 
+  describe "SeriesChapter" $ do
+    it "holds title, slug, and content" $ do
+      now <- getCurrentTime
+      let timeline' = Timeline now now
+          actual =
+            SeriesChapter
+              { title = "Chapter 1",
+                slug = "chapter-1",
+                content = "Chapter content",
+                timeline = timeline'
+              }
+      actual.title `shouldBe` "Chapter 1"
+      actual.slug `shouldBe` "chapter-1"
+      actual.content `shouldBe` "Chapter content"
+      actual.timeline `shouldBe` timeline'
+
+  describe "SeriesCreatedPayload" $ do
+    it "holds all fields" $ do
+      now <- getCurrentTime
+      let timeline' = Timeline now now
+          chapter = SeriesChapter {title = "C1", slug = "c1", content = "content", timeline = timeline'}
+          actual =
+            SeriesCreatedPayload
+              { identifier = "series-1",
+                title = "My Series",
+                slug = "my-series",
+                description = Just "A description",
+                tags = ["haskell"],
+                chapters = [chapter],
+                timeline = timeline'
+              }
+      actual.identifier `shouldBe` "series-1"
+      actual.title `shouldBe` "My Series"
+      actual.slug `shouldBe` "my-series"
+      actual.description `shouldBe` Just "A description"
+      actual.tags `shouldBe` ["haskell"]
+      actual.chapters `shouldBe` [chapter]
+      actual.timeline `shouldBe` timeline'
+
+  describe "SeriesEditedPayload" $ do
+    it "holds next and before" $ do
+      now <- getCurrentTime
+      let timeline' = Timeline now now
+          before' =
+            SeriesCreatedPayload
+              { identifier = "series-1",
+                title = "Old",
+                slug = "old",
+                description = Nothing,
+                tags = [],
+                chapters = [],
+                timeline = timeline'
+              }
+          next' =
+            SeriesCreatedPayload
+              { identifier = "series-1",
+                title = "New",
+                slug = "new",
+                description = Just "Updated",
+                tags = ["updated"],
+                chapters = [],
+                timeline = timeline'
+              }
+          actual = SeriesEditedPayload {next = next', before = before'}
+      actual.next `shouldBe` next'
+      actual.before `shouldBe` before'
+
   describe "EventPayload" $ do
     it "wraps ArticleCreatedPayload" $ do
       now <- getCurrentTime
@@ -192,6 +268,26 @@ spec = do
     it "wraps MemoTerminatePayload" $ do
       let actual = MemoTerminatePayload' "ref-2"
       actual `shouldBe` MemoTerminatePayload' "ref-2"
+
+    it "wraps SeriesCreatedPayload" $ do
+      now <- getCurrentTime
+      let timeline' = Timeline now now
+          series =
+            SeriesCreatedPayload
+              { identifier = "s-1",
+                title = "S",
+                slug = "s",
+                description = Nothing,
+                tags = [],
+                chapters = [],
+                timeline = timeline'
+              }
+          actual = SeriesCreatedPayload' series
+      actual `shouldBe` SeriesCreatedPayload' series
+
+    it "wraps SeriesTerminatePayload" $ do
+      let actual = SeriesTerminatePayload' "ref-3"
+      actual `shouldBe` SeriesTerminatePayload' "ref-3"
 
   describe "Event" $ do
     it "holds all fields" $ do
