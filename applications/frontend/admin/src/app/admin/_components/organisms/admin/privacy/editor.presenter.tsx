@@ -11,6 +11,8 @@ import styles from "./editor.module.css";
 import { UnvalidatedPrivacyPolicy } from "@shared/domains/document";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
+import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
+import { useToast } from "@shared/components/molecules/toast";
 
 export type Props = {
   value: UnvalidatedPrivacyPolicy;
@@ -18,7 +20,10 @@ export type Props = {
 };
 
 export const PolicyEditorPresenter = (props: Props) => {
-  const { execute, reset, error, isLoading } = useServerAction(props.persist);
+  const { showToast } = useToast();
+  const { execute, reset, error, isLoading } = useServerAction(props.persist, {
+    onSuccess: () => showToast("プライバシーポリシーを保存しました"),
+  });
 
   const [sections, setSections] = useState<
     UnvalidatedPrivacyPolicy["sections"]
@@ -89,6 +94,7 @@ export const PolicyEditorPresenter = (props: Props) => {
         message={error?.message ?? ""}
         details={error?.details}
       />
+      {isLoading && <LoadingOverlay />}
     </div>
   );
 };
