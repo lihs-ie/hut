@@ -4,6 +4,7 @@ import { cache } from "react";
 import { generateToc } from "@shared/components/global/mdx";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { Article } from "@shared/domains/articles";
+import { PublishStatus } from "@shared/domains/common";
 import { ArticleWorkflowProvider } from "@/providers/workflows/article";
 
 export const findBySlug = cache(async (slug: string): Promise<Article> => {
@@ -19,4 +20,15 @@ export const createTableOfContents = cache(async (slug: string) => {
   const article = await findBySlug(slug);
 
   return generateToc(article.content);
+});
+
+export const searchAllSlugs = cache(async (): Promise<string[]> => {
+  const articles = await unwrapForNextJs(
+    ArticleWorkflowProvider.search({
+      payload: { status: PublishStatus.PUBLISHED },
+      now: new Date(),
+    }),
+  );
+
+  return articles.map((article) => article.slug);
 });
