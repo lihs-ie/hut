@@ -107,9 +107,7 @@
 }
 
 .content pre {
-  background: var(--secondary);
-  color: var(--foreground);
-  padding: 1em;
+  padding: 0;
   border-radius: 10px;
   overflow-x: auto;
   margin: 1.5em 0;
@@ -120,10 +118,6 @@
   padding: 0;
   font-size: 0.9rem;
   line-height: 1.6;
-}
-
-.content pre {
-  padding: 0;
 }
 
 .content pre code {
