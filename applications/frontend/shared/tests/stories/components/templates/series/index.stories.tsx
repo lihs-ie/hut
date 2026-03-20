@@ -49,6 +49,7 @@ export const Default: StoryObj<typeof SeriesIndex> = {
   args: {
     slug,
     findBySlug,
+    findAllTags: async () => [],
   },
 };
 
@@ -63,6 +64,7 @@ export const ManyChapters: StoryObj<typeof SeriesIndex> = {
   args: {
     slug: Forger(SeriesSlugMold).forge({ value: "react-19-master" }),
     findBySlug: async () => seriesWithManyChapters,
+    findAllTags: async () => [],
   },
 };
 
@@ -83,5 +85,6 @@ export const SingleChapter: StoryObj<typeof SeriesIndex> = {
   args: {
     slug: Forger(SeriesSlugMold).forge({ value: "typescript-intro" }),
     findBySlug: async () => seriesWithSingleChapter,
+    findAllTags: async () => [],
   },
 };
