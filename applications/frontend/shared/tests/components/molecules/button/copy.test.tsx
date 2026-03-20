@@ -4,11 +4,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, fireEvent, act, waitFor } from "@testing-library/react";
 
-vi.mock("next/image", () => ({
-  __esModule: true,
-  default: (imageProps: Record<string, unknown>) => <img {...imageProps} />,
-}));
-
 import { CopyButton } from "@shared/components/molecules/button/copy";
 
 describe("components/molecules/button/CopyButton", () => {
@@ -65,5 +60,26 @@ describe("components/molecules/button/CopyButton", () => {
     });
     expect(button.getAttribute("data-copied")).toBe("false");
     vi.useRealTimers();
+  });
+
+  it("コピー前はClipboardIconが表示される", () => {
+    const { container } = render(<CopyButton text="test" />);
+    const button = container.querySelector("button")!;
+    expect(button.getAttribute("data-copied")).toBe("false");
+    const iconSpan = button.querySelector("span[role='img']");
+    expect(iconSpan).not.toBeNull();
+  });
+
+  it("コピー後はCheckIconが表示される", async () => {
+    const { container } = render(<CopyButton text="test" />);
+    const button = container.querySelector("button")!;
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    await waitFor(() => {
+      expect(button.getAttribute("data-copied")).toBe("true");
+    });
+    const iconSpan = button.querySelector("span[role='img']");
+    expect(iconSpan).not.toBeNull();
   });
 });
