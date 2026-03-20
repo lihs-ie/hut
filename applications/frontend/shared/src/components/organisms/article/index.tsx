@@ -14,8 +14,6 @@ export type Props = {
   incrementViewCount: (identifier: SearchReferenceIdentifier) => Promise<void>;
 };
 
-export const revalidate = 3600;
-
 export const Article = async (props: Props) => {
   const article = await props.findBySlug(props.slug);
 
