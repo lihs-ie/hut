@@ -39,4 +39,32 @@ test.describe("series edit page", () => {
       page.getByRole("button", { name: "保存" }),
     ).toBeVisible({ timeout: 15000 });
   });
+
+  test("displays chapter management section", async ({ page }: TestArgs) => {
+    await page.goto(`/series/${series.slug}/edit`);
+
+    await expect(
+      page.getByRole("heading", { name: "チャプター管理" }),
+    ).toBeVisible({ timeout: 15000 });
+  });
+
+  test("displays add chapter link", async ({ page }: TestArgs) => {
+    await page.goto(`/series/${series.slug}/edit`);
+
+    await expect(
+      page.getByRole("link", { name: /チャプターを追加/ }),
+    ).toBeVisible({ timeout: 15000 });
+  });
+
+  test("displays chapter list with edit links", async ({ page }: TestArgs) => {
+    await page.goto(`/series/${series.slug}/edit`);
+
+    await expect(
+      page.getByText("第1章: Rustの基礎").first(),
+    ).toBeVisible({ timeout: 15000 });
+
+    await expect(
+      page.getByRole("link", { name: "編集" }).first(),
+    ).toBeVisible({ timeout: 15000 });
+  });
 });
