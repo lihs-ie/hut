@@ -1,5 +1,4 @@
 .container {
-  min-height: calc(100dvh - var(--header-height));
   display: flex;
   flex-direction: column;
   background-color: var(--background);
@@ -210,6 +209,11 @@
   color: var(--muted-foreground);
   margin-bottom: 0.5rem;
   margin-top: 0.75rem;
+}
+
+.tagsavailable {
+  max-height: 7rem;
+  overflow-y: auto;
 }
 
 .statusrow {
