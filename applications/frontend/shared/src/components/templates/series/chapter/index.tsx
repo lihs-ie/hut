@@ -4,7 +4,6 @@ import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 import { ChevronLeftIcon } from "@shared/components/atoms/icon/chevron-left";
 import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
 import { ClockIcon } from "@shared/components/atoms/icon/clock";
-import { BallpenIcon } from "@shared/components/atoms/icon/ballpen";
 import { MarkdownRenderer } from "@shared/components/global/mdx";
 import { ArticleContentSkeleton } from "@shared/components/molecules/skeleton";
 import { ModestText } from "@shared/components/atoms/text/modest";
@@ -21,7 +20,6 @@ export type Props = {
   renderer: MarkdownRenderer;
   findChapterBySlug: (slug: string) => Promise<Chapter>;
   findChaptersByIdentifiers: (identifiers: ChapterIdentifier[]) => Promise<Chapter[]>;
-  editable?: boolean;
 };
 
 export const ChapterIndex = async (props: Props) => {
@@ -84,20 +82,9 @@ export const ChapterIndex = async (props: Props) => {
           <div className={styles.main}>
             <article>
               <div className={styles["chapter-header"]}>
-                <div className={styles["chapter-label-row"]}>
-                  <p className={styles["chapter-label"]}>
-                    Chapter {String(currentIndex + 1).padStart(2, "0")}
-                  </p>
-                  {props.editable && (
-                    <Link
-                      href={Routes.page.series.chapter.edit(props.slug, props.chapterSlug)}
-                      className={styles["chapter-edit-button"]}
-                    >
-                      <BallpenIcon className={styles["chapter-edit-button-icon"]} />
-                      編集
-                    </Link>
-                  )}
-                </div>
+                <p className={styles["chapter-label"]}>
+                  Chapter {String(currentIndex + 1).padStart(2, "0")}
+                </p>
                 <h1 className={styles["chapter-title"]}>{currentChapter.title}</h1>
                 <div className={styles["chapter-meta"]}>
                   <ModestText>
