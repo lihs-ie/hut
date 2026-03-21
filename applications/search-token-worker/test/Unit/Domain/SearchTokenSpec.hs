@@ -3,7 +3,7 @@ module Unit.Domain.SearchTokenSpec (spec) where
 import Control.Monad (forM_)
 import Data.Time (getCurrentTime)
 import Domain.Common (Timeline (..))
-import Domain.SearchToken (ContentType (Article, Memo, Series), SearchToken (..))
+import Domain.SearchToken (ContentType (Article, Chapter, Memo, Series), SearchToken (..))
 import Test.Hspec
 
 spec :: Spec
@@ -13,7 +13,8 @@ spec = do
       forM_
         [ (Article, "article"),
           (Memo, "memo"),
-          (Series, "series")
+          (Series, "series"),
+          (Chapter, "chapter")
         ]
         $ \(input, expected) ->
           it ("returns " <> expected) $ do
