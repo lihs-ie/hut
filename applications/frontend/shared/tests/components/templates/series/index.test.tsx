@@ -21,7 +21,7 @@ describe("components/templates/series/SeriesIndex", () => {
       "@shared/components/templates/series/index"
     );
 
-    const result = await SeriesIndex({
+    const result = SeriesIndex({
       slug: series.slug,
       findBySlug: async () => series,
       findChaptersByIdentifiers: async () => [],

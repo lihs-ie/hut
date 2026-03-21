@@ -9,6 +9,7 @@ import {
   SeriesSlugMold,
   ChapterMold,
 } from "../../../../support/molds/domains/series";
+import { TagMold } from "../../../../support/molds/domains/attributes/tag";
 
 vi.mock("next/link", () => ({
   default: (linkProps: {
@@ -22,26 +23,26 @@ vi.mock("@shared/components/atoms/icon/chevron-right", () => ({
   ChevronRightIcon: () => null,
 }));
 
-vi.mock("@shared/components/organisms/common/list/tag", () => ({
-  TagBadgeList: () => null,
+vi.mock("@shared/components/organisms/common/list/tag.presenter", () => ({
+  TagBadgeListPresenter: () => null,
 }));
 
-describe("components/organisms/series/detail/SeriesDetail", () => {
+describe("components/organisms/series/detail/SeriesDetailPresenter", () => {
   it("React 要素を返す", async () => {
     const chapters = [Forger(ChapterMold).forge()];
     const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { SeriesDetail } = await import(
-      "@shared/components/organisms/series/detail/index"
+    const { SeriesDetailPresenter } = await import(
+      "@shared/components/organisms/series/detail/index.presenter"
     );
 
     const { unmount } = render(
-      SeriesDetail({
+      SeriesDetailPresenter({
         series,
         slug,
         chapters,
-        findAllTags: async () => [],
+        tags: [],
       })
     );
 
@@ -57,16 +58,16 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
     const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { SeriesDetail } = await import(
-      "@shared/components/organisms/series/detail/index"
+    const { SeriesDetailPresenter } = await import(
+      "@shared/components/organisms/series/detail/index.presenter"
     );
 
     const { unmount } = render(
-      SeriesDetail({
+      SeriesDetailPresenter({
         series,
         slug,
         chapters,
-        findAllTags: async () => [],
+        tags: [],
       })
     );
 
@@ -85,16 +86,16 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
     const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { SeriesDetail } = await import(
-      "@shared/components/organisms/series/detail/index"
+    const { SeriesDetailPresenter } = await import(
+      "@shared/components/organisms/series/detail/index.presenter"
     );
 
     const { unmount } = render(
-      SeriesDetail({
+      SeriesDetailPresenter({
         series,
         slug,
         chapters,
-        findAllTags: async () => [],
+        tags: [],
       })
     );
 
@@ -111,16 +112,16 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
     const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { SeriesDetail } = await import(
-      "@shared/components/organisms/series/detail/index"
+    const { SeriesDetailPresenter } = await import(
+      "@shared/components/organisms/series/detail/index.presenter"
     );
 
     const { unmount } = render(
-      SeriesDetail({
+      SeriesDetailPresenter({
         series,
         slug,
         chapters,
-        findAllTags: async () => [],
+        tags: [],
       })
     );
 
@@ -136,16 +137,16 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
     });
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { SeriesDetail } = await import(
-      "@shared/components/organisms/series/detail/index"
+    const { SeriesDetailPresenter } = await import(
+      "@shared/components/organisms/series/detail/index.presenter"
     );
 
     const { unmount } = render(
-      SeriesDetail({
+      SeriesDetailPresenter({
         series,
         slug,
         chapters: [],
-        findAllTags: async () => [],
+        tags: [],
       })
     );
 
@@ -159,16 +160,16 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
     const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { SeriesDetail } = await import(
-      "@shared/components/organisms/series/detail/index"
+    const { SeriesDetailPresenter } = await import(
+      "@shared/components/organisms/series/detail/index.presenter"
     );
 
     const { unmount } = render(
-      SeriesDetail({
+      SeriesDetailPresenter({
         series,
         slug,
         chapters,
-        findAllTags: async () => [],
+        tags: [],
       })
     );
 
@@ -186,21 +187,44 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
     const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { SeriesDetail } = await import(
-      "@shared/components/organisms/series/detail/index"
+    const { SeriesDetailPresenter } = await import(
+      "@shared/components/organisms/series/detail/index.presenter"
     );
 
     const { unmount } = render(
-      SeriesDetail({
+      SeriesDetailPresenter({
         series,
         slug,
         chapters,
-        findAllTags: async () => [],
+        tags: [],
       })
     );
 
     expect(screen.getByText("第1章")).toBeInTheDocument();
     expect(screen.getByText("第2章")).toBeInTheDocument();
+
+    unmount();
+  });
+
+  it("タグを受け取った場合も正常にレンダリングされる", async () => {
+    const tags = Forger(TagMold).forgeMultiWithSeed(2, 1);
+    const series = Forger(SeriesMold).forge({ chapters: [] });
+    const slug = Forger(SeriesSlugMold).forge();
+
+    const { SeriesDetailPresenter } = await import(
+      "@shared/components/organisms/series/detail/index.presenter"
+    );
+
+    const { unmount } = render(
+      SeriesDetailPresenter({
+        series,
+        slug,
+        chapters: [],
+        tags,
+      })
+    );
+
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
 
     unmount();
   });

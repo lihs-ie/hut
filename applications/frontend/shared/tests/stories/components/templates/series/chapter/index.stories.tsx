@@ -70,7 +70,7 @@ const chapters = [
 
 const series = Forger(SeriesMold).forge({
   title: "Next.js 15 / React 19 実践設計ガイド",
-  chapters,
+  chapters: [],
 });
 
 const slug = Forger(SeriesSlugMold).forge({ value: "nextjs-guide" });
@@ -81,6 +81,8 @@ export const Default: StoryObj<typeof ChapterIndex> = {
     chapterSlug,
     series,
     renderer: (content: string) => MDXRenderer(content),
+    findChapterBySlug: async () => chapters[0],
+    findChaptersByIdentifiers: async () => chapters,
   },
 };
 
@@ -90,6 +92,8 @@ export const MiddleChapter: StoryObj<typeof ChapterIndex> = {
     chapterSlug: chapters[3].slug,
     series,
     renderer: (content: string) => MDXRenderer(content),
+    findChapterBySlug: async () => chapters[3],
+    findChaptersByIdentifiers: async () => chapters,
   },
 };
 
@@ -99,5 +103,7 @@ export const LastChapter: StoryObj<typeof ChapterIndex> = {
     chapterSlug: chapters[6].slug,
     series,
     renderer: (content: string) => MDXRenderer(content),
+    findChapterBySlug: async () => chapters[6],
+    findChaptersByIdentifiers: async () => chapters,
   },
 };

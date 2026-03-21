@@ -13,20 +13,15 @@ export type Props = {
   findAllTags: (identifiers: string[]) => Promise<Tag[]>;
 };
 
-export const SeriesIndex = async (props: Props) => {
-  const series = await props.findBySlug(props.slug);
-  const chapters = await props.findChaptersByIdentifiers(series.chapters);
-
-  return (
-    <div className={styles.container}>
-      <Suspense fallback={<ArticleContentSkeleton />}>
-        <SeriesDetail
-          series={series}
-          slug={props.slug}
-          chapters={chapters}
-          findAllTags={props.findAllTags}
-        />
-      </Suspense>
-    </div>
-  );
-};
+export const SeriesIndex = (props: Props) => (
+  <div className={styles.container}>
+    <Suspense fallback={<ArticleContentSkeleton />}>
+      <SeriesDetail
+        slug={props.slug}
+        findBySlug={props.findBySlug}
+        findChaptersByIdentifiers={props.findChaptersByIdentifiers}
+        findAllTags={props.findAllTags}
+      />
+    </Suspense>
+  </div>
+);
