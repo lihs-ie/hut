@@ -43,11 +43,11 @@ test.describe("series create page", () => {
     ).toBeVisible({ timeout: 15000 });
   });
 
-  test("publish status checkbox is present", async ({ page }: TestArgs) => {
+  test("publish status toggle is present", async ({ page }: TestArgs) => {
     await page.goto("/series/new");
 
     await expect(
-      page.getByRole("checkbox"),
+      page.getByRole("switch"),
     ).toBeVisible({ timeout: 15000 });
   });
 });
