@@ -6,6 +6,16 @@ import { Series, UnvalidatedCriteria, UnvalidatedSeries } from "@shared/domains/
 import { AdminSeriesWorkflowProvider } from "@/providers/workflows/series";
 import { requireAdmin } from "@/aspects/auth-guard";
 
+export async function findBySlug(slug: string): Promise<Series> {
+  await requireAdmin();
+  return await unwrapForNextJs(
+    AdminSeriesWorkflowProvider.findBySlug({
+      payload: { slug },
+      now: new Date(),
+    }),
+  );
+}
+
 export async function persist(unvalidated: UnvalidatedSeries): Promise<void> {
   await requireAdmin();
   await unwrapForNextJs(AdminSeriesWorkflowProvider.persist(unvalidated));
