@@ -11,6 +11,7 @@ export type Props = {
   findBySlug: (slug: string) => Promise<Series>;
   findChaptersByIdentifiers: (identifiers: ChapterIdentifier[]) => Promise<Chapter[]>;
   findAllTags: (identifiers: string[]) => Promise<Tag[]>;
+  editable?: boolean;
 };
 
 export const SeriesIndex = async (props: Props) => {
@@ -25,6 +26,7 @@ export const SeriesIndex = async (props: Props) => {
           slug={props.slug}
           chapters={chapters}
           findAllTags={props.findAllTags}
+          editable={props.editable}
         />
       </Suspense>
     </div>
