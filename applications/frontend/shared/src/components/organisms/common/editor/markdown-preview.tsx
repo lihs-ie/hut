@@ -17,6 +17,7 @@ import { stripFrontmatter } from "@shared/components/global/matter";
 import { LinkCardClient } from "@shared/components/molecules/card/link.client";
 import { ContentImage } from "@shared/components/atoms/image/content";
 import React, { useEffect, useRef } from "react";
+import { extractStandaloneUrl } from "@shared/components/global/markdown-url";
 import { parseMessageBox, parseAccordion, parseCodeBlockFilename, parseImageWidth } from "./markdown-extension";
 import { sanitizeMermaidSvg } from "@shared/components/molecules/mermaid/sanitize";
 
@@ -125,14 +126,9 @@ export const MarkdownPreview = (props: Props) => {
                   );
                 },
                 p({ children }) {
-                  if (React.Children.count(children) === 1) {
-                    const child = React.Children.toArray(children)[0];
-                    if (typeof child === "string") {
-                      const trimmed = child.trim();
-                      if (/^https?:\/\/[^\s]+$/.test(trimmed)) {
-                        return <LinkCardClient url={trimmed} />;
-                      }
-                    }
+                  const url = extractStandaloneUrl(children);
+                  if (url) {
+                    return <LinkCardClient url={url} />;
                   }
                   return <p>{children}</p>;
                 },
