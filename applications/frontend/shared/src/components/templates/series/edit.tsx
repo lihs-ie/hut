@@ -85,8 +85,9 @@ export const SeriesEdit = (props: Props) => {
         </h1>
       </div>
 
-      <div className={styles.wrapper}>
-        <div className={styles.card}>
+      <div className={styles.layout}>
+        <div className={styles.main}>
+          <div className={styles.card}>
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
               タイトル
@@ -253,21 +254,22 @@ export const SeriesEdit = (props: Props) => {
           </div>
         </div>
 
-        <div className={styles.actions}>
-          <button
-            type="button"
-            onClick={execute}
-            disabled={isLoading || !title.trim()}
-            className={styles.savebutton}
-          >
-            {isLoading ? "保存中..." : "保存"}
-          </button>
+          <div className={styles.actions}>
+            <button
+              type="button"
+              onClick={execute}
+              disabled={isLoading || !title.trim()}
+              className={styles.savebutton}
+            >
+              {isLoading ? "保存中..." : "保存"}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {props.chapters !== undefined && props.seriesSlug !== undefined && (
-        <div className={styles.chapterssection}>
-          <div className={styles.chapterssectionheader}>
+        {props.chapters !== undefined && props.seriesSlug !== undefined && (
+          <aside className={styles.sidebar}>
+            <div className={styles.chapterssection}>
+            <div className={styles.chapterssectionheader}>
             <h2 className={styles.chapterssectiontitle}>チャプター管理</h2>
             <Link
               href={Routes.page.series.chapter.new(props.seriesSlug)}
@@ -300,8 +302,10 @@ export const SeriesEdit = (props: Props) => {
               ))}
             </ol>
           )}
-        </div>
-      )}
+            </div>
+          </aside>
+        )}
+      </div>
 
       {isLoading && <LoadingOverlay />}
       {error && (
