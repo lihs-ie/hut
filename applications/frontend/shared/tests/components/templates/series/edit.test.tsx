@@ -136,7 +136,7 @@ describe("components/templates/series/SeriesEdit", () => {
     expect(titleInput).not.toBeNull();
   });
 
-  it("ステータストグルが表示される", async () => {
+  it("ステータストグルがrole=switchで表示される", async () => {
     const persist = vi.fn().mockResolvedValue(undefined);
 
     const { SeriesEdit } = await import(
@@ -149,8 +149,88 @@ describe("components/templates/series/SeriesEdit", () => {
       </ToastProvider>,
     );
 
-    const checkbox = getByRole("checkbox");
-    expect(checkbox).not.toBeNull();
+    const toggleSwitch = getByRole("switch");
+    expect(toggleSwitch).not.toBeNull();
+  });
+
+  it("初期状態でDRAFTバッジが表示される", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+
+    const { SeriesEdit } = await import(
+      "@shared/components/templates/series/edit"
+    );
+
+    const { getByText } = render(
+      <ToastProvider>
+        <SeriesEdit persist={persist} tags={[]} />
+      </ToastProvider>,
+    );
+
+    expect(getByText("下書き")).toBeInTheDocument();
+  });
+
+  it("PUBLISHEDステータスの場合にPUBLISHEDバッジが表示される", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+
+    const { SeriesEdit } = await import(
+      "@shared/components/templates/series/edit"
+    );
+
+    const { getByText } = render(
+      <ToastProvider>
+        <SeriesEdit
+          initial={{
+            identifier: "01HWXYZ0000000000000000000",
+            title: "既存連載",
+            slug: "existing-series" as import("@shared/domains/common").Slug,
+            subTitle: null,
+            description: undefined,
+            cover: null,
+            tags: [],
+            chapters: [],
+            status: "published" as import("@shared/domains/common").PublishStatus,
+            timeline: { createdAt: new Date(), updatedAt: new Date() },
+          } as import("@shared/domains/series").Series}
+          persist={persist}
+          tags={[]}
+        />
+      </ToastProvider>,
+    );
+
+    expect(getByText("公開中")).toBeInTheDocument();
+  });
+
+  it("chaptersが空配列で渡された場合、「まだチャプターがありません」が表示される", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+
+    const { SeriesEdit } = await import(
+      "@shared/components/templates/series/edit"
+    );
+
+    const { getByText } = render(
+      <ToastProvider>
+        <SeriesEdit
+          initial={{
+            identifier: "01HWXYZ0000000000000000000",
+            title: "既存連載",
+            slug: "existing-series" as import("@shared/domains/common").Slug,
+            subTitle: null,
+            description: undefined,
+            cover: null,
+            tags: [],
+            chapters: [],
+            status: "DRAFT" as import("@shared/domains/common").PublishStatus,
+            timeline: { createdAt: new Date(), updatedAt: new Date() },
+          } as import("@shared/domains/series").Series}
+          persist={persist}
+          tags={[]}
+          chapters={[]}
+          seriesSlug={"existing-series" as import("@shared/domains/common").Slug}
+        />
+      </ToastProvider>,
+    );
+
+    expect(getByText("まだチャプターがありません")).toBeInTheDocument();
   });
 
   it("chaptersとseriesSlugが両方渡された場合、チャプター管理セクションが表示される", async () => {
