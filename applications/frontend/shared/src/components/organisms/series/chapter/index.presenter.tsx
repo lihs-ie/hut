@@ -1,23 +1,26 @@
 import { MarkdownRenderer } from "@shared/components/global/mdx";
-import { Chapter, ChapterSlug, Series, SeriesSlug } from "@shared/domains/series";
+import { ChapterSlug, SeriesSlug } from "@shared/domains/series";
+import { Chapter } from "@shared/domains/series/chapter";
 import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 import { ChevronLeftIcon } from "@shared/components/atoms/icon/chevron-left";
 import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
 import Link from "next/link";
+import { Routes } from "@shared/config/presentation/route";
 import styles from "./index.module.css";
 
 export type Props = {
-  series: Series;
+  seriesTitle: string;
   seriesSlug: SeriesSlug;
   chapterSlug: ChapterSlug;
+  chapters: Chapter[];
   renderer: MarkdownRenderer;
 };
 
 export const ChapterPresenter = (props: Props) => {
-  const currentChapter = props.series.chapters.find(
+  const currentChapter = props.chapters.find(
     (chapter) => chapter.slug === props.chapterSlug
   );
-  const currentIndex = props.series.chapters.findIndex(
+  const currentIndex = props.chapters.findIndex(
     (chapter) => chapter.slug === props.chapterSlug
   );
 
@@ -26,10 +29,10 @@ export const ChapterPresenter = (props: Props) => {
   }
 
   const previousChapter =
-    currentIndex > 0 ? props.series.chapters[currentIndex - 1] : null;
+    currentIndex > 0 ? props.chapters[currentIndex - 1] : null;
   const nextChapter =
-    currentIndex < props.series.chapters.length - 1
-      ? props.series.chapters[currentIndex + 1]
+    currentIndex < props.chapters.length - 1
+      ? props.chapters[currentIndex + 1]
       : null;
 
   return (
@@ -37,8 +40,9 @@ export const ChapterPresenter = (props: Props) => {
       <div className={styles.wrapper}>
         <div className={styles.content}>
           <Sidebar
-            series={props.series}
+            seriesTitle={props.seriesTitle}
             seriesSlug={props.seriesSlug}
+            chapters={props.chapters}
             currentChapterSlug={props.chapterSlug}
           />
           <main className={styles.main}>
@@ -72,8 +76,9 @@ export const ChapterPresenter = (props: Props) => {
 };
 
 type SidebarProps = {
-  series: Series;
+  seriesTitle: string;
   seriesSlug: SeriesSlug;
+  chapters: Chapter[];
   currentChapterSlug: ChapterSlug;
 };
 
@@ -81,20 +86,20 @@ const Sidebar = (props: SidebarProps) => (
   <aside className={styles.sidebar}>
     <div className={styles["sidebar-card"]}>
       <Link
-        href={`/series/${props.seriesSlug}`}
+        href={Routes.page.series.show(props.seriesSlug)}
         className={styles["series-link"]}
       >
         <BookOpenIcon className={styles["series-link-icon"]} />
-        <span className={styles["series-title"]}>{props.series.title}</span>
+        <span className={styles["series-title"]}>{props.seriesTitle}</span>
       </Link>
 
       <nav className={styles["chapter-nav"]}>
-        {props.series.chapters.map((chapter, index) => {
+        {props.chapters.map((chapter, index) => {
           const isActive = chapter.slug === props.currentChapterSlug;
           return (
             <Link
               key={chapter.slug}
-              href={`/series/${props.seriesSlug}/chapters/${chapter.slug}`}
+              href={Routes.page.series.chapter.show(props.seriesSlug, chapter.slug)}
               className={`${styles["chapter-nav-item"]} ${
                 isActive
                   ? styles["chapter-nav-item-active"]
@@ -123,7 +128,7 @@ const BidirectionalNavigation = (props: BidirectionalNavigationProps) => (
   <div className={styles.navigation}>
     {props.previousChapter ? (
       <Link
-        href={`/series/${props.seriesSlug}/chapters/${props.previousChapter.slug}`}
+        href={Routes.page.series.chapter.show(props.seriesSlug, props.previousChapter.slug)}
         className={styles["nav-link"]}
       >
         <div
@@ -146,7 +151,7 @@ const BidirectionalNavigation = (props: BidirectionalNavigationProps) => (
 
     {props.nextChapter ? (
       <Link
-        href={`/series/${props.seriesSlug}/chapters/${props.nextChapter.slug}`}
+        href={Routes.page.series.chapter.show(props.seriesSlug, props.nextChapter.slug)}
         className={styles["nav-link"]}
       >
         <div

@@ -6,6 +6,7 @@ import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
 import { MarkdownRenderer } from "@shared/components/global/mdx";
 import { ArticleContentSkeleton } from "@shared/components/molecules/skeleton";
 import { Series, SeriesSlug, ChapterSlug } from "@shared/domains/series";
+import { Chapter, ChapterIdentifier } from "@shared/domains/series/chapter";
 import { Routes } from "@shared/config/presentation/route";
 import styles from "./index.module.css";
 
@@ -14,16 +15,21 @@ export type Props = {
   chapterSlug: ChapterSlug;
   series: Series;
   renderer: MarkdownRenderer;
+  findChapterBySlug: (slug: string) => Promise<Chapter>;
+  findChaptersByIdentifiers: (identifiers: ChapterIdentifier[]) => Promise<Chapter[]>;
 };
 
 export const ChapterIndex = async (props: Props) => {
-  const series = props.series;
-  const currentIndex = series.chapters.findIndex(
-    (ch) => ch.slug === props.chapterSlug
-  );
-  const currentChapter = series.chapters[currentIndex];
+  const [currentChapter, allChapters] = await Promise.all([
+    props.findChapterBySlug(props.chapterSlug),
+    props.findChaptersByIdentifiers(props.series.chapters),
+  ]);
 
-  if (!currentChapter) {
+  const currentIndex = allChapters.findIndex(
+    (chapter) => chapter.slug === props.chapterSlug
+  );
+
+  if (currentIndex === -1) {
     return (
       <div className={styles.container}>
         <div className={styles.wrapper}>
@@ -33,10 +39,10 @@ export const ChapterIndex = async (props: Props) => {
     );
   }
 
-  const prevChapter = currentIndex > 0 ? series.chapters[currentIndex - 1] : null;
+  const prevChapter = currentIndex > 0 ? allChapters[currentIndex - 1] : null;
   const nextChapter =
-    currentIndex < series.chapters.length - 1
-      ? series.chapters[currentIndex + 1]
+    currentIndex < allChapters.length - 1
+      ? allChapters[currentIndex + 1]
       : null;
 
   const RenderedContent = await props.renderer(currentChapter.content);
@@ -49,11 +55,11 @@ export const ChapterIndex = async (props: Props) => {
             <div className={styles["sidebar-inner"]}>
               <Link href={Routes.page.series.show(props.slug)} className={styles["book-link"]}>
                 <BookOpenIcon className={styles["book-link-icon"]} />
-                {series.title}
+                {props.series.title}
               </Link>
 
               <nav className={styles["nav-list"]} aria-label="チャプター一覧">
-                {series.chapters.map((chapter, index) => {
+                {allChapters.map((chapter, index) => {
                   const isActive = chapter.slug === props.chapterSlug;
                   return (
                     <Link
@@ -93,7 +99,7 @@ export const ChapterIndex = async (props: Props) => {
                   >
                     <ChevronLeftIcon className={styles["nav-button-icon"]} />
                     <div className={styles["nav-button-content"]}>
-                      <span className={styles["nav-button-label"]}>PREV</span>
+                      <span className={styles["nav-button-label"]}>前の章</span>
                       <span className={styles["nav-button-title"]}>
                         {prevChapter.title}
                       </span>
@@ -107,7 +113,7 @@ export const ChapterIndex = async (props: Props) => {
                     className={`${styles["nav-button"]} ${styles["nav-button-next"]}`}
                   >
                     <div className={styles["nav-button-content"]}>
-                      <span className={styles["nav-button-label"]}>NEXT</span>
+                      <span className={styles["nav-button-label"]}>次の章</span>
                       <span className={styles["nav-button-title"]}>
                         {nextChapter.title}
                       </span>

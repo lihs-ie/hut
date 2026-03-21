@@ -7,7 +7,7 @@ import {
 } from "@shared/aspects/cache";
 import { Memo, MemoEntry } from "@shared/domains/memo";
 import { UnvalidatedCriteria } from "@shared/domains/search-token";
-import { Chapter, Series } from "@shared/domains/series";
+import { Series } from "@shared/domains/series";
 import { SearchTokenWorkflowProvider } from "@shared/providers/workflows/search-token";
 import { recordSearchLog } from "@shared/actions/search-log";
 
@@ -25,12 +25,7 @@ type CachedSearchResult = {
   content?: string;
   excerpt?: string;
   // Series specific
-  chapters?: Array<{
-    title: string;
-    slug: string;
-    content: string;
-    timeline: { createdAt: string | Date; updatedAt: string | Date };
-  }>;
+  chapters?: string[];
   subTitle?: string | null;
   cover?: string | null;
   // Memo specific
@@ -64,17 +59,10 @@ const restoreSearchResultDates = (
 
     // Check if it's a Series (has chapters)
     if ("chapters" in item && Array.isArray(item.chapters)) {
-      const chapters = item.chapters.map(
-        (chapter) =>
-          ({
-            ...chapter,
-            timeline: restoreTimelineFromCache(chapter.timeline),
-          }) as Chapter
-      );
       return {
         ...item,
         timeline,
-        chapters,
+        chapters: item.chapters,
       } as Series;
     }
 

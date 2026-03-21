@@ -4,7 +4,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { isValidElement } from "react";
 import { Forger } from "@lihs-ie/forger-ts";
-import { SeriesMold } from "@tests/support/molds/domains/series";
+import { SeriesMold } from "../../../support/molds/domains/series";
 
 vi.mock("@shared/components/molecules/skeleton", () => ({
   ArticleContentSkeleton: () => null,
@@ -24,6 +24,7 @@ describe("components/templates/series/SeriesIndex", () => {
     const result = await SeriesIndex({
       slug: series.slug,
       findBySlug: async () => series,
+      findChaptersByIdentifiers: async () => [],
       findAllTags: async () => [],
     });
 

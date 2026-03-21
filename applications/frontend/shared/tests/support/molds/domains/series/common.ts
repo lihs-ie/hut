@@ -12,10 +12,9 @@ import {
   descriptionSchema,
   Cover,
   cover,
-  Chapter,
-  chapterSchema,
-  ChapterSlug,
   SeriesSlug,
+  ChapterIdentifier,
+  chapterIdentifierSchema,
 } from "@shared/domains/series";
 import { PublishStatus } from "@shared/domains/common";
 import { ulid } from "ulid";
@@ -106,27 +105,18 @@ export type SeriesSlugProperties = SlugProperties;
 export const ChapterSlugMold = SlugMold;
 export type ChapterSlugProperties = SlugProperties;
 
-export type ChapterProperties = {
-  title: string;
-  slug: ChapterSlug;
-  content: string;
-  timeline: Timeline;
+export type ChapterIdentifierProperties = {
+  value: string;
 };
 
-export const ChapterMold = Mold<Chapter, ChapterProperties>({
-  pour: (properties) =>
-    chapterSchema.parse({
-      title: properties.title,
-      slug: properties.slug,
-      content: properties.content,
-      timeline: properties.timeline,
-    }),
+export const ChapterIdentifierMold = Mold<
+  ChapterIdentifier,
+  ChapterIdentifierProperties
+>({
+  pour: (properties) => chapterIdentifierSchema.parse(properties.value),
   prepare: (overrides, seed) => ({
-    title: overrides.title ?? Forger(StringMold(1, 100)).forgeWithSeed(seed),
-    slug: overrides.slug ?? Forger(ChapterSlugMold).forgeWithSeed(seed),
-    content:
-      overrides.content ?? Forger(StringMold(1, 1000)).forgeWithSeed(seed),
-    timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
+    value:
+      overrides.value ?? ulid(Forger(DateMold).forgeWithSeed(seed).getTime()),
   }),
 });
 
@@ -138,7 +128,7 @@ export type SeriesProperties = {
   subTitle: SubTitle | null;
   description: Description;
   cover: Cover | null;
-  chapters: Chapter[];
+  chapters: ChapterIdentifier[];
   status: PublishStatus;
   timeline: Timeline;
 };
@@ -170,7 +160,7 @@ export const SeriesMold = Mold<Series, SeriesProperties>({
       Forger(SeriesDescriptionMold).forgeWithSeed(seed),
     cover: overrides.cover ?? Forger(SeriesCoverMold).forgeWithSeed(seed),
     chapters:
-      overrides.chapters ?? Forger(ChapterMold).forgeMultiWithSeed(3, seed),
+      overrides.chapters ?? Forger(ChapterIdentifierMold).forgeMultiWithSeed(3, seed),
     status: overrides.status ?? PublishStatus.PUBLISHED,
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
