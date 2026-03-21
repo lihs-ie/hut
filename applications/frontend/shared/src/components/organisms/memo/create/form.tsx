@@ -1,6 +1,7 @@
 "use client";
 
 import { Textarea } from "@shared/components/atoms/input/textarea";
+import { TextInput } from "@shared/components/atoms/input/text";
 import styles from "./form.module.css";
 import { PublishStatus, publishStatusSchema } from "@shared/domains/common";
 import { useState } from "react";
@@ -15,6 +16,8 @@ import { ulid } from "ulid";
 import { useRouter } from "next/navigation";
 import { Routes } from "@shared/config/presentation/route";
 
+const SLUG_PATTERN = /^[a-z0-9-]+$/;
+
 export type Props = {
   persist: (unvalidated: UnvalidatedMemo) => Promise<void>;
 };
@@ -23,6 +26,7 @@ export const MemoCreateForm = (props: Props) => {
   const router = useRouter();
   const { showToast } = useToast();
   const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
   const [status, setStatus] = useState<PublishStatus>(PublishStatus.DRAFT);
 
   const { execute, reset, error, isLoading } = useServerAction(
@@ -30,7 +34,7 @@ export const MemoCreateForm = (props: Props) => {
       const unvalidated: UnvalidatedMemo = {
         identifier: ulid(),
         title: String(formData.get("title") ?? ""),
-        slug: "test",
+        slug,
         tags: [],
         entries: [],
         images: [],
@@ -43,10 +47,13 @@ export const MemoCreateForm = (props: Props) => {
 
       await props.persist(unvalidated);
 
-      router.push(Routes.page.memos.edit("test"));
+      router.push(Routes.page.memos.edit(slug));
     },
     { onSuccess: () => showToast("メモを作成しました") },
   );
+
+  const isSlugValid =
+    slug.length >= 1 && slug.length <= 100 && SLUG_PATTERN.test(slug);
 
   return (
     <form className={styles.container} action={execute}>
@@ -60,9 +67,21 @@ export const MemoCreateForm = (props: Props) => {
           name="title"
         />
       </div>
+      <div className={styles.input}>
+        <TextInput
+          value={slug}
+          onChange={setSlug}
+          placeholder="Enter slug..."
+        />
+      </div>
       <div className={styles.button}>
         <FormButton
-          disabled={title.length === 0 || 100 < title.length || isLoading}
+          disabled={
+            title.length === 0 ||
+            100 < title.length ||
+            !isSlugValid ||
+            isLoading
+          }
         >
           {isLoading ? "作成中..." : "メモを作成"}
         </FormButton>
