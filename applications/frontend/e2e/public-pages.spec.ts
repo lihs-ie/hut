@@ -54,4 +54,10 @@ test.describe("public pages", () => {
     // Verify page content is displayed
     await expect(page.locator("main")).toBeVisible();
   });
+
+  test("series list page renders", async ({ page }: TestArgs) => {
+    await page.goto("/series");
+
+    await expect(page.locator("main")).toBeVisible();
+  });
 });
