@@ -48,8 +48,8 @@
 
 @media (min-width: 1024px) {
   .sidebar {
-    width: 320px;
-    flex-shrink: 0;
+    flex: 1;
+    min-width: 0;
     position: sticky;
     top: calc(var(--header-height) + 2rem);
   }
