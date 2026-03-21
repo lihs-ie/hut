@@ -2,7 +2,7 @@ import { MDXRenderer } from "@shared/components/global/mdx";
 import { ChapterIndex } from "@shared/components/templates/series/chapter";
 import { findChapterBySlug, findChaptersByIdentifiers } from "@shared/actions/chapter";
 import { slugSchema } from "@shared/domains/common/slug";
-import { findBySlug, searchAllSlugs } from "@/actions/series";
+import { findBySlug, searchAllChapterParams } from "@/actions/series";
 
 export const revalidate = 3600;
 
@@ -11,17 +11,7 @@ type Props = {
 };
 
 export async function generateStaticParams() {
-  const slugs = await searchAllSlugs();
-
-  const paramsList = await Promise.all(
-    slugs.map(async (slug) => {
-      const series = await findBySlug(slug);
-      const chapters = await findChaptersByIdentifiers(series.chapters);
-      return chapters.map((chapter) => ({ slug, chapter: chapter.slug }));
-    })
-  );
-
-  return paramsList.flat();
+  return await searchAllChapterParams();
 }
 
 export default async function ChapterPage(props: Props) {
