@@ -1,23 +1,30 @@
 "use client";
 
+import Link from "next/link";
 import styles from "./edit.module.css";
 import { useCallback, useState } from "react";
 import { ulid } from "ulid";
 import { PublishStatus } from "@shared/domains/common";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
-import { Series, UnvalidatedSeries } from "@shared/domains/series";
+import { Series, SeriesSlug, UnvalidatedSeries } from "@shared/domains/series";
+import { Chapter } from "@shared/domains/series/chapter";
 import { TagSelect } from "@shared/components/molecules/select/tag";
 import { Tag, TagIdentifier } from "@shared/domains/attributes/tag";
 import { TagIcon } from "@shared/components/atoms/icon/tag";
 import { CrossIcon } from "@shared/components/atoms/icon/cross";
+import { PlusIcon } from "@shared/components/atoms/icon/plus";
+import { BallpenIcon } from "@shared/components/atoms/icon/ballpen";
 import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
 import { useToast } from "@shared/components/molecules/toast";
+import { Routes } from "@shared/config/presentation/route";
 
 export type Props = {
   initial?: Series;
   persist: (unvalidated: UnvalidatedSeries) => Promise<void>;
   tags: Tag[];
+  chapters?: Chapter[];
+  seriesSlug?: SeriesSlug;
 };
 
 export const SeriesEdit = (props: Props) => {
@@ -250,6 +257,38 @@ export const SeriesEdit = (props: Props) => {
           </button>
         </div>
       </div>
+
+      {props.chapters !== undefined && props.seriesSlug !== undefined && (
+        <div className={styles["chapters-section"]}>
+          <div className={styles["chapters-section-header"]}>
+            <h2 className={styles["chapters-section-title"]}>チャプター管理</h2>
+            <Link
+              href={Routes.page.series.chapter.new(props.seriesSlug)}
+              className={styles["add-chapter-link"]}
+            >
+              <PlusIcon className={styles["add-icon"]} />
+              チャプターを追加
+            </Link>
+          </div>
+          <ol className={styles["chapters-list"]}>
+            {props.chapters.map((chapter, index) => (
+              <li key={chapter.slug} className={styles["chapter-item"]}>
+                <span className={styles["chapter-number"]}>
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className={styles["chapter-title"]}>{chapter.title}</span>
+                <Link
+                  href={Routes.page.series.chapter.edit(props.seriesSlug!, chapter.slug)}
+                  className={styles["chapter-edit-link"]}
+                >
+                  <BallpenIcon className={styles["chapter-edit-icon"]} />
+                  編集
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {isLoading && <LoadingOverlay />}
       {error && (

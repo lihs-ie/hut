@@ -9,40 +9,6 @@
   border-bottom: 1px solid var(--border);
 }
 
-.title-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.edit-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  color: var(--muted-foreground);
-  text-decoration: none;
-  font-size: 0.75rem;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s;
-  flex-shrink: 0;
-}
-
-.edit-link:hover {
-  color: var(--primary);
-  border-color: var(--primary);
-}
-
-.edit-icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  display: inline-block;
-}
-
 .main-title {
   font-size: 1.5rem;
   font-weight: bold;
@@ -104,39 +70,6 @@
   gap: 1rem;
 }
 
-.chapters-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.add-chapter-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: var(--primary-foreground);
-  text-decoration: none;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: background 0.15s;
-  flex-shrink: 0;
-}
-
-.add-chapter-link:hover {
-  background: var(--primary-hover);
-}
-
-.add-icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  display: inline-block;
-}
-
 .chapters-title {
   font-size: 1rem;
   font-weight: bold;
@@ -164,6 +97,10 @@
 .chapter-card {
   display: flex;
   align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  text-decoration: none;
+  color: inherit;
   border-bottom: 1px solid var(--border);
   background: var(--card);
   transition: background 0.15s;
@@ -177,41 +114,9 @@
   background: var(--muted);
 }
 
-.chapter-link {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.875rem 1rem;
-  text-decoration: none;
-  color: inherit;
-}
-
-.chapter-link:focus-visible {
+.chapter-card:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: -2px;
-}
-
-.chapter-edit-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 0.75rem;
-  color: var(--muted-foreground);
-  text-decoration: none;
-  transition: color 0.15s;
-  flex-shrink: 0;
-}
-
-.chapter-edit-link:hover {
-  color: var(--primary);
-}
-
-.chapter-edit-icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  display: inline-block;
 }
 
 .chapter-info {

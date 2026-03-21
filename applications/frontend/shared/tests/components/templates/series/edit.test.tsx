@@ -38,6 +38,22 @@ vi.mock("@shared/components/atoms/icon/cross", () => ({
   CrossIcon: () => <span>CrossIcon</span>,
 }));
 
+vi.mock("next/link", () => ({
+  default: (linkProps: {
+    href: string;
+    children: React.ReactNode;
+    className?: string;
+  }) => <a href={linkProps.href} className={linkProps.className}>{linkProps.children}</a>,
+}));
+
+vi.mock("@shared/components/atoms/icon/plus", () => ({
+  PlusIcon: () => <span>PlusIcon</span>,
+}));
+
+vi.mock("@shared/components/atoms/icon/ballpen", () => ({
+  BallpenIcon: () => <span>BallpenIcon</span>,
+}));
+
 describe("components/templates/series/SeriesEdit", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -135,5 +151,95 @@ describe("components/templates/series/SeriesEdit", () => {
 
     const checkbox = getByRole("checkbox");
     expect(checkbox).not.toBeNull();
+  });
+
+  it("chaptersとseriesSlugが両方渡された場合、チャプター管理セクションが表示される", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+
+    const { SeriesEdit } = await import(
+      "@shared/components/templates/series/edit"
+    );
+
+    const chapters = [
+      {
+        identifier: "01HWXYZ0000000000000000001",
+        title: "第1章: はじめに",
+        slug: "chapter-1" as import("@shared/domains/common").Slug,
+        content: "",
+        images: [],
+        status: "PUBLISHED" as import("@shared/domains/common").PublishStatus,
+        timeline: { createdAt: new Date(), updatedAt: new Date() },
+      } as import("@shared/domains/series/chapter").Chapter,
+    ];
+
+    const { getByText } = render(
+      <ToastProvider>
+        <SeriesEdit
+          initial={{
+            identifier: "01HWXYZ0000000000000000000",
+            title: "既存連載",
+            slug: "existing-series" as import("@shared/domains/common").Slug,
+            subTitle: null,
+            description: undefined,
+            cover: null,
+            tags: [],
+            chapters: [],
+            status: "DRAFT" as import("@shared/domains/common").PublishStatus,
+            timeline: { createdAt: new Date(), updatedAt: new Date() },
+          } as import("@shared/domains/series").Series}
+          persist={persist}
+          tags={[]}
+          chapters={chapters}
+          seriesSlug={"existing-series" as import("@shared/domains/common").Slug}
+        />
+      </ToastProvider>,
+    );
+
+    expect(getByText("チャプター管理")).toBeInTheDocument();
+    expect(getByText("第1章: はじめに")).toBeInTheDocument();
+  });
+
+  it("chaptersとseriesSlugが渡されない場合、チャプター管理セクションは表示されない", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+
+    const { SeriesEdit } = await import(
+      "@shared/components/templates/series/edit"
+    );
+
+    const { queryByText } = render(
+      <ToastProvider>
+        <SeriesEdit persist={persist} tags={[]} />
+      </ToastProvider>,
+    );
+
+    expect(queryByText("チャプター管理")).not.toBeInTheDocument();
+  });
+
+  it("chaptersのみ渡されseriesSlugがない場合、チャプター管理セクションは表示されない", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+
+    const { SeriesEdit } = await import(
+      "@shared/components/templates/series/edit"
+    );
+
+    const chapters = [
+      {
+        identifier: "01HWXYZ0000000000000000001",
+        title: "第1章",
+        slug: "chapter-1" as import("@shared/domains/common").Slug,
+        content: "",
+        images: [],
+        status: "PUBLISHED" as import("@shared/domains/common").PublishStatus,
+        timeline: { createdAt: new Date(), updatedAt: new Date() },
+      } as import("@shared/domains/series/chapter").Chapter,
+    ];
+
+    const { queryByText } = render(
+      <ToastProvider>
+        <SeriesEdit persist={persist} tags={[]} chapters={chapters} />
+      </ToastProvider>,
+    );
+
+    expect(queryByText("チャプター管理")).not.toBeInTheDocument();
   });
 });

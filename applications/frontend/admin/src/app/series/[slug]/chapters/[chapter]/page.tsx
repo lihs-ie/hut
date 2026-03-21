@@ -20,7 +20,6 @@ export default async function AdminChapterPage(props: Props) {
       renderer={MDXRenderer}
       findChapterBySlug={findChapterBySlug}
       findChaptersByIdentifiers={findChaptersByIdentifiers}
-      editable
     />
   );
 }

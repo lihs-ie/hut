@@ -215,6 +215,139 @@
   cursor: not-allowed;
 }
 
+.chapters-section {
+  max-width: 48rem;
+  width: 100%;
+  margin: 2rem auto 0;
+}
+
+.chapters-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.chapters-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .chapters-section-title {
+    font-size: 1.125rem;
+  }
+}
+
+.add-chapter-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.add-chapter-link:hover {
+  background: var(--primary-hover);
+}
+
+.add-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  display: inline-block;
+}
+
+.chapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.chapter-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+
+.chapter-item:last-child {
+  border-bottom: none;
+}
+
+.chapter-number {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5rem;
+}
+
+.chapter-title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .chapter-title {
+    font-size: 1rem;
+  }
+}
+
+.chapter-edit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.chapter-edit-link:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.chapter-edit-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  display: inline-block;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 1rem;

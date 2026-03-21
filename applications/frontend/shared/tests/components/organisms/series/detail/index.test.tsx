@@ -154,6 +154,30 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
     unmount();
   });
 
+  it("編集リンクが表示されない", async () => {
+    const chapters = [Forger(ChapterMold).forge()];
+    const series = Forger(SeriesMold).forge({ chapters: [] });
+    const slug = Forger(SeriesSlugMold).forge();
+
+    const { SeriesDetail } = await import(
+      "@shared/components/organisms/series/detail/index"
+    );
+
+    const { unmount } = render(
+      SeriesDetail({
+        series,
+        slug,
+        chapters,
+        findAllTags: async () => [],
+      })
+    );
+
+    expect(screen.queryByText("編集")).not.toBeInTheDocument();
+    expect(screen.queryByText("チャプターを追加")).not.toBeInTheDocument();
+
+    unmount();
+  });
+
   it("複数の章があっても React 要素を返す", async () => {
     const chapters = [
       Forger(ChapterMold).forge({ title: "第1章" }),

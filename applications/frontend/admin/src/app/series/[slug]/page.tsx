@@ -17,7 +17,6 @@ export default async function AdminSeriesDetailPage(props: Props) {
       findBySlug={findBySlug}
       findChaptersByIdentifiers={findChaptersByIdentifiers}
       findAllTags={findAllTags}
-      editable
     />
   );
 }
