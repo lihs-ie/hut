@@ -75,6 +75,8 @@ export const SeriesEdit = (props: Props) => {
     },
   );
 
+  const isPublished = status === PublishStatus.PUBLISHED;
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -83,166 +85,171 @@ export const SeriesEdit = (props: Props) => {
         </h1>
       </div>
 
-      <div className={styles.form}>
-        <div className={styles.field}>
-          <label htmlFor="title" className={styles.label}>
-            タイトル
-          </label>
-          <input
-            id="title"
-            name="title"
-            type="text"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="連載タイトルを入力"
-            className={styles.input}
-          />
-        </div>
-
-        <div className={styles.field}>
-          <label htmlFor="slug" className={styles.label}>
-            スラッグ
-          </label>
-          <input
-            id="slug"
-            name="slug"
-            type="text"
-            value={slug}
-            onChange={(event) => setSlug(event.target.value)}
-            placeholder="series-slug"
-            className={styles.input}
-            disabled={!!props.initial}
-          />
-        </div>
-
-        <div className={styles.field}>
-          <label htmlFor="subTitle" className={styles.label}>
-            サブタイトル
-          </label>
-          <input
-            id="subTitle"
-            name="subTitle"
-            type="text"
-            value={subTitle}
-            onChange={(event) => setSubTitle(event.target.value)}
-            placeholder="サブタイトルを入力（任意）"
-            className={styles.input}
-          />
-        </div>
-
-        <div className={styles.field}>
-          <label htmlFor="description" className={styles.label}>
-            説明
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder="連載の説明を入力（任意）"
-            className={styles.textarea}
-            rows={4}
-          />
-        </div>
-
-        <div className={styles.field}>
-          <label htmlFor="cover" className={styles.label}>
-            カバー画像URL
-          </label>
-          <input
-            id="cover"
-            name="cover"
-            type="url"
-            value={cover}
-            onChange={(event) => setCover(event.target.value)}
-            placeholder="https://example.com/cover.png"
-            className={styles.input}
-          />
-        </div>
-
-        <div className={styles.field}>
-          <div className={styles["tags-header"]}>
-            <span className={styles["tags-icon"]}>
-              <TagIcon />
-            </span>
-            <label className={styles.label}>タグ</label>
+      <div className={styles.wrapper}>
+        <div className={styles.card}>
+          <div className={styles.field}>
+            <label htmlFor="title" className={styles.label}>
+              タイトル
+            </label>
+            <input
+              id="title"
+              name="title"
+              type="text"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="連載タイトルを入力"
+              className={styles.input}
+            />
           </div>
-          {tags.length > 0 && (
-            <div className={styles["tags-selected-wrapper"]}>
-              <div className={styles["tags-selected"]}>
-                {tags.map((tagIdentifier) => {
-                  const tag = props.tags.find(
-                    (t) => t.identifier === tagIdentifier,
-                  );
-                  if (!tag) return null;
-                  return (
-                    <span key={tagIdentifier} className={styles["tag-item"]}>
-                      {tag.name}
-                      <button
-                        type="button"
-                        className={styles["tag-remove"]}
-                        onClick={() =>
-                          handleTagsChange(
-                            tags.filter((t) => t !== tagIdentifier),
-                          )
-                        }
-                        aria-label={`${tag.name}を削除`}
-                      >
-                        <CrossIcon />
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-              <button
-                type="button"
-                className={styles["tags-clear"]}
-                onClick={() => handleTagsChange([])}
-              >
-                全て解除
-              </button>
-            </div>
-          )}
-          {props.tags.filter((t) => !tags.includes(t.identifier)).length >
-            0 && (
-            <>
-              <p className={styles["tags-available-label"]}>
-                クリックして追加
-              </p>
-              <TagSelect
-                tags={props.tags.filter((t) => !tags.includes(t.identifier))}
-                onSelect={(tag) =>
-                  handleTagsChange([...tags, tag.identifier])
-                }
-                selected={tags}
-              />
-            </>
-          )}
-        </div>
 
-        <div className={styles.field}>
-          <div className={styles["status-row"]}>
-            <label htmlFor="status" className={styles.label}>
-              公開ステータス
+          <div className={styles.field}>
+            <label htmlFor="slug" className={styles.label}>
+              スラッグ
             </label>
-            <label className={styles["status-toggle"]}>
-              <input
-                id="status"
-                type="checkbox"
-                checked={status === PublishStatus.PUBLISHED}
-                onChange={(event) =>
-                  setStatus(
-                    event.target.checked
-                      ? PublishStatus.PUBLISHED
-                      : PublishStatus.DRAFT,
-                  )
-                }
-                className={styles["status-checkbox"]}
-              />
-              <span className={styles["status-label"]}>
-                {status === PublishStatus.PUBLISHED ? "公開" : "下書き"}
+            <input
+              id="slug"
+              name="slug"
+              type="text"
+              value={slug}
+              onChange={(event) => setSlug(event.target.value)}
+              placeholder="series-slug"
+              className={styles.input}
+              disabled={!!props.initial}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="subTitle" className={styles.label}>
+              サブタイトル
+            </label>
+            <input
+              id="subTitle"
+              name="subTitle"
+              type="text"
+              value={subTitle}
+              onChange={(event) => setSubTitle(event.target.value)}
+              placeholder="サブタイトルを入力（任意）"
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="description" className={styles.label}>
+              説明
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="連載の説明を入力（任意）"
+              className={styles.textarea}
+              rows={4}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="cover" className={styles.label}>
+              カバー画像URL
+            </label>
+            <input
+              id="cover"
+              name="cover"
+              type="url"
+              value={cover}
+              onChange={(event) => setCover(event.target.value)}
+              placeholder="https://example.com/cover.png"
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <div className={styles.tagsheader}>
+              <span className={styles.tagsicon}>
+                <TagIcon />
               </span>
-            </label>
+              <label className={styles.label}>タグ</label>
+            </div>
+            {tags.length > 0 && (
+              <div className={styles.tagswrapper}>
+                <div className={styles.tagsselected}>
+                  {tags.map((tagIdentifier) => {
+                    const tag = props.tags.find(
+                      (t) => t.identifier === tagIdentifier,
+                    );
+                    if (!tag) return null;
+                    return (
+                      <span key={tagIdentifier} className={styles.tagitem}>
+                        {tag.name}
+                        <button
+                          type="button"
+                          className={styles.tagremove}
+                          onClick={() =>
+                            handleTagsChange(
+                              tags.filter((t) => t !== tagIdentifier),
+                            )
+                          }
+                          aria-label={`${tag.name}を削除`}
+                        >
+                          <CrossIcon />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  className={styles.tagsclear}
+                  onClick={() => handleTagsChange([])}
+                >
+                  全て解除
+                </button>
+              </div>
+            )}
+            {props.tags.filter((t) => !tags.includes(t.identifier)).length >
+              0 && (
+              <>
+                <p className={styles.tagsavailablelabel}>
+                  クリックして追加
+                </p>
+                <TagSelect
+                  tags={props.tags.filter((t) => !tags.includes(t.identifier))}
+                  onSelect={(tag) =>
+                    handleTagsChange([...tags, tag.identifier])
+                  }
+                  selected={tags}
+                />
+              </>
+            )}
+          </div>
+
+          <div className={`${styles.field} ${styles.last}`}>
+            <div className={styles.statusrow}>
+              <label htmlFor="status" className={styles.label}>
+                公開ステータス
+              </label>
+              <div className={styles.statuscontrol}>
+                <button
+                  id="status"
+                  type="button"
+                  role="switch"
+                  aria-checked={isPublished}
+                  className={`${styles.toggle} ${isPublished ? styles.checked : ""}`}
+                  onClick={() =>
+                    setStatus(
+                      isPublished ? PublishStatus.DRAFT : PublishStatus.PUBLISHED,
+                    )
+                  }
+                >
+                  <span className={styles.togglethumb} />
+                </button>
+                <span
+                  className={`${styles.statusbadge} ${isPublished ? styles.published : styles.draft}`}
+                >
+                  {isPublished ? "公開中" : "下書き"}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -251,7 +258,7 @@ export const SeriesEdit = (props: Props) => {
             type="button"
             onClick={execute}
             disabled={isLoading || !title.trim()}
-            className={styles["save-button"]}
+            className={styles.savebutton}
           >
             {isLoading ? "保存中..." : "保存"}
           </button>
@@ -259,34 +266,40 @@ export const SeriesEdit = (props: Props) => {
       </div>
 
       {props.chapters !== undefined && props.seriesSlug !== undefined && (
-        <div className={styles["chapters-section"]}>
-          <div className={styles["chapters-section-header"]}>
-            <h2 className={styles["chapters-section-title"]}>チャプター管理</h2>
+        <div className={styles.chapterssection}>
+          <div className={styles.chapterssectionheader}>
+            <h2 className={styles.chapterssectiontitle}>チャプター管理</h2>
             <Link
               href={Routes.page.series.chapter.new(props.seriesSlug)}
-              className={styles["add-chapter-link"]}
+              className={styles.addchapterlink}
             >
-              <PlusIcon className={styles["add-icon"]} />
+              <PlusIcon className={styles.addicon} />
               チャプターを追加
             </Link>
           </div>
-          <ol className={styles["chapters-list"]}>
-            {props.chapters.map((chapter, index) => (
-              <li key={chapter.slug} className={styles["chapter-item"]}>
-                <span className={styles["chapter-number"]}>
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className={styles["chapter-title"]}>{chapter.title}</span>
-                <Link
-                  href={Routes.page.series.chapter.edit(props.seriesSlug!, chapter.slug)}
-                  className={styles["chapter-edit-link"]}
-                >
-                  <BallpenIcon className={styles["chapter-edit-icon"]} />
-                  編集
-                </Link>
-              </li>
-            ))}
-          </ol>
+          {props.chapters.length === 0 ? (
+            <div className={styles.chaptersempty}>
+              まだチャプターがありません
+            </div>
+          ) : (
+            <ol className={styles.chapterslist}>
+              {props.chapters.map((chapter, index) => (
+                <li key={chapter.slug} className={styles.chapteritem}>
+                  <span className={styles.chapternumber}>
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className={styles.chaptertitle}>{chapter.title}</span>
+                  <Link
+                    href={Routes.page.series.chapter.edit(props.seriesSlug!, chapter.slug)}
+                    className={styles.chapterlink}
+                  >
+                    <BallpenIcon className={styles.chaptericon} />
+                    編集
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
       )}
 
