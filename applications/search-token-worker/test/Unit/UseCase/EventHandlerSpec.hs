@@ -9,6 +9,9 @@ import Support.Helper.Domain.Event
   ( createArticleCreatedEvent,
     createArticleEditedEvent,
     createArticleTerminateEvent,
+    createChapterCreatedEvent,
+    createChapterEditedEvent,
+    createChapterTerminateEvent,
     createMemoCreatedEvent,
     createMemoEditedEvent,
     createMemoTerminateEvent,
@@ -275,4 +278,81 @@ spec = do
       context "failure" $ do
         it "returns Left when terminate fails" $ do
           (result, _, _) <- runHandle (Right ()) (Left Unexpected) (createSeriesTerminateEvent 1)
+          result `shouldSatisfy` isLeft
+
+    context "ChapterCreated" $ do
+      context "successfully" $ do
+        it "returns Right" $ do
+          (result, _, _) <- runHandle (Right ()) (Right ()) (createChapterCreatedEvent 1)
+          result `shouldSatisfy` isRight
+
+        it "calls persist with tokens" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createChapterCreatedEvent 1)
+          persisted `shouldSatisfy` (not . null)
+
+        it "persists tokens with Chapter contentType" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createChapterCreatedEvent 1)
+          all (\token -> token.contentType == Chapter) persisted `shouldBe` True
+
+        it "persists tokens with correct reference" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createChapterCreatedEvent 1)
+          all (\token -> token.reference == "chapter-1") persisted `shouldBe` True
+
+        it "persists ngram tokens" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createChapterCreatedEvent 1)
+          any (\token -> take 6 token.identifier == "ngram:") persisted `shouldBe` True
+
+        it "does not call terminate" $ do
+          (_, _, terminated) <- runHandle (Right ()) (Right ()) (createChapterCreatedEvent 1)
+          terminated `shouldBe` []
+
+      context "failure" $ do
+        it "returns Left when persist fails" $ do
+          (result, _, _) <- runHandle (Left Unexpected) (Right ()) (createChapterCreatedEvent 1)
+          result `shouldSatisfy` isLeft
+
+    context "ChapterEdited" $ do
+      context "successfully" $ do
+        it "returns Right" $ do
+          (result, _, _) <- runHandle (Right ()) (Right ()) (createChapterEditedEvent 1)
+          result `shouldSatisfy` isRight
+
+        it "calls persist with tokens" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createChapterEditedEvent 1)
+          persisted `shouldSatisfy` (not . null)
+
+        it "persists tokens with Chapter contentType" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createChapterEditedEvent 1)
+          all (\token -> token.contentType == Chapter) persisted `shouldBe` True
+
+        it "persists tokens with next payload reference" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createChapterEditedEvent 1)
+          all (\token -> token.reference == "chapter-2") persisted `shouldBe` True
+
+        it "does not call terminate" $ do
+          (_, _, terminated) <- runHandle (Right ()) (Right ()) (createChapterEditedEvent 1)
+          terminated `shouldBe` []
+
+      context "failure" $ do
+        it "returns Left when persist fails" $ do
+          (result, _, _) <- runHandle (Left Unexpected) (Right ()) (createChapterEditedEvent 1)
+          result `shouldSatisfy` isLeft
+
+    context "ChapterTerminated" $ do
+      context "successfully" $ do
+        it "returns Right" $ do
+          (result, _, _) <- runHandle (Right ()) (Right ()) (createChapterTerminateEvent 1)
+          result `shouldSatisfy` isRight
+
+        it "calls terminate with correct reference" $ do
+          (_, _, terminated) <- runHandle (Right ()) (Right ()) (createChapterTerminateEvent 1)
+          terminated `shouldBe` ["chapter:chapter-1"]
+
+        it "does not call persist" $ do
+          (_, persisted, _) <- runHandle (Right ()) (Right ()) (createChapterTerminateEvent 1)
+          persisted `shouldBe` []
+
+      context "failure" $ do
+        it "returns Left when terminate fails" $ do
+          (result, _, _) <- runHandle (Right ()) (Left Unexpected) (createChapterTerminateEvent 1)
           result `shouldSatisfy` isLeft

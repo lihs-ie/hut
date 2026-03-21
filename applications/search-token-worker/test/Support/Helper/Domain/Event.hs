@@ -8,6 +8,9 @@ module Support.Helper.Domain.Event
     createSeriesCreatedEvent,
     createSeriesEditedEvent,
     createSeriesTerminateEvent,
+    createChapterCreatedEvent,
+    createChapterEditedEvent,
+    createChapterTerminateEvent,
   )
 where
 
@@ -17,6 +20,8 @@ import Domain.Common (Timeline (..))
 import Domain.Event
   ( ArticleCreatedPayload (..),
     ArticleEditedPayload (..),
+    ChapterCreatedPayload (..),
+    ChapterEditedPayload (..),
     Event (..),
     EventPayload (..),
     EventType (..),
@@ -147,3 +152,33 @@ createSeriesEditedEvent seed =
 createSeriesTerminateEvent :: Int -> Event
 createSeriesTerminateEvent seed =
   createEvent seed SeriesTerminated (SeriesTerminatePayload' ("series-" <> show seed))
+
+createChapterCreatedPayload :: Int -> ChapterCreatedPayload
+createChapterCreatedPayload seed =
+  ChapterCreatedPayload
+    { identifier = "chapter-" <> show seed,
+      title = "title-" <> show seed,
+      slug = "slug-" <> show seed,
+      content = "content-" <> show seed,
+      timeline = seedToTimeline seed
+    }
+
+createChapterCreatedEvent :: Int -> Event
+createChapterCreatedEvent seed =
+  createEvent seed ChapterCreated (ChapterCreatedPayload' (createChapterCreatedPayload seed))
+
+createChapterEditedEvent :: Int -> Event
+createChapterEditedEvent seed =
+  createEvent
+    seed
+    ChapterEdited
+    ( ChapterEditedPayload'
+        ChapterEditedPayload
+          { next = createChapterCreatedPayload (seed + 1),
+            before = createChapterCreatedPayload seed
+          }
+    )
+
+createChapterTerminateEvent :: Int -> Event
+createChapterTerminateEvent seed =
+  createEvent seed ChapterTerminated (ChapterTerminatePayload' ("chapter-" <> show seed))

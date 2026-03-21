@@ -6,6 +6,8 @@ import Domain.Common (Timeline (..))
 import Domain.Event
   ( ArticleCreatedPayload (..),
     ArticleEditedPayload (..),
+    ChapterCreatedPayload (..),
+    ChapterEditedPayload (..),
     Event (..),
     EventPayload (..),
     EventType (..),
@@ -33,7 +35,10 @@ spec = do
           (TagTerminated, "TagTerminated"),
           (SeriesCreated, "SeriesCreated"),
           (SeriesEdited, "SeriesEdited"),
-          (SeriesTerminated, "SeriesTerminated")
+          (SeriesTerminated, "SeriesTerminated"),
+          (ChapterCreated, "ChapterCreated"),
+          (ChapterEdited, "ChapterEdited"),
+          (ChapterTerminated, "ChapterTerminated")
         ]
         $ \(eventType, expected) ->
           it ("returns " <> expected) $ do
@@ -53,7 +58,10 @@ spec = do
                               TagTerminated,
                               SeriesCreated,
                               SeriesEdited,
-                              SeriesTerminated
+                              SeriesTerminated,
+                              ChapterCreated,
+                              ChapterEdited,
+                              ChapterTerminated
                             ]
 
     context "Eq" $ do
@@ -288,6 +296,48 @@ spec = do
     it "wraps SeriesTerminatePayload" $ do
       let actual = SeriesTerminatePayload' "ref-3"
       actual `shouldBe` SeriesTerminatePayload' "ref-3"
+
+  describe "ChapterCreatedPayload" $ do
+    it "holds all fields" $ do
+      now <- getCurrentTime
+      let timeline' = Timeline now now
+          actual =
+            ChapterCreatedPayload
+              { identifier = "chapter-1",
+                title = "Chapter Title",
+                slug = "chapter-title",
+                content = "Chapter content",
+                timeline = timeline'
+              }
+      actual.identifier `shouldBe` "chapter-1"
+      actual.title `shouldBe` "Chapter Title"
+      actual.slug `shouldBe` "chapter-title"
+      actual.content `shouldBe` "Chapter content"
+      actual.timeline `shouldBe` timeline'
+
+  describe "ChapterEditedPayload" $ do
+    it "holds next and before" $ do
+      now <- getCurrentTime
+      let timeline' = Timeline now now
+          before' =
+            ChapterCreatedPayload
+              { identifier = "chapter-1",
+                title = "Old Title",
+                slug = "old-title",
+                content = "Old content",
+                timeline = timeline'
+              }
+          next' =
+            ChapterCreatedPayload
+              { identifier = "chapter-1",
+                title = "New Title",
+                slug = "new-title",
+                content = "New content",
+                timeline = timeline'
+              }
+          actual = ChapterEditedPayload {next = next', before = before'}
+      actual.next `shouldBe` next'
+      actual.before `shouldBe` before'
 
   describe "Event" $ do
     it "holds all fields" $ do

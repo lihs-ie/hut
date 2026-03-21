@@ -12,7 +12,7 @@ import Data.ByteString.Base64 qualified as B64
 import Data.ByteString.Char8 qualified as BS
 import Data.Time (UTCTime)
 import Domain.Common (Timeline (Timeline, createdAt, updatedAt))
-import Domain.Event (ArticleCreatedPayload (..), ArticleEditedPayload (..), Event (..), EventPayload (ArticleCreatedPayload', ArticleEditedPayload', ArticleTerminatePayload', MemoCreatedPayload', MemoEditedPayload', MemoTerminatePayload', SeriesCreatedPayload', SeriesEditedPayload', SeriesTerminatePayload'), EventType (ArticleCreated, ArticleEdited, ArticleTerminated, MemoCreated, MemoEdited, MemoTerminated, SeriesCreated, SeriesEdited, SeriesTerminated), MemoCreatedPayload (..), MemoEditedPayload (..), MemoEntry (MemoEntry, createdAt, text), SeriesChapter (..), SeriesCreatedPayload (..), SeriesEditedPayload (..))
+import Domain.Event (ArticleCreatedPayload (..), ArticleEditedPayload (..), ChapterCreatedPayload (..), ChapterEditedPayload (..), Event (..), EventPayload (ArticleCreatedPayload', ArticleEditedPayload', ArticleTerminatePayload', ChapterCreatedPayload', ChapterEditedPayload', ChapterTerminatePayload', MemoCreatedPayload', MemoEditedPayload', MemoTerminatePayload', SeriesCreatedPayload', SeriesEditedPayload', SeriesTerminatePayload'), EventType (ArticleCreated, ArticleEdited, ArticleTerminated, ChapterCreated, ChapterEdited, ChapterTerminated, MemoCreated, MemoEdited, MemoTerminated, SeriesCreated, SeriesEdited, SeriesTerminated), MemoCreatedPayload (..), MemoEditedPayload (..), MemoEntry (MemoEntry, createdAt, text), SeriesChapter (..), SeriesCreatedPayload (..), SeriesEditedPayload (..))
 import GHC.Generics (Generic)
 
 data TimelineRequest = TimelineRequest
@@ -117,6 +117,24 @@ newtype SeriesTerminatedPayloadRequest = SeriesTerminatedPayloadRequest
 
 instance FromJSON SeriesTerminatedPayloadRequest
 
+data ChapterPayloadRequest = ChapterPayloadRequest
+  { identifier :: String,
+    title :: String,
+    slug :: String,
+    content :: String,
+    timeline :: TimelineRequest
+  }
+  deriving (Generic)
+
+instance FromJSON ChapterPayloadRequest
+
+newtype ChapterTerminatedPayloadRequest = ChapterTerminatedPayloadRequest
+  { chapter :: String
+  }
+  deriving (Generic)
+
+instance FromJSON ChapterTerminatedPayloadRequest
+
 data EventRequest = EventRequest
   { identifier :: String,
     occurredAt :: UTCTime,
@@ -183,6 +201,16 @@ toSeriesCreatedPayload request =
       description = request.description,
       tags = request.tags,
       chapters = map toSeriesChapter request.chapters,
+      timeline = toTimeline request.timeline
+    }
+
+toChapterCreatedPayload :: ChapterPayloadRequest -> ChapterCreatedPayload
+toChapterCreatedPayload request =
+  ChapterCreatedPayload
+    { identifier = request.identifier,
+      title = request.title,
+      slug = request.slug,
+      content = request.content,
       timeline = toTimeline request.timeline
     }
 
@@ -259,6 +287,25 @@ toDomain request = case request.eventType of
   "series.terminated" -> do
     (wrapper :: SeriesTerminatedPayloadRequest) <- parsePayload request.payload
     Right $ makeEvent request SeriesTerminated (SeriesTerminatePayload' wrapper.series)
+  "chapter.created" -> do
+    (wrapper :: SnapshotPayloadRequest ChapterPayloadRequest) <- parsePayload request.payload
+    Right $ makeEvent request ChapterCreated (ChapterCreatedPayload' (toChapterCreatedPayload wrapper.snapshot))
+  "chapter.edited" ->
+    ( \payload' ->
+        makeEvent
+          request
+          ChapterEdited
+          ( ChapterEditedPayload'
+              ChapterEditedPayload
+                { next = toChapterCreatedPayload payload'.next,
+                  before = toChapterCreatedPayload payload'.before
+                }
+          )
+    )
+      <$> (parsePayload request.payload :: Either String (EditedPayloadRequest ChapterPayloadRequest))
+  "chapter.terminated" -> do
+    (wrapper :: ChapterTerminatedPayloadRequest) <- parsePayload request.payload
+    Right $ makeEvent request ChapterTerminated (ChapterTerminatePayload' wrapper.chapter)
   _ -> Left ("Unknown event type: " <> request.eventType)
 
 newtype PubSubMessage = PubSubMessage
