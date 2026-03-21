@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 import { SimpleBadge } from "@shared/components/atoms/badge/simple";
+import { Routes } from "@shared/config/presentation/route";
 import styles from "./summary.module.css";
 
 export type Props = {
@@ -20,7 +21,7 @@ export type Props = {
 
 export const SeriesSummaryCard = (props: Props) => {
   return (
-    <Link href={`/series/${props.slug}`} className={styles.container}>
+    <Link href={Routes.page.series.show(props.slug)} className={styles.container}>
       <div className={styles.header}>
         <div className={styles.cover}>
           {props.cover ? (

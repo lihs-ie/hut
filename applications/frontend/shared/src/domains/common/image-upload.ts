@@ -46,7 +46,9 @@ export const generateUploadPath = (
         `memos/${reference}/${imageObjectName}`,
       );
     case "chapter":
-      throw new Error("Chapter upload requires separate handling");
+      return imageUploadPathSchema.parse(
+        `images/chapters/${reference}/${imageObjectName}`,
+      );
   }
 };
 

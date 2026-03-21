@@ -152,7 +152,7 @@ describe("workflows/series", () => {
         mockLogger
       );
 
-      const result = await workflow({ slug: null, tags: null }).unwrap();
+      const result = await workflow({ slug: null, tags: null, status: null, freeWord: null }).unwrap();
 
       expect(result).toEqual(seriesList);
       expect(searchMock).toHaveBeenCalled();
@@ -167,7 +167,7 @@ describe("workflows/series", () => {
         mockLogger
       );
 
-      const result = await workflow({ slug, tags: null }).unwrap();
+      const result = await workflow({ slug, tags: null, status: null, freeWord: null }).unwrap();
 
       expect(result).toEqual(seriesList);
     });
@@ -180,7 +180,7 @@ describe("workflows/series", () => {
         mockLogger
       );
 
-      const result = await workflow({ slug: null, tags: null }).unwrapError();
+      const result = await workflow({ slug: null, tags: null, status: null, freeWord: null }).unwrapError();
 
       expect(result).toEqual(error);
     });
@@ -204,6 +204,7 @@ describe("workflows/series", () => {
         chapters: series.chapters,
         description: series.description,
         cover: series.cover,
+        status: series.status,
         timeline: series.timeline,
       }).unwrap();
 
@@ -220,11 +221,12 @@ describe("workflows/series", () => {
 
       const result = workflow({
         identifier: "invalid",
-        title: "", // 空のタイトルは無効
+        title: "",
         slug: "test-slug",
         tags: [],
         subTitle: null,
         chapters: [],
+        status: "published",
         timeline: { createdAt: new Date(), updatedAt: new Date() },
       });
 
@@ -252,6 +254,7 @@ describe("workflows/series", () => {
         chapters: series.chapters,
         description: series.description,
         cover: series.cover,
+        status: series.status,
         timeline: series.timeline,
       }).unwrapError();
 
