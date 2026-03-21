@@ -88,7 +88,7 @@ export const SeriesEdit = (props: Props) => {
       <div className={styles.layout}>
         <div className={styles.main}>
           <div className={styles.card}>
-          <div className={styles.field}>
+            <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
               タイトル
             </label>

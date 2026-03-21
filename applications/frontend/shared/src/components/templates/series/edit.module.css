@@ -307,6 +307,10 @@
 
 .chapterssection {
   width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 .chapterssectionheader {
@@ -314,7 +318,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .chapterssectiontitle {
@@ -351,9 +356,6 @@
 }
 
 .chaptersempty {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
   padding: 2rem 1.5rem;
   text-align: center;
   color: var(--muted-foreground);
@@ -367,9 +369,6 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
 }
 
 .chapteritem {
@@ -445,6 +444,20 @@
 
   .chaptertitle {
     font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input,
+  .textarea,
+  .toggle,
+  .togglethumb,
+  .chapteritem,
+  .chapterlink,
+  .savebutton,
+  .tagsclear,
+  .addchapterlink {
+    transition: none;
   }
 }
 
