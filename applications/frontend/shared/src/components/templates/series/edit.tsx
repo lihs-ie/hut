@@ -213,13 +213,15 @@ export const SeriesEdit = (props: Props) => {
                 <p className={styles.tagsavailablelabel}>
                   クリックして追加
                 </p>
-                <TagSelect
-                  tags={props.tags.filter((t) => !tags.includes(t.identifier))}
-                  onSelect={(tag) =>
-                    handleTagsChange([...tags, tag.identifier])
-                  }
-                  selected={tags}
-                />
+                <div className={styles.tagsavailable}>
+                  <TagSelect
+                    tags={props.tags.filter((t) => !tags.includes(t.identifier))}
+                    onSelect={(tag) =>
+                      handleTagsChange([...tags, tag.identifier])
+                    }
+                    selected={tags}
+                  />
+                </div>
               </>
             )}
           </div>
