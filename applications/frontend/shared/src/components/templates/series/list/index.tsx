@@ -17,7 +17,7 @@ export const SeriesListIndex = (props: Props) => {
     <div className={styles.container}>
       <div className={styles.wrapper}>
         <div className={styles.header}>
-          <h1 className={styles.title}>シリーズ</h1>
+          <h1 className={styles.title}>連載</h1>
           <p className={styles.description}>
             技術書や体系的にまとめられたコンテンツ
           </p>

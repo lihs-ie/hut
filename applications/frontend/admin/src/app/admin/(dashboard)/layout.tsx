@@ -22,7 +22,7 @@ const navItems: NavItem[] = [
   },
   {
     href: Routes.admin.series.list,
-    label: "シリーズの管理",
+    label: "連載の管理",
     icon: <BookOpenIcon />,
   },
   { href: Routes.admin.tag.list, label: "タグ管理", icon: <TagIcon /> },

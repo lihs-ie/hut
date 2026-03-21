@@ -20,9 +20,9 @@ export const SeriesList = async (props: Props) => {
     return (
       <div className={styles.container}>
         <div className={styles.empty}>
-          <p className={styles["empty-title"]}>シリーズがありません</p>
+          <p className={styles["empty-title"]}>連載がありません</p>
           <p className={styles["empty-description"]}>
-            シリーズが公開されるとここに表示されます
+            連載が公開されるとここに表示されます
           </p>
         </div>
       </div>

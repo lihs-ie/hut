@@ -24,7 +24,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
 
   return {
     title: series.title,
-    description: series.description ?? `${series.title}のシリーズページです`,
+    description: series.description ?? `${series.title}の連載ページです`,
     keywords: tags.map((tag) => tag.name),
     authors: [{ name: "lihs" }],
     openGraph: {

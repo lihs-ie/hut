@@ -27,7 +27,7 @@ const badgeText = (type: ContentType) => {
     case ContentType.MEMO:
       return { text: "メモ", variant: "secondary" as const };
     case ContentType.SERIES:
-      return { text: "シリーズ", variant: "outline" as const };
+      return { text: "連載", variant: "outline" as const };
     default:
       return { text: "", variant: "default" as const };
   }

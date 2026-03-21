@@ -39,7 +39,7 @@ test.describe("series list page", () => {
       await page.waitForLoadState("networkidle");
 
       await expect(
-        page.getByRole("heading", { name: "シリーズ" }),
+        page.getByRole("heading", { name: "連載" }),
       ).toBeVisible();
     });
 
@@ -96,7 +96,7 @@ test.describe("series list page", () => {
       await page.waitForLoadState("networkidle");
 
       await expect(
-        page.getByRole("heading", { name: "シリーズ" }),
+        page.getByRole("heading", { name: "連載" }),
       ).toBeVisible();
     });
 
@@ -106,7 +106,7 @@ test.describe("series list page", () => {
       await page.waitForLoadState("networkidle");
 
       await expect(
-        page.getByRole("heading", { name: "シリーズ" }),
+        page.getByRole("heading", { name: "連載" }),
       ).toBeVisible();
     });
   });
