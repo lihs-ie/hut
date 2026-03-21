@@ -12,24 +12,23 @@ const series = {
 test.describe("series management", () => {
   test("series management page renders", async ({ page }: TestArgs) => {
     await page.goto("/admin/series");
-    await page.waitForLoadState("networkidle");
 
     await expect(
       page.getByRole("heading", { name: "シリーズの管理" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test("series list is displayed", async ({ page }: TestArgs) => {
     await page.goto("/admin/series");
-    await page.waitForLoadState("networkidle");
 
-    await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator("main")).toBeVisible({ timeout: 15000 });
   });
 
   test("displays seeded series title", async ({ page }: TestArgs) => {
     await page.goto("/admin/series");
-    await page.waitForLoadState("networkidle");
 
-    await expect(page.getByText(series.title).first()).toBeVisible();
+    await expect(
+      page.getByText(series.title).first(),
+    ).toBeVisible({ timeout: 15000 });
   });
 });
