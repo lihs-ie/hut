@@ -4,8 +4,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { isValidElement } from "react";
 import { Forger } from "@lihs-ie/forger-ts";
-import { SeriesMold } from "@tests/support/molds/domains/series";
-import { ProfileMold } from "@tests/support/molds/domains/user/common";
+import { SeriesMold } from "../../support/molds/domains/series";
+import { ProfileMold } from "../../support/molds/domains/user/common";
 
 vi.mock("@shared/components/organisms/common/top/search", () => ({
   ContentSection: async (props: Record<string, unknown>) => (

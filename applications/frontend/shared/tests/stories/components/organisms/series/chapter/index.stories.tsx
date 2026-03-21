@@ -6,11 +6,8 @@ import { Forger } from "@lihs-ie/forger-ts";
 import {
   ChapterMold,
   ChapterSlugMold,
-  SeriesMold,
   SeriesSlugMold,
 } from "../../../../../support/molds/domains/series";
-import { TagIdentifierMold } from "../../../../../support/molds/domains/attributes/tag";
-
 const meta = {
   component: ChapterPresenter,
 } satisfies Meta<typeof ChapterPresenter>;
@@ -67,59 +64,52 @@ const chapters = [
   Forger(ChapterMold).forgeWithSeed(7, { title: "エラーハンドリング" }),
 ];
 
-const tags = Forger(TagIdentifierMold).forgeMulti(3);
-
-const series = Forger(SeriesMold).forge({
-  title: "Next.js 15 / React 19 実践設計ガイド",
-  tags,
-  chapters,
-});
-
+const seriesTitle = "Next.js 15 / React 19 実践設計ガイド";
 const seriesSlug = Forger(SeriesSlugMold).forge({ value: "nextjs-guide" });
 
 export const Default: StoryObj<typeof ChapterPresenter> = {
   args: {
-    series,
+    seriesTitle,
     seriesSlug,
     chapterSlug,
+    chapters,
     renderer: (content: string) => MDXRenderer(content),
   },
 };
 
 export const MiddleChapter: StoryObj<typeof ChapterPresenter> = {
   args: {
-    series,
+    seriesTitle,
     seriesSlug,
     chapterSlug: chapters[3].slug,
+    chapters,
     renderer: (content: string) => MDXRenderer(content),
   },
 };
 
 export const LastChapter: StoryObj<typeof ChapterPresenter> = {
   args: {
-    series,
+    seriesTitle,
     seriesSlug,
     chapterSlug: chapters[6].slug,
+    chapters,
     renderer: (content: string) => MDXRenderer(content),
   },
 };
 
 export const FewChapters: StoryObj<typeof ChapterPresenter> = {
   args: {
-    series: Forger(SeriesMold).forge({
-      title: "短いシリーズ",
-      tags: Forger(TagIdentifierMold).forgeMulti(2),
-      chapters: [
-        Forger(ChapterMold).forge({
-          title: "イントロダクション",
-          slug: Forger(ChapterSlugMold).forge({ value: "intro" }),
-          content: chapterContent,
-        }),
-        Forger(ChapterMold).forgeWithSeed(2, { title: "まとめ" }),
-      ],
-    }),
+    seriesTitle: "短いシリーズ",
     seriesSlug: Forger(SeriesSlugMold).forge({ value: "short-series" }),
     chapterSlug: Forger(ChapterSlugMold).forge({ value: "intro" }),
+    chapters: [
+      Forger(ChapterMold).forge({
+        title: "イントロダクション",
+        slug: Forger(ChapterSlugMold).forge({ value: "intro" }),
+        content: chapterContent,
+      }),
+      Forger(ChapterMold).forgeWithSeed(2, { title: "まとめ" }),
+    ],
     renderer: (content: string) => MDXRenderer(content),
   },
 };

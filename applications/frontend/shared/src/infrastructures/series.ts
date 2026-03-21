@@ -36,15 +36,7 @@ type PersistedSeries = {
   subTitle?: string | null;
   cover: string | null;
   status: string;
-  chapters: Array<{
-    title: string;
-    content: string;
-    slug: string;
-    timeline: {
-      createdAt: Timestamp;
-      updatedAt: Timestamp;
-    };
-  }>;
+  chapters: string[];
   timeline: {
     createdAt: Timestamp;
     updatedAt: Timestamp;
@@ -74,15 +66,7 @@ export const FirebaseSeriesRepository = (
           tags: series.tags,
           subTitle: series.subTitle,
           status: series.status,
-          chapters: series.chapters.map((chapter) => ({
-            title: chapter.title,
-            slug: chapter.slug,
-            content: chapter.content,
-            timeline: {
-              createdAt: Timestamp.fromDate(chapter.timeline.createdAt),
-              updatedAt: Timestamp.fromDate(chapter.timeline.updatedAt),
-            },
-          })),
+          chapters: series.chapters,
           timeline: {
             createdAt: Timestamp.fromDate(series.timeline.createdAt),
             updatedAt: Timestamp.fromDate(series.timeline.updatedAt),
@@ -105,15 +89,7 @@ export const FirebaseSeriesRepository = (
           tags: data.tags,
           subTitle: data.subTitle || null,
           status: data.status ?? "published",
-          chapters: data.chapters.map((chapter) => ({
-            title: chapter.title,
-            slug: chapter.slug,
-            content: chapter.content,
-            timeline: {
-              createdAt: chapter.timeline.createdAt.toDate(),
-              updatedAt: chapter.timeline.updatedAt.toDate(),
-            },
-          })),
+          chapters: data.chapters ?? [],
           timeline: {
             createdAt: data.timeline.createdAt.toDate(),
             updatedAt: data.timeline.updatedAt.toDate(),

@@ -9,6 +9,7 @@ import {
   SeriesSlugMold,
   ChapterMold,
   ChapterSlugMold,
+  ChapterIdentifierMold,
 } from "../../../support/molds/domains/series";
 
 vi.mock("next/link", () => ({
@@ -52,7 +53,10 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
         Forger(ChapterMold).forge({ slug: chapterSlug, title: "はじめに" }),
         Forger(ChapterMold).forgeWithSeed(2, { title: "基礎" }),
       ];
-      const series = Forger(SeriesMold).forge({ chapters });
+      const chapterIdentifiers = chapters.map(() =>
+        Forger(ChapterIdentifierMold).forge()
+      );
+      const series = Forger(SeriesMold).forge({ chapters: chapterIdentifiers });
       const slug = Forger(SeriesSlugMold).forge();
 
       const { ChapterIndex } = await import(
@@ -65,6 +69,8 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
           chapterSlug,
           series,
           renderer: async () => null,
+          findChapterBySlug: async () => chapters[0],
+          findChaptersByIdentifiers: async () => chapters,
         })
       );
 
@@ -83,7 +89,10 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
           title: "第3章",
         }),
       ];
-      const series = Forger(SeriesMold).forge({ chapters });
+      const chapterIdentifiers = chapters.map(() =>
+        Forger(ChapterIdentifierMold).forge()
+      );
+      const series = Forger(SeriesMold).forge({ chapters: chapterIdentifiers });
       const slug = Forger(SeriesSlugMold).forge();
 
       const { ChapterIndex } = await import(
@@ -96,6 +105,8 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
           chapterSlug: thirdChapterSlug,
           series,
           renderer: async () => null,
+          findChapterBySlug: async () => chapters[2],
+          findChaptersByIdentifiers: async () => chapters,
         })
       );
 
@@ -112,7 +123,10 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
         Forger(ChapterMold).forge({ slug: chapterSlug, title: "はじめに" }),
         Forger(ChapterMold).forgeWithSeed(2, { title: "基礎" }),
       ];
-      const series = Forger(SeriesMold).forge({ chapters });
+      const chapterIdentifiers = chapters.map(() =>
+        Forger(ChapterIdentifierMold).forge()
+      );
+      const series = Forger(SeriesMold).forge({ chapters: chapterIdentifiers });
       const slug = Forger(SeriesSlugMold).forge();
 
       const { ChapterIndex } = await import(
@@ -125,6 +139,8 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
           chapterSlug,
           series,
           renderer: async () => null,
+          findChapterBySlug: async () => chapters[0],
+          findChaptersByIdentifiers: async () => chapters,
         })
       );
 
@@ -136,13 +152,16 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
   });
 
   describe("ナビゲーション", () => {
-    it("先頭チャプターでは PREV ボタンが表示されない", async () => {
+    it("先頭チャプターでは 前の章 ボタンが表示されない", async () => {
       const chapterSlug = Forger(ChapterSlugMold).forge();
       const chapters = [
         Forger(ChapterMold).forge({ slug: chapterSlug, title: "はじめに" }),
         Forger(ChapterMold).forgeWithSeed(2, { title: "基礎" }),
       ];
-      const series = Forger(SeriesMold).forge({ chapters });
+      const chapterIdentifiers = chapters.map(() =>
+        Forger(ChapterIdentifierMold).forge()
+      );
+      const series = Forger(SeriesMold).forge({ chapters: chapterIdentifiers });
       const slug = Forger(SeriesSlugMold).forge();
 
       const { ChapterIndex } = await import(
@@ -155,15 +174,17 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
           chapterSlug,
           series,
           renderer: async () => null,
+          findChapterBySlug: async () => chapters[0],
+          findChaptersByIdentifiers: async () => chapters,
         })
       );
 
-      expect(screen.queryByText("PREV")).not.toBeInTheDocument();
+      expect(screen.queryByText("前の章")).not.toBeInTheDocument();
 
       unmount();
     });
 
-    it("最後のチャプターでは NEXT ボタンが表示されない", async () => {
+    it("最後のチャプターでは 次の章 ボタンが表示されない", async () => {
       const lastChapterSlug = Forger(ChapterSlugMold).forgeWithSeed(2);
       const chapters = [
         Forger(ChapterMold).forge({ title: "はじめに" }),
@@ -172,7 +193,10 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
           title: "おわりに",
         }),
       ];
-      const series = Forger(SeriesMold).forge({ chapters });
+      const chapterIdentifiers = chapters.map(() =>
+        Forger(ChapterIdentifierMold).forge()
+      );
+      const series = Forger(SeriesMold).forge({ chapters: chapterIdentifiers });
       const slug = Forger(SeriesSlugMold).forge();
 
       const { ChapterIndex } = await import(
@@ -185,15 +209,17 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
           chapterSlug: lastChapterSlug,
           series,
           renderer: async () => null,
+          findChapterBySlug: async () => chapters[1],
+          findChaptersByIdentifiers: async () => chapters,
         })
       );
 
-      expect(screen.queryByText("NEXT")).not.toBeInTheDocument();
+      expect(screen.queryByText("次の章")).not.toBeInTheDocument();
 
       unmount();
     });
 
-    it("中間チャプターでは PREV と NEXT の両方が表示される", async () => {
+    it("中間チャプターでは 前の章 と 次の章 の両方が表示される", async () => {
       const middleChapterSlug = Forger(ChapterSlugMold).forgeWithSeed(2);
       const chapters = [
         Forger(ChapterMold).forge({ title: "はじめに" }),
@@ -203,7 +229,10 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
         }),
         Forger(ChapterMold).forgeWithSeed(3, { title: "おわりに" }),
       ];
-      const series = Forger(SeriesMold).forge({ chapters });
+      const chapterIdentifiers = chapters.map(() =>
+        Forger(ChapterIdentifierMold).forge()
+      );
+      const series = Forger(SeriesMold).forge({ chapters: chapterIdentifiers });
       const slug = Forger(SeriesSlugMold).forge();
 
       const { ChapterIndex } = await import(
@@ -216,11 +245,13 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
           chapterSlug: middleChapterSlug,
           series,
           renderer: async () => null,
+          findChapterBySlug: async () => chapters[1],
+          findChaptersByIdentifiers: async () => chapters,
         })
       );
 
-      expect(screen.getByText("PREV")).toBeInTheDocument();
-      expect(screen.getByText("NEXT")).toBeInTheDocument();
+      expect(screen.getByText("前の章")).toBeInTheDocument();
+      expect(screen.getByText("次の章")).toBeInTheDocument();
 
       unmount();
     });
@@ -231,6 +262,9 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
       const series = Forger(SeriesMold).forge({ chapters: [] });
       const slug = Forger(SeriesSlugMold).forge();
       const chapterSlug = Forger(ChapterSlugMold).forge();
+      const notFoundChapter = Forger(ChapterMold).forge({
+        slug: Forger(ChapterSlugMold).forge(),
+      });
 
       const { ChapterIndex } = await import(
         "@shared/components/templates/series/chapter/index"
@@ -242,6 +276,8 @@ describe("components/templates/series/chapter/ChapterIndex", () => {
           chapterSlug,
           series,
           renderer: async () => null,
+          findChapterBySlug: async () => notFoundChapter,
+          findChaptersByIdentifiers: async () => [],
         })
       );
 

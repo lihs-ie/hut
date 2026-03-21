@@ -1,4 +1,5 @@
 import { findAllTags } from "@shared/actions/tag";
+import { findChaptersByIdentifiers } from "@shared/actions/chapter";
 import { SeriesIndex } from "@shared/components/templates/series";
 import { slugSchema } from "@shared/domains/common/slug";
 import { findBySlug } from "@shared/actions/series";
@@ -14,6 +15,7 @@ export default async function SeriesDetailPage(props: Props) {
     <SeriesIndex
       slug={slugSchema.parse(params.slug)}
       findBySlug={findBySlug}
+      findChaptersByIdentifiers={findChaptersByIdentifiers}
       findAllTags={findAllTags}
     />
   );

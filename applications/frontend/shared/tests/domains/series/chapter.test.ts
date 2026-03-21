@@ -11,8 +11,12 @@ import {
 } from "@shared/domains/series/chapter";
 import { TimelineMold, DateMold } from "../../support/molds/domains/common/date";
 import { SlugMold } from "../../support/molds/domains/common/slug";
+import { PublishStatusMold } from "../../support/molds/domains/common/status";
+import { ImageIdentifierMold } from "../../support/molds/domains/image/common";
 import { ulid } from "ulid";
 import type { Slug, Timeline } from "@shared/domains/common";
+import { PublishStatus } from "@shared/domains/common";
+import type { ImageIdentifier } from "@shared/domains/image";
 import {
   describeIdentifierSchema,
   describeStringLengthSchema,
@@ -35,6 +39,8 @@ type ChapterWithIdentifierProperties = {
   title: string;
   slug: Slug;
   content: string;
+  images: ImageIdentifier[];
+  status: PublishStatus;
   timeline: Timeline;
 };
 
@@ -45,6 +51,8 @@ const ChapterWithIdentifierMold = Mold<Chapter, ChapterWithIdentifierProperties>
       title: properties.title,
       slug: properties.slug,
       content: properties.content,
+      images: properties.images,
+      status: properties.status,
       timeline: properties.timeline,
     }),
   prepare: (overrides, seed) => ({
@@ -53,6 +61,8 @@ const ChapterWithIdentifierMold = Mold<Chapter, ChapterWithIdentifierProperties>
     title: overrides.title ?? Forger(StringMold(1, 100)).forgeWithSeed(seed),
     slug: overrides.slug ?? Forger(SlugMold).forgeWithSeed(seed),
     content: overrides.content ?? Forger(StringMold(1, 1000)).forgeWithSeed(seed),
+    images: overrides.images ?? [],
+    status: overrides.status ?? Forger(PublishStatusMold).forgeWithSeed(seed),
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
 });
@@ -119,6 +129,35 @@ describe("domains/series/chapter", () => {
         );
         expect(result.success).toBe(true);
       });
+
+      it("imagesが空配列でも有効", () => {
+        const result = chapterSchema.safeParse(
+          Forger(ChapterWithIdentifierMold).forge({ images: [] }),
+        );
+        expect(result.success).toBe(true);
+      });
+
+      it("statusがdraftでも有効", () => {
+        const result = chapterSchema.safeParse(
+          Forger(ChapterWithIdentifierMold).forge({ status: PublishStatus.DRAFT }),
+        );
+        expect(result.success).toBe(true);
+      });
+
+      it("statusがpublishedでも有効", () => {
+        const result = chapterSchema.safeParse(
+          Forger(ChapterWithIdentifierMold).forge({ status: PublishStatus.PUBLISHED }),
+        );
+        expect(result.success).toBe(true);
+      });
+
+      it("imagesに複数のIdentifierを含んでいても有効", () => {
+        const images = Forger(ImageIdentifierMold).forgeMulti(3);
+        const result = chapterSchema.safeParse(
+          Forger(ChapterWithIdentifierMold).forge({ images }),
+        );
+        expect(result.success).toBe(true);
+      });
     });
 
     describe("無効なChapterの検証", () => {
@@ -129,6 +168,8 @@ describe("domains/series/chapter", () => {
         title: "Chapter Title",
         slug: Forger(SlugMold).forge(),
         content: "Content",
+        images: [],
+        status: PublishStatus.PUBLISHED,
         timeline: Forger(TimelineMold).forge(),
         ...overrides,
       });
@@ -160,6 +201,13 @@ describe("domains/series/chapter", () => {
         );
         expect(result.success).toBe(false);
       });
+
+      it("statusが無効な値の場合は無効", () => {
+        const result = chapterSchema.safeParse(
+          createChapterWithOverrides({ status: "invalid-status" }),
+        );
+        expect(result.success).toBe(false);
+      });
     });
   });
 
@@ -170,6 +218,21 @@ describe("domains/series/chapter", () => {
         title: "第1章: はじめに",
         slug: "chapter-1",
         content: "これはチャプターの内容です。",
+        images: [],
+        status: "published",
+        timeline: Forger(TimelineMold).forge(),
+      });
+      expect(result.isOk).toBe(true);
+    });
+
+    it("imagesにULIDを含む場合もokを返す", () => {
+      const result = validateChapter({
+        identifier: Forger(ChapterIdentifierMold).forge(),
+        title: "第1章: はじめに",
+        slug: "chapter-1",
+        content: "これはチャプターの内容です。",
+        images: [Forger(ImageIdentifierMold).forge()],
+        status: "published",
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);
@@ -181,6 +244,8 @@ describe("domains/series/chapter", () => {
         title: "",
         slug: "",
         content: "",
+        images: [],
+        status: "invalid-status",
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -192,6 +257,8 @@ describe("domains/series/chapter", () => {
         title: "Valid Title",
         slug: "valid-slug",
         content: "Valid content",
+        images: [],
+        status: "published",
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -203,6 +270,21 @@ describe("domains/series/chapter", () => {
         title: "a".repeat(101),
         slug: "valid-slug",
         content: "Valid content",
+        images: [],
+        status: "published",
+        timeline: Forger(TimelineMold).forge(),
+      });
+      expect(result.isErr).toBe(true);
+    });
+
+    it("statusが無効な場合はerrを返す", () => {
+      const result = validateChapter({
+        identifier: Forger(ChapterIdentifierMold).forge(),
+        title: "Valid Title",
+        slug: "valid-slug",
+        content: "Valid content",
+        images: [],
+        status: "invalid",
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);

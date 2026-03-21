@@ -28,9 +28,8 @@ vi.mock("@shared/components/organisms/common/list/tag", () => ({
 
 describe("components/organisms/series/detail/SeriesDetail", () => {
   it("React 要素を返す", async () => {
-    const series = Forger(SeriesMold).forge({
-      chapters: [Forger(ChapterMold).forge()],
-    });
+    const chapters = [Forger(ChapterMold).forge()];
+    const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
     const { SeriesDetail } = await import(
@@ -41,6 +40,7 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
       SeriesDetail({
         series,
         slug,
+        chapters,
         findAllTags: async () => [],
       })
     );
@@ -53,9 +53,8 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
   });
 
   it("シリーズタイトルが表示される", async () => {
-    const series = Forger(SeriesMold).forge({
-      chapters: [Forger(ChapterMold).forge()],
-    });
+    const chapters = [Forger(ChapterMold).forge()];
+    const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
     const { SeriesDetail } = await import(
@@ -66,6 +65,7 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
       SeriesDetail({
         series,
         slug,
+        chapters,
         findAllTags: async () => [],
       })
     );
@@ -82,7 +82,7 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
       Forger(ChapterMold).forge({ title: "第1章" }),
       Forger(ChapterMold).forgeWithSeed(2, { title: "第2章" }),
     ];
-    const series = Forger(SeriesMold).forge({ chapters });
+    const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
     const { SeriesDetail } = await import(
@@ -93,6 +93,7 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
       SeriesDetail({
         series,
         slug,
+        chapters,
         findAllTags: async () => [],
       })
     );
@@ -107,7 +108,7 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
     const chapters = Array.from({ length: 10 }, (_, i) =>
       Forger(ChapterMold).forgeWithSeed(i + 1, { title: `第${i + 1}章` })
     );
-    const series = Forger(SeriesMold).forge({ chapters });
+    const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
     const { SeriesDetail } = await import(
@@ -118,6 +119,7 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
       SeriesDetail({
         series,
         slug,
+        chapters,
         findAllTags: async () => [],
       })
     );
@@ -142,6 +144,7 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
       SeriesDetail({
         series,
         slug,
+        chapters: [],
         findAllTags: async () => [],
       })
     );
@@ -156,7 +159,7 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
       Forger(ChapterMold).forge({ title: "第1章" }),
       Forger(ChapterMold).forgeWithSeed(2, { title: "第2章" }),
     ];
-    const series = Forger(SeriesMold).forge({ chapters });
+    const series = Forger(SeriesMold).forge({ chapters: [] });
     const slug = Forger(SeriesSlugMold).forge();
 
     const { SeriesDetail } = await import(
@@ -167,6 +170,7 @@ describe("components/organisms/series/detail/SeriesDetail", () => {
       SeriesDetail({
         series,
         slug,
+        chapters,
         findAllTags: async () => [],
       })
     );

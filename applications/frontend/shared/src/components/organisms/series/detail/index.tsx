@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Series, SeriesSlug } from "@shared/domains/series";
+import { Chapter } from "@shared/domains/series/chapter";
 import { Tag } from "@shared/domains/attributes/tag";
 import { TagBadgeList } from "@shared/components/organisms/common/list/tag";
 import { Routes } from "@shared/config/presentation/route";
@@ -9,6 +10,7 @@ import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
 export type Props = {
   series: Series;
   slug: SeriesSlug;
+  chapters: Chapter[];
   findAllTags: (identifiers: string[]) => Promise<Tag[]>;
 };
 
@@ -35,7 +37,7 @@ export const SeriesDetail = (props: Props) => {
       <section className={styles["chapters-section"]} aria-label="目次">
         <h2 className={styles["chapters-title"]}>目次</h2>
         <ol className={styles["chapter-list"]}>
-          {series.chapters.map((chapter, index) => (
+          {props.chapters.map((chapter, index) => (
             <li key={chapter.slug}>
               <Link
                 href={Routes.page.series.chapter.show(props.slug, chapter.slug)}

@@ -11,6 +11,7 @@ import {
   ValidationError,
 } from "@shared/aspects/error";
 import { tagIdentifierSchema } from "../attributes/tag";
+import { chapterIdentifierSchema, ChapterIdentifier } from "./chapter";
 
 export const seriesIdentifierSchema = z.ulid();
 
@@ -53,31 +54,6 @@ export type SeriesSlug = Slug;
 
 export type ChapterSlug = Slug;
 
-export const chapterSchema = z
-  .object({
-    title: z.string().min(1).max(100),
-    slug: slugSchema,
-    content: z.string().min(1),
-    timeline: timelineSchema,
-  })
-  .brand("Chapter");
-
-export type Chapter = z.infer<typeof chapterSchema>;
-
-export type UnvalidatedChapter = {
-  title: string;
-  slug: string;
-  content: string;
-  timeline: {
-    createdAt: Date;
-    updatedAt: Date;
-  };
-};
-
-export const validateChapter = (
-  candidate: UnvalidatedChapter
-): Result<Chapter, ValidationError[]> => validate(chapterSchema, candidate);
-
 export const seriesSchema = z
   .object({
     identifier: seriesIdentifierSchema,
@@ -87,7 +63,7 @@ export const seriesSchema = z
     subTitle: subTitleSchema.nullable(),
     description: descriptionSchema,
     cover: cover.nullable(),
-    chapters: z.array(chapterSchema),
+    chapters: z.array(chapterIdentifierSchema),
     status: publishStatusSchema,
     timeline: timelineSchema,
   })
@@ -101,7 +77,7 @@ export type UnvalidatedSeries = {
   slug: string;
   tags: string[];
   subTitle: string | null;
-  chapters: UnvalidatedChapter[];
+  chapters: string[];
   status: string;
   description?: string;
   cover?: string | null;
@@ -115,47 +91,23 @@ export const validateSeries = (
   candidate: UnvalidatedSeries
 ): Result<Series, ValidationError[]> => validate(seriesSchema, candidate);
 
-export const addChapter = (series: Series, chapter: Chapter): Series => {
-  return {
-    ...series,
-    chapters: [...series.chapters, chapter],
-    timeline: {
-      ...series.timeline,
-      updatedAt: chapter.timeline.createdAt,
-    },
-  };
-};
-
-export const removeChapter = (series: Series, chapterTitle: string): Series => {
-  const filteredChapters = series.chapters.filter(
-    (chapter) => chapter.title !== chapterTitle
-  );
-
-  return {
-    ...series,
-    chapters: filteredChapters,
-    timeline: {
-      ...series.timeline,
-      updatedAt: new Date(),
-    },
-  };
-};
-
-export const updateChapter = (
+export const addChapter = (
   series: Series,
-  updatedChapter: Chapter
+  chapterIdentifier: ChapterIdentifier
 ): Series => {
-  const updatedChapters = series.chapters.map((chapter) =>
-    chapter.title === updatedChapter.title ? updatedChapter : chapter
-  );
-
   return {
     ...series,
-    chapters: updatedChapters,
-    timeline: {
-      ...series.timeline,
-      updatedAt: updatedChapter.timeline.updatedAt,
-    },
+    chapters: [...series.chapters, chapterIdentifier],
+  };
+};
+
+export const removeChapter = (
+  series: Series,
+  chapterIdentifier: ChapterIdentifier
+): Series => {
+  return {
+    ...series,
+    chapters: series.chapters.filter((id) => id !== chapterIdentifier),
   };
 };
 

@@ -31,7 +31,7 @@ const buildHref = (
     case ContentType.MEMO:
       return Routes.page.memos.edit(slug);
     case ContentType.SERIES:
-      return undefined;
+      return Routes.page.series.edit(slug);
     default:
       return undefined;
   }

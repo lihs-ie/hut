@@ -1,5 +1,5 @@
 import z from "zod";
-import { Slug, slugSchema, timelineSchema } from "../common";
+import { publishStatusSchema, Slug, slugSchema, timelineSchema } from "../common";
 import {
   AggregateNotFoundError,
   DuplicationError,
@@ -8,6 +8,7 @@ import {
   ValidationError,
 } from "@shared/aspects/error";
 import { AsyncResult, Result } from "@shared/aspects/result";
+import { imageIdentifierSchema } from "../image/identifier";
 
 export const chapterIdentifierSchema = z.ulid().brand("ChapterIdentifier");
 
@@ -34,6 +35,8 @@ export const chapterSchema = z
     title: chapterTitleSchema,
     slug: slugSchema,
     content: contentSchema,
+    images: z.array(imageIdentifierSchema),
+    status: publishStatusSchema,
     timeline: timelineSchema,
   })
   .brand("Chapter");
@@ -45,6 +48,8 @@ export type UnvalidatedChapter = {
   title: string;
   slug: string;
   content: string;
+  images: string[];
+  status: string;
   timeline: {
     createdAt: Date;
     updatedAt: Date;
@@ -67,6 +72,13 @@ export interface ChapterRepository {
   ) => AsyncResult<
     Chapter,
     AggregateNotFoundError<"Chapter"> | UnexpectedError
+  >;
+  ofIdentifiers: (
+    identifiers: ChapterIdentifier[],
+    throwOnMissing?: boolean
+  ) => AsyncResult<
+    Chapter[],
+    UnexpectedError | AggregateNotFoundError<"Chapter">
   >;
   persist: (
     chapter: Chapter
