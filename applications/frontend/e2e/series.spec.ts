@@ -112,6 +112,34 @@ test.describe("series list page", () => {
   });
 });
 
+test.describe("series detail page 404", () => {
+  test("shows 404 for non-existent series slug", async ({
+    page,
+  }: TestArgs) => {
+    await page.goto("/series/non-existent-slug");
+    await page.waitForLoadState("networkidle");
+
+    const notFoundIndicators = page.locator(
+      "text=/404|not found|見つかりません|ページが見つかりません/i",
+    );
+    await expect(notFoundIndicators.first()).toBeVisible();
+  });
+
+  test("shows 404 for non-existent chapter slug", async ({
+    page,
+  }: TestArgs) => {
+    await page.goto(
+      `/series/${series.slug}/chapters/non-existent`,
+    );
+    await page.waitForLoadState("networkidle");
+
+    const notFoundIndicators = page.locator(
+      "text=/404|not found|見つかりません|ページが見つかりません/i",
+    );
+    await expect(notFoundIndicators.first()).toBeVisible();
+  });
+});
+
 test.describe("series detail page", () => {
   test.describe("page structure", () => {
     test("page loads successfully", async ({ page }: TestArgs) => {
@@ -223,12 +251,14 @@ test.describe("series detail page", () => {
     });
   });
 
-  test.describe("publication date", () => {
-    test("displays publication date", async ({ page }: TestArgs) => {
+  test.describe("tags", () => {
+    test("displays series tags", async ({ page }: TestArgs) => {
       await page.goto(`/series/${series.slug}`);
       await page.waitForLoadState("networkidle");
 
-      await expect(page.getByText(/公開:/).first()).toBeVisible();
+      for (const tag of series.tags) {
+        await expect(page.getByText(tag).first()).toBeVisible();
+      }
     });
   });
 
@@ -365,7 +395,7 @@ test.describe("chapter page", () => {
       );
       await page.waitForLoadState("networkidle");
 
-      const activeItem = page.locator('[class*="nav-item-active"]');
+      const activeItem = page.locator('[class*="chapter-nav-item-active"]');
       await expect(activeItem).toBeVisible();
 
       const activeText = await activeItem.textContent();
