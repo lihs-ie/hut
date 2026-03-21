@@ -151,6 +151,38 @@
   border-bottom: 1px solid var(--border);
 }
 
+.chapter-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chapter-edit-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.chapter-edit-button:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.chapter-edit-button-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  display: inline-block;
+}
+
 .chapter-label {
   font-size: 0.75rem;
   font-weight: 600;
