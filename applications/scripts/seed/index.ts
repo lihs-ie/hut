@@ -7,6 +7,7 @@ import {
   TAG_IDS,
   ARTICLE_IDS,
   SERIES_IDS,
+  CHAPTER_IDS,
   MEMO_IDS,
   ADMIN_ID,
 } from "./common";
@@ -35,6 +36,7 @@ async function clearAllData(): Promise<void> {
   await clearCollection("tags");
   await clearCollection("articles");
   await clearCollection("series");
+  await clearCollection("chapters");
   await clearCollection("memos");
   await clearCollection("admin");
   await clearCollection("search-tokens");
@@ -74,6 +76,7 @@ async function main(): Promise<void> {
     console.log("Tags:", TAG_IDS);
     console.log("Articles:", ARTICLE_IDS);
     console.log("Series:", SERIES_IDS);
+    console.log("Chapters:", CHAPTER_IDS);
     console.log("Memos:", MEMO_IDS);
     console.log("Admin:", ADMIN_ID);
     console.log("SiteDocument:", "site-document");

@@ -55,6 +55,15 @@ export const SERIES_IDS = {
   series3: ulid(),
 };
 
+export const CHAPTER_IDS = {
+  series1Chapter1: ulid(),
+  series1Chapter2: ulid(),
+  series2Chapter1: ulid(),
+  series2Chapter2: ulid(),
+  series2Chapter3: ulid(),
+  series3Chapter1: ulid(),
+};
+
 export const MEMO_IDS = {
   memo1: ulid(),
   memo2: ulid(),
