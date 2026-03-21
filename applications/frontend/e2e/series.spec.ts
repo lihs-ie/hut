@@ -274,7 +274,9 @@ test.describe("chapter page", () => {
       await page.waitForLoadState("networkidle");
 
       await expect(
-        page.getByRole("heading", { name: firstChapter.title, level: 1 }),
+        page
+          .getByRole("heading", { name: firstChapter.title, level: 1 })
+          .first(),
       ).toBeVisible();
     });
 
@@ -361,7 +363,7 @@ test.describe("chapter page", () => {
       );
       await page.waitForLoadState("networkidle");
 
-      const activeItem = page.locator('[class*="chapter-nav-item-active"]');
+      const activeItem = page.locator('[class*="nav-item-active"]');
       await expect(activeItem).toBeVisible();
 
       const activeText = await activeItem.textContent();
@@ -470,7 +472,9 @@ test.describe("chapter page", () => {
       await page.waitForLoadState("networkidle");
 
       await expect(
-        page.getByRole("heading", { name: firstChapter.title, level: 1 }),
+        page
+          .getByRole("heading", { name: firstChapter.title, level: 1 })
+          .first(),
       ).toBeVisible();
     });
 
@@ -482,7 +486,9 @@ test.describe("chapter page", () => {
       await page.waitForLoadState("networkidle");
 
       await expect(
-        page.getByRole("heading", { name: firstChapter.title, level: 1 }),
+        page
+          .getByRole("heading", { name: firstChapter.title, level: 1 })
+          .first(),
       ).toBeVisible();
     });
   });
