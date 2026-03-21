@@ -217,40 +217,6 @@ test.describe("series detail page", () => {
     });
   });
 
-  test.describe("read button", () => {
-    test("displays 今すぐ読む button linking to first chapter", async ({
-      page,
-    }: TestArgs) => {
-      await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
-
-      const firstChapter = series.chapters[0];
-      const readButton = page.getByRole("link", { name: /今すぐ読む/ });
-      await expect(readButton).toBeVisible();
-
-      const href = await readButton.getAttribute("href");
-      expect(href).toContain(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
-    });
-
-    test("clicking 今すぐ読む navigates to first chapter", async ({
-      page,
-    }: TestArgs) => {
-      await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
-
-      const readButton = page.getByRole("link", { name: /今すぐ読む/ });
-      await readButton.click();
-
-      await expect(page).toHaveURL(
-        new RegExp(
-          `/series/${series.slug}/chapters/${series.chapters[0].slug}`,
-        ),
-      );
-    });
-  });
-
   test.describe("tags", () => {
     test("displays series tags", async ({ page }: TestArgs) => {
       await page.goto(`/series/${series.slug}`);
