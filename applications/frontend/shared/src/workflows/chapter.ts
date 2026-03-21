@@ -1,12 +1,17 @@
 import {
   AggregateNotFoundError,
+  DuplicationError,
   UnexpectedError,
   ValidationError,
 } from "@shared/aspects/error";
 import { Logger } from "@shared/aspects/logger";
-import { AsyncResult } from "@shared/aspects/result";
+import { AsyncResult, Result } from "@shared/aspects/result";
 import { Slug, ValidateSlug } from "@shared/domains/common";
-import { Chapter } from "@shared/domains/series/chapter";
+import {
+  Chapter,
+  ChapterRepository,
+  UnvalidatedChapter,
+} from "@shared/domains/series/chapter";
 import { Command } from "./common";
 
 type ChapterFindBySlugCommand = Command<{ slug: string }>;
@@ -21,6 +26,59 @@ export type ChapterFindBySlugWorkflow = (
 type FindChapterBySlug = (
   slug: Slug
 ) => AsyncResult<Chapter, AggregateNotFoundError<"Chapter"> | UnexpectedError>;
+
+type ValidateChapter = (
+  unvalidated: UnvalidatedChapter,
+) => Result<Chapter, ValidationError[]>;
+
+type PersistChapter = ChapterRepository["persist"];
+
+export type ChapterPersistWorkflow = (
+  unvalidated: UnvalidatedChapter,
+) => AsyncResult<
+  void,
+  | ValidationError[]
+  | DuplicationError<"Chapter">
+  | AggregateNotFoundError<"Chapter">
+  | UnexpectedError
+>;
+
+export const createChapterPersistWorkflow =
+  (validate: ValidateChapter) =>
+  (persist: PersistChapter) =>
+  (logger: Logger): ChapterPersistWorkflow =>
+  (unvalidated: UnvalidatedChapter) => {
+    logger.info("ChapterPersistWorkflow started", {
+      identifier: unvalidated.identifier,
+    });
+
+    return validate(unvalidated)
+      .toAsync()
+      .tap((chapter) => {
+        logger.debug("Chapter validation passed", {
+          identifier: chapter.identifier,
+        });
+      })
+      .tapError((errors) => {
+        logger.warn("Chapter validation failed", { errors });
+      })
+      .andThen((chapter) =>
+        persist(chapter)
+          .tap(() => {
+            logger.debug("Chapter persisted", {
+              identifier: chapter.identifier,
+            });
+          })
+      )
+      .tap(() => {
+        logger.info("ChapterPersistWorkflow completed", {
+          identifier: unvalidated.identifier,
+        });
+      })
+      .tapError((error) => {
+        logger.error("ChapterPersistWorkflow failed", { error });
+      });
+  };
 
 export const createChapterFindBySlugWorkflow =
   (validate: ValidateSlug) =>
