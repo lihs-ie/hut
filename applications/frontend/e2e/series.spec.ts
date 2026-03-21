@@ -15,12 +15,12 @@ const series = {
     {
       slug: "chapter-1-rust-basics",
       title: "第1章: Rustの基礎",
-      number: 1,
+      number: "01",
     },
     {
       slug: "chapter-2-memory-management",
       title: "第2章: メモリ管理",
-      number: 2,
+      number: "02",
     },
   ],
 };
