@@ -3,11 +3,14 @@ import Link from "next/link";
 import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 import { ChevronLeftIcon } from "@shared/components/atoms/icon/chevron-left";
 import { ChevronRightIcon } from "@shared/components/atoms/icon/chevron-right";
+import { ClockIcon } from "@shared/components/atoms/icon/clock";
 import { MarkdownRenderer } from "@shared/components/global/mdx";
 import { ArticleContentSkeleton } from "@shared/components/molecules/skeleton";
+import { ModestText } from "@shared/components/atoms/text/modest";
 import { Series, SeriesSlug, ChapterSlug } from "@shared/domains/series";
 import { Chapter, ChapterIdentifier } from "@shared/domains/series/chapter";
 import { Routes } from "@shared/config/presentation/route";
+import { formatDate } from "@shared/aspects/date";
 import styles from "./index.module.css";
 
 export type Props = {
@@ -83,6 +86,20 @@ export const ChapterIndex = async (props: Props) => {
                   Chapter {String(currentIndex + 1).padStart(2, "0")}
                 </p>
                 <h1 className={styles["chapter-title"]}>{currentChapter.title}</h1>
+                <div className={styles["chapter-meta"]}>
+                  <ModestText>
+                    <span className={styles["meta-icon"]}>
+                      <ClockIcon />
+                    </span>
+                    投稿日時：{formatDate(currentChapter.timeline.createdAt)}
+                  </ModestText>
+                  <ModestText>
+                    <span className={styles["meta-icon"]}>
+                      <ClockIcon />
+                    </span>
+                    最終更新日時：{formatDate(currentChapter.timeline.updatedAt)}
+                  </ModestText>
+                </div>
               </div>
 
               <div className={styles["content-body"]}>
