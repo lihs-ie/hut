@@ -7,7 +7,7 @@
 }
 
 .header {
-  max-width: 42rem;
+  max-width: 72rem;
   width: 100%;
   margin: 0 auto 1.5rem;
 }
@@ -19,13 +19,41 @@
   margin: 0;
 }
 
-.wrapper {
-  max-width: 42rem;
+.layout {
+  max-width: 72rem;
   width: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   gap: 0;
+}
+
+.sidebar {
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--header-height) + 2rem);
+  }
 }
 
 .card {
@@ -278,9 +306,7 @@
 }
 
 .chapterssection {
-  max-width: 42rem;
   width: 100%;
-  margin: 1.5rem auto 0;
 }
 
 .chapterssectionheader {
