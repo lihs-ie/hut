@@ -14,7 +14,7 @@ test.describe("series management", () => {
     await page.goto("/admin/series");
 
     await expect(
-      page.getByRole("heading", { name: "シリーズの管理" }),
+      page.getByRole("heading", { name: "連載の管理" }),
     ).toBeVisible({ timeout: 15000 });
   });
 

@@ -22,7 +22,7 @@ vi.mock("@shared/aspects/date", () => ({
 }));
 
 describe("components/molecules/list/card/HomeContentCard", () => {
-  it("Series タイプでバッジに「シリーズ」が表示される", async () => {
+  it("Series タイプでバッジに「連載」が表示される", async () => {
     const { HomeContentCard } = await import(
       "@shared/components/molecules/list/card/home-content"
     );
@@ -37,7 +37,7 @@ describe("components/molecules/list/card/HomeContentCard", () => {
       />,
     );
 
-    expect(screen.getByText("シリーズ")).toBeInTheDocument();
+    expect(screen.getByText("連載")).toBeInTheDocument();
   });
 
   it("Series タイプで /series/[slug] へのリンクが生成される", async () => {

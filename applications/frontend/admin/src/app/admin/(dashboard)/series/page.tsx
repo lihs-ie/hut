@@ -32,7 +32,7 @@ export default async function AdminSeriesPage(props: Props) {
 
   return (
     <AdminContentListIndex
-      title="シリーズの管理"
+      title="連載の管理"
       getAllTags={getAllTags}
       searchContents={search}
       unvalidated={parameters}
