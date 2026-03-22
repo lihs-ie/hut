@@ -37,7 +37,7 @@ export const SeriesList = async (props: Props) => {
     <div className={styles.container}>
       <div className={styles.grid}>
         {props.seriesList.map((series) => {
-          const tagNames = series.tags
+          const tagNames: string[] = series.tags
             .map((identifier) => tagNameMap.get(identifier))
             .filter((name) => name !== undefined);
           const cardProps: SeriesSummaryCardProps = {

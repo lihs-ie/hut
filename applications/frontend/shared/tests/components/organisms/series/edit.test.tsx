@@ -103,7 +103,7 @@ describe("components/organisms/series/SeriesEditOrganism", () => {
             cover: null,
             tags: [],
             chapters: [],
-            status: "DRAFT" as import("@shared/domains/common").PublishStatus,
+            status: "draft" as import("@shared/domains/common").PublishStatus,
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           } as import("@shared/domains/series").Series}
           persist={persist}
@@ -188,7 +188,7 @@ describe("components/organisms/series/SeriesEditOrganism", () => {
             cover: null,
             tags: [],
             chapters: [],
-            status: "DRAFT" as import("@shared/domains/common").PublishStatus,
+            status: "draft" as import("@shared/domains/common").PublishStatus,
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           } as import("@shared/domains/series").Series}
           persist={persist}
@@ -233,7 +233,7 @@ describe("components/organisms/series/SeriesEditOrganism", () => {
             cover: null,
             tags: [],
             chapters: [],
-            status: "DRAFT" as import("@shared/domains/common").PublishStatus,
+            status: "draft" as import("@shared/domains/common").PublishStatus,
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           } as import("@shared/domains/series").Series}
           persist={persist}
