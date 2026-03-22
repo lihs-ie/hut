@@ -107,4 +107,133 @@ describe("components/organisms/series/chapter/ChapterEditOrganism", () => {
 
     expect(mockShowToast).toHaveBeenCalledWith("チャプターを更新しました");
   });
+
+  it("新規チャプター作成時にpersistにseriesSlugではなく空文字列のslugが渡される", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+
+    const { ChapterEditOrganism } = await import(
+      "@shared/components/organisms/series/chapter/edit"
+    );
+
+    const { getByText } = render(
+      <ToastProvider>
+        <ChapterEditOrganism
+          persist={persist}
+          uploadImage={vi.fn()}
+          seriesSlug="test-series"
+        />
+      </ToastProvider>,
+    );
+
+    await act(async () => {
+      getByText("保存").click();
+    });
+
+    expect(persist).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: "",
+      }),
+    );
+  });
+
+  it("新規チャプター作成時の初期コンテンツにCHAPTER_FRONTMATTER_TEMPLATEが使用される", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+
+    const { ChapterEditOrganism } = await import(
+      "@shared/components/organisms/series/chapter/edit"
+    );
+
+    const { getByText } = render(
+      <ToastProvider>
+        <ChapterEditOrganism
+          persist={persist}
+          uploadImage={vi.fn()}
+          seriesSlug="test-series"
+        />
+      </ToastProvider>,
+    );
+
+    await act(async () => {
+      getByText("保存").click();
+    });
+
+    expect(persist).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: "",
+      }),
+    );
+  });
+
+  it("編集時に既存チャプターのslugがpersistに渡される", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+
+    const { ChapterEditOrganism } = await import(
+      "@shared/components/organisms/series/chapter/edit"
+    );
+
+    const { getByText } = render(
+      <ToastProvider>
+        <ChapterEditOrganism
+          initial={{
+            identifier: "01HWXYZ0000000000000000000" as import("@shared/domains/series/chapter").ChapterIdentifier,
+            title: "既存チャプター" as import("@shared/domains/series/chapter").ChapterTitle,
+            slug: "existing-chapter" as import("@shared/domains/common").Slug,
+            content: "# 既存チャプター\n\nコンテンツ" as import("@shared/domains/series/chapter").Content,
+            images: [],
+            status: "DRAFT" as import("@shared/domains/common").PublishStatus,
+            timeline: { createdAt: new Date(), updatedAt: new Date() },
+          } as import("@shared/domains/series/chapter").Chapter}
+          persist={persist}
+          uploadImage={vi.fn()}
+          seriesSlug="test-series"
+        />
+      </ToastProvider>,
+    );
+
+    await act(async () => {
+      getByText("保存").click();
+    });
+
+    expect(persist).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: "existing-chapter",
+      }),
+    );
+  });
+
+  it("編集時にpersistに渡されるcontentにfrontmatterが含まれない", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+
+    const { ChapterEditOrganism } = await import(
+      "@shared/components/organisms/series/chapter/edit"
+    );
+
+    const { getByText } = render(
+      <ToastProvider>
+        <ChapterEditOrganism
+          initial={{
+            identifier: "01HWXYZ0000000000000000000" as import("@shared/domains/series/chapter").ChapterIdentifier,
+            title: "既存チャプター" as import("@shared/domains/series/chapter").ChapterTitle,
+            slug: "existing-chapter" as import("@shared/domains/common").Slug,
+            content: "本文コンテンツ" as import("@shared/domains/series/chapter").Content,
+            images: [],
+            status: "DRAFT" as import("@shared/domains/common").PublishStatus,
+            timeline: { createdAt: new Date(), updatedAt: new Date() },
+          } as import("@shared/domains/series/chapter").Chapter}
+          persist={persist}
+          uploadImage={vi.fn()}
+          seriesSlug="test-series"
+        />
+      </ToastProvider>,
+    );
+
+    await act(async () => {
+      getByText("保存").click();
+    });
+
+    const persistCall = persist.mock.calls[0][0];
+    expect(persistCall.content).not.toContain("---");
+    expect(persistCall.content).not.toContain("title:");
+    expect(persistCall.content).not.toContain("slug:");
+  });
 });
