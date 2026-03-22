@@ -5,7 +5,7 @@ import {
   ValidationError,
 } from "@shared/aspects/error";
 import { Logger } from "@shared/aspects/logger";
-import { AsyncResult, Result } from "@shared/aspects/result";
+import { AsyncResult, ok, Result } from "@shared/aspects/result";
 import { Slug, ValidateSlug } from "@shared/domains/common";
 import {
   Chapter,
@@ -13,6 +13,12 @@ import {
   ChapterRepository,
   UnvalidatedChapter,
 } from "@shared/domains/series/chapter";
+import {
+  addChapter,
+  removeChapter,
+  Series,
+  UnvalidatedSeries,
+} from "@shared/domains/series";
 import { Command } from "./common";
 
 type ValidateChapterIdentifier = (
@@ -149,5 +155,129 @@ export const createChapterFindBySlugWorkflow =
       })
       .tapError((error) => {
         logger.error("ChapterFindBySlugWorkflow failed", { error });
+      });
+  };
+
+type FindSeriesBySlug = (
+  slug: Slug,
+) => AsyncResult<Series, ValidationError | AggregateNotFoundError<"Series"> | UnexpectedError>;
+
+type PersistSeries = (
+  unvalidated: UnvalidatedSeries,
+) => AsyncResult<unknown, ValidationError[] | DuplicationError<"Series"> | AggregateNotFoundError<"Series"> | UnexpectedError>;
+
+const toUnvalidatedSeries = (series: Series): UnvalidatedSeries => ({
+  identifier: series.identifier,
+  title: series.title,
+  slug: series.slug,
+  subTitle: series.subTitle ?? null,
+  description: series.description,
+  cover: series.cover ?? null,
+  tags: series.tags,
+  chapters: series.chapters,
+  status: series.status,
+  timeline: {
+    createdAt: series.timeline.createdAt,
+    updatedAt: new Date(),
+  },
+});
+
+export type ChapterPersistWithSeriesWorkflow = (
+  unvalidated: UnvalidatedChapter,
+  seriesSlug: string,
+) => AsyncResult<
+  void,
+  | ValidationError
+  | ValidationError[]
+  | DuplicationError<"Chapter">
+  | DuplicationError<"Series">
+  | AggregateNotFoundError<"Chapter">
+  | AggregateNotFoundError<"Series">
+  | UnexpectedError
+>;
+
+export const createChapterPersistWithSeriesWorkflow =
+  (persistChapter: ChapterPersistWorkflow) =>
+  (validateSlug: ValidateSlug) =>
+  (findSeriesBySlug: FindSeriesBySlug) =>
+  (persistSeries: PersistSeries) =>
+  (logger: Logger): ChapterPersistWithSeriesWorkflow =>
+  (unvalidated: UnvalidatedChapter, seriesSlug: string) => {
+    logger.info("ChapterPersistWithSeriesWorkflow started", {
+      chapterIdentifier: unvalidated.identifier,
+      seriesSlug,
+    });
+
+    return persistChapter(unvalidated)
+      .andThen(() =>
+        validateSlug(seriesSlug)
+          .toAsync()
+          .andThen(findSeriesBySlug)
+      )
+      .andThen((series) => {
+        const chapterIdentifier = unvalidated.identifier as ChapterIdentifier;
+        if (series.chapters.includes(chapterIdentifier)) {
+          return ok<void, never>(undefined).toAsync();
+        }
+        const updatedSeries = addChapter(series, chapterIdentifier);
+        return persistSeries(toUnvalidatedSeries(updatedSeries)).map(() => undefined as void);
+      })
+      .tap(() => {
+        logger.info("ChapterPersistWithSeriesWorkflow completed", {
+          chapterIdentifier: unvalidated.identifier,
+          seriesSlug,
+        });
+      })
+      .tapError((error) => {
+        logger.error("ChapterPersistWithSeriesWorkflow failed", { error });
+      });
+  };
+
+export type ChapterTerminateWithSeriesWorkflow = (
+  chapterIdentifier: string,
+  seriesSlug: string,
+) => AsyncResult<
+  void,
+  | ValidationError
+  | ValidationError[]
+  | AggregateNotFoundError<"Chapter">
+  | AggregateNotFoundError<"Series">
+  | DuplicationError<"Series">
+  | UnexpectedError
+>;
+
+export const createChapterTerminateWithSeriesWorkflow =
+  (terminateChapter: ChapterTerminateWorkflow) =>
+  (validateSlug: ValidateSlug) =>
+  (findSeriesBySlug: FindSeriesBySlug) =>
+  (persistSeries: PersistSeries) =>
+  (logger: Logger): ChapterTerminateWithSeriesWorkflow =>
+  (chapterIdentifier: string, seriesSlug: string) => {
+    logger.info("ChapterTerminateWithSeriesWorkflow started", {
+      chapterIdentifier,
+      seriesSlug,
+    });
+
+    return terminateChapter(chapterIdentifier)
+      .andThen(() =>
+        validateSlug(seriesSlug)
+          .toAsync()
+          .andThen(findSeriesBySlug)
+      )
+      .andThen((series) => {
+        const updatedSeries = removeChapter(
+          series,
+          chapterIdentifier as ChapterIdentifier,
+        );
+        return persistSeries(toUnvalidatedSeries(updatedSeries)).map(() => undefined as void);
+      })
+      .tap(() => {
+        logger.info("ChapterTerminateWithSeriesWorkflow completed", {
+          chapterIdentifier,
+          seriesSlug,
+        });
+      })
+      .tapError((error) => {
+        logger.error("ChapterTerminateWithSeriesWorkflow failed", { error });
       });
   };
