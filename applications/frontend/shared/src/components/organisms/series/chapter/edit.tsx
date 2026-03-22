@@ -99,9 +99,11 @@ export const ChapterEditOrganism = (props: Props) => {
         setTitle(frontmatterTitle);
       }
 
-      const frontmatterSlug = extractFrontmatterSlug(newContent);
-      if (frontmatterSlug !== null && frontmatterSlug !== slug) {
-        setSlug(frontmatterSlug);
+      if (!props.initial) {
+        const frontmatterSlug = extractFrontmatterSlug(newContent);
+        if (frontmatterSlug !== null && frontmatterSlug !== slug) {
+          setSlug(frontmatterSlug);
+        }
       }
 
       const currentUrls = extractImageUrls(newContent);

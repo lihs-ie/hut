@@ -133,7 +133,7 @@ handle persist terminate event = do
     ChapterTerminatePayload' reference -> terminateHandle terminate (show Chapter <> ":" <> reference)
 
 chapterSearchableText :: ChapterCreatedPayload -> String
-chapterSearchableText chapter = chapter.title ++ chapter.content
+chapterSearchableText chapter = unwords [chapter.title, chapter.content]
 
 seriesSearchableText :: SeriesCreatedPayload -> String
 seriesSearchableText series =
