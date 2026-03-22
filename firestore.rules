@@ -21,6 +21,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /chapters/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /tags/{document} {
       allow read: if true;
       allow write: if isAdmin();
