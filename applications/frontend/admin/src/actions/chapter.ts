@@ -4,6 +4,7 @@ import { revalidateTag } from "next/cache";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { Chapter, UnvalidatedChapter } from "@shared/domains/series/chapter";
 import { AdminChapterWorkflowProvider } from "@/providers/workflows/chapter";
+import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
 
 export async function persist(
@@ -17,7 +18,10 @@ export async function persist(
       AdminChapterWorkflowProvider.persistWithSeries(unvalidated, seriesSlug),
     );
   } else {
-    await unwrapForNextJs(AdminChapterWorkflowProvider.persist(unvalidated));
+    await unwrapForNextJs(
+      AdminChapterWorkflowProvider.persist(unvalidated)
+        .andThen(EventBrokerProvider.pubSub.publish),
+    );
   }
 
   revalidateTag("chapters", {});

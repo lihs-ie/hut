@@ -2,12 +2,13 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ok } from "@shared/aspects/result";
 
 const mockRequireAdmin = vi.fn();
 const mockRevalidateTag = vi.fn();
 const mockUnwrapForNextJs = vi.fn();
-const mockChapterWorkflowPersist = vi.fn();
 const mockChapterWorkflowFindBySlug = vi.fn();
+const mockEventBrokerPublish = vi.fn();
 
 vi.mock("@/aspects/auth-guard", () => ({
   requireAdmin: mockRequireAdmin,
@@ -21,9 +22,23 @@ vi.mock("@shared/components/global/next-error", () => ({
   unwrapForNextJs: mockUnwrapForNextJs,
 }));
 
+vi.mock("@/providers/domain/event", () => ({
+  EventBrokerProvider: {
+    pubSub: {
+      publish: mockEventBrokerPublish,
+    },
+  },
+}));
+
 const mockChapterWorkflowTerminate = vi.fn();
 const mockChapterWorkflowPersistWithSeries = vi.fn();
 const mockChapterWorkflowTerminateWithSeries = vi.fn();
+
+const createMockAsyncResult = (value: unknown) => ({
+  andThen: vi.fn().mockReturnValue(ok(value).toAsync()),
+});
+
+const mockChapterWorkflowPersist = vi.fn();
 
 vi.mock("@/providers/workflows/chapter", () => ({
   AdminChapterWorkflowProvider: {
@@ -41,37 +56,34 @@ describe("actions/chapter", () => {
     vi.resetModules();
     mockRequireAdmin.mockResolvedValue(undefined);
     mockUnwrapForNextJs.mockImplementation((asyncResult: Promise<unknown>) => asyncResult);
+    mockEventBrokerPublish.mockReturnValue(ok(undefined).toAsync());
   });
 
   describe("persist", () => {
+    const unvalidated = {
+      identifier: "01HWXYZ0000000000000000000",
+      title: "テストチャプター",
+      slug: "test-chapter",
+      content: "# テスト",
+      images: [],
+      status: "DRAFT",
+      timeline: { createdAt: new Date(), updatedAt: new Date() },
+    };
+
+    beforeEach(() => {
+      mockChapterWorkflowPersist.mockReturnValue(createMockAsyncResult(undefined));
+    });
+
     it("requireAdminを呼び出す", async () => {
       const { persist } = await import("@/actions/chapter");
 
-      await persist({
-        identifier: "01HWXYZ0000000000000000000",
-        title: "テストチャプター",
-        slug: "test-chapter",
-        content: "# テスト",
-        images: [],
-        status: "DRAFT",
-        timeline: { createdAt: new Date(), updatedAt: new Date() },
-      });
+      await persist(unvalidated);
 
       expect(mockRequireAdmin).toHaveBeenCalled();
     });
 
     it("AdminChapterWorkflowProvider.persistを呼び出す", async () => {
       const { persist } = await import("@/actions/chapter");
-
-      const unvalidated = {
-        identifier: "01HWXYZ0000000000000000000",
-        title: "テストチャプター",
-        slug: "test-chapter",
-        content: "# テスト",
-        images: [],
-        status: "DRAFT",
-        timeline: { createdAt: new Date(), updatedAt: new Date() },
-      };
 
       await persist(unvalidated);
 
@@ -81,15 +93,7 @@ describe("actions/chapter", () => {
     it("revalidateTagを chapters で呼び出す", async () => {
       const { persist } = await import("@/actions/chapter");
 
-      await persist({
-        identifier: "01HWXYZ0000000000000000000",
-        title: "テストチャプター",
-        slug: "test-chapter",
-        content: "# テスト",
-        images: [],
-        status: "DRAFT",
-        timeline: { createdAt: new Date(), updatedAt: new Date() },
-      });
+      await persist(unvalidated);
 
       expect(mockRevalidateTag).toHaveBeenCalledWith("chapters", {});
       expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});

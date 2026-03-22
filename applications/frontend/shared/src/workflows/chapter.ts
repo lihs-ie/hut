@@ -10,7 +10,11 @@ import { Slug, ValidateSlug } from "@shared/domains/common";
 import {
   Chapter,
   ChapterIdentifier,
+  ChapterPersistedEvent,
   ChapterRepository,
+  ChapterTerminatedEvent,
+  createChapterPersistedEvent,
+  createChapterTerminatedEvent,
   UnvalidatedChapter,
 } from "@shared/domains/series/chapter";
 import {
@@ -32,7 +36,7 @@ type TerminateChapter = (
 export type ChapterTerminateWorkflow = (
   identifier: string
 ) => AsyncResult<
-  void,
+  ChapterTerminatedEvent,
   ValidationError | AggregateNotFoundError<"Chapter"> | UnexpectedError
 >;
 
@@ -52,12 +56,14 @@ export const createChapterTerminateWorkflow =
         logger.warn("Validation failed", { error });
       })
       .andThen((id) =>
-        terminate(id).tap(() => {
-          logger.debug("Chapter terminated", { identifier: id });
-        })
+        terminate(id)
+          .tap(() => {
+            logger.debug("Chapter terminated", { identifier: id });
+          })
+          .map(() => createChapterTerminatedEvent(id))
       )
-      .tap(() => {
-        logger.info("ChapterTerminateWorkflow completed", { identifier });
+      .tap((event) => {
+        logger.info("ChapterTerminateWorkflow completed", { event });
       })
       .tapError((error) => {
         logger.error("ChapterTerminateWorkflow failed", { error });
@@ -86,7 +92,7 @@ type PersistChapter = ChapterRepository["persist"];
 export type ChapterPersistWorkflow = (
   unvalidated: UnvalidatedChapter,
 ) => AsyncResult<
-  void,
+  ChapterPersistedEvent,
   | ValidationError[]
   | DuplicationError<"Chapter">
   | AggregateNotFoundError<"Chapter">
@@ -119,11 +125,10 @@ export const createChapterPersistWorkflow =
               identifier: chapter.identifier,
             });
           })
+          .map(() => createChapterPersistedEvent(chapter.identifier))
       )
-      .tap(() => {
-        logger.info("ChapterPersistWorkflow completed", {
-          identifier: unvalidated.identifier,
-        });
+      .tap((event) => {
+        logger.info("ChapterPersistWorkflow completed", { event });
       })
       .tapError((error) => {
         logger.error("ChapterPersistWorkflow failed", { error });
@@ -209,7 +214,7 @@ export const createChapterPersistWithSeriesWorkflow =
     });
 
     return persistChapter(unvalidated)
-      .andThen(() =>
+      .andThen((_event) =>
         validateSlug(seriesSlug)
           .toAsync()
           .andThen(findSeriesBySlug)
@@ -259,7 +264,7 @@ export const createChapterTerminateWithSeriesWorkflow =
     });
 
     return terminateChapter(chapterIdentifier)
-      .andThen(() =>
+      .andThen((_event) =>
         validateSlug(seriesSlug)
           .toAsync()
           .andThen(findSeriesBySlug)

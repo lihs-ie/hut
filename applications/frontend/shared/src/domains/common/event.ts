@@ -10,6 +10,8 @@ export type EventType =
   | "article.terminated"
   | "series.persisted"
   | "series.terminated"
+  | "chapter.persisted"
+  | "chapter.terminated"
   | "tag.persisted"
   | "tag.terminated"
   | "analytics.pageView.recorded"

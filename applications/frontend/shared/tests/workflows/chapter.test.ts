@@ -2,10 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Forger } from "@lihs-ie/forger-ts";
 import {
   createChapterFindBySlugWorkflow,
+  createChapterPersistWorkflow,
   createChapterTerminateWorkflow,
 } from "@shared/workflows/chapter";
 import { validateSlug } from "@shared/domains/common/slug";
-import { validateChapterIdentifier } from "@shared/domains/series/chapter";
+import {
+  validateChapter,
+  validateChapterIdentifier,
+} from "@shared/domains/series/chapter";
 import { Logger, Environment } from "@shared/aspects/logger";
 import { ok, err } from "@shared/aspects/result";
 import { aggregateNotFoundError } from "@shared/aspects/error";
@@ -153,7 +157,69 @@ describe("workflows/chapter", () => {
     });
   });
 
+  describe("createChapterPersistWorkflow", () => {
+    it("有効なチャプターでChapterPersistedEventを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(1);
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createChapterPersistWorkflow(validateChapter)(
+        persistMock,
+      )(mockLogger);
+
+      const result = await workflow({
+        identifier: chapter.identifier,
+        title: chapter.title,
+        slug: chapter.slug,
+        content: chapter.content,
+        images: chapter.images,
+        status: chapter.status,
+        timeline: chapter.timeline,
+      }).unwrap();
+
+      expect(result.type).toBe("chapter.persisted");
+      expect(result.payload.chapter).toBe(chapter.identifier);
+      expect(persistMock).toHaveBeenCalled();
+    });
+
+    it("永続化でエラーが発生した場合はエラーを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(2);
+      const error = aggregateNotFoundError("Chapter", "Chapter not found");
+      const persistMock = vi.fn().mockReturnValue(err(error).toAsync());
+
+      const workflow = createChapterPersistWorkflow(validateChapter)(
+        persistMock,
+      )(mockLogger);
+
+      const result = await workflow({
+        identifier: chapter.identifier,
+        title: chapter.title,
+        slug: chapter.slug,
+        content: chapter.content,
+        images: chapter.images,
+        status: chapter.status,
+        timeline: chapter.timeline,
+      }).unwrapError();
+
+      expect(result).toEqual(error);
+    });
+  });
+
   describe("createChapterTerminateWorkflow", () => {
+    it("有効なidentifierでChapterTerminatedEventを返す", async () => {
+      const identifier = Forger(ChapterIdentifierMold).forgeWithSeed(1);
+      const terminateMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createChapterTerminateWorkflow(validateChapterIdentifier)(
+        terminateMock,
+      )(mockLogger);
+
+      const result = await workflow(identifier).unwrap();
+
+      expect(result.type).toBe("chapter.terminated");
+      expect(result.payload.chapter).toBe(identifier);
+      expect(terminateMock).toHaveBeenCalledWith(identifier);
+    });
+
     it("有効なidentifierでチャプターを削除できる", async () => {
       const identifier = Forger(ChapterIdentifierMold).forgeWithSeed(1);
       const terminateMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
@@ -233,7 +299,12 @@ describe("workflows/chapter", () => {
 
       expect(infoSpy).toHaveBeenCalledWith(
         "ChapterTerminateWorkflow completed",
-        expect.objectContaining({ identifier }),
+        expect.objectContaining({
+          event: expect.objectContaining({
+            type: "chapter.terminated",
+            payload: expect.objectContaining({ chapter: identifier }),
+          }),
+        }),
       );
     });
   });
