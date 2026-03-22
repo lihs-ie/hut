@@ -1,12 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Forger } from "@lihs-ie/forger-ts";
-import { createChapterFindBySlugWorkflow } from "@shared/workflows/chapter";
+import {
+  createChapterFindBySlugWorkflow,
+  createChapterTerminateWorkflow,
+} from "@shared/workflows/chapter";
 import { validateSlug } from "@shared/domains/common/slug";
+import { validateChapterIdentifier } from "@shared/domains/series/chapter";
 import { Logger, Environment } from "@shared/aspects/logger";
 import { ok, err } from "@shared/aspects/result";
 import { aggregateNotFoundError } from "@shared/aspects/error";
 import {
   ChapterMold,
+  ChapterIdentifierMold,
 } from "../support/molds/domains/series/chapter";
 import { SlugMold } from "../support/molds/domains/common/slug";
 import { Command } from "@shared/workflows/common";
@@ -144,6 +149,91 @@ describe("workflows/chapter", () => {
       expect(warnSpy).toHaveBeenCalledWith(
         "Validation failed",
         expect.objectContaining({ error: expect.anything() }),
+      );
+    });
+  });
+
+  describe("createChapterTerminateWorkflow", () => {
+    it("有効なidentifierでチャプターを削除できる", async () => {
+      const identifier = Forger(ChapterIdentifierMold).forgeWithSeed(1);
+      const terminateMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createChapterTerminateWorkflow(validateChapterIdentifier)(
+        terminateMock,
+      )(mockLogger);
+
+      const result = await workflow(identifier);
+
+      expect(await result.match({ ok: () => true, err: () => false })).toBe(true);
+      expect(terminateMock).toHaveBeenCalledWith(identifier);
+    });
+
+    it("無効なidentifierでValidationErrorを返す", async () => {
+      const terminateMock = vi.fn();
+
+      const workflow = createChapterTerminateWorkflow(validateChapterIdentifier)(
+        terminateMock,
+      )(mockLogger);
+
+      const result = await workflow("invalid-identifier").match({
+        ok: () => false,
+        err: () => true,
+      });
+
+      expect(result).toBe(true);
+      expect(terminateMock).not.toHaveBeenCalled();
+    });
+
+    it("チャプターが見つからない場合はAggregateNotFoundErrorを返す", async () => {
+      const identifier = Forger(ChapterIdentifierMold).forgeWithSeed(2);
+      const notFoundError = aggregateNotFoundError(
+        "Chapter",
+        "Chapter not found",
+      );
+      const terminateMock = vi
+        .fn()
+        .mockReturnValue(err(notFoundError).toAsync());
+
+      const workflow = createChapterTerminateWorkflow(validateChapterIdentifier)(
+        terminateMock,
+      )(mockLogger);
+
+      const result = await workflow(identifier).unwrapError();
+
+      expect(result).toEqual(notFoundError);
+    });
+
+    it("ロガーがワークフロー開始時に呼ばれる", async () => {
+      const identifier = Forger(ChapterIdentifierMold).forgeWithSeed(3);
+      const terminateMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+      const infoSpy = vi.spyOn(mockLogger, "info");
+
+      const workflow = createChapterTerminateWorkflow(validateChapterIdentifier)(
+        terminateMock,
+      )(mockLogger);
+
+      await workflow(identifier).match({ ok: () => null, err: () => null });
+
+      expect(infoSpy).toHaveBeenCalledWith(
+        "ChapterTerminateWorkflow started",
+        expect.objectContaining({ identifier }),
+      );
+    });
+
+    it("ロガーがワークフロー完了時に呼ばれる", async () => {
+      const identifier = Forger(ChapterIdentifierMold).forgeWithSeed(4);
+      const terminateMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+      const infoSpy = vi.spyOn(mockLogger, "info");
+
+      const workflow = createChapterTerminateWorkflow(validateChapterIdentifier)(
+        terminateMock,
+      )(mockLogger);
+
+      await workflow(identifier).match({ ok: () => null, err: () => null });
+
+      expect(infoSpy).toHaveBeenCalledWith(
+        "ChapterTerminateWorkflow completed",
+        expect.objectContaining({ identifier }),
       );
     });
   });

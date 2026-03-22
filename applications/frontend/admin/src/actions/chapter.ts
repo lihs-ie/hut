@@ -3,7 +3,7 @@
 import { revalidateTag } from "next/cache";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { Chapter, UnvalidatedChapter, ChapterIdentifier } from "@shared/domains/series/chapter";
-import { addChapter } from "@shared/domains/series";
+import { addChapter, removeChapter } from "@shared/domains/series";
 import { AdminChapterWorkflowProvider } from "@/providers/workflows/chapter";
 import { AdminSeriesWorkflowProvider } from "@/providers/workflows/series";
 import { requireAdmin } from "@/aspects/auth-guard";
@@ -31,7 +31,7 @@ export async function persist(
           identifier: updatedSeries.identifier,
           title: updatedSeries.title,
           slug: updatedSeries.slug,
-          subTitle: updatedSeries.subTitle,
+          subTitle: updatedSeries.subTitle ?? null,
           description: updatedSeries.description,
           cover: updatedSeries.cover,
           tags: updatedSeries.tags,
@@ -45,6 +45,43 @@ export async function persist(
       );
     }
   }
+
+  revalidateTag("chapters", {});
+  revalidateTag("series", {});
+}
+
+export async function terminate(
+  chapterIdentifier: string,
+  seriesSlug: string,
+): Promise<void> {
+  await requireAdmin();
+  await unwrapForNextJs(AdminChapterWorkflowProvider.terminate(chapterIdentifier));
+
+  const series = await unwrapForNextJs(
+    AdminSeriesWorkflowProvider.findBySlug({
+      payload: { slug: seriesSlug },
+      now: new Date(),
+    }),
+  );
+
+  const updatedSeries = removeChapter(series, chapterIdentifier as ChapterIdentifier);
+  await unwrapForNextJs(
+    AdminSeriesWorkflowProvider.persist({
+      identifier: updatedSeries.identifier,
+      title: updatedSeries.title,
+      slug: updatedSeries.slug,
+      subTitle: updatedSeries.subTitle ?? null,
+      description: updatedSeries.description,
+      cover: updatedSeries.cover,
+      tags: updatedSeries.tags,
+      chapters: updatedSeries.chapters,
+      status: updatedSeries.status,
+      timeline: {
+        createdAt: updatedSeries.timeline.createdAt,
+        updatedAt: new Date(),
+      },
+    }),
+  );
 
   revalidateTag("chapters", {});
   revalidateTag("series", {});

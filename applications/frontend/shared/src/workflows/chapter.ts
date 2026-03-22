@@ -9,10 +9,54 @@ import { AsyncResult, Result } from "@shared/aspects/result";
 import { Slug, ValidateSlug } from "@shared/domains/common";
 import {
   Chapter,
+  ChapterIdentifier,
   ChapterRepository,
   UnvalidatedChapter,
 } from "@shared/domains/series/chapter";
 import { Command } from "./common";
+
+type ValidateChapterIdentifier = (
+  identifier: string
+) => Result<ChapterIdentifier, ValidationError>;
+
+type TerminateChapter = (
+  identifier: ChapterIdentifier
+) => AsyncResult<void, AggregateNotFoundError<"Chapter"> | UnexpectedError>;
+
+export type ChapterTerminateWorkflow = (
+  identifier: string
+) => AsyncResult<
+  void,
+  ValidationError | AggregateNotFoundError<"Chapter"> | UnexpectedError
+>;
+
+export const createChapterTerminateWorkflow =
+  (validate: ValidateChapterIdentifier) =>
+  (terminate: TerminateChapter) =>
+  (logger: Logger): ChapterTerminateWorkflow =>
+  (identifier: string) => {
+    logger.info("ChapterTerminateWorkflow started", { identifier });
+
+    return validate(identifier)
+      .toAsync()
+      .tap((id) => {
+        logger.debug("Validation passed", { identifier: id });
+      })
+      .tapError((error) => {
+        logger.warn("Validation failed", { error });
+      })
+      .andThen((id) =>
+        terminate(id).tap(() => {
+          logger.debug("Chapter terminated", { identifier: id });
+        })
+      )
+      .tap(() => {
+        logger.info("ChapterTerminateWorkflow completed", { identifier });
+      })
+      .tapError((error) => {
+        logger.error("ChapterTerminateWorkflow failed", { error });
+      });
+  };
 
 type ChapterFindBySlugCommand = Command<{ slug: string }>;
 

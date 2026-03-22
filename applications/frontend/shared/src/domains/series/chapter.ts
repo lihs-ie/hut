@@ -5,9 +5,10 @@ import {
   DuplicationError,
   UnexpectedError,
   validate,
+  validationError,
   ValidationError,
 } from "@shared/aspects/error";
-import { AsyncResult, Result } from "@shared/aspects/result";
+import { AsyncResult, ok, err, Result } from "@shared/aspects/result";
 import { imageIdentifierSchema } from "../image/identifier";
 
 export const chapterIdentifierSchema = z.ulid().brand("ChapterIdentifier");
@@ -54,6 +55,23 @@ export type UnvalidatedChapter = {
     createdAt: Date;
     updatedAt: Date;
   };
+};
+
+export const validateChapterIdentifier = (
+  candidate: string
+): Result<ChapterIdentifier, ValidationError> => {
+  const result = chapterIdentifierSchema.safeParse(candidate);
+
+  if (result.success) {
+    return ok(result.data);
+  } else {
+    return err(
+      validationError(
+        "ChapterIdentifier",
+        `Invalid chapter identifier: ${candidate}`,
+      )
+    );
+  }
 };
 
 export const validateChapter = (

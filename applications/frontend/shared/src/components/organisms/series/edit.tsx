@@ -16,6 +16,7 @@ import { TagIcon } from "@shared/components/atoms/icon/tag";
 import { CrossIcon } from "@shared/components/atoms/icon/cross";
 import { PlusIcon } from "@shared/components/atoms/icon/plus";
 import { BallpenIcon } from "@shared/components/atoms/icon/ballpen";
+import { TrashIcon } from "@shared/components/atoms/icon/trash";
 import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
 import { useToast } from "@shared/components/molecules/toast";
 import { Routes } from "@shared/config/presentation/route";
@@ -26,6 +27,7 @@ export type Props = {
   tags: Tag[];
   chapters?: Chapter[];
   seriesSlug?: SeriesSlug;
+  terminateChapter?: (chapterIdentifier: string, seriesSlug: string) => Promise<void>;
 };
 
 export const SeriesEditOrganism = (props: Props) => {
@@ -306,6 +308,19 @@ export const SeriesEditOrganism = (props: Props) => {
                     <BallpenIcon className={styles.chaptericon} />
                     編集
                   </Link>
+                  {props.terminateChapter && (
+                    <button
+                      type="button"
+                      className={styles.chapterdelete}
+                      onClick={() => {
+                        if (!window.confirm(`「${chapter.title}」を削除しますか？`)) return;
+                        props.terminateChapter!(chapter.identifier, props.seriesSlug!);
+                      }}
+                      aria-label={`${chapter.title}を削除`}
+                    >
+                      <TrashIcon className={styles.chaptericon} />
+                    </button>
+                  )}
                 </li>
               ))}
             </ol>
