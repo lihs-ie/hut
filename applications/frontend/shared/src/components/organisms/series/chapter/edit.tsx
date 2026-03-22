@@ -10,6 +10,13 @@ import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { EditorHeader } from "@shared/components/organisms/common/editor/header";
 import { MarkdownPreview } from "@shared/components/organisms/common/editor/markdown-preview";
 import { Chapter, UnvalidatedChapter } from "@shared/domains/series/chapter";
+import {
+  CHAPTER_FRONTMATTER_TEMPLATE,
+  extractFrontmatterTitle,
+  extractFrontmatterSlug,
+  updateFrontmatterTitle,
+  stripFrontmatter,
+} from "@shared/components/global/matter";
 import { LoadingOverlay } from "@shared/components/molecules/overlay/loading";
 import { useToast } from "@shared/components/molecules/toast";
 import { ImageIdentifier } from "@shared/domains/image";
@@ -48,14 +55,23 @@ export type Props = {
   seriesSlug: string;
 };
 
+const buildInitialContent = (chapter: Chapter): string => {
+  const frontmatter = `---\ntitle: ${chapter.title}\nslug: ${chapter.slug}\n---\n\n`;
+  return frontmatter + chapter.content;
+};
+
 export const ChapterEditOrganism = (props: Props) => {
   const { showToast } = useToast();
 
   const [identifier] = useState(() => props.initial?.identifier ?? ulid());
   const [title, setTitle] = useState<string>(props.initial?.title ?? "");
-  const [content, setContent] = useState<string>(
-    props.initial?.content ?? "",
-  );
+  const [slug, setSlug] = useState<string>(props.initial?.slug ?? "");
+  const [content, setContent] = useState<string>(() => {
+    if (props.initial) {
+      return buildInitialContent(props.initial);
+    }
+    return CHAPTER_FRONTMATTER_TEMPLATE;
+  });
   const [status, setStatus] = useState<PublishStatus>(
     props.initial?.status ?? PublishStatus.DRAFT,
   );
@@ -67,9 +83,26 @@ export const ChapterEditOrganism = (props: Props) => {
     new Map(),
   );
 
+  const handleTitleChange = useCallback((newTitle: string) => {
+    setTitle(newTitle);
+    setContent((previousContent) =>
+      updateFrontmatterTitle(previousContent, newTitle),
+    );
+  }, []);
+
   const handleContentChange = useCallback(
     (newContent: string) => {
       setContent(newContent);
+
+      const frontmatterTitle = extractFrontmatterTitle(newContent);
+      if (frontmatterTitle !== null && frontmatterTitle !== title) {
+        setTitle(frontmatterTitle);
+      }
+
+      const frontmatterSlug = extractFrontmatterSlug(newContent);
+      if (frontmatterSlug !== null && frontmatterSlug !== slug) {
+        setSlug(frontmatterSlug);
+      }
 
       const currentUrls = extractImageUrls(newContent);
       const removedIdentifiers: ImageIdentifier[] = [];
@@ -85,7 +118,7 @@ export const ChapterEditOrganism = (props: Props) => {
         );
       }
     },
-    [],
+    [title, slug],
   );
 
   const handleImageUploaded = useCallback(
@@ -101,8 +134,8 @@ export const ChapterEditOrganism = (props: Props) => {
       await props.persist({
         identifier,
         title,
-        slug: props.initial?.slug ?? props.seriesSlug,
-        content: content.trim() || title,
+        slug: props.initial?.slug ?? slug,
+        content: stripFrontmatter(content).trim() || title,
         images,
         status: status ?? PublishStatus.DRAFT,
         timeline: {
@@ -124,7 +157,7 @@ export const ChapterEditOrganism = (props: Props) => {
       <div className={styles.header}>
         <EditorHeader
           title={title}
-          onTitleChange={setTitle}
+          onTitleChange={handleTitleChange}
           isPublished={status === PublishStatus.PUBLISHED}
           onPublishChange={(value) =>
             setStatus(value ? PublishStatus.PUBLISHED : PublishStatus.DRAFT)

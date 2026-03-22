@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   ARTICLE_FRONTMATTER_TEMPLATE,
+  CHAPTER_FRONTMATTER_TEMPLATE,
   stripFrontmatter,
   extractFrontmatterTitle,
   updateFrontmatterTitle,
@@ -15,6 +16,24 @@ describe("components/global/matter", () => {
       expect(ARTICLE_FRONTMATTER_TEMPLATE).toContain("excerpt:");
       expect(ARTICLE_FRONTMATTER_TEMPLATE).toContain("slug:");
       expect(ARTICLE_FRONTMATTER_TEMPLATE).toContain("tags: []");
+    });
+  });
+
+  describe("CHAPTER_FRONTMATTER_TEMPLATE", () => {
+    it("titleとslugのみを持つテンプレート構造を持つ", () => {
+      expect(CHAPTER_FRONTMATTER_TEMPLATE).toContain("---\n");
+      expect(CHAPTER_FRONTMATTER_TEMPLATE).toContain("title:");
+      expect(CHAPTER_FRONTMATTER_TEMPLATE).toContain("slug:");
+    });
+
+    it("excerptとtagsを持たない", () => {
+      expect(CHAPTER_FRONTMATTER_TEMPLATE).not.toContain("excerpt:");
+      expect(CHAPTER_FRONTMATTER_TEMPLATE).not.toContain("tags:");
+    });
+
+    it("frontmatterの開始と終了を持つ", () => {
+      expect(CHAPTER_FRONTMATTER_TEMPLATE.startsWith("---\n")).toBe(true);
+      expect(CHAPTER_FRONTMATTER_TEMPLATE).toContain("\n---\n");
     });
   });
 
