@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import styles from "./edit.module.css";
 import { useCallback, useState } from "react";
 import { ulid } from "ulid";
@@ -28,6 +29,7 @@ export type Props = {
 };
 
 export const SeriesEditOrganism = (props: Props) => {
+  const router = useRouter();
   const { showToast } = useToast();
 
   const [identifier] = useState(() => props.initial?.identifier ?? ulid());
@@ -70,8 +72,12 @@ export const SeriesEditOrganism = (props: Props) => {
       });
     },
     {
-      onSuccess: () =>
-        showToast(props.initial ? "連載を更新しました" : "連載を作成しました"),
+      onSuccess: () => {
+        showToast(props.initial ? "連載を更新しました" : "連載を作成しました");
+        if (!props.initial) {
+          router.push(Routes.page.series.edit(slug));
+        }
+      },
     },
   );
 
