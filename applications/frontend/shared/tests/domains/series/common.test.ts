@@ -7,20 +7,18 @@ import {
   subTitleSchema,
   descriptionSchema,
   cover,
-  chapterSchema,
-  validateChapter,
   seriesSchema,
   validateSeries,
   addChapter,
   removeChapter,
-  updateChapter,
   criteriaSchema,
   validateCriteria,
 } from "@shared/domains/series";
+import { chapterIdentifierSchema } from "@shared/domains/series/chapter";
+import { PublishStatus } from "@shared/domains/common";
 import {
   SeriesMold,
   SeriesIdentifierMold,
-  ChapterMold,
 } from "../../support/molds/domains/series";
 import { TimelineMold } from "../../support/molds/domains/common/date";
 import { TagIdentifierMold } from "../../support/molds/domains/attributes/tag";
@@ -29,6 +27,7 @@ import {
   describeIdentifierSchema,
   describeStringLengthSchema,
 } from "../../support/helpers";
+import { ulid } from "ulid";
 
 describe("domains/series/common", () => {
   describe("seriesIdentifierSchema", () => {
@@ -147,57 +146,6 @@ describe("domains/series/common", () => {
     });
   });
 
-  describe("chapterSchema", () => {
-    describe("有効なChapterの検証", () => {
-      it("全てのフィールドが有効な場合は検証を通過する", () => {
-        const result = chapterSchema.safeParse(Forger(ChapterMold).forge());
-        expect(result.success).toBe(true);
-      });
-    });
-
-    describe("無効なChapterの検証", () => {
-      const createChapterWithOverrides = (overrides: Record<string, unknown>) => ({
-        title: "Chapter 1",
-        slug: Forger(SlugMold).forge(),
-        content: "Content",
-        timeline: Forger(TimelineMold).forge(),
-        ...overrides,
-      });
-
-      it("titleが空の場合は無効", () => {
-        const result = chapterSchema.safeParse(createChapterWithOverrides({ title: "" }));
-        expect(result.success).toBe(false);
-      });
-
-      it("contentが空の場合は無効", () => {
-        const result = chapterSchema.safeParse(createChapterWithOverrides({ content: "" }));
-        expect(result.success).toBe(false);
-      });
-    });
-  });
-
-  describe("validateChapter", () => {
-    it("有効なChapterでokを返す", () => {
-      const result = validateChapter({
-        title: "Chapter 1",
-        slug: "chapter-1",
-        content: "This is chapter content",
-        timeline: Forger(TimelineMold).forge(),
-      });
-      expect(result.isOk).toBe(true);
-    });
-
-    it("無効なChapterでerrを返す", () => {
-      const result = validateChapter({
-        title: "",
-        slug: "",
-        content: "",
-        timeline: Forger(TimelineMold).forge(),
-      });
-      expect(result.isErr).toBe(true);
-    });
-  });
-
   describe("seriesSchema", () => {
     describe("有効なSeriesの検証", () => {
       it("全てのフィールドが有効な場合は検証を通過する", () => {
@@ -207,6 +155,16 @@ describe("domains/series/common", () => {
 
       it("chaptersが空配列でも有効", () => {
         const result = seriesSchema.safeParse(Forger(SeriesMold).forge({ chapters: [] }));
+        expect(result.success).toBe(true);
+      });
+
+      it("chaptersにChapterIdentifierの配列を含んでいても有効", () => {
+        const chapterIdentifiers = [ulid(), ulid()].map((id) =>
+          chapterIdentifierSchema.parse(id)
+        );
+        const result = seriesSchema.safeParse(
+          Forger(SeriesMold).forge({ chapters: chapterIdentifiers })
+        );
         expect(result.success).toBe(true);
       });
 
@@ -225,6 +183,23 @@ describe("domains/series/common", () => {
           description: "Description",
           cover: "https://example.com/cover.png",
           chapters: [],
+          status: PublishStatus.PUBLISHED,
+          timeline: Forger(TimelineMold).forge(),
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it("statusがdraftでも有効", () => {
+        const result = seriesSchema.safeParse({
+          identifier: Forger(SeriesIdentifierMold).forge(),
+          title: "Series Title",
+          slug: Forger(SlugMold).forge(),
+          tags: [],
+          subTitle: null,
+          description: "Description",
+          cover: null,
+          chapters: [],
+          status: PublishStatus.DRAFT,
           timeline: Forger(TimelineMold).forge(),
         });
         expect(result.success).toBe(true);
@@ -241,6 +216,7 @@ describe("domains/series/common", () => {
         description: "Description",
         cover: null,
         chapters: [],
+        status: PublishStatus.PUBLISHED,
         timeline: Forger(TimelineMold).forge(),
         ...overrides,
       });
@@ -252,6 +228,18 @@ describe("domains/series/common", () => {
 
       it("titleが空の場合は無効", () => {
         const result = seriesSchema.safeParse(createSeriesWithOverrides({ title: "" }));
+        expect(result.success).toBe(false);
+      });
+
+      it("statusが無効な値の場合は無効", () => {
+        const result = seriesSchema.safeParse(createSeriesWithOverrides({ status: "invalid-status" }));
+        expect(result.success).toBe(false);
+      });
+
+      it("chaptersにULIDでない文字列が含まれる場合は無効", () => {
+        const result = seriesSchema.safeParse(
+          createSeriesWithOverrides({ chapters: ["not-a-ulid"] })
+        );
         expect(result.success).toBe(false);
       });
     });
@@ -268,6 +256,23 @@ describe("domains/series/common", () => {
         description: "説明",
         cover: "https://example.com/cover.png",
         chapters: [],
+        status: "published",
+        timeline: Forger(TimelineMold).forge(),
+      });
+      expect(result.isOk).toBe(true);
+    });
+
+    it("chaptersにULIDを含む場合もokを返す", () => {
+      const result = validateSeries({
+        identifier: Forger(SeriesIdentifierMold).forge(),
+        title: "テストシリーズ",
+        slug: "test-series",
+        tags: [],
+        subTitle: null,
+        description: "説明",
+        cover: "https://example.com/cover.png",
+        chapters: [ulid(), ulid()],
+        status: "published",
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);
@@ -282,6 +287,7 @@ describe("domains/series/common", () => {
         subTitle: null,
         description: "a".repeat(501),
         chapters: [],
+        status: "published",
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -289,110 +295,66 @@ describe("domains/series/common", () => {
   });
 
   describe("addChapter", () => {
-    it("シリーズに新しいチャプターを追加する", () => {
+    it("シリーズに新しいChapterIdentifierを追加する", () => {
       const series = Forger(SeriesMold).forge({ chapters: [] });
-      const newChapter = Forger(ChapterMold).forge();
-      const updatedSeries = addChapter(series, newChapter);
+      const newChapterIdentifier = chapterIdentifierSchema.parse(ulid());
+      const updatedSeries = addChapter(series, newChapterIdentifier);
 
       expect(updatedSeries.chapters).toHaveLength(1);
-      expect(updatedSeries.chapters[0]).toEqual(newChapter);
+      expect(updatedSeries.chapters[0]).toEqual(newChapterIdentifier);
     });
 
-    it("既存のチャプターに追加される", () => {
-      const existingChapters = Forger(ChapterMold).forgeMulti(2);
-      const series = Forger(SeriesMold).forge({ chapters: existingChapters });
-      const newChapter = Forger(ChapterMold).forge();
-      const updatedSeries = addChapter(series, newChapter);
+    it("既存のChapterIdentifierに追加される", () => {
+      const existingIdentifiers = [ulid(), ulid()].map((id) =>
+        chapterIdentifierSchema.parse(id)
+      );
+      const series = Forger(SeriesMold).forge({ chapters: existingIdentifiers });
+      const newIdentifier = chapterIdentifierSchema.parse(ulid());
+      const updatedSeries = addChapter(series, newIdentifier);
 
       expect(updatedSeries.chapters).toHaveLength(3);
-      expect(updatedSeries.chapters[2]).toEqual(newChapter);
-    });
-
-    it("timelineのupdatedAtがチャプターのtimeline.createdAtに更新される", () => {
-      const series = Forger(SeriesMold).forge();
-      const chapterDate = new Date("2025-12-31T00:00:00Z");
-      const newChapter = Forger(ChapterMold).forge({
-        timeline: { createdAt: chapterDate, updatedAt: chapterDate },
-      });
-      const updatedSeries = addChapter(series, newChapter);
-
-      expect(updatedSeries.timeline.updatedAt).toEqual(chapterDate);
+      expect(updatedSeries.chapters[2]).toEqual(newIdentifier);
     });
 
     it("元のシリーズは変更されない（イミュータブル）", () => {
       const series = Forger(SeriesMold).forge({ chapters: [] });
-      addChapter(series, Forger(ChapterMold).forge());
+      addChapter(series, chapterIdentifierSchema.parse(ulid()));
       expect(series.chapters).toHaveLength(0);
     });
   });
 
   describe("removeChapter", () => {
-    it("タイトルに一致するチャプターを削除する", () => {
-      const chapter1 = Forger(ChapterMold).forge({ title: "Chapter 1" });
-      const chapter2 = Forger(ChapterMold).forge({ title: "Chapter 2" });
-      const series = Forger(SeriesMold).forge({ chapters: [chapter1, chapter2] });
-      const updatedSeries = removeChapter(series, "Chapter 1");
+    it("identifierに一致するChapterIdentifierを削除する", () => {
+      const identifier1 = chapterIdentifierSchema.parse(ulid());
+      const identifier2 = chapterIdentifierSchema.parse(ulid());
+      const series = Forger(SeriesMold).forge({ chapters: [identifier1, identifier2] });
+      const updatedSeries = removeChapter(series, identifier1);
 
       expect(updatedSeries.chapters).toHaveLength(1);
-      expect(updatedSeries.chapters[0].title).toBe("Chapter 2");
+      expect(updatedSeries.chapters[0]).toEqual(identifier2);
     });
 
-    it("存在しないタイトルを指定した場合は変更なし", () => {
-      const chapter1 = Forger(ChapterMold).forge({ title: "Chapter 1" });
-      const series = Forger(SeriesMold).forge({ chapters: [chapter1] });
-      const updatedSeries = removeChapter(series, "Non-existent");
+    it("存在しないidentifierを指定した場合は変更なし", () => {
+      const identifier1 = chapterIdentifierSchema.parse(ulid());
+      const series = Forger(SeriesMold).forge({ chapters: [identifier1] });
+      const nonExistentIdentifier = chapterIdentifierSchema.parse(ulid());
+      const updatedSeries = removeChapter(series, nonExistentIdentifier);
 
       expect(updatedSeries.chapters).toHaveLength(1);
     });
 
     it("元のシリーズは変更されない（イミュータブル）", () => {
-      const chapter1 = Forger(ChapterMold).forge({ title: "Chapter 1" });
-      const series = Forger(SeriesMold).forge({ chapters: [chapter1] });
-      removeChapter(series, "Chapter 1");
+      const identifier1 = chapterIdentifierSchema.parse(ulid());
+      const series = Forger(SeriesMold).forge({ chapters: [identifier1] });
+      removeChapter(series, identifier1);
       expect(series.chapters).toHaveLength(1);
-    });
-  });
-
-  describe("updateChapter", () => {
-    it("タイトルに一致するチャプターを更新する", () => {
-      const chapter1 = Forger(ChapterMold).forge({ title: "Chapter 1" });
-      const chapter2 = Forger(ChapterMold).forge({ title: "Chapter 2" });
-      const series = Forger(SeriesMold).forge({ chapters: [chapter1, chapter2] });
-      const updatedChapter = { ...chapter1, content: "Updated content" };
-      const updatedSeries = updateChapter(series, updatedChapter);
-
-      expect(updatedSeries.chapters[0].content).toBe("Updated content");
-      expect(updatedSeries.chapters[1]).toEqual(chapter2);
-    });
-
-    it("timelineのupdatedAtが更新される", () => {
-      const chapter1 = Forger(ChapterMold).forge({ title: "Chapter 1" });
-      const series = Forger(SeriesMold).forge({ chapters: [chapter1] });
-      const newDate = new Date("2025-12-31T00:00:00Z");
-      const updatedChapter = {
-        ...chapter1,
-        timeline: { ...chapter1.timeline, updatedAt: newDate },
-      };
-      const updatedSeries = updateChapter(series, updatedChapter);
-
-      expect(updatedSeries.timeline.updatedAt).toEqual(newDate);
-    });
-
-    it("存在しないタイトルを指定した場合は変更なし", () => {
-      const chapter1 = Forger(ChapterMold).forge({ title: "Chapter 1" });
-      const series = Forger(SeriesMold).forge({ chapters: [chapter1] });
-      const nonExistentChapter = Forger(ChapterMold).forge({ title: "Non-existent" });
-      const updatedSeries = updateChapter(series, nonExistentChapter);
-
-      expect(updatedSeries.chapters).toHaveLength(1);
-      expect(updatedSeries.chapters[0]).toEqual(chapter1);
     });
   });
 
   describe("criteriaSchema", () => {
     describe("有効なCriteriaの検証", () => {
       it("全てnullで有効", () => {
-        const result = criteriaSchema.safeParse({ slug: null, tags: null });
+        const result = criteriaSchema.safeParse({ slug: null, tags: null, status: null, freeWord: null });
         expect(result.success).toBe(true);
       });
 
@@ -400,6 +362,28 @@ describe("domains/series/common", () => {
         const result = criteriaSchema.safeParse({
           slug: Forger(SlugMold).forge(),
           tags: Forger(TagIdentifierMold).forgeMulti(2),
+          status: "published",
+          freeWord: "検索ワード",
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it("statusのみ指定しても有効", () => {
+        const result = criteriaSchema.safeParse({
+          slug: null,
+          tags: null,
+          status: "draft",
+          freeWord: null,
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it("freeWordのみ指定しても有効", () => {
+        const result = criteriaSchema.safeParse({
+          slug: null,
+          tags: null,
+          status: null,
+          freeWord: "キーワード",
         });
         expect(result.success).toBe(true);
       });
@@ -407,7 +391,7 @@ describe("domains/series/common", () => {
 
     describe("無効なCriteriaの検証", () => {
       it("無効なslugの場合は無効", () => {
-        const result = criteriaSchema.safeParse({ slug: "Invalid Slug With Spaces", tags: null });
+        const result = criteriaSchema.safeParse({ slug: "Invalid Slug With Spaces", tags: null, status: null, freeWord: null });
         expect(result.success).toBe(false);
       });
     });
@@ -415,12 +399,17 @@ describe("domains/series/common", () => {
 
   describe("validateCriteria", () => {
     it("有効なCriteriaでokを返す", () => {
-      const result = validateCriteria({ slug: "test-slug", tags: null });
+      const result = validateCriteria({ slug: "test-slug", tags: null, status: null, freeWord: null });
+      expect(result.isOk).toBe(true);
+    });
+
+    it("statusを指定した有効なCriteriaでokを返す", () => {
+      const result = validateCriteria({ slug: null, tags: null, status: "published", freeWord: null });
       expect(result.isOk).toBe(true);
     });
 
     it("無効なCriteriaでerrを返す", () => {
-      const result = validateCriteria({ slug: "Invalid Slug", tags: null });
+      const result = validateCriteria({ slug: "Invalid Slug", tags: null, status: null, freeWord: null });
       expect(result.isErr).toBe(true);
     });
   });

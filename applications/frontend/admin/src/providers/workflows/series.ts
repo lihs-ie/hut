@@ -8,9 +8,11 @@ import {
   createSeriesFindWorkflow,
   createSeriesPersistWorkflow,
   createSeriesSearchWorkflow,
+  createSeriesTerminateWithChaptersWorkflow,
   createSeriesTerminateWorkflow,
 } from "@shared/workflows/series";
 import { AdminSeriesRepositoryProvider } from "../infrastructure/series";
+import { AdminChapterRepositoryProvider } from "../infrastructure/chapter";
 import { LoggerProvider } from "@shared/providers/infrastructure/logger";
 import { validateSlug } from "@shared/domains/common";
 
@@ -34,4 +36,10 @@ export const AdminSeriesWorkflowProvider = {
   terminate: createSeriesTerminateWorkflow(validateSeriesIdentifier)(
     AdminSeriesRepositoryProvider.firebase.terminate
   )(LoggerProvider.console),
+
+  terminateWithChapters: createSeriesTerminateWithChaptersWorkflow(
+    validateSeriesIdentifier,
+  )(AdminSeriesRepositoryProvider.firebase.find)(
+    AdminChapterRepositoryProvider.firebase.terminate,
+  )(AdminSeriesRepositoryProvider.firebase.terminate)(LoggerProvider.console),
 } as const;

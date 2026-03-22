@@ -34,10 +34,14 @@ describe("infrastructures/series", () => {
   const createCriteria = (params: {
     slug?: SeriesSlug | null;
     tags?: TagIdentifier[] | null;
+    status?: string | null;
+    freeWord?: string | null;
   }): Criteria => {
     return validateCriteria({
       slug: params.slug ?? null,
       tags: params.tags ?? null,
+      status: params.status ?? null,
+      freeWord: params.freeWord ?? null,
     }).unwrap();
   };
 

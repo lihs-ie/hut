@@ -38,17 +38,17 @@ const series = Forger(SeriesMold).forge({
   subTitle: "初心者から上級者まで",
   description:
     "Next.js 15の新機能を網羅的に解説するシリーズです。Server Components、App Router、Server Actionsなど最新の機能を学べます。",
-  chapters,
+  chapters: [],
 });
 
 const slug = Forger(SeriesSlugMold).forge({ value: "nextjs-15-guide" });
 
-const findBySlug = async () => series;
-
 export const Default: StoryObj<typeof SeriesIndex> = {
   args: {
     slug,
-    findBySlug,
+    findBySlug: async () => series,
+    findChaptersByIdentifiers: async () => chapters,
+    findAllTags: async () => [],
   },
 };
 
@@ -56,13 +56,17 @@ const seriesWithManyChapters = Forger(SeriesMold).forge({
   title: "React 19 マスターコース",
   subTitle: "Reactの全てを学ぶ",
   description: "React 19の新機能と最新のベストプラクティスを学ぶシリーズです。",
-  chapters: Forger(ChapterMold).forgeMultiWithSeed(10, 1),
+  chapters: [],
 });
+
+const manyChapters = Forger(ChapterMold).forgeMultiWithSeed(10, 1);
 
 export const ManyChapters: StoryObj<typeof SeriesIndex> = {
   args: {
     slug: Forger(SeriesSlugMold).forge({ value: "react-19-master" }),
     findBySlug: async () => seriesWithManyChapters,
+    findChaptersByIdentifiers: async () => manyChapters,
+    findAllTags: async () => [],
   },
 };
 
@@ -70,18 +74,22 @@ const seriesWithSingleChapter = Forger(SeriesMold).forge({
   title: "TypeScript 入門",
   subTitle: null,
   description: "TypeScriptの基礎を1章で学びます。",
-  chapters: [
-    Forger(ChapterMold).forge({
-      title: "TypeScriptとは",
-      slug: Forger(ChapterSlugMold).forge({ value: "what-is-typescript" }),
-      content: "TypeScriptの基本を説明します。",
-    }),
-  ],
+  chapters: [],
 });
+
+const singleChapter = [
+  Forger(ChapterMold).forge({
+    title: "TypeScriptとは",
+    slug: Forger(ChapterSlugMold).forge({ value: "what-is-typescript" }),
+    content: "TypeScriptの基本を説明します。",
+  }),
+];
 
 export const SingleChapter: StoryObj<typeof SeriesIndex> = {
   args: {
     slug: Forger(SeriesSlugMold).forge({ value: "typescript-intro" }),
     findBySlug: async () => seriesWithSingleChapter,
+    findChaptersByIdentifiers: async () => singleChapter,
+    findAllTags: async () => [],
   },
 };

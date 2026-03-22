@@ -54,7 +54,7 @@ const ALL_CONTENTS: ContentReference[] = [
       "Next.js 13以降で導入されたApp Routerの基本的な使い方を解説します。",
     tags: ["nextjs", "react", "typescript"],
   },
-  // シリーズ
+  // シリーズ（publishedのみ - draftは検索インデックスに含めない）
   {
     type: "series",
     id: SERIES_IDS.series1,
@@ -62,6 +62,14 @@ const ALL_CONTENTS: ContentReference[] = [
     excerpt:
       "Rustを使ってシステムプログラミングの基礎を学ぶシリーズです。メモリ管理、並行処理、ネットワークプログラミングなどを扱います。",
     tags: ["rust"],
+  },
+  {
+    type: "series",
+    id: SERIES_IDS.series2,
+    title: "実践TypeScript設計パターン",
+    excerpt:
+      "TypeScriptの型システムを最大限に活用し、保守性の高いアプリケーションを設計するためのパターンを解説するシリーズです。",
+    tags: ["typescript", "react"],
   },
   // メモ（publishedのみ - draftは検索インデックスに含めない）
   {

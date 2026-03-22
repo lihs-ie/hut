@@ -5,7 +5,7 @@ import {
   ValidationError,
 } from "@shared/aspects/error";
 import { Logger } from "@shared/aspects/logger";
-import { AsyncResult, Result } from "@shared/aspects/result";
+import { AsyncResult, ok, Result } from "@shared/aspects/result";
 import { Slug, ValidateSlug } from "@shared/domains/common";
 import {
   Criteria,
@@ -20,6 +20,7 @@ import {
   SeriesCreatedEvent,
   SeriesTerminatedEvent,
 } from "@shared/domains/series/event";
+import { ChapterIdentifier } from "@shared/domains/series/chapter";
 import { Command } from "./common";
 
 type ValidateIdentifier = (
@@ -238,5 +239,73 @@ export const createSeriesTerminateWorkflow =
       })
       .tapError((error) => {
         logger.error("SeriesTerminateWorkflow failed", { error });
+      });
+  };
+
+type TerminateChapter = (
+  identifier: ChapterIdentifier,
+) => AsyncResult<void, AggregateNotFoundError<"Chapter"> | UnexpectedError>;
+
+export type SeriesTerminateWithChaptersWorkflow = (
+  identifier: string,
+) => AsyncResult<
+  SeriesTerminatedEvent,
+  | ValidationError
+  | AggregateNotFoundError<"Series">
+  | AggregateNotFoundError<"Chapter">
+  | UnexpectedError
+>;
+
+const terminateChaptersSequentially = (
+  chapters: ChapterIdentifier[],
+  terminateChapter: TerminateChapter,
+): AsyncResult<void, AggregateNotFoundError<"Chapter"> | UnexpectedError> =>
+  chapters.reduce(
+    (accumulated, chapterId) =>
+      accumulated.andThen(() => terminateChapter(chapterId)),
+    ok<void, AggregateNotFoundError<"Chapter"> | UnexpectedError>(undefined).toAsync(),
+  );
+
+export const createSeriesTerminateWithChaptersWorkflow =
+  (validate: ValidateIdentifier) =>
+  (find: FindSeries) =>
+  (terminateChapter: TerminateChapter) =>
+  (terminate: TerminateSeries) =>
+  (logger: Logger): SeriesTerminateWithChaptersWorkflow =>
+  (identifier: string) => {
+    logger.info("SeriesTerminateWithChaptersWorkflow started", { identifier });
+
+    return validate(identifier)
+      .toAsync()
+      .tap((id) => {
+        logger.debug("Validation passed", { identifier: id });
+      })
+      .tapError((error) => {
+        logger.warn("Validation failed", { error });
+      })
+      .andThen((id) =>
+        find(id).tap((series) => {
+          logger.debug("Series found", {
+            identifier: id,
+            chapterCount: series.chapters.length,
+          });
+        })
+      )
+      .andThen((series) =>
+        terminateChaptersSequentially(series.chapters, terminateChapter)
+          .map(() => series)
+      )
+      .andThen((series) =>
+        terminate(series.identifier)
+          .tap(() => {
+            logger.debug("Series terminated", { identifier: series.identifier });
+          })
+          .map(() => createSeriesTerminatedEvent(series.identifier))
+      )
+      .tap((event) => {
+        logger.info("SeriesTerminateWithChaptersWorkflow completed", { event });
+      })
+      .tapError((error) => {
+        logger.error("SeriesTerminateWithChaptersWorkflow failed", { error });
       });
   };
