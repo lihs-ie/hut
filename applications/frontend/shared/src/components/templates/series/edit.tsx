@@ -10,6 +10,7 @@ export type Props = {
   tags: Tag[];
   chapters?: Chapter[];
   seriesSlug?: SeriesSlug;
+  terminateChapter?: (chapterIdentifier: string, seriesSlug: string) => Promise<void>;
 };
 
 export const SeriesEdit = (props: Props) => (
@@ -20,6 +21,7 @@ export const SeriesEdit = (props: Props) => (
       tags={props.tags}
       chapters={props.chapters}
       seriesSlug={props.seriesSlug}
+      terminateChapter={props.terminateChapter}
     />
   </div>
 );

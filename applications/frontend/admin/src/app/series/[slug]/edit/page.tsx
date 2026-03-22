@@ -1,4 +1,5 @@
 import { findBySlug, persist as persistAction } from "@/actions/series";
+import { terminate as terminateChapterAction } from "@/actions/chapter";
 import { getAllTags } from "@shared/actions/tag";
 import { findChaptersByIdentifiers } from "@shared/actions/chapter";
 import { SeriesEdit } from "@shared/components/templates/series/edit";
@@ -17,6 +18,12 @@ function edit(seriesSlug: string) {
   };
 }
 
+async function terminateChapter(chapterIdentifier: string, seriesSlug: string) {
+  "use server";
+
+  return terminateChapterAction(chapterIdentifier, seriesSlug);
+}
+
 export default async function SeriesEditPage(props: Props) {
   const { slug } = await props.params;
 
@@ -30,6 +37,7 @@ export default async function SeriesEditPage(props: Props) {
       persist={edit(slug)}
       chapters={chapters}
       seriesSlug={slugSchema.parse(slug)}
+      terminateChapter={terminateChapter}
     />
   );
 }
