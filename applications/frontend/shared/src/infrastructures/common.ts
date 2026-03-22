@@ -13,7 +13,7 @@ export type SlugIndex = {
   createdAt: Date;
 };
 
-export type SlugIndexCollectionName = "articles" | "memos" | "series";
+export type SlugIndexCollectionName = "articles" | "memos" | "series" | "chapters";
 
 export const getSlugIndexPath = (
   collectionName: SlugIndexCollectionName,

@@ -2,7 +2,13 @@
 
 import { revalidateTag } from "next/cache";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
-import { Chapter, UnvalidatedChapter } from "@shared/domains/series/chapter";
+import {
+  Chapter,
+  ChapterIdentifier,
+  UnvalidatedChapter,
+  createChapterPersistedEvent,
+  createChapterTerminatedEvent,
+} from "@shared/domains/series/chapter";
 import { AdminChapterWorkflowProvider } from "@/providers/workflows/chapter";
 import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
@@ -24,6 +30,12 @@ export async function persist(
     );
   }
 
+  await unwrapForNextJs(
+    EventBrokerProvider.pubSub.publish(
+      createChapterPersistedEvent(unvalidated.identifier as ChapterIdentifier),
+    ),
+  );
+
   revalidateTag("chapters", {});
   revalidateTag("series", {});
 }
@@ -36,6 +48,12 @@ export async function terminate(
 
   await unwrapForNextJs(
     AdminChapterWorkflowProvider.terminateWithSeries(chapterIdentifier, seriesSlug),
+  );
+
+  await unwrapForNextJs(
+    EventBrokerProvider.pubSub.publish(
+      createChapterTerminatedEvent(chapterIdentifier as ChapterIdentifier),
+    ),
   );
 
   revalidateTag("chapters", {});

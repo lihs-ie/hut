@@ -45,6 +45,7 @@ async function clearAllData(): Promise<void> {
   await clearCollection("index/articles/slug");
   await clearCollection("index/memos/slug");
   await clearCollection("index/series/slug");
+  await clearCollection("index/chapters/slug");
   await clearCollection("page-view-counters");
   await clearCollection("page-view-dedup");
   await clearCollection("access-logs");

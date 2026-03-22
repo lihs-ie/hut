@@ -137,9 +137,11 @@ chapterSearchableText chapter = chapter.title ++ chapter.content
 
 seriesSearchableText :: SeriesCreatedPayload -> String
 seriesSearchableText series =
-  series.title
-    ++ fromMaybe "" series.description
-    ++ unwords (map (\chapter -> chapter.title ++ chapter.content) series.chapters)
+  unwords
+    [ series.title,
+      fromMaybe "" series.description,
+      unwords (map (\chapter -> chapter.title ++ " " ++ chapter.content) series.chapters)
+    ]
 
 persistHandle :: (Monad m) => Persist m -> PersistContext -> m (Either SearchTokenError ())
 persistHandle persist' context = persist' $ buildTokens context
