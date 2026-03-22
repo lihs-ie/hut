@@ -158,7 +158,7 @@ export const FirebaseChapterRepository = (
             operations,
             firestore,
             {
-              collectionName: "series",
+              collectionName: "chapters",
               oldSlug,
               newSlug: chapter.slug,
               referenceIdentifier: chapter.identifier,
@@ -178,7 +178,7 @@ export const FirebaseChapterRepository = (
             operations,
             firestore,
             {
-              collectionName: "series",
+              collectionName: "chapters",
               slug: chapter.slug,
               referenceIdentifier: chapter.identifier,
               aggregateName: "Chapter",
@@ -210,7 +210,7 @@ export const FirebaseChapterRepository = (
 
         const chapter = snapshot.data();
         deleteSlugIndexInTransaction(transaction, operations, firestore, {
-          collectionName: "series",
+          collectionName: "chapters",
           slug: chapter.slug,
         });
 
