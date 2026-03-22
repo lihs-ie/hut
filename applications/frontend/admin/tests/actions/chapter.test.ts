@@ -28,6 +28,17 @@ vi.mock("@/providers/workflows/chapter", () => ({
   },
 }));
 
+vi.mock("@/providers/workflows/series", () => ({
+  AdminSeriesWorkflowProvider: {
+    findBySlug: vi.fn(),
+    persist: vi.fn(),
+  },
+}));
+
+vi.mock("@shared/domains/series", () => ({
+  addChapter: vi.fn(),
+}));
+
 describe("actions/chapter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -85,6 +96,7 @@ describe("actions/chapter", () => {
       });
 
       expect(mockRevalidateTag).toHaveBeenCalledWith("chapters", {});
+      expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});
     });
   });
 
