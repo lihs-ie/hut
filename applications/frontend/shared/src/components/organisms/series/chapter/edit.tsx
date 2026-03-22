@@ -2,7 +2,7 @@
 
 import styles from "./edit.module.css";
 import dynamic from "next/dynamic";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ulid } from "ulid";
 import { PublishStatus } from "@shared/domains/common";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
@@ -83,53 +83,47 @@ export const ChapterEditOrganism = (props: Props) => {
     new Map(),
   );
 
-  const handleTitleChange = useCallback((newTitle: string) => {
+  const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
     setContent((previousContent) =>
       updateFrontmatterTitle(previousContent, newTitle),
     );
-  }, []);
+  };
 
-  const handleContentChange = useCallback(
-    (newContent: string) => {
-      setContent(newContent);
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
 
-      const frontmatterTitle = extractFrontmatterTitle(newContent);
-      if (frontmatterTitle !== null && frontmatterTitle !== title) {
-        setTitle(frontmatterTitle);
+    const frontmatterTitle = extractFrontmatterTitle(newContent);
+    if (frontmatterTitle !== null && frontmatterTitle !== title) {
+      setTitle(frontmatterTitle);
+    }
+
+    if (!props.initial) {
+      const frontmatterSlug = extractFrontmatterSlug(newContent);
+      if (frontmatterSlug !== null && frontmatterSlug !== slug) {
+        setSlug(frontmatterSlug);
       }
+    }
 
-      if (!props.initial) {
-        const frontmatterSlug = extractFrontmatterSlug(newContent);
-        if (frontmatterSlug !== null && frontmatterSlug !== slug) {
-          setSlug(frontmatterSlug);
-        }
+    const currentUrls = extractImageUrls(newContent);
+    const removedIdentifiers: ImageIdentifier[] = [];
+    imageUrlToIdentifierMap.current.forEach((imageIdentifier, url) => {
+      if (!currentUrls.has(url)) {
+        removedIdentifiers.push(imageIdentifier);
+        imageUrlToIdentifierMap.current.delete(url);
       }
+    });
+    if (removedIdentifiers.length > 0) {
+      setImages((previous) =>
+        previous.filter((id) => !removedIdentifiers.includes(id)),
+      );
+    }
+  };
 
-      const currentUrls = extractImageUrls(newContent);
-      const removedIdentifiers: ImageIdentifier[] = [];
-      imageUrlToIdentifierMap.current.forEach((imageIdentifier, url) => {
-        if (!currentUrls.has(url)) {
-          removedIdentifiers.push(imageIdentifier);
-          imageUrlToIdentifierMap.current.delete(url);
-        }
-      });
-      if (removedIdentifiers.length > 0) {
-        setImages((previous) =>
-          previous.filter((id) => !removedIdentifiers.includes(id)),
-        );
-      }
-    },
-    [title, slug],
-  );
-
-  const handleImageUploaded = useCallback(
-    (imageIdentifier: ImageIdentifier, url: string) => {
-      imageUrlToIdentifierMap.current.set(url, imageIdentifier);
-      setImages((previous) => [...previous, imageIdentifier]);
-    },
-    [],
-  );
+  const handleImageUploaded = (imageIdentifier: ImageIdentifier, url: string) => {
+    imageUrlToIdentifierMap.current.set(url, imageIdentifier);
+    setImages((previous) => [...previous, imageIdentifier]);
+  };
 
   const { execute, error, isLoading, reset } = useServerAction(
     async () => {
