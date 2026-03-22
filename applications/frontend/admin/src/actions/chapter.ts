@@ -2,10 +2,8 @@
 
 import { revalidateTag } from "next/cache";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
-import { Chapter, UnvalidatedChapter, ChapterIdentifier } from "@shared/domains/series/chapter";
-import { addChapter, removeChapter } from "@shared/domains/series";
+import { Chapter, UnvalidatedChapter } from "@shared/domains/series/chapter";
 import { AdminChapterWorkflowProvider } from "@/providers/workflows/chapter";
-import { AdminSeriesWorkflowProvider } from "@/providers/workflows/series";
 import { requireAdmin } from "@/aspects/auth-guard";
 
 export async function persist(
@@ -13,37 +11,13 @@ export async function persist(
   seriesSlug?: string,
 ): Promise<void> {
   await requireAdmin();
-  await unwrapForNextJs(AdminChapterWorkflowProvider.persist(unvalidated));
 
   if (seriesSlug) {
-    const series = await unwrapForNextJs(
-      AdminSeriesWorkflowProvider.findBySlug({
-        payload: { slug: seriesSlug },
-        now: new Date(),
-      }),
+    await unwrapForNextJs(
+      AdminChapterWorkflowProvider.persistWithSeries(unvalidated, seriesSlug),
     );
-
-    const chapterIdentifier = unvalidated.identifier as ChapterIdentifier;
-    if (!series.chapters.includes(chapterIdentifier)) {
-      const updatedSeries = addChapter(series, chapterIdentifier);
-      await unwrapForNextJs(
-        AdminSeriesWorkflowProvider.persist({
-          identifier: updatedSeries.identifier,
-          title: updatedSeries.title,
-          slug: updatedSeries.slug,
-          subTitle: updatedSeries.subTitle ?? null,
-          description: updatedSeries.description,
-          cover: updatedSeries.cover,
-          tags: updatedSeries.tags,
-          chapters: updatedSeries.chapters,
-          status: updatedSeries.status,
-          timeline: {
-            createdAt: updatedSeries.timeline.createdAt,
-            updatedAt: new Date(),
-          },
-        }),
-      );
-    }
+  } else {
+    await unwrapForNextJs(AdminChapterWorkflowProvider.persist(unvalidated));
   }
 
   revalidateTag("chapters", {});
@@ -55,32 +29,9 @@ export async function terminate(
   seriesSlug: string,
 ): Promise<void> {
   await requireAdmin();
-  await unwrapForNextJs(AdminChapterWorkflowProvider.terminate(chapterIdentifier));
 
-  const series = await unwrapForNextJs(
-    AdminSeriesWorkflowProvider.findBySlug({
-      payload: { slug: seriesSlug },
-      now: new Date(),
-    }),
-  );
-
-  const updatedSeries = removeChapter(series, chapterIdentifier as ChapterIdentifier);
   await unwrapForNextJs(
-    AdminSeriesWorkflowProvider.persist({
-      identifier: updatedSeries.identifier,
-      title: updatedSeries.title,
-      slug: updatedSeries.slug,
-      subTitle: updatedSeries.subTitle ?? null,
-      description: updatedSeries.description,
-      cover: updatedSeries.cover,
-      tags: updatedSeries.tags,
-      chapters: updatedSeries.chapters,
-      status: updatedSeries.status,
-      timeline: {
-        createdAt: updatedSeries.timeline.createdAt,
-        updatedAt: new Date(),
-      },
-    }),
+    AdminChapterWorkflowProvider.terminateWithSeries(chapterIdentifier, seriesSlug),
   );
 
   revalidateTag("chapters", {});

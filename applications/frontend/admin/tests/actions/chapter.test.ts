@@ -22,28 +22,17 @@ vi.mock("@shared/components/global/next-error", () => ({
 }));
 
 const mockChapterWorkflowTerminate = vi.fn();
+const mockChapterWorkflowPersistWithSeries = vi.fn();
+const mockChapterWorkflowTerminateWithSeries = vi.fn();
 
 vi.mock("@/providers/workflows/chapter", () => ({
   AdminChapterWorkflowProvider: {
     persist: mockChapterWorkflowPersist,
     findBySlug: mockChapterWorkflowFindBySlug,
     terminate: mockChapterWorkflowTerminate,
+    persistWithSeries: mockChapterWorkflowPersistWithSeries,
+    terminateWithSeries: mockChapterWorkflowTerminateWithSeries,
   },
-}));
-
-const mockSeriesWorkflowFindBySlug = vi.fn();
-const mockSeriesWorkflowPersist = vi.fn();
-
-vi.mock("@/providers/workflows/series", () => ({
-  AdminSeriesWorkflowProvider: {
-    findBySlug: mockSeriesWorkflowFindBySlug,
-    persist: mockSeriesWorkflowPersist,
-  },
-}));
-
-vi.mock("@shared/domains/series", () => ({
-  addChapter: vi.fn(),
-  removeChapter: vi.fn(),
 }));
 
 describe("actions/chapter", () => {
@@ -129,90 +118,29 @@ describe("actions/chapter", () => {
   });
 
   describe("terminate", () => {
-    const defaultSeries = {
-      identifier: "01HWXYZ0000000000000000001",
-      title: "テスト連載",
-      slug: "test-series",
-      chapters: ["01HWXYZ0000000000000000000"],
-      tags: [],
-      subTitle: null,
-      status: "DRAFT",
-      timeline: { createdAt: new Date(), updatedAt: new Date() },
-    };
-
     it("requireAdminを呼び出す", async () => {
       const { terminate } = await import("@/actions/chapter");
-      const { removeChapter } = await import("@shared/domains/series");
-      vi.mocked(removeChapter).mockReturnValue({ ...defaultSeries, chapters: [] } as never);
-
-      mockSeriesWorkflowFindBySlug.mockReturnValue(Promise.resolve(defaultSeries));
-      mockSeriesWorkflowPersist.mockReturnValue(Promise.resolve(undefined));
 
       await terminate("01HWXYZ0000000000000000000", "test-series");
 
       expect(mockRequireAdmin).toHaveBeenCalled();
     });
 
-    it("AdminChapterWorkflowProvider.terminateをchapterIdentifierで呼び出す", async () => {
-      const { terminate } = await import("@/actions/chapter");
-      const { removeChapter } = await import("@shared/domains/series");
-      const chapterIdentifier = "01HWXYZ0000000000000000000";
-      vi.mocked(removeChapter).mockReturnValue({ ...defaultSeries, chapters: [] } as never);
-
-      mockSeriesWorkflowFindBySlug.mockReturnValue(Promise.resolve(defaultSeries));
-      mockSeriesWorkflowPersist.mockReturnValue(Promise.resolve(undefined));
-
-      await terminate(chapterIdentifier, "test-series");
-
-      expect(mockChapterWorkflowTerminate).toHaveBeenCalledWith(chapterIdentifier);
-    });
-
-    it("Seriesからchapterを除去してpersistする", async () => {
+    it("AdminChapterWorkflowProvider.terminateWithSeriesを呼び出す", async () => {
       const { terminate } = await import("@/actions/chapter");
       const chapterIdentifier = "01HWXYZ0000000000000000000";
       const seriesSlug = "test-series";
-      const series = {
-        identifier: "01HWXYZ0000000000000000001",
-        title: "テスト連載",
-        slug: seriesSlug,
-        chapters: [chapterIdentifier],
-        tags: [],
-        subTitle: null,
-        status: "DRAFT",
-        timeline: { createdAt: new Date(), updatedAt: new Date() },
-      };
-
-      mockSeriesWorkflowFindBySlug.mockReturnValue(Promise.resolve(series));
-      mockSeriesWorkflowPersist.mockReturnValue(Promise.resolve(undefined));
-
-      const { removeChapter } = await import("@shared/domains/series");
-      const updatedSeries = { ...series, chapters: [] };
-      vi.mocked(removeChapter).mockReturnValue(updatedSeries as never);
 
       await terminate(chapterIdentifier, seriesSlug);
 
-      expect(mockSeriesWorkflowFindBySlug).toHaveBeenCalledWith({
-        payload: { slug: seriesSlug },
-        now: expect.any(Date),
-      });
-      expect(removeChapter).toHaveBeenCalledWith(series, chapterIdentifier);
-      expect(mockSeriesWorkflowPersist).toHaveBeenCalled();
+      expect(mockChapterWorkflowTerminateWithSeries).toHaveBeenCalledWith(
+        chapterIdentifier,
+        seriesSlug,
+      );
     });
 
     it("revalidateTagを chapters と series で呼び出す", async () => {
       const { terminate } = await import("@/actions/chapter");
-
-      mockSeriesWorkflowFindBySlug.mockReturnValue(Promise.resolve({
-        identifier: "01HWXYZ0000000000000000001",
-        title: "テスト連載",
-        slug: "test-series",
-        chapters: ["01HWXYZ0000000000000000000"],
-        tags: [],
-        subTitle: null,
-        status: "DRAFT",
-        timeline: { createdAt: new Date(), updatedAt: new Date() },
-      }));
-      mockSeriesWorkflowPersist.mockReturnValue(Promise.resolve(undefined));
 
       await terminate("01HWXYZ0000000000000000000", "test-series");
 
