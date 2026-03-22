@@ -1,5 +1,7 @@
 import z from "zod";
+import { ulid } from "ulid";
 import { publishStatusSchema, Slug, slugSchema, timelineSchema } from "../common";
+import { Event } from "../common/event";
 import {
   AggregateNotFoundError,
   DuplicationError,
@@ -77,6 +79,38 @@ export const validateChapterIdentifier = (
 export const validateChapter = (
   candidate: UnvalidatedChapter
 ): Result<Chapter, ValidationError[]> => validate(chapterSchema, candidate);
+
+type ChapterPayload = {
+  chapter: ChapterIdentifier;
+};
+
+export type ChapterPersistedEvent = Event<"chapter.persisted", ChapterPayload>;
+
+export type ChapterTerminatedEvent = Event<"chapter.terminated", ChapterPayload>;
+
+export const createChapterPersistedEvent = (
+  identifier: ChapterIdentifier,
+): ChapterPersistedEvent => ({
+  identifier: ulid(),
+  occurredAt: new Date(),
+  type: "chapter.persisted",
+  payload: {
+    chapter: identifier,
+  },
+});
+
+export const createChapterTerminatedEvent = (
+  identifier: ChapterIdentifier,
+): ChapterTerminatedEvent => ({
+  identifier: ulid(),
+  occurredAt: new Date(),
+  type: "chapter.terminated",
+  payload: {
+    chapter: identifier,
+  },
+});
+
+export type ChapterEvent = ChapterPersistedEvent | ChapterTerminatedEvent;
 
 export interface ChapterRepository {
   find: (

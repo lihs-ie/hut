@@ -4,6 +4,7 @@ import { revalidateTag } from "next/cache";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { Series, UnvalidatedCriteria, UnvalidatedSeries } from "@shared/domains/series";
 import { AdminSeriesWorkflowProvider } from "@/providers/workflows/series";
+import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
 
 export async function findBySlug(slug: string): Promise<Series> {
@@ -18,14 +19,20 @@ export async function findBySlug(slug: string): Promise<Series> {
 
 export async function persist(unvalidated: UnvalidatedSeries): Promise<void> {
   await requireAdmin();
-  await unwrapForNextJs(AdminSeriesWorkflowProvider.persist(unvalidated));
+  await unwrapForNextJs(
+    AdminSeriesWorkflowProvider.persist(unvalidated)
+      .andThen(EventBrokerProvider.pubSub.publish),
+  );
 
   revalidateTag("series", {});
 }
 
 export async function terminate(identifier: string): Promise<void> {
   await requireAdmin();
-  await unwrapForNextJs(AdminSeriesWorkflowProvider.terminate(identifier));
+  await unwrapForNextJs(
+    AdminSeriesWorkflowProvider.terminateWithChapters(identifier)
+      .andThen(EventBrokerProvider.pubSub.publish),
+  );
 
   revalidateTag("series", {});
 }
