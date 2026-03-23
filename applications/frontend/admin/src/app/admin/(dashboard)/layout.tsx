@@ -7,6 +7,8 @@ import { TagIcon } from "@shared/components/atoms/icon/tag";
 import { UserIcon } from "@shared/components/atoms/icon/user";
 import { ShieldIcon } from "@shared/components/atoms/icon/shield";
 import { BarChartIcon } from "@shared/components/atoms/icon/bar-chart";
+import { getSession } from "@/actions/auth";
+import { redirect } from "next/navigation";
 
 const navItems: NavItem[] = [
   {
@@ -19,11 +21,6 @@ const navItems: NavItem[] = [
     label: "メモの管理",
     icon: <MessageSquareIcon />,
   },
-  // [初期リリース対象外] {
-  //   href: Routes.admin.series.list,
-  //   label: "シリーズの管理",
-  //   icon: <BookOpenIcon />,
-  // },
   { href: Routes.admin.tag.list, label: "タグ管理", icon: <TagIcon /> },
   {
     href: Routes.admin.profile.edit,
@@ -42,15 +39,21 @@ const navItems: NavItem[] = [
   },
 ];
 
-export default function AdminLayout({
-  children,
-}: {
+type Props = {
   children: React.ReactNode;
-}) {
+};
+
+export default async function AdminLayout(props: Props) {
+  const session = await getSession();
+
+  if (!session) {
+    redirect("/admin/login");
+  }
+
   return (
     <div className={styles.container}>
       <AdminSidebar items={navItems} />
-      <div className={styles.content}>{children}</div>
+      <div className={styles.content}>{props.children}</div>
     </div>
   );
 }
