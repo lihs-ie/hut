@@ -2,6 +2,7 @@ import { enforceLoginRateLimit } from "@/actions/rate-limit";
 import { isE2EAuthAvailable } from "@/aspects/e2e";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveIP } from "@/aspects/ip-address";
+import { OIDCServerProvider } from "@/providers/acl/oidc/server";
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|logo).*)"],
@@ -31,7 +32,20 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isLoginPage && adminSession) {
-    return NextResponse.redirect(new URL("/", request.url));
+    const isValid = await OIDCServerProvider.verifySessionCookie(
+      adminSession,
+    ).match({
+      ok: () => true,
+      err: () => false,
+    });
+
+    if (isValid) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    const response = NextResponse.next();
+    response.cookies.delete("admin_session");
+    return response;
   }
 
   if (isLoginPage) {
@@ -51,5 +65,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  return NextResponse.next();
+  return await OIDCServerProvider.verifySessionCookie(adminSession).match({
+    ok: () => NextResponse.next(),
+    err: () => {
+      const response = NextResponse.redirect(
+        new URL("/admin/login", request.url),
+      );
+      response.cookies.delete("admin_session");
+      return response;
+    },
+  });
 }
