@@ -23,7 +23,7 @@
     "@codemirror/language-data": "^6.5.2",
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.40.0",
-    "@shikijs/rehype": "^4.0.1",
+    "@shikijs/rehype": "^4.0.2",
     "@types/mdast": "^4.0.4",
     "dompurify": "^3.3.3",
     "firebase": "^12.7.0",
