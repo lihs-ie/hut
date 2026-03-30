@@ -12,15 +12,14 @@
 .card {
   display: flex;
   flex-direction: row;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background-color: var(--card);
+  border: 2px solid var(--border);
+  background-color: transparent;
   overflow: hidden;
-  transition: background-color 0.15s ease;
+  transition: opacity 0.2s;
 }
 
 .card:hover {
-  background-color: color-mix(in oklch, var(--card) 95%, var(--foreground) 5%);
+  opacity: 0.6;
 }
 
 .content {
@@ -39,12 +38,13 @@
 }
 
 .title {
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.5;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
   color: var(--foreground);
   margin: 0 0 4px 0 !important;
-  font-size: 1rem !important;
+  font-size: 0.9375rem !important;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
