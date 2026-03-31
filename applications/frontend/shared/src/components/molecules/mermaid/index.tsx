@@ -16,10 +16,14 @@ export const MermaidRenderer = (props: Props) => {
     if (!containerRef.current || !props.code) return;
 
     const container = containerRef.current;
+    const isDark = document.documentElement.classList.contains("dark");
 
     import("mermaid").then((module) => {
       const mermaid = module.default;
-      mermaid.initialize({ startOnLoad: false, theme: "default" });
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: isDark ? "dark" : "default",
+      });
 
       const mermaidId = `mermaid-${Math.random().toString(36).slice(2)}`;
 

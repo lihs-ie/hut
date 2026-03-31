@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Noto_Sans_JP, Inter, Geist_Mono } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "@shared/global.css";
 import { Header } from "@shared/components/organisms/header";
@@ -10,8 +10,14 @@ import { getProfile } from "@shared/actions/admin";
 import { NavigationProvider } from "@shared/components/molecules/navigation/provider";
 import { ToastProvider } from "@shared/components/molecules/toast";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const notoSansJP = Noto_Sans_JP({
+  variable: "--font-noto-sans-jp",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700", "800", "900"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -37,7 +43,7 @@ export default async function RootLayout({
 
   return (
     <html lang="ja" className={theme}>
-      <body className={`${geistSans.variable} ${geistMono.variable} admin`}>
+      <body className={`${notoSansJP.variable} ${inter.variable} ${geistMono.variable} admin`}>
         <NuqsAdapter>
           <ToastProvider>
             <NavigationProvider>

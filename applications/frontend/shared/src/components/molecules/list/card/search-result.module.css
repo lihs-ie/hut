@@ -123,8 +123,8 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  font-size: 0.875rem;
-  line-height: 1.6;
+  font-size: 0.8125rem;
+  line-height: 1.65;
   color: var(--muted-foreground);
   text-wrap: pretty;
 }
