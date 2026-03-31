@@ -22,23 +22,12 @@
 }
 
 .triggerIcon {
-  display: none;
+  display: block;
 }
 
-.triggerText {
-  display: inline;
-}
 
 @media (max-width: 768px) {
   .trigger {
     padding: 8px;
-  }
-
-  .triggerIcon {
-    display: inline-block;
-  }
-
-  .triggerText {
-    display: none;
   }
 }

@@ -196,6 +196,163 @@ Mermaid記法を使えば、テキストベースで図を管理できます。
       status: "published",
       tags: [TAG_IDS.typescript],
     },
+    {
+      id: ARTICLE_IDS.article6,
+      title: "Mermaid図 全サンプル集",
+      slug: "mermaid-all-diagrams",
+      excerpt:
+        "Mermaidがサポートする主要な図種（フローチャート、シーケンス図、クラス図、状態遷移図、ER図、ガントチャート、円グラフ、Git グラフ）を一覧で紹介します。",
+      content: `---
+title: Mermaid図 全サンプル集
+excerpt: Mermaidがサポートする主要な図種を一覧で紹介します。
+slug: mermaid-all-diagrams
+tags: [${TAG_IDS.typescript}]
+---
+
+# Mermaid図 全サンプル集
+
+Mermaidがサポートする主要な図種のサンプルをまとめました。
+
+## フローチャート
+
+\`\`\`mermaid
+flowchart TD
+    A[開始] --> B{条件分岐}
+    B -->|Yes| C[処理A]
+    B -->|No| D[処理B]
+    C --> E[終了]
+    D --> E
+\`\`\`
+
+## シーケンス図
+
+\`\`\`mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant DB
+    Client->>API: リクエスト送信
+    API->>DB: クエリ実行
+    DB-->>API: 結果返却
+    API-->>Client: レスポンス返却
+    Client->>API: データ更新
+    API->>DB: UPDATE実行
+    DB-->>API: 成功
+    API-->>Client: 200 OK
+\`\`\`
+
+## クラス図
+
+\`\`\`mermaid
+classDiagram
+    class Animal {
+        +String name
+        +int age
+        +makeSound() void
+    }
+    class Dog {
+        +String breed
+        +fetch() void
+    }
+    class Cat {
+        +bool isIndoor
+        +purr() void
+    }
+    Animal <|-- Dog
+    Animal <|-- Cat
+\`\`\`
+
+## 状態遷移図
+
+\`\`\`mermaid
+stateDiagram-v2
+    [*] --> Draft
+    Draft --> Review : 提出
+    Review --> Approved : 承認
+    Review --> Draft : 差し戻し
+    Approved --> Published : 公開
+    Published --> [*]
+\`\`\`
+
+## ER図
+
+\`\`\`mermaid
+erDiagram
+    USER ||--o{ ARTICLE : writes
+    USER {
+        string id PK
+        string name
+        string email
+    }
+    ARTICLE ||--o{ TAG : has
+    ARTICLE {
+        string id PK
+        string title
+        string content
+        string authorId FK
+    }
+    TAG {
+        string id PK
+        string name
+    }
+\`\`\`
+
+## ガントチャート
+
+\`\`\`mermaid
+gantt
+    title プロジェクトスケジュール
+    dateFormat YYYY-MM-DD
+    section 設計
+        要件定義      :a1, 2026-01-01, 14d
+        基本設計      :a2, after a1, 10d
+    section 開発
+        フロントエンド :b1, after a2, 20d
+        バックエンド   :b2, after a2, 25d
+    section テスト
+        結合テスト    :c1, after b2, 10d
+        受入テスト    :c2, after c1, 7d
+\`\`\`
+
+## 円グラフ
+
+\`\`\`mermaid
+pie title 使用言語の割合
+    "TypeScript" : 40
+    "Rust" : 25
+    "Go" : 20
+    "Python" : 15
+\`\`\`
+
+## Git グラフ
+
+\`\`\`mermaid
+gitGraph
+    commit
+    branch develop
+    checkout develop
+    commit
+    commit
+    branch feature
+    checkout feature
+    commit
+    commit
+    checkout develop
+    merge feature
+    checkout main
+    merge develop
+    commit tag:"v1.0"
+\`\`\`
+
+## まとめ
+
+以上がMermaidの主要な図種です。テキストベースで図を管理でき、バージョン管理との相性も良いのが特徴です。
+`,
+      image:
+        "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800",
+      status: "published",
+      tags: [TAG_IDS.typescript],
+    },
   ];
 
   for (const article of articles) {
@@ -251,6 +408,13 @@ export const ARTICLES_DATA = [
     id: "article5",
     title: "Mermaid図を使った技術ドキュメント",
     excerpt: "Mermaid記法を使ってフローチャートやシーケンス図を描画するテストです。",
+    tags: ["typescript"],
+  },
+  {
+    id: "article6",
+    title: "Mermaid図 全サンプル集",
+    excerpt:
+      "Mermaidがサポートする主要な図種を一覧で紹介します。",
     tags: ["typescript"],
   },
 ];
