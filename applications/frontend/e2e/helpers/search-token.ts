@@ -3,7 +3,7 @@ const PROJECT_IDENTIFIER = "demo-hut";
 const DATABASE_IDENTIFIER = "(default)";
 const BASE_URL = `${FIRESTORE_EMULATOR_HOST}/v1/projects/${PROJECT_IDENTIFIER}/databases/${DATABASE_IDENTIFIER}/documents`;
 
-type ContentType = "article" | "memo" | "series";
+type ContentType = "article" | "memo" | "series" | "chapter";
 
 type FirestoreValue = {
   stringValue?: string;
@@ -110,6 +110,18 @@ export const getSeriesIdentifierBySlug = async (
   slug: string,
 ): Promise<string | undefined> => {
   const document = await findDocumentBySlug("series", slug);
+
+  if (document === undefined) {
+    return undefined;
+  }
+
+  return extractIdentifier(document);
+};
+
+export const getChapterIdentifierBySlug = async (
+  slug: string,
+): Promise<string | undefined> => {
+  const document = await findDocumentBySlug("chapters", slug);
 
   if (document === undefined) {
     return undefined;

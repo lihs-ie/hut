@@ -1,10 +1,15 @@
 import { expect, type Page, test } from "@playwright/test";
+import {
+  getChapterIdentifierBySlug,
+  waitForSearchTokens,
+} from "./helpers/search-token";
 
 type TestArgs = {
   page: Page;
 };
 
 const seriesSlug = "rust-system-programming";
+const existingChapterSlug = "chapter-1-rust-basics";
 
 test.describe("chapter create page", () => {
   test("page is accessible", async ({ page }: TestArgs) => {
@@ -27,5 +32,36 @@ test.describe("chapter create page", () => {
     await expect(
       page.getByRole("button", { name: /保存|下書き保存|公開する/ }),
     ).toBeVisible({ timeout: 15000 });
+  });
+});
+
+test.describe("chapter search token verification", () => {
+  test("search tokens exist for existing published chapter", async ({
+    page,
+  }: TestArgs) => {
+    await page.goto(`/series/${seriesSlug}/chapters/new`);
+    await page.waitForLoadState("networkidle");
+
+    const chapterIdentifier =
+      await getChapterIdentifierBySlug(existingChapterSlug);
+
+    if (chapterIdentifier === undefined) {
+      test.skip(true, "chapter identifier not found in Firestore");
+      return;
+    }
+
+    const tokenIndex = await waitForSearchTokens(
+      "chapter",
+      chapterIdentifier,
+      30000,
+    );
+
+    expect(tokenIndex).toBeDefined();
+
+    if (tokenIndex === undefined) {
+      return;
+    }
+
+    expect(tokenIndex.tokens.length).toBeGreaterThan(0);
   });
 });
