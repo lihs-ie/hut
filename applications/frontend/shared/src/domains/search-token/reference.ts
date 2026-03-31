@@ -6,7 +6,7 @@ import { memoIdentifierSchema } from "../memo";
 import { seriesIdentifierSchema } from "../series";
 
 export const contentTypeSchema = z
-  .enum(["article", "memo", "series"])
+  .enum(["article", "memo", "series", "chapter"])
   .brand("ContentType");
 
 export type ContentType = z.infer<typeof contentTypeSchema>;
@@ -15,6 +15,7 @@ export const ContentType = {
   ARTICLE: contentTypeSchema.parse("article"),
   MEMO: contentTypeSchema.parse("memo"),
   SERIES: contentTypeSchema.parse("series"),
+  CHAPTER: contentTypeSchema.parse("chapter"),
 } as const;
 
 export const contentSchema = articleIdentifierSchema
