@@ -8,7 +8,7 @@ type TestArgs = {
  * Wait for search results to load, handling error state with retry
  * This is necessary because CI environment may have timing issues with Firebase Emulator
  */
-const waitForSearchResults = async (page: Page, timeout = 30000): Promise<void> => {
+const waitForSearchResults = async (page: Page, timeout = 60000): Promise<void> => {
   const startTime = Date.now();
   let retryCount = 0;
   const maxRetries = 5;
@@ -41,11 +41,11 @@ const waitForSearchResults = async (page: Page, timeout = 30000): Promise<void> 
     // Also check for loading skeleton or initial state
     const skeleton = page.locator('[class*="skeleton"]');
     if (await skeleton.isVisible().catch(() => false)) {
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(1000);
       continue;
     }
 
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
   }
 
   throw new Error(`Search results did not load within ${timeout}ms after ${retryCount} retries`);
@@ -272,7 +272,7 @@ test.describe("content type filter", () => {
     const filterButton = page.getByText("フィルター");
     await filterButton.scrollIntoViewIfNeeded();
     await filterButton.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // "すべて" button should be active/selected by default
     const allButton = page.getByRole("button", { name: "すべて" });
@@ -325,7 +325,7 @@ test.describe("content type filter", () => {
     const filterButton = page.getByText("フィルター");
     await filterButton.scrollIntoViewIfNeeded();
     await filterButton.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Click "すべて" button (use force to avoid interception)
     const allButton = page.getByRole("button", { name: "すべて" });
@@ -353,7 +353,7 @@ test.describe("sort order", () => {
     const filterButton = page.getByText("フィルター");
     await filterButton.scrollIntoViewIfNeeded();
     await filterButton.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // "最新" button should be active by default
     const latestButton = page.getByRole("button", { name: "最新" });
@@ -381,7 +381,7 @@ test.describe("sort order", () => {
     const filterButton = page.getByText("フィルター");
     await filterButton.scrollIntoViewIfNeeded();
     await filterButton.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Click "最新" button (use force to avoid interception)
     const latestButton = page.getByRole("button", { name: "最新" });
@@ -412,7 +412,7 @@ test.describe("tag filter", () => {
     const filterButton = page.getByText("フィルター");
     await filterButton.scrollIntoViewIfNeeded();
     await filterButton.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Verify "タグ" section exists (use exact match to avoid matching description text)
     await expect(page.getByText("タグ", { exact: true })).toBeVisible();
@@ -488,7 +488,7 @@ test.describe("tag filter", () => {
     const filterButton = page.getByText("フィルター");
     await filterButton.scrollIntoViewIfNeeded();
     await filterButton.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Click TypeScript tag again to deselect (use force to avoid interception)
     const tagButton = page.getByRole("button", { name: "TypeScript" });
@@ -592,7 +592,7 @@ test.describe("clear filters", () => {
     const filterButton = page.getByText("フィルター");
     await filterButton.scrollIntoViewIfNeeded();
     await filterButton.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Clear button should be visible since filters are active
     await expect(page.getByRole("button", { name: "クリア" })).toBeVisible();
@@ -616,7 +616,7 @@ test.describe("clear filters", () => {
     const filterButton = page.getByText("フィルター");
     await filterButton.scrollIntoViewIfNeeded();
     await filterButton.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Click clear button (use force to avoid interception)
     const clearButton = page.getByRole("button", { name: "クリア" });
@@ -829,7 +829,7 @@ test.describe("mobile responsiveness", () => {
     const filterButton = page.getByText("フィルター");
     await filterButton.scrollIntoViewIfNeeded();
     await filterButton.click({ force: true });
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Filter options should be visible
     await expect(page.getByRole("button", { name: "すべて" })).toBeVisible();
