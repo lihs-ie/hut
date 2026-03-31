@@ -47,6 +47,7 @@ export const ARTICLE_IDS = {
   article3: ulid(),
   article4: ulid(),
   article5: ulid(),
+  article6: ulid(),
 };
 
 export const SERIES_IDS = {

@@ -23,13 +23,14 @@ test.describe("memo creation", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByPlaceholder("Enter title...")).toBeVisible();
+    await expect(page.getByPlaceholder("Enter slug...")).toBeVisible();
 
     await expect(
       page.getByRole("button", { name: "メモを作成" }),
     ).toBeVisible();
   });
 
-  test("create button is disabled when title is empty", async ({
+  test("create button is disabled when title and slug are empty", async ({
     page,
   }: TestArgs) => {
     await page.goto("/memos/new");
@@ -40,7 +41,7 @@ test.describe("memo creation", () => {
     await expect(createButton).toBeDisabled();
   });
 
-  test("create button is enabled when title is entered", async ({
+  test("create button is enabled when title and slug are entered", async ({
     page,
   }: TestArgs) => {
     await page.goto("/memos/new");
@@ -48,6 +49,7 @@ test.describe("memo creation", () => {
     await page.waitForLoadState("networkidle");
 
     await page.getByPlaceholder("Enter title...").fill("テストメモ");
+    await page.getByPlaceholder("Enter slug...").fill("test-memo");
 
     const createButton = page.getByRole("button", { name: "メモを作成" });
     await expect(createButton).toBeEnabled();

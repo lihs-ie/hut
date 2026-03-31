@@ -1,53 +1,48 @@
 .container {
-  margin-bottom: 3rem;
+  margin-bottom: 4rem;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid var(--border);
+  align-items: baseline;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--foreground);
 }
 
 .title {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 900;
   color: var(--foreground);
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
 }
 
 .viewAll {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--foreground);
   text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   transition: opacity 0.2s;
 }
 
 .viewAll:hover {
-  opacity: 0.7;
+  opacity: 0.4;
 }
 
 .list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-/* タブレット: 2列 */
-@media (max-width: 1024px) {
-  .list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* SP: 1列 */
 @media (max-width: 768px) {
-  .list {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  .container {
+    margin-bottom: 3rem;
   }
 
   .section {
@@ -55,10 +50,10 @@
   }
 
   .title {
-    font-size: 1.25rem;
+    font-size: 0.7rem;
   }
 
   .viewAll {
-    font-size: 0.85rem;
+    font-size: 0.7rem;
   }
 }

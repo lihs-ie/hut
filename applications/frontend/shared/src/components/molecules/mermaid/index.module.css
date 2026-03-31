@@ -5,33 +5,293 @@
   overflow-x: auto;
 }
 
-:global(.dark) .container :global(svg) text,
-:global(.dark) .container :global(svg) .messageText,
-:global(.dark) .container :global(svg) .labelText,
-:global(.dark) .container :global(svg) .loopText,
-:global(.dark) .container :global(svg) .noteText,
-:global(.dark) .container :global(svg) .edgeLabel,
-:global(.dark) .container :global(svg) .label {
-  fill: var(--foreground) !important;
+.container :global(svg) {
+  max-width: 100%;
+  height: auto;
 }
 
-:global(.dark) .container :global(svg) line,
-:global(.dark) .container :global(svg) .messageLine0,
-:global(.dark) .container :global(svg) .messageLine1,
-:global(.dark) .container :global(svg) .relation,
-:global(.dark) .container :global(svg) .flowchart-link,
-:global(.dark) .container :global(svg) .transition {
+/* ── Text clipping fix: foreignObject clips labels ── */
+.container :global(svg) foreignObject {
+  overflow: visible !important;
+}
+
+/* ── Node label vertical centering ── */
+.container :global(svg) foreignObject > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+}
+
+/* ── Node shapes ── */
+.container :global(svg) :global(.nodes) rect,
+.container :global(svg) :global(.nodes) polygon,
+.container :global(svg) :global(.nodes) circle,
+.container :global(svg) :global(.node) rect,
+.container :global(svg) :global(.node) polygon,
+.container :global(svg) :global(.node) circle,
+.container :global(svg) :global(.label-container) {
+  fill: var(--background-secondary) !important;
+  stroke: var(--foreground) !important;
+  stroke-width: 1px !important;
+}
+
+/* ── Edge lines: stroke only, no fill ── */
+.container :global(svg) :global(.flowchart-link) {
+  fill: none !important;
+  stroke: var(--foreground) !important;
+  stroke-width: 1px !important;
+}
+
+.container :global(svg) :global(.edgePaths) path {
+  fill: none !important;
+  stroke: var(--foreground) !important;
+  stroke-width: 1px !important;
+}
+
+/* ── Arrow markers ── */
+.container :global(svg) marker path {
+  fill: var(--foreground) !important;
   stroke: var(--foreground) !important;
 }
 
-:global(.dark) .container :global(svg) marker path {
+/* ── Text: SVG text elements ── */
+.container :global(svg) text {
+  fill: var(--foreground) !important;
+}
+
+/* ── Text: HTML span labels inside foreignObject ── */
+.container :global(svg) :global(.nodeLabel),
+.container :global(svg) :global(.edgeLabel),
+.container :global(svg) :global(.label) {
+  color: var(--foreground) !important;
+}
+
+/* ── Edge label background ── */
+.container :global(svg) :global(.edgeLabel) rect,
+.container :global(svg) :global(.edgeLabels) rect {
+  fill: var(--background) !important;
+  stroke: none !important;
+}
+
+/* ── Sequence diagram: actor boxes ── */
+.container :global(svg) rect:global(.actor) {
+  fill: var(--background-secondary) !important;
+  stroke: var(--foreground) !important;
+}
+
+/* ── Sequence diagram: actor text ── */
+.container :global(svg) text:global(.actor) {
+  fill: var(--foreground) !important;
+  dominant-baseline: central !important;
+}
+
+/* ── Sequence diagram: message lines ── */
+.container :global(svg) line:global(.messageLine0),
+.container :global(svg) line:global(.messageLine1) {
+  stroke: var(--foreground) !important;
+  stroke-width: 1.5px !important;
+}
+
+/* ── Sequence diagram: actor lifelines ── */
+.container :global(svg) line:global(.actor-line) {
+  stroke: var(--muted-foreground) !important;
+}
+
+/* ── Sequence diagram: message text ── */
+.container :global(svg) text:global(.messageText) {
+  fill: var(--foreground) !important;
+}
+
+/* ── Sequence diagram: activation boxes ── */
+.container :global(svg) rect:global(.activation0),
+.container :global(svg) rect:global(.activation1),
+.container :global(svg) rect:global(.activation2) {
+  fill: var(--background-secondary) !important;
+  stroke: var(--foreground) !important;
+}
+
+/* ── Class diagram: box backgrounds (path-based) ── */
+.container :global(svg.classDiagram) :global(.label-container) path {
+  fill: var(--background-secondary) !important;
+  stroke: var(--foreground) !important;
+}
+
+/* ── Class diagram: divider lines ── */
+.container :global(svg.classDiagram) :global(.divider) {
+  stroke: var(--border) !important;
+}
+
+/* ── Class diagram: member/method text groups ── */
+.container :global(svg.classDiagram) :global(.text) {
+  fill: var(--foreground) !important;
+  color: var(--foreground) !important;
+}
+
+/* ── Class diagram: relation arrows ── */
+.container :global(svg.classDiagram) :global(.relation) {
+  stroke: var(--foreground) !important;
+}
+
+/* ── Class diagram: marker arrows ── */
+.container :global(svg.classDiagram) marker path {
   fill: var(--foreground) !important;
   stroke: var(--foreground) !important;
+}
+
+/* ── ER diagram: entity box stroke + header background ── */
+.container :global(svg.erDiagram) :global(.node) path {
+  stroke: var(--foreground) !important;
+}
+
+.container :global(svg.erDiagram) :global(.node) > g:first-child > path:first-child {
+  fill: var(--muted) !important;
+}
+
+.container :global(svg.erDiagram) :global(.row-rect-odd) path:first-child {
+  fill: var(--background) !important;
+}
+
+.container :global(svg.erDiagram) :global(.row-rect-even) path:first-child {
+  fill: var(--background-secondary) !important;
+}
+
+/* ── ER diagram: all text ── */
+.container :global(svg.erDiagram) :global(.nodeLabel),
+.container :global(svg.erDiagram) :global(.attribute-type) span,
+.container :global(svg.erDiagram) :global(.attribute-name) span,
+.container :global(svg.erDiagram) :global(.attribute-keys) span,
+.container :global(svg.erDiagram) :global(.attribute-comment) span,
+.container :global(svg.erDiagram) :global(.name) span {
+  color: var(--foreground) !important;
+}
+
+/* ── ER diagram: relationship lines ── */
+.container :global(svg.erDiagram) :global(.relationshipLine) {
+  stroke: var(--foreground) !important;
+}
+
+/* ── ER diagram: markers ── */
+.container :global(svg.erDiagram) marker path {
+  fill: var(--foreground) !important;
+  stroke: var(--foreground) !important;
+}
+
+.container :global(svg.erDiagram) marker circle {
+  fill: var(--background) !important;
+  stroke: var(--foreground) !important;
+}
+
+/* ── ER diagram: edge labels ── */
+.container :global(svg.erDiagram) :global(.edgeLabel) span {
+  color: var(--foreground) !important;
+}
+
+/* ── Pie chart: slice borders ── */
+.container :global(svg) :global(.pieCircle) {
+  stroke: var(--background) !important;
+  stroke-width: 2px !important;
+}
+
+/* ── Pie chart: outer circle ── */
+.container :global(svg) :global(.pieOuterCircle) {
+  fill: none !important;
+  stroke: var(--foreground) !important;
+  stroke-width: 1px !important;
+}
+
+/* ── Pie chart: title ── */
+.container :global(svg) :global(.pieTitleText) {
+  fill: var(--foreground) !important;
+}
+
+/* ── Pie chart: slice labels ── */
+.container :global(svg) text:global(.slice) {
+  fill: #ffffff !important;
+}
+
+/* ── Pie chart: legend text ── */
+.container :global(svg) :global(.legend) text {
+  fill: var(--foreground) !important;
+}
+
+/* ── Git graph: branch lines ── */
+.container :global(svg) line:global(.branch) {
+  stroke: var(--muted-foreground) !important;
+  stroke-width: 2px !important;
+}
+
+/* ── Git graph: commit circles ── */
+.container :global(svg) circle:global(.commit) {
+  fill: var(--foreground) !important;
+  stroke: var(--background) !important;
+  stroke-width: 2px !important;
+}
+
+/* ── Git graph: merge commit (larger, hollow) ── */
+.container :global(svg) circle:global(.commit-merge) {
+  fill: var(--background) !important;
+  stroke: var(--foreground) !important;
+  stroke-width: 3px !important;
+}
+
+/* ── Git graph: arrows ── */
+.container :global(svg) path:global(.arrow) {
+  fill: none !important;
+  stroke: var(--muted-foreground) !important;
+  stroke-width: 2px !important;
+}
+
+/* ── Git graph: branch label backgrounds ── */
+.container :global(svg) rect:global(.branchLabelBkg) {
+  fill: var(--muted) !important;
+  stroke: var(--border) !important;
+  stroke-width: 1px !important;
+}
+
+/* ── Git graph: branch label text ── */
+.container :global(svg) :global(.branchLabel) text {
+  fill: var(--foreground) !important;
+}
+
+/* ── Git graph: commit label backgrounds ── */
+.container :global(svg) rect:global(.commit-label-bkg) {
+  fill: var(--background-secondary) !important;
+  stroke: var(--border) !important;
+  stroke-width: 1px !important;
+}
+
+/* ── Git graph: commit label text ── */
+.container :global(svg) text:global(.commit-label) {
+  fill: var(--foreground) !important;
+}
+
+/* ── Git graph: tag label (polygon shape) ── */
+.container :global(svg) polygon:global(.tag-label-bkg) {
+  fill: var(--muted) !important;
+  stroke: var(--foreground) !important;
+  stroke-width: 1px !important;
+}
+
+.container :global(svg) text:global(.tag-label) {
+  fill: var(--foreground) !important;
+  font-size: 10px !important;
+  dominant-baseline: central !important;
+}
+
+.container :global(svg) circle:global(.tag-hole) {
+  fill: var(--background) !important;
+  stroke: var(--foreground) !important;
+}
+
+/* ── Cluster/subgraph ── */
+.container :global(svg) :global(.cluster) rect {
+  fill: var(--background-secondary) !important;
+  stroke: var(--border) !important;
 }
 
 .fallback {
   padding: 1rem;
   background-color: var(--muted);
-  border-radius: var(--radius-md);
   overflow-x: auto;
 }

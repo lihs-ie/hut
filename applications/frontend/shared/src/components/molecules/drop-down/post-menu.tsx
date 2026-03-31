@@ -44,7 +44,6 @@ export const PostMenuDropDown = () => (
   >
     <span className={styles.trigger}>
       <BallpenIcon className={styles.triggerIcon} />
-      <span className={styles.triggerText}>投稿する</span>
     </span>
   </DropDown>
 );

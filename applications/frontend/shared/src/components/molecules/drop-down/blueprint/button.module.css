@@ -2,7 +2,6 @@
   display: flex;
   align-items: center;
   width: fit-content;
-  background: var(--primary);
   color: var(--primary-foreground);
   color: #fff;
   border-radius: 0.5rem;
@@ -11,7 +10,7 @@
 }
 
 .container:hover {
-  background: var(--primary-hover);
+  color: var(--primary-hover);
 }
 
 .open {

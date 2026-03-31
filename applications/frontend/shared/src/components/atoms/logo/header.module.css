@@ -1,4 +1,8 @@
 .container {
-  width: 100%;
-  height: auto;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--foreground);
+  line-height: 1;
+  user-select: none;
 }
