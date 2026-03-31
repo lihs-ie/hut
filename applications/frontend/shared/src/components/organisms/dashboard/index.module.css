@@ -64,7 +64,6 @@
 
 .section-content {
   padding: 1rem;
-  border-radius: var(--radius);
   background-color: var(--card);
   border: 1px solid var(--border);
 }

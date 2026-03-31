@@ -74,7 +74,6 @@
   margin-bottom: 1rem;
   background: color-mix(in oklch, var(--destructive) 10%, transparent);
   border: 1px solid var(--destructive);
-  border-radius: var(--radius-md);
   color: var(--destructive);
   font-size: 0.875rem;
 }

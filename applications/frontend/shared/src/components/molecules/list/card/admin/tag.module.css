@@ -3,19 +3,16 @@
   align-items: center;
   gap: 1rem;
   padding: 1.5rem;
-  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--card-foreground);
   text-decoration: none;
-  transition: all 0.2s ease-in-out;
+  transition: opacity 0.2s;
   cursor: pointer;
 }
 
 .container:hover {
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  border-color: var(--primary);
-  transform: translateY(-2px);
+  opacity: 0.6;
 }
 
 .logo {
@@ -26,7 +23,6 @@
   align-items: center;
   justify-content: center;
   background: var(--muted);
-  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -43,7 +39,8 @@
 
 .name {
   font-size: 1.125rem;
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   margin-bottom: 0.25rem;
   color: var(--foreground);
 }

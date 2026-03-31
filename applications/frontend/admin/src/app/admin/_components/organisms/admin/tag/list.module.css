@@ -15,10 +15,9 @@
   padding: 0 0.75rem;
   font-size: 1rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
   background: var(--background);
   color: var(--foreground);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 
 .search-input::placeholder {
@@ -28,7 +27,6 @@
 .search-input:focus {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring), transparent 80%);
 }
 
 .grid {

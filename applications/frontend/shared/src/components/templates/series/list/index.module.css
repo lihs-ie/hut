@@ -21,7 +21,8 @@
 
 .title {
   font-size: 1.875rem;
-  font-weight: bold;
+  font-weight: 900;
+  letter-spacing: -0.03em;
   margin-bottom: 0.5rem;
 }
 

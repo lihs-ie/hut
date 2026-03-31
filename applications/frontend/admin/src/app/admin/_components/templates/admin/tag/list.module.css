@@ -34,7 +34,6 @@
   font-weight: 500;
   color: var(--foreground);
   background-color: var(--primary);
-  border-radius: var(--radius);
   text-decoration: none;
   transition: background-color 0.2s ease;
 }

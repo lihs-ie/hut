@@ -16,7 +16,6 @@
   padding: 0 1rem;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: var(--radius);
   cursor: pointer;
   transition: background-color 0.2s ease, opacity 0.2s ease;
 }
