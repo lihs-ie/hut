@@ -171,8 +171,8 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.25rem 0.5rem 0.25rem 0.75rem;
-  background-color: var(--primary);
-  color: var(--primary-foreground);
+  background-color: var(--foreground);
+  color: var(--background);
   font-size: 0.8125rem;
   font-weight: 700;
 }
@@ -186,7 +186,7 @@
   padding: 0;
   border: none;
   background-color: transparent;
-  color: var(--primary-foreground);
+  color: var(--background);
   cursor: pointer;
   transition: background-color 0.15s;
 }
@@ -238,7 +238,7 @@
 }
 
 .toggle.checked {
-  background-color: var(--primary);
+  background-color: var(--foreground);
 }
 
 .togglethumb {
@@ -284,9 +284,9 @@
 
 .savebutton {
   padding: 0.625rem 2rem;
-  background-color: var(--primary);
-  color: var(--primary-foreground);
-  border: 2px solid var(--primary);
+  background-color: var(--foreground);
+  color: var(--background);
+  border: 2px solid var(--foreground);
   font-size: 0.9375rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -297,7 +297,7 @@
 }
 
 .savebutton:hover:not(:disabled) {
-  background-color: var(--primary-hover);
+  opacity: 0.7;
 }
 
 .savebutton:disabled {
@@ -335,8 +335,8 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: var(--foreground);
+  color: var(--background);
   text-decoration: none;
   font-size: 0.75rem;
   font-weight: 700;
@@ -348,7 +348,7 @@
 }
 
 .addchapterlink:hover {
-  background: var(--primary-hover);
+  opacity: 0.7;
 }
 
 .addicon {
@@ -427,9 +427,7 @@
 }
 
 .chapterlink:hover {
-  color: var(--primary);
-  border-color: var(--primary);
-  background-color: color-mix(in oklch, var(--primary) 6%, transparent);
+  opacity: 0.6;
 }
 
 .chaptericon {

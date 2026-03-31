@@ -21,13 +21,13 @@
 }
 
 .button-primary {
-  color: var(--primary-foreground);
-  border: none;
-  background-color: var(--primary);
+  color: var(--background);
+  border: 2px solid var(--foreground);
+  background-color: var(--foreground);
 }
 
 .button-primary:hover {
-  background-color: var(--primary-hover);
+  opacity: 0.7;
 }
 
 .button-primary:disabled {

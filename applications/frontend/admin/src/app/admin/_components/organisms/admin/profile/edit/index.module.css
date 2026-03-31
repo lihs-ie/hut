@@ -20,15 +20,15 @@
   padding: 0.75rem 2rem;
   font-size: 1rem;
   font-weight: 600;
-  color: var(--primary-foreground);
-  background: var(--primary);
-  border: none;
+  color: var(--background);
+  background: var(--foreground);
+  border: 2px solid var(--foreground);
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: opacity 0.2s;
 }
 
 .submit:hover:not(:disabled) {
-  background: var(--primary-hover);
+  opacity: 0.7;
 }
 
 .submit:disabled {
