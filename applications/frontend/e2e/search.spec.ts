@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+test.setTimeout(60000);
+
 type TestArgs = {
   page: Page;
 };
@@ -8,47 +10,28 @@ type TestArgs = {
  * Wait for search results to load, handling error state with retry
  * This is necessary because CI environment may have timing issues with Firebase Emulator
  */
-const waitForSearchResults = async (page: Page, timeout = 60000): Promise<void> => {
-  const startTime = Date.now();
-  let retryCount = 0;
-  const maxRetries = 5;
+const waitForSearchResults = async (page: Page): Promise<void> => {
+  const errorHeading = page.getByRole("heading", { name: "検索中にエラーが発生しました" });
+  const retryButton = page.getByRole("button", { name: "再試行" });
+  const resultsText = page.getByText(/検索結果：\d+件/);
 
-  while (Date.now() - startTime < timeout) {
-    // Check if error state is displayed
-    const errorHeading = page.getByRole("heading", { name: "検索中にエラーが発生しました" });
-    const isErrorVisible = await errorHeading.isVisible().catch(() => false);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await expect(resultsText).toBeVisible({ timeout: 10000 });
+      return;
+    } catch {
+      const isError = await errorHeading.isVisible().catch(() => false);
 
-    if (isErrorVisible) {
-      // Click retry button to attempt recovery
-      const retryButton = page.getByRole("button", { name: "再試行" });
-      if (await retryButton.isVisible().catch(() => false)) {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          await retryButton.click();
-          // Wait longer between retries to allow Firebase to stabilize
-          await page.waitForTimeout(2000);
-          continue;
-        }
+      if (isError && (await retryButton.isVisible().catch(() => false))) {
+        await retryButton.click();
+        continue;
+      }
+
+      if (attempt === 2) {
+        throw new Error("Search results did not load after 3 attempts");
       }
     }
-
-    // Check if results are loaded (either with content or empty)
-    const resultsText = page.getByText(/検索結果：\d+件/);
-    if (await resultsText.isVisible().catch(() => false)) {
-      return;
-    }
-
-    // Also check for loading skeleton or initial state
-    const skeleton = page.locator('[class*="skeleton"]');
-    if (await skeleton.isVisible().catch(() => false)) {
-      await page.waitForTimeout(1000);
-      continue;
-    }
-
-    await page.waitForTimeout(1000);
   }
-
-  throw new Error(`Search results did not load within ${timeout}ms after ${retryCount} retries`);
 };
 
 // シードデータの公開記事（テストで参照）
@@ -172,17 +155,12 @@ test.describe("free word search", () => {
     await page.goto("/search");
     await page.waitForLoadState("networkidle");
 
-    // Search for "TypeScript"
     const searchInput = page.getByPlaceholder("キーワードで検索...");
     await searchInput.fill("TypeScript");
 
-    // Wait for search results
-    await page.waitForTimeout(1000);
-
-    // Verify TypeScript article is found
     await expect(
       page.getByText("TypeScriptで型安全なコードを書く").first(),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test("searches by keyword in content", async ({ page }: TestArgs) => {
