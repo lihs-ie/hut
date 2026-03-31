@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDebounce } from "@shared/components/global/hooks/use-debounce";
 import { SearchIcon } from "@shared/components/atoms/icon/search";
 import { FilterIcon } from "@shared/components/atoms/icon/filter";
 import { XIcon } from "@shared/components/atoms/icon/cross";
@@ -81,6 +82,13 @@ export const SearchFilterPresenter = (props: Props) => {
     "freeWord",
     searchParamsParsers.freeWord,
   );
+  const [localFreeWord, setLocalFreeWord] = useState(freeWord);
+  const debouncedFreeWord = useDebounce(localFreeWord, 500);
+
+  useEffect(() => {
+    setFreeWord(debouncedFreeWord);
+  }, [debouncedFreeWord, setFreeWord]);
+
   const [tagNames, setTagNames] = useQueryState(
     "tags",
     searchParamsParsers.tags,
@@ -132,8 +140,8 @@ export const SearchFilterPresenter = (props: Props) => {
           <TextInput
             type="search"
             placeholder="キーワードで検索..."
-            value={freeWord}
-            onChange={setFreeWord}
+            value={localFreeWord}
+            onChange={setLocalFreeWord}
             className={styles["search-input"]}
             autoFocus
           />
