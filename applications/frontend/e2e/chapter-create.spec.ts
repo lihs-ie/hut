@@ -43,13 +43,14 @@ test.describe("chapter search token verification", () => {
     expect(chapterIdentifier).toBeDefined();
   });
 
-  test("search tokens exist for published chapter if seeded", async () => {
+  test("search tokens exist for published chapter", async () => {
     const chapterIdentifier =
       await getChapterIdentifierBySlug(existingChapterSlug);
 
     if (chapterIdentifier === undefined) {
-      test.skip(true, "chapter identifier not found in Firestore");
-      return;
+      throw new Error(
+        `Chapter identifier not found for slug: ${existingChapterSlug}`,
+      );
     }
 
     const tokenIndex = await getContentTokenIndex(
@@ -57,8 +58,9 @@ test.describe("chapter search token verification", () => {
       chapterIdentifier,
     );
 
+    expect(tokenIndex).toBeDefined();
+
     if (tokenIndex === undefined) {
-      test.skip(true, "chapter search tokens not seeded");
       return;
     }
 

@@ -40,6 +40,7 @@ async function clearAllData(): Promise<void> {
   await clearCollection("memos");
   await clearCollection("admin");
   await clearCollection("search-tokens");
+  await clearCollection("content-token-index");
   await clearCollection("site-documents");
   await clearCollection("index/tags/name");
   await clearCollection("index/articles/slug");

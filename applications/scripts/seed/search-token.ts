@@ -1,10 +1,3 @@
-/**
- * SearchTokenシードデータ
- *
- * SearchTokenは検索の逆インデックスとして機能し、
- * 各トークン（TagまたはNGram）がどのコンテンツを参照しているかをマップします。
- */
-
 import {
   createDocument,
   createSubDocument,
@@ -12,13 +5,12 @@ import {
   TAG_IDS,
   ARTICLE_IDS,
   SERIES_IDS,
+  CHAPTER_IDS,
   MEMO_IDS,
 } from "./common";
 
-// コンテンツタイプ
-type ContentType = "article" | "memo" | "series";
+type ContentType = "article" | "memo" | "series" | "chapter";
 
-// コンテンツ参照情報
 type ContentReference = {
   type: ContentType;
   id: string;
@@ -27,9 +19,7 @@ type ContentReference = {
   tags: (keyof typeof TAG_IDS)[];
 };
 
-// 全コンテンツのメタデータ
 const ALL_CONTENTS: ContentReference[] = [
-  // 記事
   {
     type: "article",
     id: ARTICLE_IDS.article1,
@@ -54,7 +44,6 @@ const ALL_CONTENTS: ContentReference[] = [
       "Next.js 13以降で導入されたApp Routerの基本的な使い方を解説します。",
     tags: ["nextjs", "react", "typescript"],
   },
-  // シリーズ（publishedのみ - draftは検索インデックスに含めない）
   {
     type: "series",
     id: SERIES_IDS.series1,
@@ -71,7 +60,27 @@ const ALL_CONTENTS: ContentReference[] = [
       "TypeScriptの型システムを最大限に活用し、保守性の高いアプリケーションを設計するためのパターンを解説するシリーズです。",
     tags: ["typescript", "react"],
   },
-  // メモ（publishedのみ - draftは検索インデックスに含めない）
+  {
+    type: "chapter",
+    id: CHAPTER_IDS.series1Chapter1,
+    title: "Rustの基礎：所有権とライフタイム",
+    excerpt: "Rustの所有権システムとライフタイムの基本を学びます。",
+    tags: ["rust"],
+  },
+  {
+    type: "chapter",
+    id: CHAPTER_IDS.series1Chapter2,
+    title: "メモリ管理の仕組み",
+    excerpt: "Rustのメモリ管理の仕組みを詳しく解説します。",
+    tags: ["rust"],
+  },
+  {
+    type: "chapter",
+    id: CHAPTER_IDS.series2Chapter1,
+    title: "型駆動開発入門",
+    excerpt: "TypeScriptの型システムを活用した開発手法を紹介します。",
+    tags: ["typescript"],
+  },
   {
     type: "memo",
     id: MEMO_IDS.memo1,
@@ -79,22 +88,37 @@ const ALL_CONTENTS: ContentReference[] = [
     excerpt: "Go言語ではエラーは値として扱う。goroutineは軽量スレッド。",
     tags: ["go"],
   },
-  // memo2 "TypeScript設定メモ" は status: "draft" のため検索インデックスに含めない
 ];
 
-// トークン識別子（Firestore document IDとしてそのまま使用）
-// Note: インフラ層と同じ形式（エンコードなし）を使用
 function encodeTokenIdentifier(identifier: string): string {
   return identifier;
 }
 
-// タグトークンを作成
+const contentTokenMap = new Map<string, string[]>();
+
+function trackContentToken(
+  contentType: ContentType,
+  contentIdentifier: string,
+  tokenIdentifier: string,
+): void {
+  const key = `${contentType}:${contentIdentifier}`;
+
+  if (!contentTokenMap.has(key)) {
+    contentTokenMap.set(key, []);
+  }
+
+  const tokens = contentTokenMap.get(key)!;
+
+  if (!tokens.includes(tokenIdentifier)) {
+    tokens.push(tokenIdentifier);
+  }
+}
+
 async function createTagTokens(): Promise<void> {
   console.log("\n  --- Creating Tag Tokens ---");
 
   const now = new Date();
 
-  // タグごとにコンテンツをグループ化
   const tagContentMap = new Map<string, ContentReference[]>();
 
   for (const content of ALL_CONTENTS) {
@@ -107,13 +131,10 @@ async function createTagTokens(): Promise<void> {
     }
   }
 
-  // 各タグに対してトークンを作成
   for (const [tagId, contents] of tagContentMap) {
     const tokenIdentifier = `tag:${tagId}`;
     const encodedTokenId = encodeTokenIdentifier(tokenIdentifier);
 
-    // トークンドキュメントを作成
-    // Note: インフラ層ではcreatedAt/updatedAtをFirestore Timestampとして保存
     await createDocument(
       "search-tokens",
       encodedTokenId,
@@ -127,7 +148,6 @@ async function createTagTokens(): Promise<void> {
       { useTimestamp: true },
     );
 
-    // 参照サブコレクションを作成
     for (const content of contents) {
       const refId = `${content.type}:${content.id}`;
 
@@ -141,29 +161,28 @@ async function createTagTokens(): Promise<void> {
             type: content.type,
             content: content.id,
           },
-          score: 10.0, // タグマッチは高スコア
+          score: 10.0,
           updatedAt: now,
         },
         { useTimestamp: true },
       );
+
+      trackContentToken(content.type, content.id, tokenIdentifier);
     }
   }
 }
 
-// Ngramトークンを作成
 async function createNgramTokens(): Promise<void> {
   console.log("\n  --- Creating Ngram Tokens ---");
 
   const now = new Date();
 
-  // Ngramごとにコンテンツをグループ化
   const ngramContentMap = new Map<
     string,
     Array<{ content: ContentReference; score: number }>
   >();
 
   for (const content of ALL_CONTENTS) {
-    // タイトルと概要からテキストを結合
     const searchText = [content.title, content.excerpt].join(" ");
     const ngrams = generateNgrams(searchText);
 
@@ -171,7 +190,6 @@ async function createNgramTokens(): Promise<void> {
       if (!ngramContentMap.has(ngram)) {
         ngramContentMap.set(ngram, []);
       }
-      // タイトルに含まれるNgramは高スコア
       const inTitle = content.title.toLowerCase().includes(ngram);
       const score = inTitle ? 5.0 : 2.0;
 
@@ -179,7 +197,6 @@ async function createNgramTokens(): Promise<void> {
     }
   }
 
-  // 各Ngramに対してトークンを作成（最初の50個のみ、テスト用）
   let count = 0;
   const maxTokens = 50;
 
@@ -189,8 +206,6 @@ async function createNgramTokens(): Promise<void> {
     const tokenIdentifier = `ngram:${ngram}`;
     const encodedTokenId = encodeTokenIdentifier(tokenIdentifier);
 
-    // トークンドキュメントを作成
-    // Note: インフラ層ではcreatedAt/updatedAtをFirestore Timestampとして保存
     await createDocument(
       "search-tokens",
       encodedTokenId,
@@ -204,7 +219,6 @@ async function createNgramTokens(): Promise<void> {
       { useTimestamp: true },
     );
 
-    // 参照サブコレクションを作成
     for (const { content, score } of contentRefs) {
       const refId = `${content.type}:${content.id}`;
 
@@ -223,6 +237,8 @@ async function createNgramTokens(): Promise<void> {
         },
         { useTimestamp: true },
       );
+
+      trackContentToken(content.type, content.id, tokenIdentifier);
     }
 
     count++;
@@ -231,9 +247,31 @@ async function createNgramTokens(): Promise<void> {
   console.log(`  Created ${count} ngram tokens (limited to ${maxTokens})`);
 }
 
+async function createContentTokenIndex(): Promise<void> {
+  console.log("\n  --- Creating Content Token Index ---");
+
+  const now = new Date();
+
+  for (const [contentKey, tokens] of contentTokenMap) {
+    await createDocument(
+      "content-token-index",
+      contentKey,
+      {
+        tokens,
+        updatedAt: now,
+      },
+      { useTimestamp: true },
+    );
+  }
+
+  console.log(`  Created ${contentTokenMap.size} content token index entries`);
+}
+
 export async function seedSearchTokens(): Promise<void> {
   console.log("\n--- Creating Search Tokens ---");
 
+  contentTokenMap.clear();
   await createTagTokens();
   await createNgramTokens();
+  await createContentTokenIndex();
 }
