@@ -1,4 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
+import {
+  getSeriesIdentifierBySlug,
+  waitForSearchTokens,
+} from "./helpers/search-token";
 
 type TestArgs = {
   page: Page;
@@ -66,5 +70,32 @@ test.describe("series edit page", () => {
     await expect(
       page.getByRole("link", { name: "編集" }).first(),
     ).toBeVisible({ timeout: 15000 });
+  });
+});
+
+test.describe("series search token verification", () => {
+  test("search tokens exist for published series", async ({
+    page,
+  }: TestArgs) => {
+    await page.goto(`/series/${series.slug}/edit`);
+    await page.waitForLoadState("networkidle");
+
+    const seriesIdentifier = await getSeriesIdentifierBySlug(series.slug);
+
+    if (seriesIdentifier === undefined) {
+      throw new Error(`Series identifier not found for slug: ${series.slug}`);
+    }
+
+    const tokenIndex = await waitForSearchTokens(
+      "series",
+      seriesIdentifier,
+      30000,
+    );
+
+    if (tokenIndex === undefined) {
+      throw new Error(`Token index not found for series: ${seriesIdentifier}`);
+    }
+
+    expect(tokenIndex.tokens.length).toBeGreaterThan(0);
   });
 });

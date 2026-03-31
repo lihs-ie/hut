@@ -1,4 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
+import {
+  getArticleIdentifierBySlug,
+  waitForSearchTokens,
+} from "./helpers/search-token";
 
 type TestArgs = {
   page: Page;
@@ -6,17 +10,11 @@ type TestArgs = {
 
 const newArticlePath = "/articles/new";
 
-/**
- * Generate a unique slug for test articles.
- */
 const generateTestSlug = (): string => {
   const timestamp = Date.now();
   return `e2e-test-article-${timestamp}`;
 };
 
-/**
- * Create frontmatter content for a new article.
- */
 const createFrontmatter = (options: {
   title: string;
   excerpt: string;
@@ -34,9 +32,6 @@ tags: [${tagsArray.join(", ")}]
 `;
 };
 
-/**
- * Fill CodeMirror editor with content.
- */
 const fillCodeMirrorEditor = async (page: Page, content: string): Promise<void> => {
   const editorContent = page.locator(".cm-content");
   await editorContent.click();
@@ -44,9 +39,6 @@ const fillCodeMirrorEditor = async (page: Page, content: string): Promise<void> 
   await page.keyboard.type(content);
 };
 
-/**
- * Test: Save a new article as draft.
- */
 const saveNewArticleAsDraft = async ({ page }: TestArgs): Promise<void> => {
   const testSlug = generateTestSlug();
   const testTitle = "E2Eテスト記事（下書き）";
@@ -78,9 +70,6 @@ const saveNewArticleAsDraft = async ({ page }: TestArgs): Promise<void> => {
   });
 };
 
-/**
- * Test: Publish a new article.
- */
 const publishNewArticle = async ({ page }: TestArgs): Promise<void> => {
   const testSlug = generateTestSlug();
   const testTitle = "E2Eテスト記事（公開）";
@@ -117,9 +106,6 @@ const publishNewArticle = async ({ page }: TestArgs): Promise<void> => {
   await page.waitForURL(/\/articles\//, { timeout: 15000 });
 };
 
-/**
- * Test: Save button is disabled when title is empty.
- */
 const saveButtonDisabledWithoutTitle = async ({
   page,
 }: TestArgs): Promise<void> => {
@@ -140,9 +126,6 @@ const saveButtonDisabledWithoutTitle = async ({
   await expect(saveButton).toBeDisabled();
 };
 
-/**
- * Test: Tags can be selected and cleared.
- */
 const tagSelectionWorks = async ({ page }: TestArgs): Promise<void> => {
   await page.goto(newArticlePath);
 
@@ -175,3 +158,60 @@ test("save new article as draft", saveNewArticleAsDraft);
 test("publish new article", publishNewArticle);
 test("save button disabled without title", saveButtonDisabledWithoutTitle);
 test("tag selection works", tagSelectionWorks);
+
+test.describe("search token verification", () => {
+  test("search tokens are created after publishing an article", async ({
+    page,
+  }: TestArgs) => {
+    const testSlug = generateTestSlug();
+    const testTitle = "E2Eテスト記事（SearchToken検証）";
+
+    await page.goto(newArticlePath);
+
+    await page.getByPlaceholder("タイトルを入力").fill(testTitle);
+
+    const frontmatter = createFrontmatter({
+      title: testTitle,
+      excerpt: "SearchTokenが正しく生成されることを検証するためのテスト記事です。",
+      slug: testSlug,
+      tags: [],
+    });
+    await fillCodeMirrorEditor(
+      page,
+      frontmatter + "# SearchToken検証テスト\n\nこれはSearchToken生成を検証するためのテスト記事です。",
+    );
+
+    await page.getByRole("button", { name: "TypeScript" }).click();
+
+    const publishCheckbox = page.getByRole("checkbox");
+    await page.getByPlaceholder("タイトルを入力").scrollIntoViewIfNeeded();
+    await publishCheckbox.evaluate((element: HTMLInputElement) => {
+      element.click();
+    });
+
+    await expect(publishCheckbox).toBeChecked();
+
+    const publishButton = page.getByRole("button", { name: /公開する/ });
+    await publishButton.click();
+
+    await page.waitForURL(/\/articles\//, { timeout: 15000 });
+
+    const articleIdentifier = await getArticleIdentifierBySlug(testSlug);
+
+    if (articleIdentifier === undefined) {
+      throw new Error(`Article identifier not found for slug: ${testSlug}`);
+    }
+
+    const tokenIndex = await waitForSearchTokens(
+      "article",
+      articleIdentifier,
+      30000,
+    );
+
+    if (tokenIndex === undefined) {
+      throw new Error(`Token index not found for article: ${articleIdentifier}`);
+    }
+
+    expect(tokenIndex.tokens.length).toBeGreaterThan(0);
+  });
+});
