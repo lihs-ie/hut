@@ -69,7 +69,7 @@ handle persist terminate event = do
           Article
           article.identifier
           article.timeline
-          (article.title ++ article.excerpt ++ article.content)
+          (unwords [article.title, article.excerpt, article.content])
           article.tags
     ArticleEditedPayload' edited ->
       persistHandle persist $
@@ -77,7 +77,7 @@ handle persist terminate event = do
           Article
           edited.next.identifier
           edited.next.timeline
-          (edited.next.title ++ edited.next.excerpt ++ edited.next.content)
+          (unwords [edited.next.title, edited.next.excerpt, edited.next.content])
           edited.next.tags
     ArticleTerminatePayload' reference -> terminateHandle terminate (show Article <> ":" <> reference)
     MemoCreatedPayload' memo ->
@@ -86,7 +86,7 @@ handle persist terminate event = do
           Memo
           memo.identifier
           memo.timeline
-          (memo.title ++ unwords (map (\entry -> entry.text) memo.entries))
+          (unwords [memo.title, unwords (map (\entry -> entry.text) memo.entries)])
           memo.tags
     MemoEditedPayload' edited ->
       persistHandle persist $
@@ -94,7 +94,7 @@ handle persist terminate event = do
           Memo
           edited.next.identifier
           edited.next.timeline
-          (edited.next.title ++ unwords (map (\entry -> entry.text) edited.next.entries))
+          (unwords [edited.next.title, unwords (map (\entry -> entry.text) edited.next.entries)])
           edited.next.tags
     MemoTerminatePayload' reference -> terminateHandle terminate (show Memo <> ":" <> reference)
     SeriesCreatedPayload' series ->
@@ -140,7 +140,7 @@ seriesSearchableText series =
   unwords
     [ series.title,
       fromMaybe "" series.description,
-      unwords (map (\chapter -> chapter.title ++ " " ++ chapter.content) series.chapters)
+      unwords (map (\chapter -> unwords [chapter.title, chapter.content]) series.chapters)
     ]
 
 persistHandle :: (Monad m) => Persist m -> PersistContext -> m (Either SearchTokenError ())

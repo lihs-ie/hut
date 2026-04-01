@@ -89,6 +89,10 @@ export const SearchFilterPresenter = (props: Props) => {
     setFreeWord(debouncedFreeWord);
   }, [debouncedFreeWord, setFreeWord]);
 
+  useEffect(() => {
+    setLocalFreeWord(freeWord);
+  }, [freeWord]);
+
   const [tagNames, setTagNames] = useQueryState(
     "tags",
     searchParamsParsers.tags,

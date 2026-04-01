@@ -25,8 +25,7 @@ export async function persist(
     );
   } else {
     await unwrapForNextJs(
-      AdminChapterWorkflowProvider.persist(unvalidated)
-        .andThen(EventBrokerProvider.pubSub.publish),
+      AdminChapterWorkflowProvider.persist(unvalidated),
     );
   }
 

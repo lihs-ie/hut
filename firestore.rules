@@ -22,6 +22,11 @@ service cloud.firestore {
     }
 
     match /chapters/{document} {
+      allow read: if resource.data.status == 'published' || request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    match /content-token-index/{document} {
       allow read: if true;
       allow write: if isAdmin();
     }

@@ -1,5 +1,5 @@
 import { Series } from "@shared/domains/series";
-import { Tag } from "@shared/domains/attributes/tag";
+import { Tag, TagName } from "@shared/domains/attributes/tag";
 import {
   SeriesSummaryCard,
   Props as SeriesSummaryCardProps,
@@ -37,9 +37,9 @@ export const SeriesList = async (props: Props) => {
     <div className={styles.container}>
       <div className={styles.grid}>
         {props.seriesList.map((series) => {
-          const tagNames: string[] = series.tags
+          const tagNames = series.tags
             .map((identifier) => tagNameMap.get(identifier))
-            .filter((name) => name !== undefined);
+            .filter((name): name is TagName => name !== undefined);
           const cardProps: SeriesSummaryCardProps = {
             slug: series.slug,
             title: series.title,

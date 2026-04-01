@@ -98,11 +98,9 @@ export const ChapterEditOrganism = (props: Props) => {
       setTitle(frontmatterTitle);
     }
 
-    if (!props.initial) {
-      const frontmatterSlug = extractFrontmatterSlug(newContent);
-      if (frontmatterSlug !== null && frontmatterSlug !== slug) {
-        setSlug(frontmatterSlug);
-      }
+    const frontmatterSlug = extractFrontmatterSlug(newContent);
+    if (frontmatterSlug !== null && frontmatterSlug !== slug) {
+      setSlug(frontmatterSlug);
     }
 
     const currentUrls = extractImageUrls(newContent);
@@ -130,7 +128,7 @@ export const ChapterEditOrganism = (props: Props) => {
       await props.persist({
         identifier,
         title,
-        slug: props.initial?.slug ?? slug,
+        slug,
         content: stripFrontmatter(content).trim() || title,
         images,
         status: status ?? PublishStatus.DRAFT,
