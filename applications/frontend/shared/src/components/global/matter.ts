@@ -26,6 +26,13 @@ tags: []
 
 `;
 
+export const CHAPTER_FRONTMATTER_TEMPLATE = `---
+title:
+slug:
+---
+
+`;
+
 export const updateFrontmatterTitle = (
   content: string,
   newTitle: string

@@ -3,6 +3,7 @@
 import { cache } from "react";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { Series, UnvalidatedCriteria } from "@shared/domains/series";
+import { PublishStatus } from "@shared/domains/common";
 import { SeriesWorkflowProvider } from "@shared/providers/workflows/series";
 
 export const findBySlug = cache(async (slug: string): Promise<Series> => {
@@ -17,6 +18,11 @@ export const find = cache(async (identifier: string): Promise<Series> => {
 
 export const search = cache(
   async (unvalidated: UnvalidatedCriteria): Promise<Series[]> => {
-    return await unwrapForNextJs(SeriesWorkflowProvider.search(unvalidated));
+    return await unwrapForNextJs(
+      SeriesWorkflowProvider.search({
+        ...unvalidated,
+        status: PublishStatus.PUBLISHED,
+      }),
+    );
   },
 );

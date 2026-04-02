@@ -4,7 +4,11 @@ import { unwrapForNextJs, ValidationHttpError } from "@shared/components/global/
 import { AdminImageUploaderProvider } from "../providers/infrastructure/storage";
 import { requireAdmin } from "@/aspects/auth-guard";
 
-const ALLOWED_PATH_PREFIXES = ["images/articles/", "images/memos/"] as const;
+const ALLOWED_PATH_PREFIXES = [
+  "images/articles/",
+  "images/memos/",
+  "images/chapters/",
+] as const;
 
 const ALLOWED_IMAGE_CONTENT_TYPES = [
   "image/jpeg",

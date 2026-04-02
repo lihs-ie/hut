@@ -1,12 +1,13 @@
 .container {
   display: inline-flex;
   align-items: center;
-  border-radius: 4px;
-  background: var(--secondary);
-  padding: 0.125rem 0.625rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--secondary-foreground);
+  background: transparent;
+  padding: 0.125rem 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 @media (max-width: 600px) {

@@ -1,13 +1,5 @@
-import Image from "next/image";
+import styles from "./header.module.css";
 
 export const HeaderLogo = () => (
-  <Image
-    src={"/logo/header-logo.png"}
-    alt="lihs"
-    width={0}
-    height={0}
-    sizes="100vw"
-    style={{ width: "100%", height: "auto" }}
-    priority
-  />
+  <span className={styles.container}>hut</span>
 );

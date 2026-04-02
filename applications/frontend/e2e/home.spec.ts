@@ -4,7 +4,11 @@ type TestArgs = {
   page: Page;
 };
 
-// シードデータの公開記事情報 (下書きを除く)
+const seriesData = {
+  slug: "rust-system-programming",
+  title: "Rustで学ぶシステムプログラミング",
+};
+
 const publishedArticles = [
   {
     slug: "typescript-type-safe-code",
@@ -58,29 +62,30 @@ test.describe("home page", () => {
       await expect(page.locator("main")).toBeVisible();
     });
 
-    test("displays sections in correct order: ARTICLE, MEMO, Profile", async ({
+    test("displays sections in correct order: ARTICLE, MEMO, SERIES, Profile", async ({
       page,
     }: TestArgs) => {
       await page.goto("/");
       await page.waitForLoadState("networkidle");
 
-      // Get all sections
       const articleSection = page.getByRole("heading", { name: "ARTICLE" });
       const memoSection = page.getByRole("heading", { name: "MEMO" });
+      const seriesSection = page.getByRole("heading", { name: "SERIES" });
       const profileName = page.getByRole("heading", { name: profile.name });
 
-      // All should be visible
       await expect(articleSection).toBeVisible();
       await expect(memoSection).toBeVisible();
+      await expect(seriesSection).toBeVisible();
       await expect(profileName).toBeVisible();
 
-      // Verify order by checking bounding boxes
       const articleBox = await articleSection.boundingBox();
       const memoBox = await memoSection.boundingBox();
+      const seriesBox = await seriesSection.boundingBox();
       const profileBox = await profileName.boundingBox();
 
       expect(articleBox!.y).toBeLessThan(memoBox!.y);
-      expect(memoBox!.y).toBeLessThan(profileBox!.y);
+      expect(memoBox!.y).toBeLessThan(seriesBox!.y);
+      expect(seriesBox!.y).toBeLessThan(profileBox!.y);
     });
   });
 
@@ -450,6 +455,42 @@ test.describe("home page", () => {
       await viewMoreLink.click();
 
       await expect(page).toHaveURL(/\/memos/);
+    });
+  });
+
+  test.describe("series section", () => {
+    test("displays SERIES section heading", async ({ page }: TestArgs) => {
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
+
+      await expect(
+        page.getByRole("heading", { name: "SERIES" }),
+      ).toBeVisible();
+    });
+
+    test("displays seeded series card title", async ({ page }: TestArgs) => {
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
+
+      await expect(page.getByText(seriesData.title).first()).toBeVisible();
+    });
+
+    test("displays もっと見る link pointing to /series", async ({
+      page,
+    }: TestArgs) => {
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
+
+      const seriesSection = page.locator("section").filter({
+        has: page.getByRole("heading", { name: "SERIES" }),
+      });
+      const viewMoreLink = seriesSection.getByRole("link", {
+        name: /もっと見る/,
+      });
+      await expect(viewMoreLink).toBeVisible();
+
+      const href = await viewMoreLink.getAttribute("href");
+      expect(href).toBe("/series");
     });
   });
 

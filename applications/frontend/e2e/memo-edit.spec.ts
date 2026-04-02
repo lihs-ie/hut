@@ -1,4 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
+import {
+  getMemoIdentifierBySlug,
+  getContentTokenIndex,
+} from "./helpers/search-token";
 
 type TestArgs = {
   page: Page;
@@ -264,6 +268,27 @@ test.describe("memo entry submission", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByText(uniqueContent).first()).toBeVisible({ timeout: 30000 });
+  });
+});
+
+test.describe("memo search token verification", () => {
+  test("search tokens exist for published memo", async () => {
+    const memoIdentifier = await getMemoIdentifierBySlug(publishedMemo.slug);
+
+    if (memoIdentifier === undefined) {
+      test.skip(true, "seed memo not found in Firestore");
+      return;
+    }
+
+    const tokenIndex = await getContentTokenIndex("memo", memoIdentifier);
+
+    expect(tokenIndex).toBeDefined();
+
+    if (tokenIndex === undefined) {
+      return;
+    }
+
+    expect(tokenIndex.tokens.length).toBeGreaterThan(0);
   });
 });
 

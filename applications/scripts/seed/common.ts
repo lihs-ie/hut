@@ -47,10 +47,22 @@ export const ARTICLE_IDS = {
   article3: ulid(),
   article4: ulid(),
   article5: ulid(),
+  article6: ulid(),
 };
 
 export const SERIES_IDS = {
   series1: ulid(),
+  series2: ulid(),
+  series3: ulid(),
+};
+
+export const CHAPTER_IDS = {
+  series1Chapter1: ulid(),
+  series1Chapter2: ulid(),
+  series2Chapter1: ulid(),
+  series2Chapter2: ulid(),
+  series2Chapter3: ulid(),
+  series3Chapter1: ulid(),
 };
 
 export const MEMO_IDS = {

@@ -6,7 +6,6 @@
 
 .button {
   padding: 0.5rem 1rem;
-  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--foreground);
@@ -20,13 +19,13 @@
 }
 
 .active {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border-color: var(--primary);
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
 }
 
 .active:hover {
-  background: var(--primary-hover);
+  opacity: 0.7;
 }
 
 @media (max-width: 640px) {

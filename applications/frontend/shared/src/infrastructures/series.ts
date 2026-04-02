@@ -35,15 +35,8 @@ type PersistedSeries = {
   description?: string;
   subTitle?: string | null;
   cover: string | null;
-  chapters: Array<{
-    title: string;
-    content: string;
-    slug: string;
-    timeline: {
-      createdAt: Timestamp;
-      updatedAt: Timestamp;
-    };
-  }>;
+  status: string;
+  chapters: string[];
   timeline: {
     createdAt: Timestamp;
     updatedAt: Timestamp;
@@ -72,15 +65,8 @@ export const FirebaseSeriesRepository = (
           slug: series.slug,
           tags: series.tags,
           subTitle: series.subTitle,
-          chapters: series.chapters.map((chapter) => ({
-            title: chapter.title,
-            slug: chapter.slug,
-            content: chapter.content,
-            timeline: {
-              createdAt: Timestamp.fromDate(chapter.timeline.createdAt),
-              updatedAt: Timestamp.fromDate(chapter.timeline.updatedAt),
-            },
-          })),
+          status: series.status,
+          chapters: series.chapters,
           timeline: {
             createdAt: Timestamp.fromDate(series.timeline.createdAt),
             updatedAt: Timestamp.fromDate(series.timeline.updatedAt),
@@ -102,15 +88,8 @@ export const FirebaseSeriesRepository = (
           slug: data.slug,
           tags: data.tags,
           subTitle: data.subTitle || null,
-          chapters: data.chapters.map((chapter) => ({
-            title: chapter.title,
-            slug: chapter.slug,
-            content: chapter.content,
-            timeline: {
-              createdAt: chapter.timeline.createdAt.toDate(),
-              updatedAt: chapter.timeline.updatedAt.toDate(),
-            },
-          })),
+          status: data.status ?? "published",
+          chapters: data.chapters ?? [],
           timeline: {
             createdAt: data.timeline.createdAt.toDate(),
             updatedAt: data.timeline.updatedAt.toDate(),
@@ -228,7 +207,23 @@ export const FirebaseSeriesRepository = (
   const search: SeriesRepository["search"] = (criteria: Criteria) => {
     return fromPromise(
       (async () => {
-        const q = operations.query(collection);
+        const constraints = [];
+
+        if (criteria.slug) {
+          constraints.push(operations.where("slug", "==", criteria.slug));
+        }
+
+        if (criteria.status) {
+          constraints.push(operations.where("status", "==", criteria.status));
+        }
+
+        if (criteria.tags && criteria.tags.length > 0) {
+          constraints.push(
+            operations.where("tags", "array-contains-any", criteria.tags),
+          );
+        }
+
+        const q = operations.query(collection, ...constraints);
         const querySnapshot = await operations.getDocs(q);
 
         const seriesList: Series[] = [];
@@ -236,8 +231,8 @@ export const FirebaseSeriesRepository = (
           seriesList.push(doc.data());
         });
 
-        if (criteria.slug) {
-          const keyword = criteria.slug.toLowerCase();
+        if (criteria.freeWord) {
+          const keyword = criteria.freeWord.toLowerCase();
           return seriesList.filter((series) =>
             series.title.toLowerCase().includes(keyword),
           );

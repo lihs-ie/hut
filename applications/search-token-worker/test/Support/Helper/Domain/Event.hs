@@ -5,6 +5,12 @@ module Support.Helper.Domain.Event
     createMemoCreatedEvent,
     createMemoEditedEvent,
     createMemoTerminateEvent,
+    createSeriesCreatedEvent,
+    createSeriesEditedEvent,
+    createSeriesTerminateEvent,
+    createChapterCreatedEvent,
+    createChapterEditedEvent,
+    createChapterTerminateEvent,
   )
 where
 
@@ -14,12 +20,17 @@ import Domain.Common (Timeline (..))
 import Domain.Event
   ( ArticleCreatedPayload (..),
     ArticleEditedPayload (..),
+    ChapterCreatedPayload (..),
+    ChapterEditedPayload (..),
     Event (..),
     EventPayload (..),
     EventType (..),
     MemoCreatedPayload (..),
     MemoEditedPayload (..),
     MemoEntry (..),
+    SeriesChapter (..),
+    SeriesCreatedPayload (..),
+    SeriesEditedPayload (..),
   )
 
 seedToTime :: Int -> UTCTime
@@ -102,3 +113,72 @@ createMemoEditedEvent seed =
 createMemoTerminateEvent :: Int -> Event
 createMemoTerminateEvent seed =
   createEvent seed MemoTerminated (MemoTerminatePayload' ("memo-" <> show seed))
+
+createSeriesCreatedPayload :: Int -> SeriesCreatedPayload
+createSeriesCreatedPayload seed =
+  SeriesCreatedPayload
+    { identifier = "series-" <> show seed,
+      title = "title-" <> show seed,
+      slug = "slug-" <> show seed,
+      description = Just ("description-" <> show seed),
+      tags = ["tag-" <> show seed],
+      chapters =
+        [ SeriesChapter
+            { title = "chapter-" <> show seed,
+              slug = "chapter-slug-" <> show seed,
+              content = "chapter-content-" <> show seed,
+              timeline = seedToTimeline seed
+            }
+        ],
+      timeline = seedToTimeline seed
+    }
+
+createSeriesCreatedEvent :: Int -> Event
+createSeriesCreatedEvent seed =
+  createEvent seed SeriesCreated (SeriesCreatedPayload' (createSeriesCreatedPayload seed))
+
+createSeriesEditedEvent :: Int -> Event
+createSeriesEditedEvent seed =
+  createEvent
+    seed
+    SeriesEdited
+    ( SeriesEditedPayload'
+        SeriesEditedPayload
+          { next = createSeriesCreatedPayload (seed + 1),
+            before = createSeriesCreatedPayload seed
+          }
+    )
+
+createSeriesTerminateEvent :: Int -> Event
+createSeriesTerminateEvent seed =
+  createEvent seed SeriesTerminated (SeriesTerminatePayload' ("series-" <> show seed))
+
+createChapterCreatedPayload :: Int -> ChapterCreatedPayload
+createChapterCreatedPayload seed =
+  ChapterCreatedPayload
+    { identifier = "chapter-" <> show seed,
+      title = "title-" <> show seed,
+      slug = "slug-" <> show seed,
+      content = "content-" <> show seed,
+      timeline = seedToTimeline seed
+    }
+
+createChapterCreatedEvent :: Int -> Event
+createChapterCreatedEvent seed =
+  createEvent seed ChapterCreated (ChapterCreatedPayload' (createChapterCreatedPayload seed))
+
+createChapterEditedEvent :: Int -> Event
+createChapterEditedEvent seed =
+  createEvent
+    seed
+    ChapterEdited
+    ( ChapterEditedPayload'
+        ChapterEditedPayload
+          { next = createChapterCreatedPayload (seed + 1),
+            before = createChapterCreatedPayload seed
+          }
+    )
+
+createChapterTerminateEvent :: Int -> Event
+createChapterTerminateEvent seed =
+  createEvent seed ChapterTerminated (ChapterTerminatePayload' ("chapter-" <> show seed))
