@@ -1,25 +1,57 @@
 import { MarkdownRenderer } from "@shared/components/global/mdx";
 import { ChapterSlug, Series, SeriesSlug } from "@shared/domains/series";
+import type { Chapter, ChapterIdentifier } from "@shared/domains/series/chapter";
 import { ChapterPresenter } from "./index.presenter";
+import styles from "./index.presenter.module.css";
 
 export type Props = {
-  seriesSlug: SeriesSlug;
+  slug: SeriesSlug;
   chapterSlug: ChapterSlug;
-  findBySlug: (slug: SeriesSlug) => Promise<Series>;
+  series: Series;
   renderer: MarkdownRenderer;
+  findChapterBySlug: (slug: string) => Promise<Chapter>;
+  findChaptersByIdentifiers: (identifiers: ChapterIdentifier[]) => Promise<Chapter[]>;
 };
 
-export const revalidate = 3600;
+export const ChapterContainer = async (props: Props) => {
+  const [currentChapter, allChapters] = await Promise.all([
+    props.findChapterBySlug(props.chapterSlug),
+    props.findChaptersByIdentifiers(props.series.chapters),
+  ]);
 
-export const Chapter = async (props: Props) => {
-  const series = await props.findBySlug(props.seriesSlug);
+  const currentIndex = allChapters.findIndex(
+    (chapter) => chapter.slug === props.chapterSlug
+  );
+
+  if (currentIndex === -1) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.wrapper}>
+          <p>チャプターが見つかりませんでした</p>
+        </div>
+      </div>
+    );
+  }
+
+  const prevChapter = currentIndex > 0 ? allChapters[currentIndex - 1] : null;
+  const nextChapter =
+    currentIndex < allChapters.length - 1
+      ? allChapters[currentIndex + 1]
+      : null;
+
+  const renderedContent = await props.renderer(currentChapter.content);
 
   return (
     <ChapterPresenter
-      series={series}
-      seriesSlug={props.seriesSlug}
+      slug={props.slug}
       chapterSlug={props.chapterSlug}
-      renderer={props.renderer}
+      seriesTitle={props.series.title}
+      currentChapter={currentChapter}
+      allChapters={allChapters}
+      currentIndex={currentIndex}
+      prevChapter={prevChapter}
+      nextChapter={nextChapter}
+      renderedContent={renderedContent}
     />
   );
 };

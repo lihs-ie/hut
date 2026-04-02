@@ -5,6 +5,7 @@ import {
   createSeriesFindBySlugWorkflow,
   createSeriesSearchWorkflow,
   createSeriesPersistWorkflow,
+  createSeriesTerminateWithChaptersWorkflow,
   createSeriesTerminateWorkflow,
 } from "@shared/workflows/series";
 import {
@@ -21,6 +22,9 @@ import {
   SeriesIdentifierMold,
   SeriesSlugMold,
 } from "../support/molds/domains/series";
+import {
+  ChapterIdentifierMold,
+} from "../support/molds/domains/series/chapter";
 import { Command } from "@shared/workflows/common";
 
 describe("workflows/series", () => {
@@ -152,7 +156,7 @@ describe("workflows/series", () => {
         mockLogger
       );
 
-      const result = await workflow({ slug: null, tags: null }).unwrap();
+      const result = await workflow({ slug: null, tags: null, status: null, freeWord: null }).unwrap();
 
       expect(result).toEqual(seriesList);
       expect(searchMock).toHaveBeenCalled();
@@ -167,7 +171,7 @@ describe("workflows/series", () => {
         mockLogger
       );
 
-      const result = await workflow({ slug, tags: null }).unwrap();
+      const result = await workflow({ slug, tags: null, status: null, freeWord: null }).unwrap();
 
       expect(result).toEqual(seriesList);
     });
@@ -180,7 +184,7 @@ describe("workflows/series", () => {
         mockLogger
       );
 
-      const result = await workflow({ slug: null, tags: null }).unwrapError();
+      const result = await workflow({ slug: null, tags: null, status: null, freeWord: null }).unwrapError();
 
       expect(result).toEqual(error);
     });
@@ -204,6 +208,7 @@ describe("workflows/series", () => {
         chapters: series.chapters,
         description: series.description,
         cover: series.cover,
+        status: series.status,
         timeline: series.timeline,
       }).unwrap();
 
@@ -220,11 +225,12 @@ describe("workflows/series", () => {
 
       const result = workflow({
         identifier: "invalid",
-        title: "", // 空のタイトルは無効
+        title: "",
         slug: "test-slug",
         tags: [],
         subTitle: null,
         chapters: [],
+        status: "published",
         timeline: { createdAt: new Date(), updatedAt: new Date() },
       });
 
@@ -252,10 +258,67 @@ describe("workflows/series", () => {
         chapters: series.chapters,
         description: series.description,
         cover: series.cover,
+        status: series.status,
         timeline: series.timeline,
       }).unwrapError();
 
       expect(result).toEqual(error);
+    });
+  });
+
+  describe("createSeriesTerminateWithChaptersWorkflow", () => {
+    it("チャプターを持つ連載を削除するとチャプターも連鎖削除される", async () => {
+      const chapterIdentifier1 = Forger(ChapterIdentifierMold).forgeWithSeed(1);
+      const chapterIdentifier2 = Forger(ChapterIdentifierMold).forgeWithSeed(2);
+      const series = Forger(SeriesMold).forgeWithSeed(1, {
+        chapters: [chapterIdentifier1, chapterIdentifier2],
+      });
+      const findMock = vi.fn().mockReturnValue(ok(series).toAsync());
+      const terminateChapterMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+      const terminateSeriesMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createSeriesTerminateWithChaptersWorkflow(
+        validateSeriesIdentifier,
+      )(findMock)(terminateChapterMock)(terminateSeriesMock)(mockLogger);
+
+      const result = await workflow(series.identifier).unwrap();
+
+      expect(result.payload.series).toBe(series.identifier);
+      expect(findMock).toHaveBeenCalledWith(series.identifier);
+      expect(terminateChapterMock).toHaveBeenCalledWith(chapterIdentifier1);
+      expect(terminateChapterMock).toHaveBeenCalledWith(chapterIdentifier2);
+      expect(terminateSeriesMock).toHaveBeenCalledWith(series.identifier);
+    });
+
+    it("チャプターを持たない連載を削除するとチャプター削除はスキップされる", async () => {
+      const series = Forger(SeriesMold).forgeWithSeed(2, { chapters: [] });
+      const findMock = vi.fn().mockReturnValue(ok(series).toAsync());
+      const terminateChapterMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+      const terminateSeriesMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createSeriesTerminateWithChaptersWorkflow(
+        validateSeriesIdentifier,
+      )(findMock)(terminateChapterMock)(terminateSeriesMock)(mockLogger);
+
+      await workflow(series.identifier).unwrap();
+
+      expect(terminateChapterMock).not.toHaveBeenCalled();
+      expect(terminateSeriesMock).toHaveBeenCalledWith(series.identifier);
+    });
+
+    it("無効なidentifierでValidationErrorを返す", async () => {
+      const findMock = vi.fn();
+      const terminateChapterMock = vi.fn();
+      const terminateSeriesMock = vi.fn();
+
+      const workflow = createSeriesTerminateWithChaptersWorkflow(
+        validateSeriesIdentifier,
+      )(findMock)(terminateChapterMock)(terminateSeriesMock)(mockLogger);
+
+      const result = workflow("invalid-identifier");
+
+      expect(await result.match({ ok: () => false, err: () => true })).toBe(true);
+      expect(findMock).not.toHaveBeenCalled();
     });
   });
 

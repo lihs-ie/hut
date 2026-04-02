@@ -22,7 +22,8 @@
 
 .empty-title {
   font-size: 1.125rem;
-  font-weight: 500;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
 }
 

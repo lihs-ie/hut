@@ -3,7 +3,6 @@
   align-items: center;
   justify-content: center;
 
-  border-radius: 16px;
   background: var(--card);
   border: 1px solid var(--border);
   padding: 4px 8px;
@@ -14,11 +13,11 @@
   width: fit-content;
 
   cursor: pointer;
+  transition: opacity 0.2s;
 }
 
 .container:hover {
-  background: var(--primary-hover);
-  color: var(--foreground);
+  opacity: 0.6;
 }
 
 .image {

@@ -97,10 +97,9 @@ describe("domains/common/image-upload", () => {
       expect(path).toBe("memos/ref456/photo.webp");
     });
 
-    it("chapterの場合はエラーをスローする", () => {
-      expect(() => {
-        generateUploadPath("chapter", "ref789", "image.webp");
-      }).toThrow("Chapter upload requires separate handling");
+    it("chapterの場合はimages/chapters/プレフィックスのパスを生成する", () => {
+      const path = generateUploadPath("chapter", "ref789", "image.webp");
+      expect(path).toBe("images/chapters/ref789/image.webp");
     });
   });
 

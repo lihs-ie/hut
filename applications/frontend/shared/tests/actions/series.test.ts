@@ -90,7 +90,7 @@ describe("series actions", () => {
       const unwrapForNextJs = await setupUnwrapWithResolvedValue(seriesList);
 
       const { search } = await import("@shared/actions/series");
-      const result = await search({ slug: null, tags: null });
+      const result = await search({ slug: null, tags: null, status: null, freeWord: null });
 
       expect(result).toEqual(seriesList);
       expect(unwrapForNextJs).toHaveBeenCalled();
@@ -101,7 +101,7 @@ describe("series actions", () => {
       await setupUnwrapWithResolvedValue(seriesList);
 
       const { search } = await import("@shared/actions/series");
-      const result = await search({ slug: "test", tags: null });
+      const result = await search({ slug: "test", tags: null, status: null, freeWord: null });
 
       expect(result).toEqual(seriesList);
     });
@@ -110,7 +110,7 @@ describe("series actions", () => {
       await setupUnwrapWithResolvedValue([]);
 
       const { search } = await import("@shared/actions/series");
-      const result = await search({ slug: "non-existent", tags: null });
+      const result = await search({ slug: "non-existent", tags: null, status: null, freeWord: null });
 
       expect(result).toEqual([]);
     });

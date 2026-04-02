@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDebounce } from "@shared/components/global/hooks/use-debounce";
 import { SearchIcon } from "@shared/components/atoms/icon/search";
 import { FilterIcon } from "@shared/components/atoms/icon/filter";
 import { XIcon } from "@shared/components/atoms/icon/cross";
 import { FileTextIcon } from "@shared/components/atoms/icon/file-text";
 import { MessageSquareIcon } from "@shared/components/atoms/icon/message";
+import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 import { ChevronDownIcon } from "@shared/components/atoms/icon/chevron-down";
 import { TextInput } from "@shared/components/atoms/input/text";
 import { VariantButton } from "@shared/components/atoms/button/variant";
@@ -80,6 +82,17 @@ export const SearchFilterPresenter = (props: Props) => {
     "freeWord",
     searchParamsParsers.freeWord,
   );
+  const [localFreeWord, setLocalFreeWord] = useState(freeWord);
+  const debouncedFreeWord = useDebounce(localFreeWord, 500);
+
+  useEffect(() => {
+    setFreeWord(debouncedFreeWord);
+  }, [debouncedFreeWord, setFreeWord]);
+
+  useEffect(() => {
+    setLocalFreeWord(freeWord);
+  }, [freeWord]);
+
   const [tagNames, setTagNames] = useQueryState(
     "tags",
     searchParamsParsers.tags,
@@ -131,8 +144,8 @@ export const SearchFilterPresenter = (props: Props) => {
           <TextInput
             type="search"
             placeholder="キーワードで検索..."
-            value={freeWord}
-            onChange={setFreeWord}
+            value={localFreeWord}
+            onChange={setLocalFreeWord}
             className={styles["search-input"]}
             autoFocus
           />
@@ -212,18 +225,15 @@ export const SearchFilterPresenter = (props: Props) => {
                 <MessageSquareIcon className={styles["button-icon"]} />
                 メモ
               </VariantButton>
-              {/* <VariantButton
-                variant={
-                  types?.includes(ContentType.SERIES) ? "default" : "outline"
-                }
+              <VariantButton
+                variant={type === ContentType.SERIES ? "default" : "outline"}
                 size="sm"
-                onClick={() =>
-                  setArrayParameter(setTypes)(types, ContentType.SERIES)
-                }
+                onClick={() => setType(ContentType.SERIES)}
                 className={styles["filter-button"]}
               >
-                <BookOpenIcon className={styles["button-icon"]} />本
-              </VariantButton> */}
+                <BookOpenIcon className={styles["button-icon"]} />
+                連載
+              </VariantButton>
             </div>
           </div>
 

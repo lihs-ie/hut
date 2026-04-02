@@ -6,7 +6,7 @@ import styles from "./grid.module.css";
 const CONTENT_TYPE_DISPLAY_NAMES: Record<string, string> = {
   article: "記事",
   memo: "メモ",
-  series: "シリーズ",
+  series: "連載",
 };
 
 type Props = {

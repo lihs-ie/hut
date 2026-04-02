@@ -12,11 +12,15 @@ import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Domain.Event
   ( ArticleCreatedPayload (..),
     ArticleEditedPayload (..),
+    ChapterCreatedPayload (..),
+    ChapterEditedPayload (..),
     Event (..),
     EventPayload (..),
     EventType (..),
     MemoCreatedPayload (..),
     MemoEditedPayload (..),
+    SeriesCreatedPayload (..),
+    SeriesEditedPayload (..),
   )
 import Test.Hspec
 
@@ -59,6 +63,37 @@ mkMemoPayloadJSON seed =
       "entries" .= [mkMemoEntryJSON seed],
       "tags" .= (["tag-" <> show seed] :: [String]),
       "status" .= ("published" :: String),
+      "timeline" .= mkTimelineJSON seed
+    ]
+
+mkChapterJSON :: Int -> Value
+mkChapterJSON seed =
+  object
+    [ "title" .= ("chapter-" <> show seed),
+      "slug" .= ("chapter-slug-" <> show seed),
+      "content" .= ("chapter-content-" <> show seed),
+      "timeline" .= mkTimelineJSON seed
+    ]
+
+mkChapterPayloadJSON :: Int -> Value
+mkChapterPayloadJSON seed =
+  object
+    [ "identifier" .= ("chapter-" <> show seed),
+      "title" .= ("title-" <> show seed),
+      "slug" .= ("slug-" <> show seed),
+      "content" .= ("content-" <> show seed),
+      "timeline" .= mkTimelineJSON seed
+    ]
+
+mkSeriesPayloadJSON :: Int -> Value
+mkSeriesPayloadJSON seed =
+  object
+    [ "identifier" .= ("series-" <> show seed),
+      "title" .= ("title-" <> show seed),
+      "slug" .= ("slug-" <> show seed),
+      "description" .= ("description-" <> show seed :: String),
+      "tags" .= (["tag-" <> show seed] :: [String]),
+      "chapters" .= [mkChapterJSON seed],
       "timeline" .= mkTimelineJSON seed
     ]
 
@@ -173,6 +208,100 @@ spec = do
               MemoTerminatePayload' reference ->
                 reference `shouldBe` "memo-1"
               _ -> expectationFailure "Expected MemoTerminatePayload'"
+
+    context "series.created" $ do
+      it "converts to SeriesCreated event" $ do
+        let payload = object ["snapshot" .= mkSeriesPayloadJSON 1]
+            json = mkEventJSON 1 "series.created" payload
+        case parseAndConvert json of
+          Left err -> expectationFailure err
+          Right event -> do
+            event.eventType `shouldBe` SeriesCreated
+            event.identifier `shouldBe` "evt-1"
+            case event.payload of
+              SeriesCreatedPayload' series -> do
+                series.identifier `shouldBe` "series-1"
+                series.title `shouldBe` "title-1"
+                series.tags `shouldBe` ["tag-1"]
+              _ -> expectationFailure "Expected SeriesCreatedPayload'"
+
+    context "series.edited" $ do
+      it "converts to SeriesEdited event" $ do
+        let payload =
+              object
+                [ "next" .= mkSeriesPayloadJSON 2,
+                  "before" .= mkSeriesPayloadJSON 1
+                ]
+            json = mkEventJSON 1 "series.edited" payload
+        case parseAndConvert json of
+          Left err -> expectationFailure err
+          Right event -> do
+            event.eventType `shouldBe` SeriesEdited
+            case event.payload of
+              SeriesEditedPayload' edited -> do
+                edited.next.identifier `shouldBe` "series-2"
+                edited.before.identifier `shouldBe` "series-1"
+              _ -> expectationFailure "Expected SeriesEditedPayload'"
+
+    context "series.terminated" $ do
+      it "converts to SeriesTerminated event" $ do
+        let payload = object ["series" .= ("series-1" :: String)]
+            json = mkEventJSON 1 "series.terminated" payload
+        case parseAndConvert json of
+          Left err -> expectationFailure err
+          Right event -> do
+            event.eventType `shouldBe` SeriesTerminated
+            case event.payload of
+              SeriesTerminatePayload' reference ->
+                reference `shouldBe` "series-1"
+              _ -> expectationFailure "Expected SeriesTerminatePayload'"
+
+    context "chapter.created" $ do
+      it "converts to ChapterCreated event" $ do
+        let payload = object ["snapshot" .= mkChapterPayloadJSON 1]
+            json = mkEventJSON 1 "chapter.created" payload
+        case parseAndConvert json of
+          Left err -> expectationFailure err
+          Right event -> do
+            event.eventType `shouldBe` ChapterCreated
+            event.identifier `shouldBe` "evt-1"
+            case event.payload of
+              ChapterCreatedPayload' chapter -> do
+                chapter.identifier `shouldBe` "chapter-1"
+                chapter.title `shouldBe` "title-1"
+                chapter.content `shouldBe` "content-1"
+              _ -> expectationFailure "Expected ChapterCreatedPayload'"
+
+    context "chapter.edited" $ do
+      it "converts to ChapterEdited event" $ do
+        let payload =
+              object
+                [ "next" .= mkChapterPayloadJSON 2,
+                  "before" .= mkChapterPayloadJSON 1
+                ]
+            json = mkEventJSON 1 "chapter.edited" payload
+        case parseAndConvert json of
+          Left err -> expectationFailure err
+          Right event -> do
+            event.eventType `shouldBe` ChapterEdited
+            case event.payload of
+              ChapterEditedPayload' edited -> do
+                edited.next.identifier `shouldBe` "chapter-2"
+                edited.before.identifier `shouldBe` "chapter-1"
+              _ -> expectationFailure "Expected ChapterEditedPayload'"
+
+    context "chapter.terminated" $ do
+      it "converts to ChapterTerminated event" $ do
+        let payload = object ["chapter" .= ("chapter-1" :: String)]
+            json = mkEventJSON 1 "chapter.terminated" payload
+        case parseAndConvert json of
+          Left err -> expectationFailure err
+          Right event -> do
+            event.eventType `shouldBe` ChapterTerminated
+            case event.payload of
+              ChapterTerminatePayload' reference ->
+                reference `shouldBe` "chapter-1"
+              _ -> expectationFailure "Expected ChapterTerminatePayload'"
 
     context "unknown event type" $ do
       it "returns Left with error message" $ do

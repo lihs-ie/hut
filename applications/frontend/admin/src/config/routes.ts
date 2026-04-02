@@ -10,9 +10,9 @@ export const Routes = {
     memos: {
       list: "/admin/memos",
     },
-    // [初期リリース対象外] series: {
-    //   list: "/admin/series",
-    // },
+    series: {
+      list: "/admin/series",
+    },
     tag: {
       list: "/admin/tags",
       new: "/admin/tags/new",

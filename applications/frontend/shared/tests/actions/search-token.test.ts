@@ -165,25 +165,16 @@ describe("search-token actions", () => {
       }
     });
 
-    it("キャッシュからのSeriesのchapter.timelineが正しくDateオブジェクトに復元される", async () => {
+    it("キャッシュからのSeriesのtimelineが正しくDateオブジェクトに復元される", async () => {
       const series = Forger(SeriesMold).forgeWithSeed(1);
       const serializedSeries = JSON.parse(JSON.stringify(series));
-
-      // シリアライズ後、chapters[].timeline.createdAtも文字列になっている
-      if (serializedSeries.chapters.length > 0) {
-        expect(typeof serializedSeries.chapters[0].timeline.createdAt).toBe("string");
-      }
 
       await setupUnwrapWithResolvedValue([serializedSeries]);
 
       const { searchByToken } = await import("@shared/actions/search-token");
       const result = await searchByToken(createSearchCondition());
 
-      // Date復元後、Dateオブジェクトになっていることを確認
       expect(result[0].timeline.createdAt).toBeInstanceOf(Date);
-      if ((result[0] as typeof series).chapters.length > 0) {
-        expect((result[0] as typeof series).chapters[0].timeline.createdAt).toBeInstanceOf(Date);
-      }
     });
   });
 });

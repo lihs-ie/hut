@@ -1,4 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
+import {
+  getArticleIdentifierBySlug,
+  getContentTokenIndex,
+} from "./helpers/search-token";
 
 type TestArgs = {
   page: Page;
@@ -6,17 +10,11 @@ type TestArgs = {
 
 const newArticlePath = "/articles/new";
 
-/**
- * Generate a unique slug for test articles.
- */
 const generateTestSlug = (): string => {
   const timestamp = Date.now();
   return `e2e-test-article-${timestamp}`;
 };
 
-/**
- * Create frontmatter content for a new article.
- */
 const createFrontmatter = (options: {
   title: string;
   excerpt: string;
@@ -34,9 +32,6 @@ tags: [${tagsArray.join(", ")}]
 `;
 };
 
-/**
- * Fill CodeMirror editor with content.
- */
 const fillCodeMirrorEditor = async (page: Page, content: string): Promise<void> => {
   const editorContent = page.locator(".cm-content");
   await editorContent.click();
@@ -44,9 +39,6 @@ const fillCodeMirrorEditor = async (page: Page, content: string): Promise<void> 
   await page.keyboard.type(content);
 };
 
-/**
- * Test: Save a new article as draft.
- */
 const saveNewArticleAsDraft = async ({ page }: TestArgs): Promise<void> => {
   const testSlug = generateTestSlug();
   const testTitle = "E2Eテスト記事（下書き）";
@@ -78,9 +70,6 @@ const saveNewArticleAsDraft = async ({ page }: TestArgs): Promise<void> => {
   });
 };
 
-/**
- * Test: Publish a new article.
- */
 const publishNewArticle = async ({ page }: TestArgs): Promise<void> => {
   const testSlug = generateTestSlug();
   const testTitle = "E2Eテスト記事（公開）";
@@ -117,9 +106,6 @@ const publishNewArticle = async ({ page }: TestArgs): Promise<void> => {
   await page.waitForURL(/\/articles\//, { timeout: 15000 });
 };
 
-/**
- * Test: Save button is disabled when title is empty.
- */
 const saveButtonDisabledWithoutTitle = async ({
   page,
 }: TestArgs): Promise<void> => {
@@ -140,9 +126,6 @@ const saveButtonDisabledWithoutTitle = async ({
   await expect(saveButton).toBeDisabled();
 };
 
-/**
- * Test: Tags can be selected and cleared.
- */
 const tagSelectionWorks = async ({ page }: TestArgs): Promise<void> => {
   await page.goto(newArticlePath);
 
@@ -175,3 +158,30 @@ test("save new article as draft", saveNewArticleAsDraft);
 test("publish new article", publishNewArticle);
 test("save button disabled without title", saveButtonDisabledWithoutTitle);
 test("tag selection works", tagSelectionWorks);
+
+test.describe("search token verification", () => {
+  const existingArticleSlug = "typescript-type-safe-code";
+
+  test("search tokens exist for seed article", async () => {
+    const articleIdentifier =
+      await getArticleIdentifierBySlug(existingArticleSlug);
+
+    if (articleIdentifier === undefined) {
+      test.skip(true, "seed article not found in Firestore");
+      return;
+    }
+
+    const tokenIndex = await getContentTokenIndex(
+      "article",
+      articleIdentifier,
+    );
+
+    expect(tokenIndex).toBeDefined();
+
+    if (tokenIndex === undefined) {
+      return;
+    }
+
+    expect(tokenIndex.tokens.length).toBeGreaterThan(0);
+  });
+});
