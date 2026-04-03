@@ -4,10 +4,8 @@ import { ok } from "@shared/aspects/result";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { Profile, UnvalidatedProfile } from "@shared/domains/user";
 import { AdminWorkflowProvider } from "../providers/workflows/admin";
-import { requireAdmin } from "@/aspects/auth-guard";
 
 export async function getProfile(): Promise<Profile> {
-  await requireAdmin();
   return await unwrapForNextJs(
     AdminWorkflowProvider.find({ now: new Date(), payload: null }).andThen(
       (admin) => ok(admin.profile),
