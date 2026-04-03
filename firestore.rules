@@ -57,7 +57,7 @@ service cloud.firestore {
     }
 
     match /admin/{document} {
-      allow read: if isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
