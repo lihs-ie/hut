@@ -6,7 +6,7 @@ import { Header } from "@shared/components/organisms/header";
 import { Footer } from "@shared/components/organisms/footer";
 import { currentTheme } from "@shared/actions/theme";
 import { isAdmin, logout } from "@/actions/auth";
-import { getProfile } from "@/actions/profile";
+import { getProfile } from "@shared/actions/admin";
 import { NavigationProvider } from "@shared/components/molecules/navigation/provider";
 import { ToastProvider } from "@shared/components/molecules/toast";
 

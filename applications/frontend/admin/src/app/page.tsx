@@ -1,4 +1,4 @@
-import { getProfile } from "@/actions/profile";
+import { getProfile } from "@shared/actions/admin";
 import { search as searchArticles } from "@/actions/article";
 import { search as searchMemos } from "@/actions/memo";
 import { search as searchSeries } from "@/actions/series";
