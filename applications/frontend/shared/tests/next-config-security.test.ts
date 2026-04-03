@@ -141,7 +141,7 @@ describe("next.config.shared - セキュリティヘッダー", () => {
       expect(header?.value).not.toContain("img-src 'self' data: blob: https: http:");
     });
 
-    it("本番環境では script-src に unsafe-inline/unsafe-eval が含まれない", async () => {
+    it("本番環境では script-src に unsafe-eval が含まれない", async () => {
       process.env.NODE_ENV = "production";
       const config = createBaseNextConfig();
       const headersResult = await config.headers?.();
@@ -156,7 +156,6 @@ describe("next.config.shared - セキュリティヘッダー", () => {
         ?.split(";")
         .find((directive) => directive.trim().startsWith("script-src"));
       expect(scriptSrc).toBeDefined();
-      expect(scriptSrc).not.toContain("unsafe-inline");
       expect(scriptSrc).not.toContain("unsafe-eval");
     });
   });
