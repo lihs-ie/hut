@@ -22,20 +22,12 @@ const externalServices = (
 };
 
 export const Footer = async (props: Props) => {
-  let profile: Profile | null = null;
-
-  try {
-    profile = await props.getProfile();
-  } catch {
-    profile = null;
-  }
+  const profile = await props.getProfile();
 
   return (
     <FooterPresenter
-      mailAddress={profile?.email ?? null}
-      externalServices={
-        profile ? externalServices(profile.externalServices) : new Map()
-      }
+      mailAddress={profile.email}
+      externalServices={externalServices(profile.externalServices)}
     />
   );
 };
