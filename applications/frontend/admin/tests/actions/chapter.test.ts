@@ -40,6 +40,14 @@ const createMockAsyncResult = (value: unknown) => ({
 
 const mockChapterWorkflowPersist = vi.fn();
 
+vi.mock("@/providers/infrastructure/chapter", () => ({
+  AdminChapterRepositoryProvider: {
+    firebase: {
+      ofIdentifiers: vi.fn(),
+    },
+  },
+}));
+
 vi.mock("@/providers/workflows/chapter", () => ({
   AdminChapterWorkflowProvider: {
     persist: mockChapterWorkflowPersist,
