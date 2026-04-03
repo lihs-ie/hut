@@ -68,6 +68,16 @@ describe("tag actions", () => {
 
       await expect(find(identifier)).rejects.toThrow();
     });
+
+    it("ofIdentifiersが空配列を返した場合はAggregateNotFoundErrorがスローされる", async () => {
+      const identifier = Forger(TagIdentifierMold).forgeWithSeed(1);
+      mockOfIdentifiers.mockReturnValue(createSuccessAsyncResult([]));
+      await setupUnwrapForAsyncResult();
+
+      const { find } = await import("@shared/actions/tag");
+
+      await expect(find(identifier)).rejects.toThrow();
+    });
   });
 
   describe("findAllTags", () => {

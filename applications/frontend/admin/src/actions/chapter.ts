@@ -60,25 +60,6 @@ export async function terminate(
   revalidateTag("series", {});
 }
 
-export async function findChapterBySlug(slug: string): Promise<Chapter> {
-  await requireAdmin();
-  return await unwrapForNextJs(
-    AdminChapterWorkflowProvider.findBySlug({
-      payload: { slug },
-      now: new Date(),
-    }),
-  );
-}
-
-export async function findChaptersByIdentifiers(
-  identifiers: ChapterIdentifier[],
-): Promise<Chapter[]> {
-  await requireAdmin();
-  return await unwrapForNextJs(
-    AdminChapterRepositoryProvider.firebase.ofIdentifiers(identifiers),
-  );
-}
-
 export async function findBySlug(slug: string): Promise<Chapter> {
   await requireAdmin();
   return await unwrapForNextJs(
@@ -86,5 +67,16 @@ export async function findBySlug(slug: string): Promise<Chapter> {
       payload: { slug },
       now: new Date(),
     }),
+  );
+}
+
+export const findChapterBySlug = findBySlug;
+
+export async function findChaptersByIdentifiers(
+  identifiers: ChapterIdentifier[],
+): Promise<Chapter[]> {
+  await requireAdmin();
+  return await unwrapForNextJs(
+    AdminChapterRepositoryProvider.firebase.ofIdentifiers(identifiers),
   );
 }

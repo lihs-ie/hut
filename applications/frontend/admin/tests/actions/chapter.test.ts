@@ -129,6 +129,24 @@ describe("actions/chapter", () => {
     });
   });
 
+  describe("findChapterBySlug", () => {
+    it("findBySlugと同じ関数である", async () => {
+      const { findBySlug, findChapterBySlug } = await import("@/actions/chapter");
+
+      expect(findChapterBySlug).toBe(findBySlug);
+    });
+  });
+
+  describe("findChaptersByIdentifiers", () => {
+    it("requireAdminを呼び出す", async () => {
+      const { findChaptersByIdentifiers } = await import("@/actions/chapter");
+
+      await findChaptersByIdentifiers([]);
+
+      expect(mockRequireAdmin).toHaveBeenCalled();
+    });
+  });
+
   describe("terminate", () => {
     it("requireAdminを呼び出す", async () => {
       const { terminate } = await import("@/actions/chapter");

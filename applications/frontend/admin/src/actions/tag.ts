@@ -58,6 +58,7 @@ export const ofNames = cache(async (names: string[]): Promise<Tag[]> => {
 });
 
 export async function persist(unvalidated: UnvalidatedTag): Promise<void> {
+  await requireAdmin();
   await unwrapForNextJs(
     AdminTagWorkflowProvider.persist({ payload: unvalidated, now: new Date() }),
   );
@@ -66,6 +67,7 @@ export async function persist(unvalidated: UnvalidatedTag): Promise<void> {
 }
 
 export async function terminate(identifier: string): Promise<void> {
+  await requireAdmin();
   await unwrapForNextJs(
     AdminTagWorkflowProvider.terminate({ payload: identifier, now: new Date() }),
   );
