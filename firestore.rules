@@ -7,17 +7,17 @@ service cloud.firestore {
     }
 
     match /articles/{document} {
-      allow read: if true;
+      allow read: if resource.data.status == 'published' || request.auth != null;
       allow write: if isAdmin();
     }
 
     match /memos/{document} {
-      allow read: if true;
+      allow read: if resource.data.status == 'published' || request.auth != null;
       allow write: if isAdmin();
     }
 
     match /series/{document} {
-      allow read: if true;
+      allow read: if resource.data.status == 'published' || request.auth != null;
       allow write: if isAdmin();
     }
 

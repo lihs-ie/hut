@@ -1,8 +1,8 @@
-import { findAllTags } from "@shared/actions/tag";
-import { findChaptersByIdentifiers } from "@shared/actions/chapter";
+import { findAllTags } from "@/actions/tag";
+import { findChaptersByIdentifiers } from "@/actions/chapter";
 import { SeriesIndex } from "@shared/components/templates/series";
 import { slugSchema } from "@shared/domains/common/slug";
-import { findBySlug } from "@shared/actions/series";
+import { findBySlug } from "@/actions/series";
 
 type Props = {
   params: Promise<{ slug: string }>;

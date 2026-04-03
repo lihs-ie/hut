@@ -2,6 +2,7 @@
 
 import {
   Memo,
+  MemoEntry,
   MemoSnapshot,
   UnvalidatedCriteria,
   UnvalidatedEntry,
@@ -13,6 +14,18 @@ import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { revalidateTag } from "next/cache";
 import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
+
+export async function findBySlug(slug: string): Promise<Memo> {
+  await requireAdmin();
+  return await unwrapForNextJs(AdminMemoWorkflowProvider.findBySlug(slug));
+}
+
+export async function getEntriesBySlug(slug: string): Promise<MemoEntry[]> {
+  await requireAdmin();
+  return await unwrapForNextJs(
+    AdminMemoWorkflowProvider.findBySlug(slug).map((memo) => memo.entries),
+  );
+}
 
 export async function create(unvalidated: UnvalidatedMemo): Promise<void> {
   await requireAdmin();

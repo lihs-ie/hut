@@ -1,4 +1,4 @@
-import { search } from "@shared/actions/tag";
+import { search } from "@/actions/tag";
 import { TagListIndex } from "../../_components/templates/admin/tag/list";
 
 type Props = {

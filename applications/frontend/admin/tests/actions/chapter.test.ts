@@ -40,6 +40,14 @@ const createMockAsyncResult = (value: unknown) => ({
 
 const mockChapterWorkflowPersist = vi.fn();
 
+vi.mock("@/providers/infrastructure/chapter", () => ({
+  AdminChapterRepositoryProvider: {
+    firebase: {
+      ofIdentifiers: vi.fn(),
+    },
+  },
+}));
+
 vi.mock("@/providers/workflows/chapter", () => ({
   AdminChapterWorkflowProvider: {
     persist: mockChapterWorkflowPersist,
@@ -118,6 +126,24 @@ describe("actions/chapter", () => {
         payload: { slug: "test-chapter" },
         now: expect.any(Date),
       });
+    });
+  });
+
+  describe("findChapterBySlug", () => {
+    it("findBySlugと同じ関数である", async () => {
+      const { findBySlug, findChapterBySlug } = await import("@/actions/chapter");
+
+      expect(findChapterBySlug).toBe(findBySlug);
+    });
+  });
+
+  describe("findChaptersByIdentifiers", () => {
+    it("requireAdminを呼び出す", async () => {
+      const { findChaptersByIdentifiers } = await import("@/actions/chapter");
+
+      await findChaptersByIdentifiers([]);
+
+      expect(mockRequireAdmin).toHaveBeenCalled();
     });
   });
 

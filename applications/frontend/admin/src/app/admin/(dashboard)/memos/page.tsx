@@ -1,4 +1,4 @@
-import { getAllTags } from "@shared/actions/tag";
+import { getAllTags } from "@/actions/tag";
 import { AdminContentListIndex } from "../../_components/templates/admin/content/list";
 import { search, terminate } from "@/actions/memo";
 import { ContentType } from "@shared/domains/search-token";

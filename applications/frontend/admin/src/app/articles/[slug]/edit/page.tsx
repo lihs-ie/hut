@@ -1,7 +1,7 @@
 import { edit as editAction } from "@/actions/article";
 import { uploadImage } from "@/actions/common";
-import { findBySlug } from "@shared/actions/article";
-import { getAllTags } from "@shared/actions/tag";
+import { findBySlug } from "@/actions/article";
+import { getAllTags } from "@/actions/tag";
 import { ArticleEdit } from "@shared/components/templates/article/edit";
 import {
   ArticleSnapshot,

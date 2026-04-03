@@ -11,6 +11,7 @@ const EMULATOR_PATTERNS: ReadonlyArray<RemotePattern> = [
 ];
 
 export const createBaseNextConfig = (options?: Options): NextConfig => {
+  const isProduction = process.env.NODE_ENV === "production";
   const useEmulator = options?.useFirebaseEmulator ?? false;
 
   const remotePatterns: Array<RemotePattern> = [
@@ -24,6 +25,7 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
 
   return {
     output: "standalone",
+    poweredByHeader: false,
     headers: async () => [
       {
         source: "/(.*)",
@@ -41,6 +43,23 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
           {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              isProduction
+                ? "script-src 'self' 'unsafe-inline' https://apis.google.com https://*.firebaseio.com"
+                : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://*.firebaseio.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: blob: https:",
+              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com",
+              "frame-src 'self' https://accounts.google.com",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join("; "),
           },
         ],
       },
