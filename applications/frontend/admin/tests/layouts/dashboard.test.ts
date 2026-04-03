@@ -50,10 +50,6 @@ vi.mock("@shared/components/atoms/icon/bar-chart", () => ({
   BarChartIcon: () => null,
 }));
 
-vi.mock("@shared/components/atoms/icon/facing-book", () => ({
-  BookOpenIcon: () => null,
-}));
-
 vi.mock("../../src/app/admin/(dashboard)/layout.module.css", () => ({
   default: { container: "container", content: "content" },
 }));
