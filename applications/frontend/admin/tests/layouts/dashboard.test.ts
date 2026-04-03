@@ -13,6 +13,7 @@ vi.mock("@/config/routes", () => ({
     admin: {
       articles: { list: "/admin/articles" },
       memos: { list: "/admin/memos" },
+      series: { list: "/admin/series" },
       tag: { list: "/admin/tags" },
       profile: { edit: "/admin/profile" },
       privacy: { edit: "/admin/privacy" },
@@ -47,6 +48,10 @@ vi.mock("@shared/components/atoms/icon/shield", () => ({
 
 vi.mock("@shared/components/atoms/icon/bar-chart", () => ({
   BarChartIcon: () => null,
+}));
+
+vi.mock("@shared/components/atoms/icon/facing-book", () => ({
+  BookOpenIcon: () => null,
 }));
 
 vi.mock("../../src/app/admin/(dashboard)/layout.module.css", () => ({
