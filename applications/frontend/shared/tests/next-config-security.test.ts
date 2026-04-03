@@ -111,5 +111,60 @@ describe("next.config.shared - セキュリティヘッダー", () => {
         "max-age=31536000; includeSubDomains",
       );
     });
+
+    it("Content-Security-Policy ヘッダーが設定される", async () => {
+      const config = createBaseNextConfig();
+      const headersResult = await config.headers?.();
+      const allRoutesHeader = headersResult!.find(
+        (h) => h.source === "/(.*)",
+      );
+
+      const header = allRoutesHeader!.headers.find(
+        (h) => h.key === "Content-Security-Policy",
+      );
+      expect(header).toBeDefined();
+      expect(header?.value).toContain("default-src 'self'");
+      expect(header?.value).toContain("object-src 'none'");
+      expect(header?.value).toContain("base-uri 'self'");
+    });
+
+    it("Content-Security-Policy の img-src に http: が含まれない", async () => {
+      const config = createBaseNextConfig();
+      const headersResult = await config.headers?.();
+      const allRoutesHeader = headersResult!.find(
+        (h) => h.source === "/(.*)",
+      );
+
+      const header = allRoutesHeader!.headers.find(
+        (h) => h.key === "Content-Security-Policy",
+      );
+      expect(header?.value).not.toContain("img-src 'self' data: blob: https: http:");
+    });
+
+    it("本番環境では script-src に unsafe-inline/unsafe-eval が含まれない", async () => {
+      process.env.NODE_ENV = "production";
+      const config = createBaseNextConfig();
+      const headersResult = await config.headers?.();
+      const allRoutesHeader = headersResult!.find(
+        (h) => h.source === "/(.*)",
+      );
+
+      const header = allRoutesHeader!.headers.find(
+        (h) => h.key === "Content-Security-Policy",
+      );
+      const scriptSrc = header?.value
+        ?.split(";")
+        .find((directive) => directive.trim().startsWith("script-src"));
+      expect(scriptSrc).toBeDefined();
+      expect(scriptSrc).not.toContain("unsafe-inline");
+      expect(scriptSrc).not.toContain("unsafe-eval");
+    });
+  });
+
+  describe("poweredByHeader", () => {
+    it("poweredByHeader が false に設定される", () => {
+      const config = createBaseNextConfig();
+      expect(config.poweredByHeader).toBe(false);
+    });
   });
 });

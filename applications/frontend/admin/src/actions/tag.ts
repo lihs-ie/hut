@@ -6,11 +6,19 @@ import { AdminTagWorkflowProvider } from "@/providers/workflows/tag";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/aspects/auth-guard";
+import { err, ok } from "@shared/aspects/result";
+import { aggregateNotFoundError } from "@shared/aspects/error";
 
 export const find = cache(async (identifier: string): Promise<Tag> => {
   await requireAdmin();
   return await unwrapForNextJs(
-    AdminTagWorkflowProvider.ofIdentifiers([identifier]).map((tags) => tags[0]),
+    AdminTagWorkflowProvider.ofIdentifiers([identifier]).andThen((tags: Tag[]) => {
+      const tag = tags[0];
+      if (tag === undefined) {
+        return err(aggregateNotFoundError("Tag", `Tag not found: ${identifier}`));
+      }
+      return ok(tag);
+    }),
   );
 });
 
