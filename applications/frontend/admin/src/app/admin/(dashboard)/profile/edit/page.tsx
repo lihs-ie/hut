@@ -1,7 +1,6 @@
 import { AdminProfileEdit } from "@/app/admin/_components/templates/admin/profile/edit";
-import { getProfile } from "@shared/actions/admin";
-import { persistProfile } from "@/actions/profile";
-import { getAllTags } from "@shared/actions/tag";
+import { getProfile, persistProfile } from "@/actions/profile";
+import { getAllTags } from "@/actions/tag";
 
 export default function AdminProfileEditPage() {
   return (

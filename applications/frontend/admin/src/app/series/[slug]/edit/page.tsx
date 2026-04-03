@@ -1,7 +1,7 @@
 import { findBySlug, persist as persistAction } from "@/actions/series";
 import { terminate as terminateChapterAction } from "@/actions/chapter";
-import { getAllTags } from "@shared/actions/tag";
-import { findChaptersByIdentifiers } from "@shared/actions/chapter";
+import { getAllTags } from "@/actions/tag";
+import { findChaptersByIdentifiers } from "@/actions/chapter";
 import { SeriesEdit } from "@shared/components/templates/series/edit";
 import { UnvalidatedSeries } from "@shared/domains/series";
 import { slugSchema } from "@shared/domains/common/slug";

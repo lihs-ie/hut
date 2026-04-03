@@ -1,4 +1,4 @@
-import { find } from "@shared/actions/tag";
+import { find } from "@/actions/tag";
 import { persist, terminate } from "@/actions/tag";
 import { TagEditIndex } from "../../../../_components/templates/admin/tag/form";
 
