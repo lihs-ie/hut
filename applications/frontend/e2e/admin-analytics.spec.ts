@@ -1,7 +1,50 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { execSync } from "child_process";
 
 const ANALYTICS_URL = "/admin/analytics";
 const LOAD_TIMEOUT = 30_000;
+
+const reseedAnalyticsData = () => {
+  const firestoreHost = "http://localhost:8085";
+  const projectId = "demo-hut";
+  const databaseId = "(default)";
+
+  const collections = [
+    "access-logs",
+    "engagement-logs",
+    "unique-visitor-dedup",
+    "page-view-dedup",
+    "search-logs",
+  ];
+
+  for (const collection of collections) {
+    const url = `${firestoreHost}/v1/projects/${projectId}/databases/${databaseId}/documents/${collection}`;
+    try {
+      const response = JSON.parse(
+        execSync(`curl -s "${url}"`, { encoding: "utf-8" }),
+      );
+      const documents = response.documents ?? [];
+      for (const doc of documents) {
+        const docUrl = `${firestoreHost}/v1/${doc.name}`;
+        execSync(`curl -s -X DELETE "${docUrl}"`, { encoding: "utf-8" });
+      }
+    } catch {
+      // collection may not exist or be empty
+    }
+  }
+
+  execSync(
+    "pnpm exec tsx ../scripts/seed/index.ts",
+    {
+      cwd: process.cwd(),
+      encoding: "utf-8",
+      env: {
+        ...process.env,
+        FIRESTORE_EMULATOR_HOST: "localhost:8085",
+      },
+    },
+  );
+};
 
 const navigateWithSingleRetry = async (page: Page, url: string) => {
   try {
@@ -434,6 +477,10 @@ test.describe("analytics dashboard", () => {
   });
 
   test.describe("exact seed data values", () => {
+    test.beforeAll(() => {
+      reseedAnalyticsData();
+    });
+
     test("summary cards display exact values from seed data", async ({ page }: { page: Page }) => {
       const expectedCards = [
         { title: "総PV", value: "38" },
