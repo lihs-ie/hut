@@ -1,5 +1,8 @@
 import { FirebaseProvider } from "./firebase";
+import type { ImageUploader } from "@shared/domains/common/image";
 
 export const ImageUploaderProvider = {
-  firebase: FirebaseProvider.storage.imageUploader,
+  get firebase(): ImageUploader {
+    return FirebaseProvider.storage.imageUploader;
+  },
 };
