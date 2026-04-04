@@ -20,7 +20,7 @@ type Props = {
   axisLabel?: { x?: string; y?: string };
 };
 
-const AXIS_TICK: React.SVGProps<SVGTextElement> = {
+const AXIS_TICK_STYLE: React.CSSProperties = {
   fontSize: 12,
   fill: "var(--muted-foreground)",
 };
@@ -59,13 +59,13 @@ export const BarChart = (props: Props) => (
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
         <XAxis
           dataKey="label"
-          tick={AXIS_TICK}
+          tick={{ style: AXIS_TICK_STYLE }}
           tickLine={false}
           axisLine={{ stroke: "var(--border)" }}
           label={buildAxisLabel(props.axisLabel?.x, X_AXIS_PLACEMENT)}
         />
         <YAxis
-          tick={AXIS_TICK}
+          tick={{ style: AXIS_TICK_STYLE }}
           tickLine={false}
           axisLine={false}
           label={buildAxisLabel(props.axisLabel?.y, Y_AXIS_PLACEMENT)}
