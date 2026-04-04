@@ -2,15 +2,15 @@ import {
   createGetPrivacyPolicyWorkflow,
   createPrivacyPolicyPersistWorkflow,
 } from "@shared/workflows/document";
-import { AdminDocumentRepositoryProvider } from "../infrastructure/document";
+import { DocumentRepositoryProvider } from "@shared/providers/infrastructure/document";
 import { LoggerProvider } from "@shared/providers/infrastructure/logger";
 
 export const AdminDocumentWorkflowProvider = {
   GetPrivacyPolicy: createGetPrivacyPolicyWorkflow(
-    AdminDocumentRepositoryProvider.firebase.find,
+    DocumentRepositoryProvider.firebase.find,
   )(LoggerProvider.console),
 
   PersistPrivatePolicy: createPrivacyPolicyPersistWorkflow(
-    AdminDocumentRepositoryProvider.firebase.find,
-  )(AdminDocumentRepositoryProvider.firebase.persist)(LoggerProvider.console),
+    DocumentRepositoryProvider.firebase.find,
+  )(DocumentRepositoryProvider.firebase.persist)(LoggerProvider.console),
 } as const;
