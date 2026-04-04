@@ -1,49 +1,35 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 
 const ANALYTICS_URL = "/admin/analytics";
 const LOAD_TIMEOUT = 30_000;
 
+const FIRESTORE_EMULATOR_HOST = "http://localhost:8085";
+const EMULATOR_PROJECT = "demo-hut";
+const EMULATOR_DATABASE = "(default)";
+const EMULATOR_CLEAR_URL = `${FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/${EMULATOR_PROJECT}/databases/${EMULATOR_DATABASE}/documents`;
+
 const reseedAnalyticsData = () => {
-  const firestoreHost = "http://localhost:8085";
-  const projectId = "demo-hut";
-  const databaseId = "(default)";
+  spawnSync("curl", ["-s", "-X", "DELETE", EMULATOR_CLEAR_URL], {
+    timeout: 10_000,
+  });
 
-  const collections = [
-    "access-logs",
-    "engagement-logs",
-    "unique-visitor-dedup",
-    "page-view-dedup",
-    "search-logs",
-  ];
-
-  for (const collection of collections) {
-    const url = `${firestoreHost}/v1/projects/${projectId}/databases/${databaseId}/documents/${collection}`;
-    try {
-      const response = JSON.parse(
-        execSync(`curl -s "${url}"`, { encoding: "utf-8" }),
-      );
-      const documents = response.documents ?? [];
-      for (const doc of documents) {
-        const docUrl = `${firestoreHost}/v1/${doc.name}`;
-        execSync(`curl -s -X DELETE "${docUrl}"`, { encoding: "utf-8" });
-      }
-    } catch {
-      // collection may not exist or be empty
-    }
-  }
-
-  execSync(
-    "pnpm exec tsx ../scripts/seed/index.ts",
+  const result = spawnSync(
+    "pnpm",
+    ["exec", "tsx", "../scripts/seed/index.ts"],
     {
       cwd: process.cwd(),
-      encoding: "utf-8",
+      timeout: 60_000,
       env: {
         ...process.env,
         FIRESTORE_EMULATOR_HOST: "localhost:8085",
       },
     },
   );
+
+  if (result.status !== 0 && result.status !== null) {
+    console.error("Reseed stderr:", result.stderr?.toString());
+  }
 };
 
 const navigateWithSingleRetry = async (page: Page, url: string) => {
