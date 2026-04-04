@@ -1,4 +1,4 @@
-import { FirebaseAdminProvider } from "@/providers/auth/admin";
+import { FirebaseAdminProvider } from "@shared/providers/infrastructure/firebase-admin";
 import { OIDCServerProvider } from "@/providers/acl/oidc/server";
 import {
   isInvalidCredentialError,

@@ -10,7 +10,7 @@ import {
   createChapterTerminatedEvent,
 } from "@shared/domains/series/chapter";
 import { AdminChapterWorkflowProvider } from "@/providers/workflows/chapter";
-import { AdminChapterRepositoryProvider } from "@/providers/infrastructure/chapter";
+import { ChapterRepositoryProvider } from "@shared/providers/infrastructure/chapter";
 import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
 
@@ -77,6 +77,6 @@ export async function findChaptersByIdentifiers(
 ): Promise<Chapter[]> {
   await requireAdmin();
   return await unwrapForNextJs(
-    AdminChapterRepositoryProvider.firebase.ofIdentifiers(identifiers),
+    ChapterRepositoryProvider.firebase.ofIdentifiers(identifiers),
   );
 }

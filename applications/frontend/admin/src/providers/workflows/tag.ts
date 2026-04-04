@@ -13,31 +13,31 @@ import {
   createTagPersistWorkflow,
   createTagTerminateWorkflow,
 } from "@shared/workflows/attributes/tag";
-import { AdminTagRepositoryProvider } from "../infrastructure/tag";
+import { TagRepositoryProvider } from "@shared/providers/infrastructure/tag";
 import { LoggerProvider } from "@shared/providers/infrastructure/logger";
 
 export const AdminTagWorkflowProvider = {
   search: createTagSearchWorkflow(validateCriteria)(
-    AdminTagRepositoryProvider.firebase.search,
+    TagRepositoryProvider.firebase.search,
   )(LoggerProvider.console),
 
   find: createTagFindWorkflow(validateTagIdentifier)(
-    AdminTagRepositoryProvider.firebase.find,
+    TagRepositoryProvider.firebase.find,
   )(LoggerProvider.console),
 
   ofIdentifiers: createTagOfIdentifiersWorkflow(validateTagIdentifiers)(
-    AdminTagRepositoryProvider.firebase.ofIdentifiers,
+    TagRepositoryProvider.firebase.ofIdentifiers,
   )(LoggerProvider.console),
 
   ofNames: createTagOfNamesWorkflow(validateTagNames)(
-    AdminTagRepositoryProvider.firebase.ofNames,
+    TagRepositoryProvider.firebase.ofNames,
   )(LoggerProvider.console),
 
   persist: createTagPersistWorkflow(validateTag)(
-    AdminTagRepositoryProvider.firebase.persist,
+    TagRepositoryProvider.firebase.persist,
   )(LoggerProvider.console),
 
   terminate: createTagTerminateWorkflow(validateTagIdentifier)(
-    AdminTagRepositoryProvider.firebase.terminate,
+    TagRepositoryProvider.firebase.terminate,
   )(LoggerProvider.console),
 } as const;
