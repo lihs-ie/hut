@@ -1,36 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { spawnSync } from "child_process";
 
 const ANALYTICS_URL = "/admin/analytics";
 const LOAD_TIMEOUT = 30_000;
-
-const FIRESTORE_EMULATOR_HOST = "http://localhost:8085";
-const EMULATOR_PROJECT = "demo-hut";
-const EMULATOR_DATABASE = "(default)";
-const EMULATOR_CLEAR_URL = `${FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/${EMULATOR_PROJECT}/databases/${EMULATOR_DATABASE}/documents`;
-
-const reseedAnalyticsData = () => {
-  spawnSync("curl", ["-s", "-X", "DELETE", EMULATOR_CLEAR_URL], {
-    timeout: 10_000,
-  });
-
-  const result = spawnSync(
-    "pnpm",
-    ["exec", "tsx", "../scripts/seed/index.ts"],
-    {
-      cwd: process.cwd(),
-      timeout: 60_000,
-      env: {
-        ...process.env,
-        FIRESTORE_EMULATOR_HOST: "localhost:8085",
-      },
-    },
-  );
-
-  if (result.status !== 0 && result.status !== null) {
-    console.error("Reseed stderr:", result.stderr?.toString());
-  }
-};
 
 const navigateWithSingleRetry = async (page: Page, url: string) => {
   try {
@@ -463,10 +434,6 @@ test.describe("analytics dashboard", () => {
   });
 
   test.describe("exact seed data values", () => {
-    test.beforeAll(() => {
-      reseedAnalyticsData();
-    });
-
     test("summary cards display exact values from seed data", async ({ page }: { page: Page }) => {
       const expectedCards = [
         { title: "総PV", value: "38" },
