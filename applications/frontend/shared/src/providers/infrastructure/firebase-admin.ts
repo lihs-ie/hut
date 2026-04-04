@@ -102,11 +102,23 @@ const getFirestoreInstance = (): Firestore => {
   return firestoreInstance;
 };
 
+const resolveStorageBucket = (): string => {
+  if (useEmulator) {
+    return process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "demo-hut.appspot.com";
+  }
+
+  const bucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+  if (!bucket) {
+    throw new Error("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is required");
+  }
+  return bucket;
+};
+
 const getStorageBucketInstance = (): Bucket => {
   if (storageBucketInstance === null) {
     ensureStorageEmulator();
     storageBucketInstance = getStorage(getFirebaseAdminApp()).bucket(
-      process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      resolveStorageBucket(),
     );
   }
 
