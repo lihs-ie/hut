@@ -59,7 +59,7 @@ const gotoSearchPage = async (
   page: Page,
   path: string = "/search",
 ): Promise<void> => {
-  await page.goto(path, { waitUntil: "domcontentloaded" });
+  await page.goto(path, { waitUntil: "load" });
   await waitForSearchPageReady(page);
 };
 
