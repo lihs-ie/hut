@@ -56,7 +56,9 @@ const waitForSearchPageReady = async (page: Page): Promise<void> => {
     const title = await page.title();
     const url = page.url();
     console.error(`[SearchPageReady FAILED] url=${url} title=${title}`);
-    console.error(`[SearchPageReady FAILED] body snippet: ${pageContent.slice(0, 2000)}`);
+    const bodyStart = pageContent.indexOf("<body");
+    const bodySnippet = bodyStart >= 0 ? pageContent.slice(bodyStart, bodyStart + 3000) : pageContent.slice(0, 3000);
+    console.error(`[SearchPageReady FAILED] body: ${bodySnippet}`);
     throw error;
   }
 };
