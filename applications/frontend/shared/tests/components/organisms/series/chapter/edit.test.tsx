@@ -6,6 +6,7 @@ import { render, act } from "@testing-library/react";
 import { Forger } from "@lihs-ie/forger-ts";
 import { ToastProvider } from "@shared/components/molecules/toast";
 import { ChapterMold } from "../../../../support/molds/domains/series";
+import { slugSchema } from "@shared/domains/common/slug";
 
 const mockShowToast = vi.fn();
 
@@ -174,6 +175,7 @@ describe("components/organisms/series/chapter/ChapterEditOrganism", () => {
         <ChapterEditOrganism
           initial={Forger(ChapterMold).forge({
             title: "既存チャプター",
+            slug: slugSchema.parse("existing-chapter"),
             content: "# 既存チャプター\n\nコンテンツ",
             images: [],
           })}
