@@ -1,5 +1,5 @@
 import z from "zod";
-import { AsyncResult, err, fromPromise, ok, Result } from "@shared/aspects/result";
+import { AsyncResult, fromPromise, Result } from "@shared/aspects/result";
 import {
   AggregateNotFoundError,
   aggregateNotFoundError,
