@@ -260,8 +260,7 @@ jobs:
 
   reader-search-debug:
     name: Reader Search Debug (Shard ${{ matrix.shard }}/${{ env.SHARD_TOTAL }})
-    if: ${{ always() && needs.build.result == 'success' && needs.reader-e2e.result != 'success' }}
-    needs: [build, reader-e2e]
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -379,7 +378,7 @@ jobs:
 
   merge-reports:
     name: Merge E2E Reports
-    if: ${{ !cancelled() && (needs.admin-e2e.result != 'skipped' || needs.reader-e2e.result != 'skipped') }}
+    if: ${{ !cancelled() }}
     needs: [admin-e2e, reader-e2e]
     runs-on: ubuntu-latest
 
