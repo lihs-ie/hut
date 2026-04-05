@@ -39,28 +39,17 @@ const getSearchResultSummary = (page: Page) => {
  * Waits until the search UI is interactive after navigation.
  */
 const waitForSearchPageReady = async (page: Page): Promise<void> => {
-  try {
-    await Promise.all([
-      expect(page.locator("main")).toBeVisible({
-        timeout: SEARCH_PAGE_READY_TIMEOUT_MS,
-      }),
-      expect(getSearchInput(page)).toBeVisible({
-        timeout: SEARCH_PAGE_READY_TIMEOUT_MS,
-      }),
-      expect(getFilterToggle(page)).toBeVisible({
-        timeout: SEARCH_PAGE_READY_TIMEOUT_MS,
-      }),
-    ]);
-  } catch (error) {
-    const pageContent = await page.content();
-    const title = await page.title();
-    const url = page.url();
-    console.error(`[SearchPageReady FAILED] url=${url} title=${title}`);
-    const bodyStart = pageContent.indexOf("<body");
-    const bodySnippet = bodyStart >= 0 ? pageContent.slice(bodyStart, bodyStart + 3000) : pageContent.slice(0, 3000);
-    console.error(`[SearchPageReady FAILED] body: ${bodySnippet}`);
-    throw error;
-  }
+  await Promise.all([
+    expect(page.locator("main")).toBeVisible({
+      timeout: SEARCH_PAGE_READY_TIMEOUT_MS,
+    }),
+    expect(getSearchInput(page)).toBeVisible({
+      timeout: SEARCH_PAGE_READY_TIMEOUT_MS,
+    }),
+    expect(getFilterToggle(page)).toBeVisible({
+      timeout: SEARCH_PAGE_READY_TIMEOUT_MS,
+    }),
+  ]);
 };
 
 /**
