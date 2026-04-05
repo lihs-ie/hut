@@ -259,7 +259,7 @@ jobs:
         run: docker compose -f ${{ env.FIREBASE_COMPOSE_FILE }} down
 
   reader-search-debug:
-    name: Reader Search Debug (Shard ${{ matrix.shard }}/${{ env.SHARD_TOTAL }})
+    name: Reader Search Debug (Shard ${{ matrix.shard }}/5)
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
