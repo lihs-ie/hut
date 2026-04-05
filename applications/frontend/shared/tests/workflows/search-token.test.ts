@@ -5,6 +5,7 @@ import { Logger, Environment } from "@shared/aspects/logger";
 import { ok, err } from "@shared/aspects/result";
 import { unexpectedError } from "@shared/aspects/error";
 import {
+  SearchTokenRepository,
   validateCriteria,
   SearchTokenType,
   ContentType,
@@ -19,6 +20,9 @@ import {
 import { ArticleMold } from "../support/molds/domains/article";
 import { MemoMold } from "../support/molds/domains/memo";
 import { TagIdentifierMold } from "../support/molds/domains/attributes/tag";
+import type { Article, ArticleRepository } from "@shared/domains/articles";
+import type { MemoRepository } from "@shared/domains/memo";
+import type { SeriesRepository } from "@shared/domains/series";
 
 describe("workflows/search-token", () => {
   const logger = Logger(Environment.DEVELOPMENT);
@@ -52,10 +56,10 @@ describe("workflows/search-token", () => {
 
   describe("createSearchByTokenWorkflow", () => {
     const createWorkflow = (
-      ofTokenIdentifiersMock: ReturnType<typeof vi.fn>,
-      ofArticleIdentifiersMock: ReturnType<typeof vi.fn>,
-      ofMemoIdentifiersMock: ReturnType<typeof vi.fn>,
-      ofSeriesIdentifiersMock: ReturnType<typeof vi.fn>
+      ofTokenIdentifiersMock: SearchTokenRepository["ofIdentifiers"],
+      ofArticleIdentifiersMock: ArticleRepository["ofIdentifiers"],
+      ofMemoIdentifiersMock: MemoRepository["ofIdentifiers"],
+      ofSeriesIdentifiersMock: SeriesRepository["ofIdentifiers"]
     ) =>
       createSearchByTokenWorkflow(validateCriteria)(logger)(
         ofTokenIdentifiersMock
@@ -64,7 +68,7 @@ describe("workflows/search-token", () => {
       );
 
     const createNgramToken = (
-      article: ReturnType<typeof Forger<typeof ArticleMold>["forgeWithSeed"]>
+      article: Article
     ) => {
       const referenceIdentifier = Forger(
         SearchReferenceIdentifierMold

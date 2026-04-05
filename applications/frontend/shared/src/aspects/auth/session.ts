@@ -5,8 +5,8 @@ import {
   aggregateNotFoundError,
   UnexpectedError,
   unexpectedError,
+  validate,
   ValidationError,
-  validationErrors,
 } from "@shared/aspects/error";
 import {
   Firestore,
@@ -46,15 +46,7 @@ export type UnvalidatedSession = {
 
 export const validateSession = (
   candidate: UnvalidatedSession
-): Result<AdminSession, ValidationError[]> => {
-  const errors = validationErrors(sessionSchema, candidate);
-
-  if (errors.length > 0) {
-    return err(errors);
-  }
-
-  return ok(sessionSchema.parse(candidate));
-};
+): Result<AdminSession, ValidationError[]> => validate(sessionSchema, candidate);
 
 export const isSessionExpired = (session: AdminSession): boolean => {
   return new Date() > session.expiresAt;

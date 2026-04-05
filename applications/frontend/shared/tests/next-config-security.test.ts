@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { vi } from "vitest";
 import { createBaseNextConfig } from "../../next.config.shared";
 
 describe("next.config.shared - セキュリティヘッダー", () => {
@@ -10,6 +11,7 @@ describe("next.config.shared - セキュリティヘッダー", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     process.env = originalEnv;
   });
 
@@ -142,7 +144,7 @@ describe("next.config.shared - セキュリティヘッダー", () => {
     });
 
     it("本番環境では script-src に unsafe-eval が含まれない", async () => {
-      process.env.NODE_ENV = "production";
+      vi.stubEnv("NODE_ENV", "production");
       const config = createBaseNextConfig();
       const headersResult = await config.headers?.();
       const allRoutesHeader = headersResult!.find(

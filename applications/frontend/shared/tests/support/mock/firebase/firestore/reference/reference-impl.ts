@@ -164,13 +164,13 @@ export function doc(
 ): DocumentReferenceImpl {
   let firestore: FirestoreImpl
   let fullPath: string
-  let converter: FirestoreDataConverter<unknown> | null = null
+  let converter: FirestoreDataConverter<DocumentData> | null = null
 
   if ("firestore" in firestoreOrReference) {
     firestore = firestoreOrReference.firestore as FirestoreImpl
 
     if ("converter" in firestoreOrReference) {
-      converter = firestoreOrReference.converter
+      converter = firestoreOrReference.converter as FirestoreDataConverter<DocumentData> | null
     }
 
     if (path) {

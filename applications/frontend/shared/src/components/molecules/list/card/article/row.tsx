@@ -16,7 +16,10 @@ export const ArticleRowCard = (props: Props) => (
     href={Routes.page.articles.show(props.article.slug)}
   >
     <div className={styles.image}>
-      <CommonImage src={props.article.image} alt={props.article.title} />
+      <CommonImage
+        src={props.article.images[0] ?? "/placeholder.png"}
+        alt={props.article.title}
+      />
     </div>
     <div className={styles.body}>
       <div className={styles.content}>

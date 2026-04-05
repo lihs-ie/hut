@@ -5,14 +5,24 @@ import { Logger, Environment } from "@shared/aspects/logger";
 import { ok, err } from "@shared/aspects/result";
 import { unexpectedError } from "@shared/aspects/error";
 import {
+  SearchIndexRepository,
   validateCriteria,
   ContentType,
+  type SearchIndexTitle,
 } from "@shared/domains/search-index/common";
 import { score, Scorer } from "@shared/aspects/ngram";
-import { SearchIndexMold } from "../support/molds/domains/search-index";
+import {
+  SearchIndexMold,
+  SearchIndexTitleMold,
+} from "../support/molds/domains/search-index";
 import { ArticleMold } from "../support/molds/domains/article";
 import { MemoMold } from "../support/molds/domains/memo";
 import { SeriesMold } from "../support/molds/domains/series";
+import type {
+  ArticleRepository,
+} from "@shared/domains/articles";
+import type { MemoRepository } from "@shared/domains/memo";
+import type { SeriesRepository } from "@shared/domains/series";
 
 describe("workflows/search-index", () => {
   const logger = Logger(Environment.DEVELOPMENT);
@@ -57,10 +67,10 @@ describe("workflows/search-index", () => {
 
   describe("createSearchByIndexWorkflow", () => {
     const createWorkflow = (
-      getIndicesMock: ReturnType<typeof vi.fn>,
-      ofArticleIdentifiersMock: ReturnType<typeof vi.fn>,
-      ofMemoIdentifiersMock: ReturnType<typeof vi.fn>,
-      ofSeriesIdentifiersMock: ReturnType<typeof vi.fn>
+      getIndicesMock: SearchIndexRepository["search"],
+      ofArticleIdentifiersMock: ArticleRepository["ofIdentifiers"],
+      ofMemoIdentifiersMock: MemoRepository["ofIdentifiers"],
+      ofSeriesIdentifiersMock: SeriesRepository["ofIdentifiers"]
     ) =>
       createSearchByIndexWorkflow(validateCriteria)(logger)(scorer)(
         getIndicesMock
@@ -101,7 +111,9 @@ describe("workflows/search-index", () => {
       const searchIndex = Forger(SearchIndexMold).forgeWithSeed(1, {
         type: ContentType.ARTICLE,
         reference: articles[0].identifier,
-        title: "テスト記事タイトル",
+        title: Forger(SearchIndexTitleMold).forge({
+          value: "テスト記事タイトル",
+        }) as SearchIndexTitle,
       });
 
       const getIndicesMock = vi

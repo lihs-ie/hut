@@ -36,6 +36,7 @@ import {
   MemoSlugMold,
 } from "../support/molds/domains/memo";
 import { Command } from "@shared/workflows/common";
+import type { ImageIdentifier } from "@shared/domains/image";
 
 describe("workflows/memo", () => {
   const mockLogger = Logger(Environment.DEVELOPMENT);
@@ -546,7 +547,7 @@ describe("workflows/memo", () => {
       const command: Command<{
         slug: string;
         unvalidated: { text: string; createdAt: Date };
-        images: string[];
+        images: ImageIdentifier[];
       }> = {
         now: new Date(),
         payload: {
@@ -578,7 +579,7 @@ describe("workflows/memo", () => {
       const command: Command<{
         slug: string;
         unvalidated: { text: string; createdAt: Date };
-        images: string[];
+        images: ImageIdentifier[];
       }> = {
         now: new Date(),
         payload: {

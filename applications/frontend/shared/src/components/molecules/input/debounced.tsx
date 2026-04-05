@@ -25,8 +25,7 @@ export const DebouncedTextInput = (props: Props) => {
     props.delay ?? DEFAULT_DELAY
   );
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = event.target.value;
+  const handleChange = (newValue: string) => {
     setValue(newValue);
     debouncedOnChange(newValue);
   };

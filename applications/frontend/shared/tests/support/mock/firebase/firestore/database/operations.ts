@@ -11,7 +11,7 @@ import {
 } from "../reference/snapshot-impl"
 import { FirestoreImpl } from "./firestore-impl"
 
-export async function addDoc<T = DocumentData>(
+export async function addDoc<T extends DocumentData = DocumentData>(
   reference: CollectionReferenceImpl<T>,
   data: T
 ): Promise<DocumentReferenceImpl<T>> {
@@ -24,7 +24,7 @@ export async function addDoc<T = DocumentData>(
   return docRef
 }
 
-export async function setDoc<T = DocumentData>(
+export async function setDoc<T extends DocumentData = DocumentData>(
   reference: DocumentReferenceImpl<T>,
   data: T,
   options?: SetOptions
@@ -62,7 +62,7 @@ export async function setDoc<T = DocumentData>(
   }
 }
 
-export async function getDoc<T = DocumentData>(
+export async function getDoc<T extends DocumentData = DocumentData>(
   reference: DocumentReferenceImpl<T>
 ): Promise<DocumentSnapshotImpl<T>> {
   const firestore = reference.firestore as FirestoreImpl
@@ -72,7 +72,7 @@ export async function getDoc<T = DocumentData>(
   return new DocumentSnapshotImpl(reference, data as T | undefined)
 }
 
-export async function updateDoc<T = DocumentData>(
+export async function updateDoc<T extends DocumentData = DocumentData>(
   reference: DocumentReferenceImpl<T>,
   data: UpdateData<T>
 ): Promise<void> {
@@ -104,7 +104,7 @@ export async function updateDoc<T = DocumentData>(
   memoryStore.updateDocument(reference.path, processedData)
 }
 
-export async function deleteDoc<T = DocumentData>(
+export async function deleteDoc<T extends DocumentData = DocumentData>(
   reference: DocumentReferenceImpl<T>
 ): Promise<void> {
   const firestore = reference.firestore as FirestoreImpl
@@ -113,7 +113,7 @@ export async function deleteDoc<T = DocumentData>(
   memoryStore.deleteDocument(reference.path)
 }
 
-export async function getDocs<T = DocumentData>(
+export async function getDocs<T extends DocumentData = DocumentData>(
   query:
     | CollectionReferenceImpl<T>
     | { execute(): Promise<QuerySnapshotImpl<T>> }

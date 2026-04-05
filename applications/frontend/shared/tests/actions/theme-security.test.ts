@@ -21,6 +21,7 @@ describe("theme actions - セキュリティ", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
+    vi.unstubAllEnvs();
     mockCookies.get.mockReset();
     mockCookies.set.mockReset();
   });
@@ -40,8 +41,7 @@ describe("theme actions - セキュリティ", () => {
     });
 
     it("NODE_ENV=production の場合 secure: true でCookieを設定する", async () => {
-      const originalNodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = "production";
+      vi.stubEnv("NODE_ENV", "production");
       mockCookies.get.mockReturnValue({ value: Theme.LIGHT });
 
       const { toggleTheme } = await import("@shared/actions/theme");
@@ -52,13 +52,10 @@ describe("theme actions - セキュリティ", () => {
         Theme.DARK,
         expect.objectContaining({ secure: true }),
       );
-
-      process.env.NODE_ENV = originalNodeEnv;
     });
 
     it("NODE_ENV=development の場合 secure: false でCookieを設定する", async () => {
-      const originalNodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = "development";
+      vi.stubEnv("NODE_ENV", "development");
       mockCookies.get.mockReturnValue({ value: Theme.LIGHT });
 
       const { toggleTheme } = await import("@shared/actions/theme");
@@ -69,8 +66,6 @@ describe("theme actions - セキュリティ", () => {
         Theme.DARK,
         expect.objectContaining({ secure: false }),
       );
-
-      process.env.NODE_ENV = originalNodeEnv;
     });
   });
 });

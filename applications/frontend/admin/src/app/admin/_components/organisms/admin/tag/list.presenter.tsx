@@ -5,7 +5,7 @@ import { TagCard } from "@shared/components/molecules/list/card/admin/tag";
 import styles from "./list.module.css";
 import { parseAsString, useQueryState } from "nuqs";
 import { TextInput } from "@shared/components/atoms/input/text";
-import { Routes } from "@/config/routes";
+import { Routes } from "../../../../../../config/routes";
 
 export type Props = {
   tags: Tag[];

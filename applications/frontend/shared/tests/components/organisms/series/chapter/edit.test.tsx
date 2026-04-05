@@ -3,7 +3,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, act } from "@testing-library/react";
+import { Forger } from "@lihs-ie/forger-ts";
 import { ToastProvider } from "@shared/components/molecules/toast";
+import { ChapterMold } from "../../../../support/molds/domains/series";
 
 const mockShowToast = vi.fn();
 
@@ -85,15 +87,11 @@ describe("components/organisms/series/chapter/ChapterEditOrganism", () => {
     const { getByText } = render(
       <ToastProvider>
         <ChapterEditOrganism
-          initial={{
-            identifier: "01HWXYZ0000000000000000000" as import("@shared/domains/series/chapter").ChapterIdentifier,
-            title: "既存チャプター" as import("@shared/domains/series/chapter").ChapterTitle,
-            slug: "existing-chapter" as import("@shared/domains/common").Slug,
-            content: "# 既存チャプター\n\nコンテンツ" as import("@shared/domains/series/chapter").Content,
+          initial={Forger(ChapterMold).forge({
+            title: "既存チャプター",
+            content: "# 既存チャプター\n\nコンテンツ",
             images: [],
-            status: "DRAFT" as import("@shared/domains/common").PublishStatus,
-            timeline: { createdAt: new Date(), updatedAt: new Date() },
-          } as import("@shared/domains/series/chapter").Chapter}
+          })}
           persist={persist}
           uploadImage={vi.fn()}
           seriesSlug="test-series"
@@ -174,15 +172,11 @@ describe("components/organisms/series/chapter/ChapterEditOrganism", () => {
     const { getByText } = render(
       <ToastProvider>
         <ChapterEditOrganism
-          initial={{
-            identifier: "01HWXYZ0000000000000000000" as import("@shared/domains/series/chapter").ChapterIdentifier,
-            title: "既存チャプター" as import("@shared/domains/series/chapter").ChapterTitle,
-            slug: "existing-chapter" as import("@shared/domains/common").Slug,
-            content: "# 既存チャプター\n\nコンテンツ" as import("@shared/domains/series/chapter").Content,
+          initial={Forger(ChapterMold).forge({
+            title: "既存チャプター",
+            content: "# 既存チャプター\n\nコンテンツ",
             images: [],
-            status: "DRAFT" as import("@shared/domains/common").PublishStatus,
-            timeline: { createdAt: new Date(), updatedAt: new Date() },
-          } as import("@shared/domains/series/chapter").Chapter}
+          })}
           persist={persist}
           uploadImage={vi.fn()}
           seriesSlug="test-series"
@@ -211,15 +205,11 @@ describe("components/organisms/series/chapter/ChapterEditOrganism", () => {
     const { getByText } = render(
       <ToastProvider>
         <ChapterEditOrganism
-          initial={{
-            identifier: "01HWXYZ0000000000000000000" as import("@shared/domains/series/chapter").ChapterIdentifier,
-            title: "既存チャプター" as import("@shared/domains/series/chapter").ChapterTitle,
-            slug: "existing-chapter" as import("@shared/domains/common").Slug,
-            content: "本文コンテンツ" as import("@shared/domains/series/chapter").Content,
+          initial={Forger(ChapterMold).forge({
+            title: "既存チャプター",
+            content: "本文コンテンツ",
             images: [],
-            status: "DRAFT" as import("@shared/domains/common").PublishStatus,
-            timeline: { createdAt: new Date(), updatedAt: new Date() },
-          } as import("@shared/domains/series/chapter").Chapter}
+          })}
           persist={persist}
           uploadImage={vi.fn()}
           seriesSlug="test-series"

@@ -14,7 +14,6 @@ import {
   cover,
   SeriesSlug,
   ChapterIdentifier,
-  chapterIdentifierSchema,
 } from "@shared/domains/series";
 import { PublishStatus } from "@shared/domains/common";
 import { ulid } from "ulid";
@@ -34,6 +33,7 @@ import {
   SlugMold,
   SlugProperties,
 } from "../common/slug";
+import { ChapterIdentifierMold } from "./chapter";
 
 export type SeriesIdentifierProperties = {
   value: string;
@@ -104,21 +104,6 @@ export type SeriesSlugProperties = SlugProperties;
 
 export const ChapterSlugMold = SlugMold;
 export type ChapterSlugProperties = SlugProperties;
-
-export type ChapterIdentifierProperties = {
-  value: string;
-};
-
-export const ChapterIdentifierMold = Mold<
-  ChapterIdentifier,
-  ChapterIdentifierProperties
->({
-  pour: (properties) => chapterIdentifierSchema.parse(properties.value),
-  prepare: (overrides, seed) => ({
-    value:
-      overrides.value ?? ulid(Forger(DateMold).forgeWithSeed(seed).getTime()),
-  }),
-});
 
 export type SeriesProperties = {
   identifier: SeriesIdentifier;

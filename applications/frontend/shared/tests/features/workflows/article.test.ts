@@ -27,6 +27,7 @@ import {
   testLogger,
   type FeatureTestContext,
 } from "../setup";
+import { createPassthroughFilter } from "@shared/workflows/common";
 import {
   ArticleMold,
   ArticleIdentifierMold,
@@ -35,6 +36,9 @@ import {
 import { TagIdentifierMold } from "../../support/molds/domains/attributes/tag";
 import type { Article, ArticleRepository } from "@shared/domains/articles";
 
+/**
+ * ワークフロー入力用に Article を永続化ペイロードへ変換します。
+ */
 function toArticlePayload(article: Article) {
   return {
     identifier: article.identifier,
@@ -152,7 +156,7 @@ describe("Feature: Article Workflow (実DB接続)", () => {
 
       const findBySlugWorkflow = createArticleFindBySlugWorkflow(validateSlug)(
         testLogger
-      )(repository.findBySlug);
+      )(repository.findBySlug)(createPassthroughFilter());
 
       const result = await findBySlugWorkflow({
         now: new Date(),

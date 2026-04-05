@@ -31,6 +31,9 @@ import type {
   SeriesCreatedEvent,
 } from "@shared/domains/series";
 
+/**
+ * ワークフロー入力用に Series を永続化ペイロードへ変換します。
+ */
 function toSeriesPayload(series: Series) {
   return {
     identifier: series.identifier,
@@ -296,11 +299,9 @@ describe("Feature: Series Workflow (実DB接続)", () => {
       const found = await repository.find(series.identifier).unwrap();
 
       expect(found.chapters.length).toBe(series.chapters.length);
-      found.chapters.forEach((chapter, index) => {
-        const originalChapter = series.chapters[index];
-        expect(chapter.title).toBe(originalChapter?.title);
-        expect(chapter.slug).toBe(originalChapter?.slug);
-        expect(chapter.content).toBe(originalChapter?.content);
+      found.chapters.forEach((chapterIdentifier, index) => {
+        const originalChapterIdentifier = series.chapters[index];
+        expect(chapterIdentifier).toBe(originalChapterIdentifier);
       });
     });
   });

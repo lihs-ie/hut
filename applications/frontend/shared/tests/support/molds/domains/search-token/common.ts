@@ -38,6 +38,7 @@ import {
   UnexpectedError,
 } from "@shared/aspects/error";
 import { EnumMold, Forger, Mold, StringMold } from "@lihs-ie/forger-ts";
+import { TagIdentifier } from "@shared/domains/attributes/tag";
 
 export const SearchTokenTypeMold = EnumMold(SearchTokenType);
 
@@ -193,7 +194,7 @@ export const SearchTokenMold = Mold<SearchToken, SearchTokenProperties>({
 
 export type SearchTokenCriteriaProperties = {
   freeWord: string | null;
-  tags: string[] | null;
+  tags: TagIdentifier[] | null;
   type: ContentType | null;
   sortBy: Sort | null;
   order: Order | null;

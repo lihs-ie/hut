@@ -17,7 +17,10 @@ export interface Firestore {
   toJSON(): object;
 }
 
-export interface DocumentReference<T = DocumentData, DbModelType = DocumentData> {
+export interface DocumentReference<
+  T = DocumentData,
+  DbModelType extends DocumentData = DocumentData
+> {
   readonly id: string;
   readonly path: string;
   readonly type: "document";
@@ -31,7 +34,10 @@ export interface DocumentReference<T = DocumentData, DbModelType = DocumentData>
   toJSON(): object;
 }
 
-export interface CollectionReference<T = DocumentData, DbModelType = DocumentData> {
+export interface CollectionReference<
+  T = DocumentData,
+  DbModelType extends DocumentData = DocumentData
+> {
   readonly id: string;
   readonly path: string;
   readonly type: "collection";
@@ -183,7 +189,10 @@ export interface SnapshotMetadata {
   isEqual(other: SnapshotMetadata): boolean;
 }
 
-export interface FirestoreDataConverter<T, DbModelType = DocumentData> {
+export interface FirestoreDataConverter<
+  T,
+  DbModelType extends DocumentData = DocumentData
+> {
   toFirestore(modelObject: T): DbModelType;
   toFirestore(
     modelObject: Partial<T>,
@@ -201,13 +210,11 @@ export interface SetOptions {
   readonly mergeFields?: string[];
 }
 
-export type UpdateData<T> = T extends Primitive
-  ? T
-  : T extends object
-  ? {
-      [K in keyof T]?: UpdateData<T[K]> | FieldValue;
-    } & NestedUpdateFields<T>
-  : Partial<T>;
+export type UpdateData<T extends DocumentData> = {
+  [K in keyof T]?: T[K] extends DocumentData
+    ? UpdateData<T[K]> | FieldValue
+    : T[K] | FieldValue;
+} & NestedUpdateFields<T>;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface NestedUpdateFields<_T extends Record<string, unknown>> {}
@@ -223,23 +230,23 @@ export class FieldValue {
 export type TransactionFunction<T> = (transaction: Transaction) => Promise<T>;
 
 export interface Transaction {
-  get<T = DocumentData>(
+  get<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>
   ): Promise<DocumentSnapshot<T>>;
-  set<T = DocumentData>(
+  set<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: T
   ): Transaction;
-  set<T = DocumentData>(
+  set<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: Partial<T>,
     options: SetOptions
   ): Transaction;
-  update<T = DocumentData>(
+  update<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: UpdateData<T>
   ): Transaction;
-  update<T = DocumentData>(
+  update<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     field: string | FieldPath,
     value: unknown,
@@ -249,17 +256,20 @@ export interface Transaction {
 }
 
 export interface WriteBatch {
-  set<T = DocumentData>(documentRef: DocumentReference<T>, data: T): WriteBatch;
-  set<T = DocumentData>(
+  set<T extends DocumentData = DocumentData>(
+    documentRef: DocumentReference<T>,
+    data: T
+  ): WriteBatch;
+  set<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: Partial<T>,
     options: SetOptions
   ): WriteBatch;
-  update<T = DocumentData>(
+  update<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: UpdateData<T>
   ): WriteBatch;
-  update<T = DocumentData>(
+  update<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     field: string | FieldPath,
     value: unknown,
@@ -276,47 +286,49 @@ export interface FirestoreTimestamp {
 }
 
 export interface FirestoreOperations {
-  doc<T = DocumentData>(
+  doc<T extends DocumentData = DocumentData>(
     firestore: Firestore,
     path: string,
     ...pathSegments: string[]
   ): DocumentReference<T>;
-  doc<T = DocumentData>(
+  doc<T extends DocumentData = DocumentData>(
     reference: CollectionReference<T>,
     path?: string,
     ...pathSegments: string[]
   ): DocumentReference<T>;
-  doc<T = DocumentData>(
+  doc<T extends DocumentData = DocumentData>(
     reference: DocumentReference<T>,
     path: string,
     ...pathSegments: string[]
   ): DocumentReference<T>;
 
-  collection<T = DocumentData>(
+  collection<T extends DocumentData = DocumentData>(
     firestore: Firestore,
     path: string,
     ...pathSegments: string[]
   ): CollectionReference<T>;
 
-  getDoc<T = DocumentData>(
+  getDoc<T extends DocumentData = DocumentData>(
     reference: DocumentReference<T>
   ): Promise<DocumentSnapshot<T>>;
-  getDocs<T = DocumentData>(query: Query<T>): Promise<QuerySnapshot<T>>;
-  setDoc<T = DocumentData>(
+  getDocs<T extends DocumentData = DocumentData>(
+    query: Query<T>
+  ): Promise<QuerySnapshot<T>>;
+  setDoc<T extends DocumentData = DocumentData>(
     reference: DocumentReference<T>,
     data: T,
     options?: SetOptions
   ): Promise<void>;
-  updateDoc<T = DocumentData>(
+  updateDoc<T extends DocumentData = DocumentData>(
     reference: DocumentReference<T>,
     data: UpdateData<T>
   ): Promise<void>;
   deleteDoc(reference: DocumentReference<DocumentData>): Promise<void>;
-  addDoc<T = DocumentData>(
+  addDoc<T extends DocumentData = DocumentData>(
     reference: CollectionReference<T>,
     data: T
   ): Promise<DocumentReference<T>>;
-  query<T = DocumentData>(
+  query<T extends DocumentData = DocumentData>(
     query: Query<T>,
     ...constraints: QueryConstraint[]
   ): Query<T>;

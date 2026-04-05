@@ -2,8 +2,15 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { Forger } from "@lihs-ie/forger-ts";
 import { render, act, fireEvent } from "@testing-library/react";
 import { ToastProvider } from "@shared/components/molecules/toast";
+import {
+  ChapterMold,
+  ChapterSlugMold,
+  SeriesMold,
+  SeriesSlugMold,
+} from "../../../support/molds/domains/series";
 
 const mockShowToast = vi.fn();
 
@@ -94,18 +101,12 @@ describe("components/organisms/series/SeriesEditOrganism", () => {
     const { getByText } = render(
       <ToastProvider>
         <SeriesEditOrganism
-          initial={{
-            identifier: "01HWXYZ0000000000000000000",
+          initial={Forger(SeriesMold).forge({
             title: "既存連載",
-            slug: "existing-series" as import("@shared/domains/common").Slug,
-            subTitle: null,
-            description: undefined,
-            cover: null,
-            tags: [],
+            slug: Forger(SeriesSlugMold).forge({ value: "existing-series" }),
             chapters: [],
-            status: "draft" as import("@shared/domains/common").PublishStatus,
-            timeline: { createdAt: new Date(), updatedAt: new Date() },
-          } as import("@shared/domains/series").Series}
+            tags: [],
+          })}
           persist={persist}
           tags={[]}
         />
@@ -179,22 +180,16 @@ describe("components/organisms/series/SeriesEditOrganism", () => {
     const { getByText } = render(
       <ToastProvider>
         <SeriesEditOrganism
-          initial={{
-            identifier: "01HWXYZ0000000000000000000",
+          initial={Forger(SeriesMold).forge({
             title: "既存連載",
-            slug: "existing-series" as import("@shared/domains/common").Slug,
-            subTitle: null,
-            description: undefined,
-            cover: null,
-            tags: [],
+            slug: Forger(SeriesSlugMold).forge({ value: "existing-series" }),
             chapters: [],
-            status: "draft" as import("@shared/domains/common").PublishStatus,
-            timeline: { createdAt: new Date(), updatedAt: new Date() },
-          } as import("@shared/domains/series").Series}
+            tags: [],
+          })}
           persist={persist}
           tags={[]}
           chapters={[]}
-          seriesSlug={"existing-series" as import("@shared/domains/common").Slug}
+          seriesSlug={Forger(SeriesSlugMold).forge({ value: "existing-series" })}
         />
       </ToastProvider>,
     );
@@ -210,36 +205,26 @@ describe("components/organisms/series/SeriesEditOrganism", () => {
     );
 
     const chapters = [
-      {
-        identifier: "01HWXYZ0000000000000000001",
+      Forger(ChapterMold).forge({
         title: "第1章: はじめに",
-        slug: "chapter-1" as import("@shared/domains/common").Slug,
-        content: "",
+        slug: Forger(ChapterSlugMold).forge({ value: "chapter-1" }),
         images: [],
-        status: "PUBLISHED" as import("@shared/domains/common").PublishStatus,
-        timeline: { createdAt: new Date(), updatedAt: new Date() },
-      } as import("@shared/domains/series/chapter").Chapter,
+      }),
     ];
 
     const { getByText } = render(
       <ToastProvider>
         <SeriesEditOrganism
-          initial={{
-            identifier: "01HWXYZ0000000000000000000",
+          initial={Forger(SeriesMold).forge({
             title: "既存連載",
-            slug: "existing-series" as import("@shared/domains/common").Slug,
-            subTitle: null,
-            description: undefined,
-            cover: null,
-            tags: [],
+            slug: Forger(SeriesSlugMold).forge({ value: "existing-series" }),
             chapters: [],
-            status: "draft" as import("@shared/domains/common").PublishStatus,
-            timeline: { createdAt: new Date(), updatedAt: new Date() },
-          } as import("@shared/domains/series").Series}
+            tags: [],
+          })}
           persist={persist}
           tags={[]}
           chapters={chapters}
-          seriesSlug={"existing-series" as import("@shared/domains/common").Slug}
+          seriesSlug={Forger(SeriesSlugMold).forge({ value: "existing-series" })}
         />
       </ToastProvider>,
     );
