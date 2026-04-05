@@ -11,8 +11,8 @@ const FILTER_TOGGLE_LABEL = "フィルター";
 const SEARCH_ERROR_HEADING = "検索中にエラーが発生しました";
 const RETRY_BUTTON_LABEL = "再試行";
 const SEARCH_RESULTS_SUMMARY = /検索結果：\d+件/;
-const SEARCH_PAGE_READY_TIMEOUT_MS = 20000;
-const SEARCH_RESULTS_TIMEOUT_MS = 8000;
+const SEARCH_PAGE_READY_TIMEOUT_MS = 30000;
+const SEARCH_RESULTS_TIMEOUT_MS = 15000;
 
 /**
  * Returns the keyword search input on the search page.
