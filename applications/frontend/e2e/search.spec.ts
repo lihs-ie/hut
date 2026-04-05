@@ -6,18 +6,94 @@ type TestArgs = {
   page: Page;
 };
 
+const SEARCH_INPUT_PLACEHOLDER = "キーワードで検索...";
+const FILTER_TOGGLE_LABEL = "フィルター";
+const SEARCH_ERROR_HEADING = "検索中にエラーが発生しました";
+const RETRY_BUTTON_LABEL = "再試行";
+const SEARCH_RESULTS_SUMMARY = /検索結果：\d+件/;
+const SEARCH_PAGE_READY_TIMEOUT_MS = 20000;
+const SEARCH_RESULTS_TIMEOUT_MS = 8000;
+
 /**
- * Wait for search results to load, handling error state with retry
- * This is necessary because CI environment may have timing issues with Firebase Emulator
+ * Returns the keyword search input on the search page.
+ */
+const getSearchInput = (page: Page) => {
+  return page.getByPlaceholder(SEARCH_INPUT_PLACEHOLDER);
+};
+
+/**
+ * Returns the filter toggle button on the search page.
+ */
+const getFilterToggle = (page: Page) => {
+  return page.getByRole("button", { name: FILTER_TOGGLE_LABEL });
+};
+
+/**
+ * Returns the search result summary text locator.
+ */
+const getSearchResultSummary = (page: Page) => {
+  return page.getByText(SEARCH_RESULTS_SUMMARY);
+};
+
+/**
+ * Waits until the search UI is interactive after navigation.
+ */
+const waitForSearchPageReady = async (page: Page): Promise<void> => {
+  await Promise.all([
+    expect(page.locator("main")).toBeVisible({
+      timeout: SEARCH_PAGE_READY_TIMEOUT_MS,
+    }),
+    expect(getSearchInput(page)).toBeVisible({
+      timeout: SEARCH_PAGE_READY_TIMEOUT_MS,
+    }),
+    expect(getFilterToggle(page)).toBeVisible({
+      timeout: SEARCH_PAGE_READY_TIMEOUT_MS,
+    }),
+  ]);
+};
+
+/**
+ * Navigates to the search page and waits until the search UI is interactive.
+ */
+const gotoSearchPage = async (
+  page: Page,
+  path: string = "/search",
+): Promise<void> => {
+  await page.goto(path, { waitUntil: "domcontentloaded" });
+  await waitForSearchPageReady(page);
+};
+
+/**
+ * Expands the filter panel only when it is currently collapsed.
+ */
+const ensureFilterPanelExpanded = async (page: Page): Promise<void> => {
+  const filterToggle = getFilterToggle(page);
+
+  await expect(filterToggle).toBeVisible();
+  await filterToggle.scrollIntoViewIfNeeded();
+
+  if ((await filterToggle.getAttribute("aria-expanded")) !== "true") {
+    await filterToggle.click({ force: true });
+  }
+
+  await expect(page.getByRole("button", { name: "すべて" })).toBeVisible();
+};
+
+/**
+ * Waits for search results to load, handling transient error state with retry.
  */
 const waitForSearchResults = async (page: Page): Promise<void> => {
-  const errorHeading = page.getByRole("heading", { name: "検索中にエラーが発生しました" });
-  const retryButton = page.getByRole("button", { name: "再試行" });
-  const resultsText = page.getByText(/検索結果：\d+件/);
+  const errorHeading = page.getByRole("heading", { name: SEARCH_ERROR_HEADING });
+  const retryButton = page.getByRole("button", { name: RETRY_BUTTON_LABEL });
+  const resultsText = getSearchResultSummary(page);
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  await waitForSearchPageReady(page);
+
+  for (let attempt = 0; attempt < 4; attempt++) {
     try {
-      await expect(resultsText).toBeVisible({ timeout: 10000 });
+      await expect(resultsText).toBeVisible({
+        timeout: SEARCH_RESULTS_TIMEOUT_MS,
+      });
       return;
     } catch {
       const isError = await errorHeading.isVisible().catch(() => false);
@@ -27,11 +103,31 @@ const waitForSearchResults = async (page: Page): Promise<void> => {
         continue;
       }
 
-      if (attempt === 2) {
-        throw new Error("Search results did not load after 3 attempts");
+      if (attempt === 3) {
+        throw new Error("Search results did not load after 4 attempts");
       }
+
+      await page.waitForTimeout(1000);
     }
   }
+};
+
+/**
+ * Builds the `/search` URL with comma-separated query parameters.
+ */
+const buildSearchUrl = (params: Record<string, string | string[]>): string => {
+  const urlParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (Array.isArray(value)) {
+      urlParams.set(key, value.join(","));
+      continue;
+    }
+
+    urlParams.set(key, value);
+  }
+
+  return `/search?${urlParams.toString()}`;
 };
 
 // シードデータの公開記事（テストで参照）
@@ -76,37 +172,16 @@ const draftMemo = {
   tags: ["TypeScript"],
 };
 
-// 検索ページのURLパラメータを構築
-// Note: サーバー側はカンマ区切り形式を期待しているため、配列はカンマで結合する
-const buildSearchUrl = (params: Record<string, string | string[]>): string => {
-  const urlParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (Array.isArray(value)) {
-      // サーバー側のparseAsArray関数はカンマ区切りを期待している
-      urlParams.set(key, value.join(","));
-    } else {
-      urlParams.set(key, value);
-    }
-  }
-  return `/search?${urlParams.toString()}`;
-};
-
 /**
  * Search page basic tests
  */
 test.describe("search page basics", () => {
   test("search page renders correctly", async ({ page }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
 
-    // Verify main elements are displayed
     await expect(page.locator("main")).toBeVisible();
-
-    // Verify search input
-    await expect(page.getByPlaceholder("キーワードで検索...")).toBeVisible();
-
-    // Verify filter section
-    await expect(page.getByText("フィルター")).toBeVisible();
+    await expect(getSearchInput(page)).toBeVisible();
+    await expect(getFilterToggle(page)).toBeVisible();
   });
 
   // SKIPPED: This test requires stable search API in Firebase Emulator
@@ -114,22 +189,13 @@ test.describe("search page basics", () => {
   test.skip("displays initial state when no filters applied", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
-
-    // Expand filter if collapsed
-    const filterButton = page.getByText("フィルター");
-    await filterButton.click();
-
-    // Wait for search results to load with error handling
+    await gotoSearchPage(page);
+    await ensureFilterPanelExpanded(page);
     await waitForSearchResults(page);
 
-    // Verify search results count is displayed (0 is expected when no criteria)
-    const resultsText = page.getByText(/検索結果：\d+件/);
+    const resultsText = getSearchResultSummary(page);
     await expect(resultsText).toBeVisible({ timeout: 10000 });
 
-    // When no search criteria is applied, the result should be 0
-    // (The search workflow returns empty array when no freeWord or tags are specified)
     const text = await resultsText.textContent();
     const count = parseInt(text?.match(/\d+/)?.[0] || "0");
     expect(count).toBe(0);
@@ -138,11 +204,7 @@ test.describe("search page basics", () => {
   test("displays empty state message when no criteria applied", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
-
-    // If no search criteria and results shown, it's the initial state
-    // The initial state may show all content or show a "start searching" message
+    await gotoSearchPage(page);
     await expect(page.locator("main")).toBeVisible();
   });
 });
@@ -152,11 +214,11 @@ test.describe("search page basics", () => {
  */
 test.describe("free word search", () => {
   test("searches by keyword in title", async ({ page }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
 
-    const searchInput = page.getByPlaceholder("キーワードで検索...");
+    const searchInput = getSearchInput(page);
     await searchInput.fill("TypeScript");
+    await waitForSearchResults(page);
 
     await expect(
       page.getByText("TypeScriptで型安全なコードを書く").first(),
@@ -164,17 +226,12 @@ test.describe("free word search", () => {
   });
 
   test("searches by keyword in content", async ({ page }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
 
-    // Search for "型安全" which is part of the article content and should be in ngram tokens
-    const searchInput = page.getByPlaceholder("キーワードで検索...");
+    const searchInput = getSearchInput(page);
     await searchInput.fill("型安全");
+    await waitForSearchResults(page);
 
-    // Wait for search results (increased timeout for CI environment)
-    await page.waitForTimeout(3000);
-
-    // Verify article is found (with extended timeout for CI)
     await expect(
       page.getByText("TypeScriptで型安全なコードを書く").first(),
     ).toBeVisible({ timeout: 15000 });
@@ -183,18 +240,13 @@ test.describe("free word search", () => {
   test("shows no results for non-matching keyword", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
 
-    // Search for non-existent keyword (use random string that won't match any ngrams)
-    const searchInput = page.getByPlaceholder("キーワードで検索...");
+    const searchInput = getSearchInput(page);
     await searchInput.fill("xyz123abc");
-
-    // Wait for search results with error handling
     await waitForSearchResults(page);
 
-    // Verify results count shows 0 (the search runs but finds no matches)
-    const resultsText = page.getByText(/検索結果：\d+件/);
+    const resultsText = getSearchResultSummary(page);
     await expect(resultsText).toBeVisible({ timeout: 10000 });
 
     const text = await resultsText.textContent();
@@ -205,31 +257,19 @@ test.describe("free word search", () => {
   test("clears search results when input is cleared", async ({
     page,
   }: TestArgs) => {
-    // Start with a tag filter to ensure we have some results
-    await page.goto(buildSearchUrl({ tags: ["TypeScript"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+    await gotoSearchPage(page, buildSearchUrl({ tags: ["TypeScript"] }));
     await waitForSearchResults(page);
 
-    // Verify we have results
-    const resultsText = page.getByText(/検索結果：\d+件/);
+    const resultsText = getSearchResultSummary(page);
     await expect(resultsText).toBeVisible({ timeout: 10000 });
 
-    // Now add a free word search
-    const searchInput = page.getByPlaceholder("キーワードで検索...");
+    const searchInput = getSearchInput(page);
     await searchInput.fill("型安全");
-
-    // Wait for search results update
     await waitForSearchResults(page);
 
-    // Clear the input (tag filter should still be active)
     await searchInput.clear();
-
-    // Wait for search results update
     await waitForSearchResults(page);
 
-    // Results should still be shown (tag filter is active)
     await expect(resultsText).toBeVisible({ timeout: 10000 });
   });
 });
@@ -243,77 +283,56 @@ test.describe("content type filter", () => {
   test("displays all types button as default selected", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
+    await ensureFilterPanelExpanded(page);
 
-    // Expand filter and scroll to ensure visibility
-    const filterButton = page.getByText("フィルター");
-    await filterButton.scrollIntoViewIfNeeded();
-    await filterButton.click();
-    await page.waitForTimeout(1000);
-
-    // "すべて" button should be active/selected by default
     const allButton = page.getByRole("button", { name: "すべて" });
     await expect(allButton).toBeVisible();
   });
 
-  test("filters to show only articles when combined with tag via URL", async ({ page }: TestArgs) => {
-    // Use URL parameters to apply filters directly
-    await page.goto(buildSearchUrl({ tags: ["TypeScript"], type: "article" }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+  test("filters to show only articles when combined with tag via URL", async ({
+    page,
+  }: TestArgs) => {
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({ tags: ["TypeScript"], type: "article" }),
+    );
     await waitForSearchResults(page);
 
-    // Verify URL includes type parameter
     expect(page.url()).toContain("type=article");
     expect(page.url()).toContain("tags=TypeScript");
 
-    // Verify articles are shown
     await expect(
       page.getByText("TypeScriptで型安全なコードを書く").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("filters to show only memos when combined with tag via URL", async ({ page }: TestArgs) => {
-    // Use URL parameters to apply filters directly
-    await page.goto(buildSearchUrl({ tags: ["Go"], type: "memo" }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+  test("filters to show only memos when combined with tag via URL", async ({
+    page,
+  }: TestArgs) => {
+    await gotoSearchPage(page, buildSearchUrl({ tags: ["Go"], type: "memo" }));
     await waitForSearchResults(page);
 
-    // Verify URL includes type parameter
     expect(page.url()).toContain("type=memo");
-
-    // Verify Go Tips memo is visible
-    await expect(page.getByText("Go言語のTips").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Go言語のTips").first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
-  // Note: This test is skipped in CI because UI click interactions are unreliable
-  // The actual filter functionality works correctly when tested manually
   test.skip("returns to all content when すべて is clicked", async ({
     page,
   }: TestArgs) => {
-    // Start with article filter
-    await page.goto(buildSearchUrl({ type: "article", tags: ["TypeScript"] }));
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({ type: "article", tags: ["TypeScript"] }),
+    );
+    await ensureFilterPanelExpanded(page);
 
-    // Expand filter and scroll to ensure visibility
-    const filterButton = page.getByText("フィルター");
-    await filterButton.scrollIntoViewIfNeeded();
-    await filterButton.click();
-    await page.waitForTimeout(1000);
-
-    // Click "すべて" button (use force to avoid interception)
     const allButton = page.getByRole("button", { name: "すべて" });
     await allButton.scrollIntoViewIfNeeded();
     await allButton.click({ force: true });
-
-    // Wait for filter to apply
     await page.waitForTimeout(1000);
 
-    // URL should not have type parameter
     expect(page.url()).not.toContain("type=");
   });
 });
@@ -324,54 +343,38 @@ test.describe("content type filter", () => {
  */
 test.describe("sort order", () => {
   test("displays latest as default sort", async ({ page }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
+    await ensureFilterPanelExpanded(page);
 
-    // Expand filter and scroll to ensure visibility
-    const filterButton = page.getByText("フィルター");
-    await filterButton.scrollIntoViewIfNeeded();
-    await filterButton.click();
-    await page.waitForTimeout(1000);
-
-    // "最新" button should be active by default
     const latestButton = page.getByRole("button", { name: "最新" });
     await expect(latestButton).toBeVisible();
   });
 
   test("sorts by oldest first via URL", async ({ page }: TestArgs) => {
-    // Use URL parameter to apply sort directly
-    await page.goto(buildSearchUrl({ sortBy: "oldest", tags: ["TypeScript"] }));
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(1000);
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({ sortBy: "oldest", tags: ["TypeScript"] }),
+    );
 
-    // Verify URL includes sortBy parameter
     expect(page.url()).toContain("sortBy=oldest");
   });
 
-  // Note: This test is skipped in CI because UI click interactions are unreliable
-  // The actual sort functionality works correctly when tested manually
   test.skip("returns to latest sort when clicked", async ({ page }: TestArgs) => {
-    // Start with oldest sort
-    await page.goto(buildSearchUrl({ sortBy: "oldest", tags: ["TypeScript"] }));
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({ sortBy: "oldest", tags: ["TypeScript"] }),
+    );
+    await ensureFilterPanelExpanded(page);
 
-    // Expand filter and scroll to ensure visibility
-    const filterButton = page.getByText("フィルター");
-    await filterButton.scrollIntoViewIfNeeded();
-    await filterButton.click();
-    await page.waitForTimeout(1000);
-
-    // Click "最新" button (use force to avoid interception)
     const latestButton = page.getByRole("button", { name: "最新" });
     await latestButton.scrollIntoViewIfNeeded();
     await latestButton.click({ force: true });
-
-    // Wait for sort to apply
     await page.waitForTimeout(1000);
 
-    // URL should have sortBy=latest or no sortBy (latest is default)
     const url = page.url();
-    expect(url.includes("sortBy=latest") || !url.includes("sortBy=oldest")).toBe(true);
+    expect(url.includes("sortBy=latest") || !url.includes("sortBy=oldest")).toBe(
+      true,
+    );
   });
 });
 
@@ -383,98 +386,61 @@ test.describe("tag filter", () => {
   test("displays available tags in filter section", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
+    await ensureFilterPanelExpanded(page);
 
-    // Expand filter and scroll to ensure visibility
-    const filterButton = page.getByText("フィルター");
-    await filterButton.scrollIntoViewIfNeeded();
-    await filterButton.click();
-    await page.waitForTimeout(1000);
-
-    // Verify "タグ" section exists (use exact match to avoid matching description text)
     await expect(page.getByText("タグ", { exact: true })).toBeVisible();
-
-    // Verify at least some tags are displayed
     await expect(page.getByRole("button", { name: "TypeScript" })).toBeVisible();
     await expect(page.getByRole("button", { name: "React" })).toBeVisible();
   });
 
-  test("filters by single tag - TypeScript via URL", async ({ page }: TestArgs) => {
-    // Use URL parameter to apply tag filter directly
-    await page.goto(buildSearchUrl({ tags: ["TypeScript"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+  test("filters by single tag - TypeScript via URL", async ({
+    page,
+  }: TestArgs) => {
+    await gotoSearchPage(page, buildSearchUrl({ tags: ["TypeScript"] }));
     await waitForSearchResults(page);
 
-    // Verify URL includes tags parameter
     expect(page.url()).toContain("tags=TypeScript");
-
-    // Verify TypeScript-related content is shown
     await expect(
       page.getByText("TypeScriptで型安全なコードを書く").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
   test("filters by single tag - Go via URL", async ({ page }: TestArgs) => {
-    // Use URL parameter to apply tag filter directly
-    await page.goto(buildSearchUrl({ tags: ["Go"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+    await gotoSearchPage(page, buildSearchUrl({ tags: ["Go"] }));
     await waitForSearchResults(page);
 
-    // Verify Go Tips memo is visible (with extended timeout for CI)
-    await expect(page.getByText("Go言語のTips").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Go言語のTips").first()).toBeVisible({
+      timeout: 10000,
+    });
 
-    // Verify results count is limited to Go content
-    const resultsText = page.getByText(/検索結果：\d+件/);
+    const resultsText = getSearchResultSummary(page);
     const text = await resultsText.textContent();
     const count = parseInt(text?.match(/\d+/)?.[0] || "0");
-    expect(count).toBeLessThanOrEqual(2); // Only Go-related content
+    expect(count).toBeLessThanOrEqual(2);
   });
 
   test("filters by multiple tags via URL", async ({ page }: TestArgs) => {
-    // Use URL parameter to apply multiple tag filters directly
-    await page.goto(buildSearchUrl({ tags: ["TypeScript", "React"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+    await gotoSearchPage(page, buildSearchUrl({ tags: ["TypeScript", "React"] }));
     await waitForSearchResults(page);
 
-    // Verify URL includes both tags
     expect(page.url()).toContain("TypeScript");
     expect(page.url()).toContain("React");
 
-    // Results should show content with both tags
-    const resultsText = page.getByText(/検索結果：\d+件/);
+    const resultsText = getSearchResultSummary(page);
     await expect(resultsText).toBeVisible({ timeout: 10000 });
   });
 
-  // Note: This test is skipped in CI because UI click interactions are unreliable
-  // The actual tag toggle functionality works correctly when tested manually
   test.skip("removes tag filter when clicked again", async ({ page }: TestArgs) => {
-    // Start with TypeScript filter
-    await page.goto(buildSearchUrl({ tags: ["TypeScript"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for page to load
+    await gotoSearchPage(page, buildSearchUrl({ tags: ["TypeScript"] }));
     await page.waitForTimeout(1000);
+    await ensureFilterPanelExpanded(page);
 
-    // Expand filter and scroll to ensure visibility
-    const filterButton = page.getByText("フィルター");
-    await filterButton.scrollIntoViewIfNeeded();
-    await filterButton.click();
-    await page.waitForTimeout(1000);
-
-    // Click TypeScript tag again to deselect (use force to avoid interception)
     const tagButton = page.getByRole("button", { name: "TypeScript" });
     await tagButton.scrollIntoViewIfNeeded();
     await tagButton.click({ force: true });
     await page.waitForTimeout(1000);
 
-    // URL should not have TypeScript tag
     expect(page.url()).not.toContain("tags=TypeScript");
   });
 });
@@ -487,45 +453,42 @@ test.describe("combined filters", () => {
   test("combines free word search with type filter via URL", async ({
     page,
   }: TestArgs) => {
-    // Use URL parameters to apply filters directly
-    await page.goto(buildSearchUrl({ freeWord: "TypeScript", type: "article" }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({ freeWord: "TypeScript", type: "article" }),
+    );
     await waitForSearchResults(page);
 
-    // Verify URL has both parameters
     expect(page.url()).toContain("freeWord=TypeScript");
     expect(page.url()).toContain("type=article");
 
-    // Verify TypeScript article is shown
     await expect(
       page.getByText("TypeScriptで型安全なコードを書く").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("combines type filter with sort order via URL", async ({ page }: TestArgs) => {
-    // Use URL parameters to apply filters directly
-    await page.goto(buildSearchUrl({ type: "memo", sortBy: "oldest", tags: ["Go"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+  test("combines type filter with sort order via URL", async ({
+    page,
+  }: TestArgs) => {
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({ type: "memo", sortBy: "oldest", tags: ["Go"] }),
+    );
     await waitForSearchResults(page);
 
-    // Verify URL has parameters
     expect(page.url()).toContain("type=memo");
     expect(page.url()).toContain("sortBy=oldest");
   });
 
-  test("combines tag filter with type filter via URL", async ({ page }: TestArgs) => {
-    // Use URL parameters to apply filters directly
-    await page.goto(buildSearchUrl({ tags: ["TypeScript"], type: "article" }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+  test("combines tag filter with type filter via URL", async ({
+    page,
+  }: TestArgs) => {
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({ tags: ["TypeScript"], type: "article" }),
+    );
     await waitForSearchResults(page);
 
-    // Verify URL has both parameters
     expect(page.url()).toContain("tags=TypeScript");
     expect(page.url()).toContain("type=article");
   });
@@ -533,19 +496,17 @@ test.describe("combined filters", () => {
   test("combines all filters: keyword, type, sort, and tag via URL", async ({
     page,
   }: TestArgs) => {
-    // Use URL parameters to apply all filters directly
-    await page.goto(buildSearchUrl({
-      freeWord: "型安全",
-      type: "article",
-      sortBy: "oldest",
-      tags: ["TypeScript"],
-    }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({
+        freeWord: "型安全",
+        type: "article",
+        sortBy: "oldest",
+        tags: ["TypeScript"],
+      }),
+    );
     await waitForSearchResults(page);
 
-    // Verify URL has all parameters
     const url = page.url();
     expect(url).toContain("freeWord=");
     expect(url).toContain("type=article");
@@ -562,25 +523,20 @@ test.describe("clear filters", () => {
   test("displays clear button when filters are active via URL", async ({
     page,
   }: TestArgs) => {
-    // Start with a filter already applied via URL
-    await page.goto(buildSearchUrl({ type: "article", tags: ["TypeScript"] }));
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({ type: "article", tags: ["TypeScript"] }),
+    );
+    await ensureFilterPanelExpanded(page);
 
-    // Expand filter and scroll to ensure visibility
-    const filterButton = page.getByText("フィルター");
-    await filterButton.scrollIntoViewIfNeeded();
-    await filterButton.click();
-    await page.waitForTimeout(1000);
-
-    // Clear button should be visible since filters are active
     await expect(page.getByRole("button", { name: "クリア" })).toBeVisible();
   });
 
   test("clears all filters when clear button is clicked", async ({
     page,
   }: TestArgs) => {
-    // Start with multiple filters
-    await page.goto(
+    await gotoSearchPage(
+      page,
       buildSearchUrl({
         freeWord: "test",
         type: "article",
@@ -588,25 +544,15 @@ test.describe("clear filters", () => {
         tags: ["TypeScript"],
       }),
     );
-    await page.waitForLoadState("networkidle");
+    await ensureFilterPanelExpanded(page);
 
-    // Expand filter and scroll to ensure visibility
-    const filterButton = page.getByText("フィルター");
-    await filterButton.scrollIntoViewIfNeeded();
-    await filterButton.click();
-    await page.waitForTimeout(1000);
-
-    // Click clear button (use force to avoid interception)
     const clearButton = page.getByRole("button", { name: "クリア" });
     await clearButton.scrollIntoViewIfNeeded();
     await clearButton.click({ force: true });
-    await page.waitForTimeout(1000);
 
-    // URL should be clean
-    const url = page.url();
-    expect(url).not.toContain("type=");
-    expect(url).not.toContain("sortBy=oldest");
-    expect(url).not.toContain("tags=");
+    await expect.poll(() => page.url()).not.toContain("type=");
+    await expect.poll(() => page.url()).not.toContain("sortBy=oldest");
+    await expect.poll(() => page.url()).not.toContain("tags=");
   });
 });
 
@@ -615,50 +561,41 @@ test.describe("clear filters", () => {
  */
 test.describe("URL parameter handling", () => {
   test("loads search with freeWord parameter", async ({ page }: TestArgs) => {
-    await page.goto(buildSearchUrl({ freeWord: "TypeScript" }));
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page, buildSearchUrl({ freeWord: "TypeScript" }));
 
-    // Verify search input has the value
-    const searchInput = page.getByPlaceholder("キーワードで検索...");
-    await expect(searchInput).toHaveValue("TypeScript");
+    const searchInput = getSearchInput(page);
+    await expect(searchInput).toHaveValue("TypeScript", { timeout: 10000 });
   });
 
-  test("loads search with type parameter and tag", async ({ page }: TestArgs) => {
-    // Type alone doesn't produce results - need to combine with tags
-    await page.goto(buildSearchUrl({ type: "memo", tags: ["Go"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+  test("loads search with type parameter and tag", async ({
+    page,
+  }: TestArgs) => {
+    await gotoSearchPage(page, buildSearchUrl({ type: "memo", tags: ["Go"] }));
     await waitForSearchResults(page);
+    await ensureFilterPanelExpanded(page);
 
-    // Expand filter to see button state
-    await page.getByText("フィルター").click();
-
-    // The Go Tips memo should be visible (with extended timeout for CI)
-    await expect(page.getByText("Go言語のTips").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Go言語のTips").first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("loads search with sortBy parameter", async ({ page }: TestArgs) => {
-    await page.goto(buildSearchUrl({ sortBy: "oldest" }));
-    await page.waitForLoadState("networkidle");
-
-    // Page should load successfully
+    await gotoSearchPage(page, buildSearchUrl({ sortBy: "oldest" }));
     await expect(page.locator("main")).toBeVisible();
   });
 
   test("loads search with tags parameter", async ({ page }: TestArgs) => {
-    await page.goto(buildSearchUrl({ tags: ["Go"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+    await gotoSearchPage(page, buildSearchUrl({ tags: ["Go"] }));
     await waitForSearchResults(page);
 
-    // Verify Go-related content is shown (with extended timeout for CI)
-    await expect(page.getByText("Go言語のTips").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Go言語のTips").first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("loads search with multiple parameters", async ({ page }: TestArgs) => {
-    await page.goto(
+    await gotoSearchPage(
+      page,
       buildSearchUrl({
         freeWord: "コンポーネント",
         type: "article",
@@ -666,14 +603,11 @@ test.describe("URL parameter handling", () => {
         tags: ["React"],
       }),
     );
-    await page.waitForLoadState("networkidle");
 
-    // Verify page loads with all parameters
     await expect(page.locator("main")).toBeVisible();
-
-    // Search input should have the value
-    const searchInput = page.getByPlaceholder("キーワードで検索...");
-    await expect(searchInput).toHaveValue("コンポーネント");
+    await expect(getSearchInput(page)).toHaveValue("コンポーネント", {
+      timeout: 10000,
+    });
   });
 });
 
@@ -684,31 +618,24 @@ test.describe("draft content visibility", () => {
   test("does not show draft articles in search results", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
 
-    // Search for the draft article title
-    const searchInput = page.getByPlaceholder("キーワードで検索...");
+    const searchInput = getSearchInput(page);
     await searchInput.fill("App Router");
-    await page.waitForTimeout(1000);
+    await waitForSearchResults(page);
 
-    // Draft article should not appear
     await expect(page.getByText(draftArticle.title)).not.toBeVisible();
   });
 
   test("does not show draft memos in search results", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
 
-    // Search for the draft memo title
-    const searchInput = page.getByPlaceholder("キーワードで検索...");
+    const searchInput = getSearchInput(page);
     await searchInput.fill("TypeScript設定メモ");
-    await page.waitForTimeout(1000);
+    await waitForSearchResults(page);
 
-    // Draft memo should not appear in results
-    // Check that no exact match for the draft title exists
     const draftTitle = page.getByText(draftMemo.title, { exact: true });
     await expect(draftTitle).not.toBeVisible();
   });
@@ -719,54 +646,42 @@ test.describe("draft content visibility", () => {
  */
 test.describe("search result cards", () => {
   test("displays article badge for articles", async ({ page }: TestArgs) => {
-    // Need tags to get results
-    await page.goto(buildSearchUrl({ type: "article", tags: ["TypeScript"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({ type: "article", tags: ["TypeScript"] }),
+    );
     await waitForSearchResults(page);
 
-    // Article cards should have "記事" badge
     const articleBadges = page.locator("article").locator("text=記事");
     await expect(articleBadges.first()).toBeVisible({ timeout: 10000 });
   });
 
   test("displays memo badge for memos", async ({ page }: TestArgs) => {
-    // Need tags to get results
-    await page.goto(buildSearchUrl({ type: "memo", tags: ["Go"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+    await gotoSearchPage(page, buildSearchUrl({ type: "memo", tags: ["Go"] }));
     await waitForSearchResults(page);
 
-    // Memo cards should have "メモ" badge
     const memoBadges = page.locator("article").locator("text=メモ");
     await expect(memoBadges.first()).toBeVisible({ timeout: 10000 });
   });
 
   test("displays tags on result cards", async ({ page }: TestArgs) => {
-    // Need a search criteria to get results
-    await page.goto(buildSearchUrl({ tags: ["TypeScript"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+    await gotoSearchPage(page, buildSearchUrl({ tags: ["TypeScript"] }));
     await waitForSearchResults(page);
 
-    // Tags should be displayed with # prefix
-    await expect(page.getByText("#TypeScript").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("#TypeScript").first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("clicking result card navigates to content page", async ({
     page,
   }: TestArgs) => {
-    // Need tags to get results
-    await page.goto(buildSearchUrl({ type: "article", tags: ["TypeScript"] }));
-    await page.waitForLoadState("networkidle");
-
-    // Wait for search results with error handling
+    await gotoSearchPage(
+      page,
+      buildSearchUrl({ type: "article", tags: ["TypeScript"] }),
+    );
     await waitForSearchResults(page);
 
-    // Click on an article
     const articleLink = page
       .getByRole("link")
       .filter({ hasText: "TypeScriptで型安全なコードを書く" })
@@ -774,7 +689,6 @@ test.describe("search result cards", () => {
     await expect(articleLink).toBeVisible({ timeout: 10000 });
     await articleLink.click();
 
-    // Should navigate to article detail page
     await expect(page).toHaveURL(/\/articles\/typescript-type-safe-code/);
   });
 });
@@ -788,28 +702,17 @@ test.describe("mobile responsiveness", () => {
     page,
   }: TestArgs) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
 
-    // Search input should be visible
-    await expect(page.getByPlaceholder("キーワードで検索...")).toBeVisible();
-
-    // Filter toggle should be visible
-    await expect(page.getByText("フィルター")).toBeVisible();
+    await expect(getSearchInput(page)).toBeVisible();
+    await expect(getFilterToggle(page)).toBeVisible();
   });
 
   test("filter panel expands on mobile", async ({ page }: TestArgs) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto("/search");
-    await page.waitForLoadState("networkidle");
+    await gotoSearchPage(page);
+    await ensureFilterPanelExpanded(page);
 
-    // Click filter toggle (use force to avoid interception on mobile)
-    const filterButton = page.getByText("フィルター");
-    await filterButton.scrollIntoViewIfNeeded();
-    await filterButton.click({ force: true });
-    await page.waitForTimeout(1000);
-
-    // Filter options should be visible
     await expect(page.getByRole("button", { name: "すべて" })).toBeVisible();
     await expect(page.getByRole("button", { name: "記事" })).toBeVisible();
     await expect(page.getByRole("button", { name: "メモ" })).toBeVisible();
