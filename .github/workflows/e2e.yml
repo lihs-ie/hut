@@ -370,9 +370,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          if [ "${{ needs.admin-e2e.result }}" != "success" ] || [ "${{ needs.reader-e2e.result }}" != "success" ]; then
-            echo "Admin E2E result: ${{ needs.admin-e2e.result }}"
-            echo "Reader E2E result: ${{ needs.reader-e2e.result }}"
+          if [ "${{ needs['admin-e2e'].result }}" != "success" ] || [ "${{ needs['reader-e2e'].result }}" != "success" ]; then
+            echo "Admin E2E result: ${{ needs['admin-e2e'].result }}"
+            echo "Reader E2E result: ${{ needs['reader-e2e'].result }}"
             exit 1
           fi
 
