@@ -13,7 +13,7 @@ export type Props = {
   externalServices: Map<ExternalServiceType, string>;
 };
 
-export const FooterPresenter = async (props: Props) => (
+export const FooterPresenter = (props: Props) => (
   <footer className={styles.container}>
     <div className={styles.contents}>
       <div className={styles.grid}>
