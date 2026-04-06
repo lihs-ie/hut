@@ -16,7 +16,7 @@
     "@next/mdx": "^16.2.3",
     "@simplewebauthn/browser": "^13.2.2",
     "@simplewebauthn/server": "^13.2.2",
-    "firebase": "^12.7.0",
+    "firebase": "^12.11.0",
     "firebase-admin": "^13.7.0",
     "next": "16.2.3",
     "next-mdx-remote": "^6.0.0",
