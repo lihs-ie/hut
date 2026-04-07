@@ -16,13 +16,16 @@ export class WriteBatchImpl implements WriteBatch {
 
   constructor(private firestore: FirestoreImpl) {}
 
-  set<T = DocumentData>(documentRef: DocumentReference<T>, data: T): WriteBatch
-  set<T = DocumentData>(
+  set<T extends DocumentData = DocumentData>(
+    documentRef: DocumentReference<T>,
+    data: T
+  ): WriteBatch
+  set<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: Partial<T>,
     options: SetOptions
   ): WriteBatch
-  set<T = DocumentData>(
+  set<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: T | Partial<T>,
     options?: SetOptions
@@ -36,17 +39,17 @@ export class WriteBatchImpl implements WriteBatch {
     return this
   }
 
-  update<T = DocumentData>(
+  update<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: UpdateData<T>
   ): WriteBatch
-  update<T = DocumentData>(
+  update<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     field: string | FieldPath,
     value: unknown,
     ...moreFieldsAndValues: unknown[]
   ): WriteBatch
-  update<T = DocumentData>(
+  update<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     dataOrField: UpdateData<T> | string | FieldPath,
     value?: unknown,
@@ -62,7 +65,7 @@ export class WriteBatchImpl implements WriteBatch {
     } else {
       updateData = {}
       const fieldPath =
-        dataOrField instanceof FieldPath ? dataOrField.toString() : dataOrField
+        dataOrField instanceof FieldPath ? dataOrField.toString() : String(dataOrField)
       updateData[fieldPath] = value
 
       for (let i = 0; i < moreFieldsAndValues.length; i += 2) {

@@ -1,12 +1,12 @@
 import z from "zod";
-import { AsyncResult, err, fromPromise, ok, Result } from "@shared/aspects/result";
+import { AsyncResult, fromPromise, Result } from "@shared/aspects/result";
 import {
   AggregateNotFoundError,
   aggregateNotFoundError,
   UnexpectedError,
   unexpectedError,
+  validate,
   ValidationError,
-  validationErrors,
 } from "@shared/aspects/error";
 import {
   Firestore,
@@ -51,15 +51,8 @@ export type UnvalidatedPasskeyAuthenticator = {
 
 export const validatePasskeyAuthenticator = (
   candidate: UnvalidatedPasskeyAuthenticator
-): Result<PasskeyAuthenticator, ValidationError[]> => {
-  const errors = validationErrors(passkeyAuthenticatorSchema, candidate);
-
-  if (errors.length > 0) {
-    return err(errors);
-  }
-
-  return ok(passkeyAuthenticatorSchema.parse(candidate));
-};
+): Result<PasskeyAuthenticator, ValidationError[]> =>
+  validate(passkeyAuthenticatorSchema, candidate);
 
 // =============================================================================
 // Passkey登録/認証オプション

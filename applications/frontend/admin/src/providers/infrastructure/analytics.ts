@@ -2,23 +2,23 @@ import { FirebasePageViewRepository } from "@shared/infrastructures/analytics/pa
 import { FirebaseUniqueVisitorRepository } from "@shared/infrastructures/analytics/unique-visitor";
 import { FirebaseEngagementRecordRepository } from "@shared/infrastructures/analytics/engagement";
 import { FirebaseSearchRecordRepository } from "@shared/infrastructures/analytics/search-record";
-import { AdminFirestoreProvider } from "./firestore";
+import { FirebaseProvider } from "@shared/providers/infrastructure/firebase";
 
 export const AdminAnalyticsRepositoryProvider = {
   pageView: FirebasePageViewRepository(
-    AdminFirestoreProvider.firestore.instance,
-    AdminFirestoreProvider.firestore.operations,
+    FirebaseProvider.firestore.instance,
+    FirebaseProvider.firestore.operations,
   ),
   uniqueVisitor: FirebaseUniqueVisitorRepository(
-    AdminFirestoreProvider.firestore.instance,
-    AdminFirestoreProvider.firestore.operations,
+    FirebaseProvider.firestore.instance,
+    FirebaseProvider.firestore.operations,
   ),
   engagementRecord: FirebaseEngagementRecordRepository(
-    AdminFirestoreProvider.firestore.instance,
-    AdminFirestoreProvider.firestore.operations,
+    FirebaseProvider.firestore.instance,
+    FirebaseProvider.firestore.operations,
   ),
   searchRecord: FirebaseSearchRecordRepository(
-    AdminFirestoreProvider.firestore.instance,
-    AdminFirestoreProvider.firestore.operations,
+    FirebaseProvider.firestore.instance,
+    FirebaseProvider.firestore.operations,
   ),
 } as const;

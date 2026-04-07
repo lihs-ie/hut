@@ -2,7 +2,9 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi } from "vitest";
+import { Forger } from "@lihs-ie/forger-ts";
 import { render } from "@testing-library/react";
+import { SeriesMold } from "../../../support/molds/domains/series";
 
 vi.mock("@shared/components/organisms/series/edit", () => ({
   SeriesEditOrganism: (props: {
@@ -49,18 +51,7 @@ describe("components/templates/series/SeriesEdit", () => {
 
     const { getByTestId } = render(
       <SeriesEdit
-        initial={{
-          identifier: "01HWXYZ0000000000000000000",
-          title: "既存連載",
-          slug: "existing-series" as import("@shared/domains/common").Slug,
-          subTitle: null,
-          description: undefined,
-          cover: null,
-          tags: [],
-          chapters: [],
-          status: "draft" as import("@shared/domains/common").PublishStatus,
-          timeline: { createdAt: new Date(), updatedAt: new Date() },
-        } as import("@shared/domains/series").Series}
+        initial={Forger(SeriesMold).forge({ chapters: [], tags: [] })}
         persist={persist}
         tags={[]}
       />,

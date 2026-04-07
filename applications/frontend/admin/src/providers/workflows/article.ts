@@ -12,34 +12,34 @@ import {
   createArticleTerminateWorkflow,
 } from "@shared/workflows/article";
 import { createPassthroughFilter } from "@shared/workflows/common";
-import { AdminArticleRepositoryProvider } from "../infrastructure/articles";
+import { ArticleRepositoryProvider } from "@shared/providers/infrastructure/articles";
 import { LoggerProvider } from "@shared/providers/infrastructure/logger";
 import { validateSlug } from "@shared/domains/common";
 
 export const AdminArticleWorkflowProvider = {
   find: createArticleFindWorkflow(validateArticleIdentifier)(
-    AdminArticleRepositoryProvider.firebase.find,
+    ArticleRepositoryProvider.firebase.find,
   )(LoggerProvider.console),
 
   findBySlug: createArticleFindBySlugWorkflow(validateSlug)(
     LoggerProvider.console,
-  )(AdminArticleRepositoryProvider.firebase.findBySlug)(
+  )(ArticleRepositoryProvider.firebase.findBySlug)(
     createPassthroughFilter(),
   ),
 
   search: createArticleSearchWorkflow(validateCriteria)(
-    AdminArticleRepositoryProvider.firebase.search,
+    ArticleRepositoryProvider.firebase.search,
   )(LoggerProvider.console),
 
   create: createArticleCreateWorkflow(validateArticle)(
-    AdminArticleRepositoryProvider.firebase.persist,
+    ArticleRepositoryProvider.firebase.persist,
   )(LoggerProvider.console),
 
   edit: createArticleEditWorkflow(validateArticle)(
-    AdminArticleRepositoryProvider.firebase.persist,
+    ArticleRepositoryProvider.firebase.persist,
   )(LoggerProvider.console),
 
   terminate: createArticleTerminateWorkflow(validateArticleIdentifier)(
-    AdminArticleRepositoryProvider.firebase.terminate,
+    ArticleRepositoryProvider.firebase.terminate,
   )(LoggerProvider.console),
 } as const;

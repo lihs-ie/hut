@@ -8,6 +8,8 @@ import { UserIcon } from "@shared/components/atoms/icon/user";
 import { ShieldIcon } from "@shared/components/atoms/icon/shield";
 import { BarChartIcon } from "@shared/components/atoms/icon/bar-chart";
 import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
+import { getSession } from "@/actions/auth";
+import { redirect } from "next/navigation";
 
 const navItems: NavItem[] = [
   {
@@ -43,15 +45,21 @@ const navItems: NavItem[] = [
   },
 ];
 
-export default function AdminLayout({
-  children,
-}: {
+type Props = {
   children: React.ReactNode;
-}) {
+};
+
+export default async function AdminLayout(props: Props) {
+  const session = await getSession();
+
+  if (!session) {
+    redirect("/admin/login");
+  }
+
   return (
     <div className={styles.container}>
       <AdminSidebar items={navItems} />
-      <div className={styles.content}>{children}</div>
+      <div className={styles.content}>{props.children}</div>
     </div>
   );
 }

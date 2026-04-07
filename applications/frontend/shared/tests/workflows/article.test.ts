@@ -340,6 +340,7 @@ describe("workflows/article", () => {
         slug: string;
         status: string;
         tags: string[];
+        images: string[];
         timeline: { createdAt: Date; updatedAt: Date };
       }> = {
         now: new Date(),
@@ -351,6 +352,7 @@ describe("workflows/article", () => {
           slug: "test-slug",
           status: "published",
           tags: [],
+          images: [],
           timeline: { createdAt: new Date(), updatedAt: new Date() },
         },
       };

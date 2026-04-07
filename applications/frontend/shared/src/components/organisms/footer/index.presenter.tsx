@@ -9,11 +9,11 @@ import { XTwitterIcon } from "@shared/components/atoms/icon/x-twitter";
 import { MailIcon } from "@shared/components/atoms/icon/mail";
 
 export type Props = {
-  mailAddress: MailAddress;
+  mailAddress: MailAddress | null;
   externalServices: Map<ExternalServiceType, string>;
 };
 
-export const FooterPresenter = async (props: Props) => (
+export const FooterPresenter = (props: Props) => (
   <footer className={styles.container}>
     <div className={styles.contents}>
       <div className={styles.grid}>
@@ -94,9 +94,11 @@ export const FooterPresenter = async (props: Props) => (
             </a>
           )}
 
-          <a href={`mailto:${props.mailAddress}`} aria-label="Email">
-            <MailIcon className={styles["social-icon"]} />
-          </a>
+          {props.mailAddress !== null && (
+            <a href={`mailto:${props.mailAddress}`} aria-label="Email">
+              <MailIcon className={styles["social-icon"]} />
+            </a>
+          )}
         </div>
         <p className={styles.copyright}>© 2026 lihs. All rights reserved.</p>
       </div>

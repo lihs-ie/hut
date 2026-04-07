@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
+import { ok, err } from "@shared/aspects/result";
 
 vi.mock("@/aspects/e2e", () => ({
   isE2EAuthAvailable: vi.fn(),
@@ -13,8 +14,16 @@ vi.mock("@/aspects/ip-address", () => ({
   resolveIP: vi.fn().mockReturnValue("ip:127.0.0.1"),
 }));
 
+vi.mock("@/providers/acl/oidc/server", () => ({
+  OIDCServerProvider: {
+    verifySessionCookie: vi.fn(),
+  },
+}));
+
 import { proxy, config } from "@/proxy";
 import { isE2EAuthAvailable } from "@/aspects/e2e";
+import { enforceLoginRateLimit } from "@/actions/rate-limit";
+import { OIDCServerProvider } from "@/providers/acl/oidc/server";
 
 const createMockRequest = (
   path: string,
@@ -77,6 +86,168 @@ describe("proxy", () => {
       await proxy(request);
 
       expect(nextSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("セッション検証", () => {
+    it("cookieがない保護ルートではログインページにリダイレクトする", async () => {
+      const request = createMockRequest("/admin/articles");
+      const response = await proxy(request);
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe(
+        "http://localhost:3001/admin/login",
+      );
+    });
+
+    it("有効なcookieがある保護ルートでは通過する", async () => {
+      vi.mocked(OIDCServerProvider.verifySessionCookie).mockReturnValue(
+        ok({
+          uid: "test-uid",
+          email: "test@example.com",
+          displayName: null,
+          photoURL: null,
+        }).toAsync(),
+      );
+
+      const request = createMockRequest("/admin/articles", {
+        cookies: { admin_session: "valid-session" },
+      });
+      const response = await proxy(request);
+
+      expect(response.status).toBe(200);
+      expect(OIDCServerProvider.verifySessionCookie).toHaveBeenCalledWith(
+        "valid-session",
+      );
+    });
+
+    it("不正なcookieがある保護ルートではログインページにリダイレクトしcookieを削除する", async () => {
+      vi.mocked(OIDCServerProvider.verifySessionCookie).mockReturnValue(
+        err({ _tag: "InvalidCredentialError", message: "Invalid session" }).toAsync(),
+      );
+
+      const request = createMockRequest("/admin/articles", {
+        cookies: { admin_session: "invalid-session" },
+      });
+      const response = await proxy(request);
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe(
+        "http://localhost:3001/admin/login",
+      );
+      expect(
+        response.headers.get("set-cookie"),
+      ).toContain("admin_session=;");
+    });
+
+    it("ログインページに有効なcookieがある場合はトップにリダイレクトする", async () => {
+      vi.mocked(OIDCServerProvider.verifySessionCookie).mockReturnValue(
+        ok({
+          uid: "test-uid",
+          email: "test@example.com",
+          displayName: null,
+          photoURL: null,
+        }).toAsync(),
+      );
+
+      const request = createMockRequest("/admin/login", {
+        cookies: { admin_session: "valid-session" },
+      });
+      const response = await proxy(request);
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe(
+        "http://localhost:3001/",
+      );
+    });
+
+    it("ログインページに不正なcookieがある場合はcookieを削除してログインページを表示する", async () => {
+      vi.mocked(OIDCServerProvider.verifySessionCookie).mockReturnValue(
+        err({ _tag: "InvalidCredentialError", message: "Invalid session" }).toAsync(),
+      );
+
+      const request = createMockRequest("/admin/login", {
+        cookies: { admin_session: "invalid-session" },
+      });
+      const response = await proxy(request);
+
+      expect(response.status).toBe(200);
+      expect(
+        response.headers.get("set-cookie"),
+      ).toContain("admin_session=;");
+    });
+
+    it("ログインページでサーバー側エラーの場合はcookieを削除せず500を返す", async () => {
+      vi.mocked(OIDCServerProvider.verifySessionCookie).mockReturnValue(
+        err({ _tag: "ConfigurationError", message: "Service account missing" }).toAsync(),
+      );
+
+      const request = createMockRequest("/admin/login", {
+        cookies: { admin_session: "valid-session" },
+      });
+      const response = await proxy(request);
+
+      expect(response.status).toBe(500);
+      expect(response.headers.get("set-cookie")).toBeNull();
+    });
+
+    it("保護ルートでサーバー側エラーの場合はcookieを削除せず500を返す", async () => {
+      vi.mocked(OIDCServerProvider.verifySessionCookie).mockReturnValue(
+        err({ _tag: "ConfigurationError", message: "Service account missing" }).toAsync(),
+      );
+
+      const request = createMockRequest("/admin/articles", {
+        cookies: { admin_session: "valid-session" },
+      });
+      const response = await proxy(request);
+
+      expect(response.status).toBe(500);
+      expect(response.headers.get("set-cookie")).toBeNull();
+    });
+  });
+
+  describe("レート制限", () => {
+    it("POST /admin/login にcookie付きでもレート制限が適用される", async () => {
+      vi.mocked(enforceLoginRateLimit).mockResolvedValue({
+        allowed: false,
+        message: "Too many requests",
+      });
+
+      const request = createMockRequest("/admin/login", {
+        method: "POST",
+        cookies: { admin_session: "some-session" },
+      });
+      const response = await proxy(request);
+
+      expect(response.status).toBe(429);
+      expect(enforceLoginRateLimit).toHaveBeenCalled();
+    });
+
+    it("POST /admin/login にcookie付きでレート制限通過後にセッション検証する", async () => {
+      vi.mocked(enforceLoginRateLimit).mockResolvedValue({
+        allowed: true,
+      });
+      vi.mocked(OIDCServerProvider.verifySessionCookie).mockReturnValue(
+        ok({
+          uid: "test-uid",
+          email: "test@example.com",
+          displayName: null,
+          photoURL: null,
+        }).toAsync(),
+      );
+
+      const request = createMockRequest("/admin/login", {
+        method: "POST",
+        cookies: { admin_session: "valid-session" },
+      });
+      const response = await proxy(request);
+
+      expect(enforceLoginRateLimit).toHaveBeenCalled();
+      expect(OIDCServerProvider.verifySessionCookie).toHaveBeenCalledWith(
+        "valid-session",
+      );
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe("http://localhost:3001/");
     });
   });
 });

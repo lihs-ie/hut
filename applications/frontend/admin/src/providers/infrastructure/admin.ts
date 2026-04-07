@@ -1,5 +1,5 @@
 import { FirebaseAdminSdkAdminRepository } from "../../infrastructure/admin";
-import { FirebaseAdminProvider } from "../auth/admin";
+import { FirebaseAdminProvider } from "@shared/providers/infrastructure/firebase-admin";
 import type { AdminRepository } from "@shared/domains/user";
 
 let cachedRepository: AdminRepository | null = null;

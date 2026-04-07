@@ -15,9 +15,14 @@ export const ArticleColumnCard = (props: Props) => (
     className={styles.container}
     href={Routes.page.articles.show(props.article.slug)}
   >
-    <div className={styles.image}>
-      <CommonImage src={props.article.image} alt={props.article.title} />
-    </div>
+    {props.article.images[0] != null && (
+      <div className={styles.image}>
+        <CommonImage
+          src={props.article.images[0]}
+          alt={props.article.title}
+        />
+      </div>
+    )}
     <div className={styles.body}>
       <div className={styles.content}>
         <div className={styles.tags}>

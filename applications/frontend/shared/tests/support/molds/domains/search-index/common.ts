@@ -83,7 +83,7 @@ export const SearchIndexExcerptMold = Mold<
 
 export type CriteriaProperties = {
   freeWord: string | null;
-  tags: string[] | null;
+  tags: TagIdentifier[] | null;
   type: ContentType | null;
   sortBy: Sort | null;
   order: Order | null;

@@ -17,7 +17,7 @@ export class TransactionImpl implements Transaction {
 
   constructor(private firestore: FirestoreImpl) {}
 
-  async get<T = DocumentData>(
+  async get<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>
   ): Promise<DocumentSnapshotImpl<T>> {
     const memoryStore = this.firestore._getMemoryStore()
@@ -29,13 +29,16 @@ export class TransactionImpl implements Transaction {
     )
   }
 
-  set<T = DocumentData>(documentRef: DocumentReference<T>, data: T): Transaction
-  set<T = DocumentData>(
+  set<T extends DocumentData = DocumentData>(
+    documentRef: DocumentReference<T>,
+    data: T
+  ): Transaction
+  set<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: Partial<T>,
     options: SetOptions
   ): Transaction
-  set<T = DocumentData>(
+  set<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: T | Partial<T>,
     options?: SetOptions
@@ -49,17 +52,17 @@ export class TransactionImpl implements Transaction {
     return this
   }
 
-  update<T = DocumentData>(
+  update<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     data: UpdateData<T>
   ): Transaction
-  update<T = DocumentData>(
+  update<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     field: string | FieldPath,
     value: unknown,
     ...moreFieldsAndValues: unknown[]
   ): Transaction
-  update<T = DocumentData>(
+  update<T extends DocumentData = DocumentData>(
     documentRef: DocumentReference<T>,
     dataOrField: UpdateData<T> | string | FieldPath,
     value?: unknown,
@@ -75,7 +78,7 @@ export class TransactionImpl implements Transaction {
     } else {
       updateData = {}
       const fieldPath =
-        dataOrField instanceof FieldPath ? dataOrField.toString() : dataOrField
+        dataOrField instanceof FieldPath ? dataOrField.toString() : String(dataOrField)
       updateData[fieldPath] = value
 
       for (let i = 0; i < moreFieldsAndValues.length; i += 2) {

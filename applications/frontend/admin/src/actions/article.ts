@@ -51,6 +51,13 @@ export async function terminate(identifier: string): Promise<void> {
   revalidateTag(`articles`, {});
 }
 
+export async function findBySlug(slug: string): Promise<Article> {
+  await requireAdmin();
+  return await unwrapForNextJs(
+    AdminArticleWorkflowProvider.findBySlug({ payload: { slug }, now: new Date() }),
+  );
+}
+
 export async function search(
   unvalidated: UnvalidatedCriteria,
 ): Promise<Article[]> {

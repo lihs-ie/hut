@@ -7,22 +7,22 @@ service cloud.firestore {
     }
 
     match /articles/{document} {
-      allow read: if true;
+      allow read: if resource.data.status == 'published' || isAdmin();
       allow write: if isAdmin();
     }
 
     match /memos/{document} {
-      allow read: if true;
+      allow read: if resource.data.status == 'published' || isAdmin();
       allow write: if isAdmin();
     }
 
     match /series/{document} {
-      allow read: if true;
+      allow read: if resource.data.status == 'published' || isAdmin();
       allow write: if isAdmin();
     }
 
     match /chapters/{document} {
-      allow read: if resource.data.status == 'published' || request.auth != null;
+      allow read: if resource.data.status == 'published' || isAdmin();
       allow write: if isAdmin();
     }
 
@@ -57,7 +57,7 @@ service cloud.firestore {
     }
 
     match /admin/{document} {
-      allow read: if isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 

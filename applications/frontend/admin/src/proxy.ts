@@ -2,6 +2,13 @@ import { enforceLoginRateLimit } from "@/actions/rate-limit";
 import { isE2EAuthAvailable } from "@/aspects/e2e";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveIP } from "@/aspects/ip-address";
+import { OIDCServerProvider } from "@/providers/acl/oidc/server";
+import {
+  isInvalidCredentialError,
+  isUserDisabledError,
+  isOidcPermissionDeniedError,
+  type OidcAuthError,
+} from "@/aspects/auth/oidc";
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|logo).*)"],
@@ -30,10 +37,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (isLoginPage && adminSession) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
   if (isLoginPage) {
     if (isLoginAttempt) {
       const rateLimitKey = resolveIP(request);
@@ -44,6 +47,21 @@ export async function proxy(request: NextRequest) {
       }
     }
 
+    if (adminSession) {
+      return await OIDCServerProvider.verifySessionCookie(adminSession).match({
+        ok: () => NextResponse.redirect(new URL("/", request.url)),
+        err: (error: OidcAuthError) => {
+          if (isRecoverableAuthError(error)) {
+            const response = NextResponse.next();
+            response.cookies.delete("admin_session");
+            return response;
+          }
+
+          return new NextResponse("Internal Server Error", { status: 500 });
+        },
+      });
+    }
+
     return NextResponse.next();
   }
 
@@ -51,5 +69,26 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  return NextResponse.next();
+  return await OIDCServerProvider.verifySessionCookie(adminSession).match({
+    ok: () => NextResponse.next(),
+    err: (error: OidcAuthError) => {
+      if (isRecoverableAuthError(error)) {
+        const response = NextResponse.redirect(
+          new URL("/admin/login", request.url),
+        );
+        response.cookies.delete("admin_session");
+        return response;
+      }
+
+      return new NextResponse("Internal Server Error", { status: 500 });
+    },
+  });
+}
+
+function isRecoverableAuthError(error: OidcAuthError): boolean {
+  return (
+    isInvalidCredentialError(error) ||
+    isUserDisabledError(error) ||
+    isOidcPermissionDeniedError(error)
+  );
 }

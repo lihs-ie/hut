@@ -1,9 +1,17 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { defineConfig, devices } from "@playwright/test";
+import {
+  defineConfig,
+  devices,
+  type ReporterDescription,
+} from "@playwright/test";
 
 const projectRoot = process.cwd();
+type ReporterSetting = string | ReporterDescription[];
 
+/**
+ * Remove surrounding quotes from an environment variable value.
+ */
 const stripQuotes = (value: string): string => {
   const trimmed = value.trim();
   const quote = trimmed[0];
@@ -19,6 +27,9 @@ const stripQuotes = (value: string): string => {
   return trimmed;
 };
 
+/**
+ * Load environment variables from the given file when they are not already set.
+ */
 const loadEnvFile = (filePath: string): void => {
   if (!existsSync(filePath)) {
     return;
@@ -76,12 +87,34 @@ const readerTestFiles = [
   "**/series.spec.ts",
 ];
 
+/**
+ * Resolve Playwright reporters from the environment.
+ */
+const resolveReporter = (): ReporterSetting => {
+  const reporter = process.env.PLAYWRIGHT_REPORTER?.trim();
+
+  if (!reporter) {
+    return process.env.CI ? "blob" : "list";
+  }
+
+  const reporters = reporter
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
+  if (reporters.length <= 1) {
+    return reporters[0] ?? "list";
+  }
+
+  return reporters.map((entry): ReporterDescription => [entry]);
+};
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? "blob" : "list",
+  reporter: resolveReporter(),
   globalSetup: "./playwright/global-setup.ts",
   use: {
     trace: "on-first-retry",
@@ -103,7 +136,6 @@ export default defineConfig({
         storageState: undefined,
       },
       testMatch: readerTestFiles,
-      dependencies: ["admin"],
     },
   ],
 });

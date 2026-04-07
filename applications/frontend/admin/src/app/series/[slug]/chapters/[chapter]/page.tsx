@@ -1,8 +1,8 @@
 import { MDXRenderer } from "@shared/components/global/mdx";
 import { ChapterIndex } from "@shared/components/templates/series/chapter";
-import { findChapterBySlug, findChaptersByIdentifiers } from "@shared/actions/chapter";
+import { findChapterBySlug, findChaptersByIdentifiers } from "@/actions/chapter";
 import { slugSchema } from "@shared/domains/common/slug";
-import { findBySlug } from "@shared/actions/series";
+import { findBySlug } from "@/actions/series";
 
 type Props = {
   params: Promise<{ slug: string; chapter: string }>;

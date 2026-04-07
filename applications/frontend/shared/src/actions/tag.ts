@@ -4,10 +4,18 @@ import { cache } from "react";
 import { Tag, UnvalidatedCriteria } from "@shared/domains/attributes/tag";
 import { TagWorkflowProvider } from "@shared/providers/workflows/tag";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
+import { err, ok } from "@shared/aspects/result";
+import { aggregateNotFoundError } from "@shared/aspects/error";
 
 export const find = cache(async (identifier: string): Promise<Tag> => {
   return await unwrapForNextJs(
-    TagWorkflowProvider.ofIdentifiers([identifier]).map((tags) => tags[0]),
+    TagWorkflowProvider.ofIdentifiers([identifier]).andThen((tags: Tag[]) => {
+      const tag = tags[0];
+      if (tag === undefined) {
+        return err(aggregateNotFoundError("Tag", `Tag not found: ${identifier}`));
+      }
+      return ok(tag);
+    }),
   );
 });
 
