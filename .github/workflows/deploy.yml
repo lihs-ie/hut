@@ -118,6 +118,34 @@ jobs:
               ;;
           esac
 
+      - name: Prepare GCP credentials for Docker build
+        id: docker-creds
+        if: steps.vars.outputs.app_type == 'frontend'
+        run: |
+          CRED_FILE="${{ steps.gcp-auth.outputs.credentials_file_path }}"
+          TOKEN_FILE=$(python3 -c "
+          import json
+          with open('${CRED_FILE}') as f:
+              cred = json.load(f)
+          print(cred.get('credential_source', {}).get('file', ''))
+          ")
+
+          if [ -n "${TOKEN_FILE}" ] && [ -f "${TOKEN_FILE}" ]; then
+            python3 -c "
+          import json
+          with open('${CRED_FILE}') as f:
+              cred = json.load(f)
+          cred['credential_source']['file'] = '/tmp/gcp-oidc-token'
+          with open('/tmp/docker-gcp-creds.json', 'w') as f:
+              json.dump(cred, f)
+          "
+            echo "cred_file=/tmp/docker-gcp-creds.json" >> "${GITHUB_OUTPUT}"
+            echo "token_file=${TOKEN_FILE}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "cred_file=${CRED_FILE}" >> "${GITHUB_OUTPUT}"
+            echo "token_file=" >> "${GITHUB_OUTPUT}"
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -131,8 +159,9 @@ jobs:
           tags: ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-${{ inputs.environment }}/${{ inputs.application }}:${{ steps.vars.outputs.tag }}
           cache-from: type=gha,scope=${{ inputs.application }}
           cache-to: type=gha,mode=max,scope=${{ inputs.application }}
-          secrets: |
-            gcp_credentials=${{ steps.gcp-auth.outputs.credentials_file_path }}
+          secret-files: |
+            gcp_credentials=${{ steps.docker-creds.outputs.cred_file }}
+            ${{ steps.docker-creds.outputs.token_file != '' && format('gcp_oidc_token={0}', steps.docker-creds.outputs.token_file) || '' }}
           build-args: |
             ${{ steps.vars.outputs.app_type == 'frontend' && format('APP_NAME={0}', steps.vars.outputs.app_name) || '' }}
             ${{ steps.vars.outputs.app_type == 'frontend' && format('APP_PORT={0}', steps.vars.outputs.app_port) || '' }}
