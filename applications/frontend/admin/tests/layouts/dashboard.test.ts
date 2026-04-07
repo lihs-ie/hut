@@ -4,8 +4,16 @@ vi.mock("@/actions/auth", () => ({
   getSession: vi.fn(),
 }));
 
+class RedirectError extends Error {
+  constructor(public readonly url: string) {
+    super(`NEXT_REDIRECT: ${url}`);
+  }
+}
+
 vi.mock("next/navigation", () => ({
-  redirect: vi.fn(),
+  redirect: vi.fn((url: string) => {
+    throw new RedirectError(url);
+  }),
 }));
 
 vi.mock("@/config/routes", () => ({
@@ -66,8 +74,9 @@ describe("dashboard layout - 認証チェック", () => {
   it("セッションが null の場合 /admin/login にリダイレクトする", async () => {
     vi.mocked(getSession).mockResolvedValue(null);
 
-    await DashboardLayout({ children: null });
-
+    await expect(DashboardLayout({ children: null })).rejects.toThrow(
+      RedirectError,
+    );
     expect(redirect).toHaveBeenCalledWith("/admin/login");
   });
 

@@ -226,7 +226,6 @@ describe("proxy", () => {
     it("POST /admin/login にcookie付きでレート制限通過後にセッション検証する", async () => {
       vi.mocked(enforceLoginRateLimit).mockResolvedValue({
         allowed: true,
-        message: "",
       });
       vi.mocked(OIDCServerProvider.verifySessionCookie).mockReturnValue(
         ok({
