@@ -18,14 +18,6 @@
   background: var(--muted);
 }
 
-.dark {
-  color: #fff;
-}
-
-.dark .container:hover {
-  background: var(--accent);
-}
-
 @media (max-width: 640px) {
   .container {
     width: 28px;

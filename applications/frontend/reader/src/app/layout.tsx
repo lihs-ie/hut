@@ -7,10 +7,10 @@ import { Header } from "@shared/components/organisms/header";
 import { Footer } from "@shared/components/organisms/footer";
 import { FooterPresenter } from "@shared/components/organisms/footer/index.presenter";
 import { FooterErrorBoundary } from "@shared/components/molecules/boundary/footer-error";
-import { currentTheme } from "@shared/actions/theme";
 import { getProfile } from "@shared/actions/admin";
 import { NavigationProvider } from "@shared/components/molecules/navigation/provider";
 import { ToastProvider } from "@shared/components/molecules/toast";
+import { ThemeProvider } from "@shared/components/molecules/theme/provider";
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
@@ -51,29 +51,29 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const theme = await currentTheme();
-
   return (
-    <html lang="ja" className={theme}>
+    <html lang="ja" suppressHydrationWarning>
       <body className={`${notoSansJP.variable} ${inter.variable} ${geistMono.variable}`}>
-        <NuqsAdapter>
-          <ToastProvider>
-            <NavigationProvider>
-              <Header />
-              <main>{children}</main>
-              <FooterErrorBoundary>
-                <Suspense fallback={<FooterPresenter mailAddress={null} externalServices={new Map()} />}>
-                  <Footer getProfile={getProfile} />
-                </Suspense>
-              </FooterErrorBoundary>
-            </NavigationProvider>
-          </ToastProvider>
-        </NuqsAdapter>
+        <ThemeProvider>
+          <NuqsAdapter>
+            <ToastProvider>
+              <NavigationProvider>
+                <Header />
+                <main>{children}</main>
+                <FooterErrorBoundary>
+                  <Suspense fallback={<FooterPresenter mailAddress={null} externalServices={new Map()} />}>
+                    <Footer getProfile={getProfile} />
+                  </Suspense>
+                </FooterErrorBoundary>
+              </NavigationProvider>
+            </ToastProvider>
+          </NuqsAdapter>
+        </ThemeProvider>
       </body>
     </html>
   );

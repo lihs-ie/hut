@@ -1,6 +1,6 @@
 import { HeaderLogo } from "@shared/components/atoms/logo/header";
 import styles from "./index.module.css";
-import { Theme, ThemeToggle } from "@shared/components/molecules/toggle/theme";
+import { ThemeToggle } from "@shared/components/molecules/toggle/theme";
 import { NavigableLink } from "@shared/components/molecules/link/navigable";
 import { SearchIcon } from "@shared/components/atoms/icon/search";
 import { LayoutDashboardIcon } from "@shared/components/atoms/icon/layout-dashboard";
@@ -9,7 +9,6 @@ import { PostMenuDropDown } from "@shared/components/molecules/drop-down/post-me
 import { LogoutButton } from "@shared/components/molecules/button/logout";
 
 export type Props = {
-  currentTheme: Theme;
   isAdmin: boolean;
   logout?: () => Promise<void>;
 };
@@ -23,7 +22,7 @@ export const HeaderPresenter = (props: Props) => (
       <NavigableLink href={Routes.page.search} className={styles.searchLink}>
         <SearchIcon />
       </NavigableLink>
-      <ThemeToggle value={props.currentTheme} />
+      <ThemeToggle />
       {props.isAdmin && (
         <NavigableLink href="/admin/tags" className={styles.admin} aria-label="管理画面">
           <LayoutDashboardIcon />
