@@ -1,6 +1,6 @@
 import { MDXRenderer } from "@shared/components/global/mdx";
 import { ChapterIndex } from "@shared/components/templates/series/chapter";
-import { findChapterBySlug, findChaptersByIdentifiers } from "@shared/actions/chapter";
+import { findChapterBySlug, findPublishedChaptersByIdentifiers } from "@/actions/chapter";
 import { slugSchema } from "@shared/domains/common/slug";
 import { findBySlug, searchAllChapterParams } from "@/actions/series";
 import type { Metadata } from "next";
@@ -54,7 +54,7 @@ export default async function ChapterPage(props: Props) {
       series={series}
       renderer={MDXRenderer}
       findChapterBySlug={findChapterBySlug}
-      findChaptersByIdentifiers={findChaptersByIdentifiers}
+      findChaptersByIdentifiers={findPublishedChaptersByIdentifiers}
     />
   );
 }

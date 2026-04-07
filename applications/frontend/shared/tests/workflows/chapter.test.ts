@@ -5,7 +5,13 @@ import {
   createChapterPersistWorkflow,
   createChapterTerminateWorkflow,
 } from "@shared/workflows/chapter";
+import {
+  createPassthroughFilter,
+  createPublishedOnlyFilter,
+} from "@shared/workflows/common";
 import { validateSlug } from "@shared/domains/common/slug";
+import { PublishStatus } from "@shared/domains/common";
+import { isAggregateNotFoundError } from "@shared/aspects/error";
 import {
   validateChapter,
   validateChapterIdentifier,
@@ -34,7 +40,7 @@ describe("workflows/chapter", () => {
 
       const workflow = createChapterFindBySlugWorkflow(validateSlug)(
         mockLogger,
-      )(findBySlugMock);
+      )(findBySlugMock)(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -52,7 +58,7 @@ describe("workflows/chapter", () => {
 
       const workflow = createChapterFindBySlugWorkflow(validateSlug)(
         mockLogger,
-      )(findBySlugMock);
+      )(findBySlugMock)(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -79,7 +85,7 @@ describe("workflows/chapter", () => {
 
       const workflow = createChapterFindBySlugWorkflow(validateSlug)(
         mockLogger,
-      )(findBySlugMock);
+      )(findBySlugMock)(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -98,7 +104,7 @@ describe("workflows/chapter", () => {
 
       const workflow = createChapterFindBySlugWorkflow(validateSlug)(
         mockLogger,
-      )(findBySlugMock);
+      )(findBySlugMock)(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -120,7 +126,7 @@ describe("workflows/chapter", () => {
 
       const workflow = createChapterFindBySlugWorkflow(validateSlug)(
         mockLogger,
-      )(findBySlugMock);
+      )(findBySlugMock)(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -141,7 +147,7 @@ describe("workflows/chapter", () => {
 
       const workflow = createChapterFindBySlugWorkflow(validateSlug)(
         mockLogger,
-      )(findBySlugMock);
+      )(findBySlugMock)(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -154,6 +160,66 @@ describe("workflows/chapter", () => {
         "Validation failed",
         expect.objectContaining({ error: expect.anything() }),
       );
+    });
+
+    it("createPublishedOnlyFilterでdraft状態のChapterはAggregateNotFoundErrorを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(1, {
+        status: PublishStatus.DRAFT,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(chapter).toAsync());
+
+      const workflow = createChapterFindBySlugWorkflow(validateSlug)(
+        mockLogger,
+      )(findBySlugMock)(createPublishedOnlyFilter("Chapter"));
+
+      const command: Command<{ slug: string }> = {
+        now: new Date(),
+        payload: { slug: chapter.slug },
+      };
+
+      const error = await workflow(command).unwrapError();
+
+      expect(isAggregateNotFoundError(error)).toBe(true);
+    });
+
+    it("createPublishedOnlyFilterでarchived状態のChapterはAggregateNotFoundErrorを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(1, {
+        status: PublishStatus.ARCHIVED,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(chapter).toAsync());
+
+      const workflow = createChapterFindBySlugWorkflow(validateSlug)(
+        mockLogger,
+      )(findBySlugMock)(createPublishedOnlyFilter("Chapter"));
+
+      const command: Command<{ slug: string }> = {
+        now: new Date(),
+        payload: { slug: chapter.slug },
+      };
+
+      const error = await workflow(command).unwrapError();
+
+      expect(isAggregateNotFoundError(error)).toBe(true);
+    });
+
+    it("createPublishedOnlyFilterでpublished状態のChapterは正常に返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(1, {
+        status: PublishStatus.PUBLISHED,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(chapter).toAsync());
+
+      const workflow = createChapterFindBySlugWorkflow(validateSlug)(
+        mockLogger,
+      )(findBySlugMock)(createPublishedOnlyFilter("Chapter"));
+
+      const command: Command<{ slug: string }> = {
+        now: new Date(),
+        payload: { slug: chapter.slug },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result).toEqual(chapter);
     });
   });
 
