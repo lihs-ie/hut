@@ -43,7 +43,10 @@ RUN printf 'packages:\n  - "shared"\n  - "reader"\n  - "admin"\n' > pnpm-workspa
 RUN find ${APP_NAME}/public -type l -delete 2>/dev/null; \
     cp -rn shared/public/. ${APP_NAME}/public/
 
-RUN pnpm --filter @hut/${APP_NAME} build
+RUN --mount=type=secret,id=gcp_credentials,target=/tmp/gcp-credentials.json \
+    --mount=type=secret,id=gcp_oidc_token,target=/tmp/gcp-oidc-token \
+    GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json \
+    pnpm --filter @hut/${APP_NAME} build
 
 FROM node:22-slim AS runner
 
