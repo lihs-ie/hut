@@ -55,6 +55,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Authenticate to Google Cloud
+        id: gcp-auth
         uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
@@ -130,6 +131,8 @@ jobs:
           tags: ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-${{ inputs.environment }}/${{ inputs.application }}:${{ steps.vars.outputs.tag }}
           cache-from: type=gha,scope=${{ inputs.application }}
           cache-to: type=gha,mode=max,scope=${{ inputs.application }}
+          secrets: |
+            gcp_credentials=${{ steps.gcp-auth.outputs.credentials_file_path }}
           build-args: |
             ${{ steps.vars.outputs.app_type == 'frontend' && format('APP_NAME={0}', steps.vars.outputs.app_name) || '' }}
             ${{ steps.vars.outputs.app_type == 'frontend' && format('APP_PORT={0}', steps.vars.outputs.app_port) || '' }}
