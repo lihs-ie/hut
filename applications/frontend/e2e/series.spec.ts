@@ -33,14 +33,12 @@ test.describe("series list page", () => {
   test.describe("page structure", () => {
     test("page loads successfully", async ({ page }: TestArgs) => {
       await page.goto("/series");
-      await page.waitForLoadState("networkidle");
 
       await expect(page.locator("main")).toBeVisible();
     });
 
     test("displays series list heading", async ({ page }: TestArgs) => {
       await page.goto("/series");
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: "連載" }),
@@ -49,7 +47,6 @@ test.describe("series list page", () => {
 
     test("displays description text", async ({ page }: TestArgs) => {
       await page.goto("/series");
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByText("技術書や体系的にまとめられたコンテンツ"),
@@ -60,14 +57,12 @@ test.describe("series list page", () => {
   test.describe("series card", () => {
     test("displays seeded series title", async ({ page }: TestArgs) => {
       await page.goto("/series");
-      await page.waitForLoadState("networkidle");
 
       await expect(page.getByText(series.title).first()).toBeVisible();
     });
 
     test("series card links to detail page", async ({ page }: TestArgs) => {
       await page.goto("/series");
-      await page.waitForLoadState("networkidle");
 
       const link = page
         .getByRole("link")
@@ -81,7 +76,6 @@ test.describe("series list page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/series");
-      await page.waitForLoadState("networkidle");
 
       const link = page
         .getByRole("link")
@@ -97,7 +91,6 @@ test.describe("series list page", () => {
     test("page is viewable on mobile viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.goto("/series");
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: "連載" }),
@@ -107,7 +100,6 @@ test.describe("series list page", () => {
     test("page is viewable on tablet viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 768, height: 1024 });
       await page.goto("/series");
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: "連載" }),
@@ -121,7 +113,6 @@ test.describe("series detail page 404", () => {
     page,
   }: TestArgs) => {
     await page.goto("/series/non-existent-slug");
-    await page.waitForLoadState("networkidle");
 
     const notFoundIndicators = page.locator(
       "text=/404|not found|見つかりません|ページが見つかりません/i",
@@ -135,7 +126,6 @@ test.describe("series detail page 404", () => {
     await page.goto(
       `/series/${series.slug}/chapters/non-existent`,
     );
-    await page.waitForLoadState("networkidle");
 
     const notFoundIndicators = page.locator(
       "text=/404|not found|見つかりません|ページが見つかりません/i",
@@ -148,7 +138,6 @@ test.describe("series detail page", () => {
   test.describe("page structure", () => {
     test("page loads successfully", async ({ page }: TestArgs) => {
       await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
 
       await expect(page.locator("main")).toBeVisible();
     });
@@ -157,7 +146,6 @@ test.describe("series detail page", () => {
       page,
     }: TestArgs) => {
       await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: series.title, level: 1 }),
@@ -166,14 +154,12 @@ test.describe("series detail page", () => {
 
     test("displays series subtitle", async ({ page }: TestArgs) => {
       await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
 
       await expect(page.getByText(series.subTitle).first()).toBeVisible();
     });
 
     test("displays series description", async ({ page }: TestArgs) => {
       await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
 
       await expect(page.getByText(series.description).first()).toBeVisible();
     });
@@ -182,7 +168,6 @@ test.describe("series detail page", () => {
   test.describe("table of contents", () => {
     test("displays 目次 heading", async ({ page }: TestArgs) => {
       await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: "目次" }),
@@ -193,7 +178,6 @@ test.describe("series detail page", () => {
       page,
     }: TestArgs) => {
       await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
 
       for (const chapter of series.chapters) {
         await expect(
@@ -206,7 +190,6 @@ test.describe("series detail page", () => {
       page,
     }: TestArgs) => {
       await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
 
       for (const chapter of series.chapters) {
         const link = page
@@ -224,7 +207,6 @@ test.describe("series detail page", () => {
   test.describe("tags", () => {
     test("displays series tags", async ({ page }: TestArgs) => {
       await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
 
       for (const tag of series.tags) {
         await expect(page.getByText(tag).first()).toBeVisible();
@@ -236,7 +218,6 @@ test.describe("series detail page", () => {
     test("page is viewable on mobile viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: series.title, level: 1 }),
@@ -246,7 +227,6 @@ test.describe("series detail page", () => {
     test("page is viewable on tablet viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 768, height: 1024 });
       await page.goto(`/series/${series.slug}`);
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: series.title, level: 1 }),
@@ -264,7 +244,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       await expect(page.locator("article")).toBeVisible();
     });
@@ -275,7 +254,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page
@@ -288,7 +266,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByText(`Chapter ${firstChapter.number}`).first(),
@@ -299,7 +276,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       await expect(page.locator(".prose")).toBeVisible();
       await expect(
@@ -313,7 +289,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       const codeBlocks = page.locator("pre code, .shiki");
       await expect(codeBlocks.first()).toBeVisible();
@@ -327,7 +302,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       const seriesLink = page.getByRole("link", { name: series.title });
       await expect(seriesLink.first()).toBeVisible();
@@ -339,7 +313,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       const seriesLink = page.getByRole("link", { name: series.title }).first();
       const href = await seriesLink.getAttribute("href");
@@ -352,7 +325,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       for (const chapter of series.chapters) {
         await expect(page.getByText(chapter.title).first()).toBeVisible();
@@ -365,7 +337,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       const activeItem = page.locator('[class*="nav-item-active"]');
       await expect(activeItem).toBeVisible();
@@ -380,7 +351,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       const prevButton = page.getByRole("link", { name: /前の章/ });
       await expect(prevButton).not.toBeVisible();
@@ -392,7 +362,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       const nextButton = page.getByRole("link", { name: /次の章/ });
       await expect(nextButton).toBeVisible();
@@ -409,7 +378,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${secondChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       const prevButton = page.getByRole("link", { name: /前の章/ });
       await expect(prevButton).toBeVisible();
@@ -424,7 +392,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${secondChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       const nextButton = page.getByRole("link", { name: /次の章/ });
       await expect(nextButton).not.toBeVisible();
@@ -436,7 +403,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       const nextButton = page.getByRole("link", { name: /次の章/ });
       await nextButton.click();
@@ -454,7 +420,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${secondChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       const prevButton = page.getByRole("link", { name: /前の章/ });
       await prevButton.click();
@@ -473,7 +438,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page
@@ -487,7 +451,6 @@ test.describe("chapter page", () => {
       await page.goto(
         `/series/${series.slug}/chapters/${firstChapter.slug}`,
       );
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page
@@ -503,7 +466,6 @@ test.describe("draft chapter visibility", () => {
     page,
   }: TestArgs) => {
     await page.goto(`/series/${series.slug}`);
-    await page.waitForLoadState("networkidle");
 
     for (const chapter of series.chapters) {
       await expect(
@@ -522,7 +484,6 @@ test.describe("draft chapter visibility", () => {
     await page.goto(
       `/series/${series.slug}/chapters/${series.draftChapter.slug}`,
     );
-    await page.waitForLoadState("networkidle");
 
     const notFoundIndicators = page.locator(
       "text=/404|not found|見つかりません|ページが見つかりません/i",
@@ -538,7 +499,6 @@ test.describe("draft chapter visibility", () => {
     await page.goto(
       `/series/${series.slug}/chapters/${publishedChapter.slug}`,
     );
-    await page.waitForLoadState("networkidle");
 
     await expect(
       page

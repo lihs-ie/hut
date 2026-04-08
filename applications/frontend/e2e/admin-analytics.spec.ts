@@ -102,7 +102,6 @@ test.describe("analytics dashboard", () => {
 
   test.beforeEach(async ({ page }: { page: Page }) => {
     await navigateWithSingleRetry(page, ANALYTICS_URL);
-    await page.waitForLoadState("networkidle");
   });
 
   test.describe("header and period selector", () => {

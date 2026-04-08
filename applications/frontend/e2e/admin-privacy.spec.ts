@@ -36,7 +36,6 @@ test.describe("privacy policy edit", () => {
     await page.goto("/admin/privacy/edit");
 
     // Wait for page to load
-    await page.waitForLoadState("networkidle");
 
     // Click add section button
     await page.getByRole("button", { name: "セクションを追加" }).click();

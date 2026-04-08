@@ -32,7 +32,6 @@ test.describe("memo management", () => {
     await page.goto("/admin/memos");
 
     // Wait for content to load
-    await page.waitForLoadState("networkidle");
 
     // Verify main content area is displayed
     await expect(page.locator("main")).toBeVisible();

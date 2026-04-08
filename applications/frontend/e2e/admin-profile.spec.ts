@@ -209,7 +209,6 @@ test.describe.serial("profile edit", () => {
     await page.goto("/admin/profile/edit");
 
     // Wait for page to load
-    await page.waitForLoadState("networkidle");
 
     // Count initial tech stack selects
     const initialSelectCount = await page
@@ -237,7 +236,6 @@ test.describe.serial("profile edit", () => {
   test("tech stack entry can be edited", async ({ page }: TestArgs) => {
     await page.goto("/admin/profile/edit");
 
-    await page.waitForLoadState("networkidle");
 
     const techStackHeader = page.getByRole("heading", { name: "技術スタック" });
     const addButton = techStackHeader
@@ -297,7 +295,6 @@ test.describe.serial("profile edit", () => {
   test("career add button creates new entry", async ({ page }: TestArgs) => {
     await page.goto("/admin/profile/edit");
 
-    await page.waitForLoadState("networkidle");
 
     // Count initial career entries
     const initialCount = await page.getByPlaceholder("株式会社〇〇").count();
@@ -319,7 +316,6 @@ test.describe.serial("profile edit", () => {
   test("career entry can be edited", async ({ page }: TestArgs) => {
     await page.goto("/admin/profile/edit");
 
-    await page.waitForLoadState("networkidle");
 
     // Find and click add button in career section
     const careerHeader = page.getByRole("heading", { name: "経歴" });
@@ -358,7 +354,6 @@ test.describe.serial("profile edit", () => {
   test("tech stack entry can be removed", async ({ page }: TestArgs) => {
     await page.goto("/admin/profile/edit");
 
-    await page.waitForLoadState("networkidle");
 
     // Count initial tech stack entries
     const initialSelectCount = await page
@@ -410,7 +405,6 @@ test.describe.serial("profile edit", () => {
   }: TestArgs) => {
     await page.goto("/admin/profile/edit");
 
-    await page.waitForLoadState("networkidle");
 
     // Edit display name
     const nameInput = page
@@ -541,7 +535,6 @@ test.describe.serial("profile save with Firestore verification", () => {
     });
 
     await page.goto("/admin/profile/edit");
-    await page.waitForLoadState("networkidle");
 
     // Change display name to a unique test value
     const testName = `E2Eテスト_${Date.now()}`;
@@ -572,7 +565,6 @@ test.describe.serial("profile save with Firestore verification", () => {
 
     // Reload page to verify saved data persisted
     await page.reload();
-    await page.waitForLoadState("networkidle");
 
     // Verify the saved name is displayed after reload
     const reloadedNameInput = page
@@ -600,7 +592,6 @@ test.describe.serial("profile save with Firestore verification", () => {
     page,
   }: TestArgs) => {
     await page.goto("/admin/profile/edit");
-    await page.waitForLoadState("networkidle");
 
     const profileDataBefore = await getProfileFromFirestore();
     expect(profileDataBefore).not.toBeNull();
@@ -706,7 +697,6 @@ test.describe.serial("profile save with Firestore verification", () => {
     }
 
     await page.goto("/admin/profile/edit");
-    await page.waitForLoadState("networkidle");
 
     // Restore original name
     const nameInput = page

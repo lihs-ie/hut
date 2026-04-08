@@ -203,7 +203,6 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
       page,
     }: TestArgs) => {
       await page.goto("/admin/tags/new");
-      await page.waitForLoadState("networkidle");
 
       const nameInput = page.getByPlaceholder("例: Next.js");
       await expect(nameInput).toBeVisible();
@@ -240,7 +239,6 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
       page,
     }: TestArgs) => {
       await page.goto("/admin/tags");
-      await page.waitForLoadState("networkidle");
 
       // Search for the created tag
       await page.getByPlaceholder("タグ名で検索").fill(testTagName);
@@ -262,7 +260,6 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
       await page.goto("/admin/tags");
-      await page.waitForLoadState("networkidle");
 
       // Search for the tag
       await page.getByPlaceholder("タグ名で検索").fill(testTagName);
@@ -282,7 +279,6 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
       await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
-      await page.waitForLoadState("networkidle");
 
       // Verify form heading
       await expect(
@@ -311,7 +307,6 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
       await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
-      await page.waitForLoadState("networkidle");
 
       // Clear and update name
       const nameInput = page.getByPlaceholder("例: Next.js");
@@ -349,7 +344,6 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
       await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
-      await page.waitForLoadState("networkidle");
 
       // Modify name but don't save
       const nameInput = page.getByPlaceholder("例: Next.js");
@@ -374,7 +368,6 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
       await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
-      await page.waitForLoadState("networkidle");
 
       // Click delete button
       await page.getByRole("button", { name: "タグを削除" }).click();
@@ -393,7 +386,6 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
       await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
-      await page.waitForLoadState("networkidle");
 
       // Click delete button
       await page.getByRole("button", { name: "タグを削除" }).click();
@@ -424,7 +416,6 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
       await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
-      await page.waitForLoadState("networkidle");
 
       // Get current tag name for verification
       const nameInput = page.getByPlaceholder("例: Next.js");
@@ -467,7 +458,6 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
 test.describe("tag list page", () => {
   test("displays all seed tags", async ({ page }: TestArgs) => {
     await page.goto("/admin/tags");
-    await page.waitForLoadState("networkidle");
 
     // Verify all seed tags are displayed
     for (const tag of seedTags) {
@@ -477,7 +467,6 @@ test.describe("tag list page", () => {
 
   test("search filters tags by name", async ({ page }: TestArgs) => {
     await page.goto("/admin/tags");
-    await page.waitForLoadState("networkidle");
 
     // Search for TypeScript
     await page.getByPlaceholder("タグ名で検索").fill("Type");
@@ -495,7 +484,6 @@ test.describe("tag list page", () => {
     page,
   }: TestArgs) => {
     await page.goto("/admin/tags");
-    await page.waitForLoadState("networkidle");
 
     // Search for non-existent tag
     await page.getByPlaceholder("タグ名で検索").fill("存在しないタグ12345");
@@ -522,7 +510,6 @@ test.describe("tag list page", () => {
     page,
   }: TestArgs) => {
     await page.goto("/admin/tags");
-    await page.waitForLoadState("networkidle");
 
     // Click on TypeScript tag
     await page.getByText("TypeScript").first().click();
@@ -534,7 +521,6 @@ test.describe("tag list page", () => {
 
   test("displays tag logos", async ({ page }: TestArgs) => {
     await page.goto("/admin/tags");
-    await page.waitForLoadState("networkidle");
 
     // At least some logos should be visible (depends on UI implementation)
     const logoCount = await page.locator("img").count();
@@ -549,7 +535,6 @@ test.describe("tag list page", () => {
 test.describe("seed tag editing (non-destructive)", () => {
   test("can view TypeScript tag edit page", async ({ page }: TestArgs) => {
     await page.goto("/admin/tags");
-    await page.waitForLoadState("networkidle");
 
     // Click TypeScript tag
     await page.getByText("TypeScript").first().click();
@@ -565,7 +550,6 @@ test.describe("seed tag editing (non-destructive)", () => {
     page,
   }: TestArgs) => {
     await page.goto("/admin/tags");
-    await page.waitForLoadState("networkidle");
 
     // Click React tag
     await page.getByText("React").first().click();

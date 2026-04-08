@@ -24,7 +24,6 @@ test.describe("memo creation", () => {
   test("displays memo creation form", async ({ page }: TestArgs) => {
     await page.goto("/memos/new");
 
-    await page.waitForLoadState("networkidle");
 
     await expect(page.getByPlaceholder("Enter title...")).toBeVisible();
     await expect(page.getByPlaceholder("Enter slug...")).toBeVisible();
@@ -39,7 +38,6 @@ test.describe("memo creation", () => {
   }: TestArgs) => {
     await page.goto("/memos/new");
 
-    await page.waitForLoadState("networkidle");
 
     const createButton = page.getByRole("button", { name: "メモを作成" });
     await expect(createButton).toBeDisabled();
@@ -50,7 +48,6 @@ test.describe("memo creation", () => {
   }: TestArgs) => {
     await page.goto("/memos/new");
 
-    await page.waitForLoadState("networkidle");
 
     await page.getByPlaceholder("Enter title...").fill("テストメモ");
     await page.getByPlaceholder("Enter slug...").fill("test-memo");
@@ -64,7 +61,6 @@ test.describe("memo creation", () => {
   }: TestArgs) => {
     await page.goto("/memos/new");
 
-    await page.waitForLoadState("networkidle");
 
     const dropdownTrigger = page.getByRole("button", { name: "下書き" });
     await expect(dropdownTrigger).toBeVisible();
@@ -79,7 +75,6 @@ test.describe("memo editing", () => {
   test("displays memo edit page with title", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await expect(
       page.getByRole("heading", { name: publishedMemo.title }).first(),
@@ -91,7 +86,6 @@ test.describe("memo editing", () => {
   }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await expect(page.getByRole("button", { name: "Markdown" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Preview" })).toBeVisible();
@@ -100,7 +94,6 @@ test.describe("memo editing", () => {
   test("displays codemirror editor for entry input", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await expect(page.locator(".cm-editor")).toBeVisible();
   });
@@ -108,7 +101,6 @@ test.describe("memo editing", () => {
   test("displays submit button", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await expect(page.getByRole("button", { name: "投稿する" })).toBeVisible();
   });
@@ -116,7 +108,6 @@ test.describe("memo editing", () => {
   test("displays existing entries", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await expect(page.getByText("Go言語ではエラーは値として扱う")).toBeVisible();
   });
@@ -128,7 +119,6 @@ test.describe("memo entry preview", () => {
   }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await page.getByRole("button", { name: "Preview" }).click();
 
@@ -140,7 +130,6 @@ test.describe("memo entry preview", () => {
   test("previews plain text content", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await fillCodeMirrorEditor(page, "これはテストテキストです。");
 
@@ -152,7 +141,6 @@ test.describe("memo entry preview", () => {
   test("previews inline code", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await fillCodeMirrorEditor(page, "変数は `const value = 123` のように定義します。");
 
@@ -164,7 +152,6 @@ test.describe("memo entry preview", () => {
   test("previews code block", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await fillCodeMirrorEditor(page, "以下はTypeScriptのコード例です。\n\n```typescript\nfunction greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n```");
 
@@ -176,7 +163,6 @@ test.describe("memo entry preview", () => {
   test("previews link", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await fillCodeMirrorEditor(
       page,
@@ -193,7 +179,6 @@ test.describe("memo entry preview", () => {
   test("previews bold and italic text", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await fillCodeMirrorEditor(page, "これは**太字**と*斜体*のテストです。");
 
@@ -206,7 +191,6 @@ test.describe("memo entry preview", () => {
   test("previews list", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await fillCodeMirrorEditor(page, "買い物リスト：\n\n- りんご\n- バナナ\n- オレンジ");
 
@@ -220,7 +204,6 @@ test.describe("memo entry preview", () => {
   test("previews blockquote", async ({ page }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     await fillCodeMirrorEditor(page, "> これは引用文です。\n> 複数行にわたることもあります。");
 
@@ -234,7 +217,6 @@ test.describe("memo entry preview", () => {
   }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     const testContent = "タブ切り替えテスト用のコンテンツ";
 
@@ -257,7 +239,6 @@ test.describe("memo entry submission", () => {
   }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}/edit`);
 
-    await page.waitForLoadState("networkidle");
 
     const uniqueContent = `E2Eテストエントリ ${Date.now()}`;
 
@@ -265,7 +246,6 @@ test.describe("memo entry submission", () => {
 
     await page.getByRole("button", { name: "投稿する" }).click();
 
-    await page.waitForLoadState("networkidle");
 
     await expect(page.getByText(uniqueContent).first()).toBeVisible({ timeout: 30000 });
   });
@@ -298,7 +278,6 @@ test.describe("memo preview page", () => {
   }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}`);
 
-    await page.waitForLoadState("networkidle");
 
     await expect(
       page.getByRole("heading", { name: publishedMemo.title }).first(),
@@ -312,7 +291,6 @@ test.describe("memo preview page", () => {
   }: TestArgs) => {
     await page.goto(`/memos/${publishedMemo.slug}`);
 
-    await page.waitForLoadState("networkidle");
 
     await expect(page.locator("code", { hasText: "error" })).toBeVisible();
   });
