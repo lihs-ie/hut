@@ -6,7 +6,7 @@ type TestArgs = {
 
 test.describe("memo management", () => {
   test("memo management page renders", async ({ page }: TestArgs) => {
-    await page.goto("/admin/memos");
+    await page.goto("/admin/memos", { waitUntil: "load" });
 
     // Verify "メモの管理" heading is displayed
     await expect(
@@ -15,21 +15,21 @@ test.describe("memo management", () => {
   });
 
   test("new memo creation button exists", async ({ page }: TestArgs) => {
-    await page.goto("/admin/memos");
+    await page.goto("/admin/memos", { waitUntil: "load" });
 
     // Verify "新規作成" button is displayed
     await expect(page.getByRole("button", { name: "新規作成" })).toBeVisible();
   });
 
   test("search input field exists", async ({ page }: TestArgs) => {
-    await page.goto("/admin/memos");
+    await page.goto("/admin/memos", { waitUntil: "load" });
 
     // Verify search input is displayed
     await expect(page.getByPlaceholder("タイトルを入力")).toBeVisible();
   });
 
   test("memo list is displayed", async ({ page }: TestArgs) => {
-    await page.goto("/admin/memos");
+    await page.goto("/admin/memos", { waitUntil: "load" });
 
     // Wait for content to load
 
@@ -40,7 +40,7 @@ test.describe("memo management", () => {
   test("new memo creation button navigates to create page", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/memos");
+    await page.goto("/admin/memos", { waitUntil: "load" });
 
     // Click new memo button
     await page.getByRole("button", { name: "新規作成" }).click();

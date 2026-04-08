@@ -6,7 +6,7 @@ type TestArgs = {
 
 test.describe("article management", () => {
   test("article management page renders", async ({ page }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Verify "記事の管理" heading is displayed
     await expect(
@@ -15,28 +15,28 @@ test.describe("article management", () => {
   });
 
   test("new article creation button exists", async ({ page }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Verify "新規作成" button is displayed
     await expect(page.getByRole("button", { name: "新規作成" })).toBeVisible();
   });
 
   test("search input field exists", async ({ page }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Verify search input is displayed
     await expect(page.getByPlaceholder("タイトルを入力")).toBeVisible();
   });
 
   test("status filter select exists", async ({ page }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Verify status filter select exists (select element contains options)
     await expect(page.locator("select").first()).toBeVisible();
   });
 
   test("article list is displayed", async ({ page }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Wait for content to load
 
@@ -47,7 +47,7 @@ test.describe("article management", () => {
   test("new article creation button navigates to create page", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Click new article button
     await page.getByRole("button", { name: "新規作成" }).click();
@@ -59,7 +59,7 @@ test.describe("article management", () => {
 
 test.describe("article search functionality", () => {
   test("search by title updates URL", async ({ page }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Fill title search field
     await page.getByPlaceholder("タイトルを入力").fill("テスト");
@@ -69,7 +69,7 @@ test.describe("article search functionality", () => {
   });
 
   test("filter by published status updates URL", async ({ page }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Select published status (first select controls 'sort' param with status values)
     await page.locator("select").first().selectOption("published");
@@ -79,7 +79,7 @@ test.describe("article search functionality", () => {
   });
 
   test("filter by sort order updates URL", async ({ page }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Select oldest sort order (second select controls 'status' param)
     await page.locator("select").nth(1).selectOption("oldest");
@@ -89,7 +89,7 @@ test.describe("article search functionality", () => {
   });
 
   test("combined filters work together", async ({ page }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Apply title filter
     await page.getByPlaceholder("タイトルを入力").fill("テスト");
@@ -110,7 +110,7 @@ test.describe("article navigation", () => {
   test("clicking article title navigates to preview page", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Get first article title link
     const firstArticleLink = page.locator("article a").first();
@@ -131,7 +131,7 @@ test.describe("article navigation", () => {
   test("clicking edit button navigates to edit page", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Find edit link (contains /edit in href)
     const editButton = page
@@ -156,7 +156,7 @@ test.describe("article deletion", () => {
   test("clicking delete button opens confirmation modal", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Find article cards (card container has article element inside)
     const cardContainers = page.locator("article").locator("..");
@@ -184,7 +184,7 @@ test.describe("article deletion", () => {
   test("clicking cancel button closes confirmation modal", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Find article card containers
     const cardContainers = page.locator("article").locator("..");
@@ -220,7 +220,7 @@ test.describe("article deletion", () => {
   test.skip("clicking confirm button deletes article", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/articles");
+    await page.goto("/admin/articles", { waitUntil: "load" });
 
     // Find article card containers
     const cardContainers = page.locator("article").locator("..");

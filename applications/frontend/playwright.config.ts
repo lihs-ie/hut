@@ -116,8 +116,13 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: resolveReporter(),
   globalSetup: "./playwright/global-setup.ts",
+  timeout: process.env.CI ? 60000 : 30000,
+  expect: {
+    timeout: process.env.CI ? 15000 : 5000,
+  },
   use: {
     trace: "on-first-retry",
+    navigationTimeout: process.env.CI ? 30000 : 15000,
     ...devices["Desktop Chrome"],
   },
   projects: [

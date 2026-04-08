@@ -13,7 +13,7 @@ const multiTagArticleTitle = "Reactコンポーネント設計パターン";
 
 test.describe.serial("article edit tests", () => {
   test("existing article data is displayed", async ({ page }: TestArgs) => {
-    await page.goto(`/articles/${publishedArticleSlug}/edit`);
+    await page.goto(`/articles/${publishedArticleSlug}/edit`, { waitUntil: "load" });
 
     const titleInput = page.getByPlaceholder("タイトルを入力");
     await expect(titleInput).toHaveValue(publishedArticleTitle);
@@ -26,7 +26,7 @@ test.describe.serial("article edit tests", () => {
   });
 
   test("draft article shows correct state", async ({ page }: TestArgs) => {
-    await page.goto(`/articles/${draftArticleSlug}/edit`);
+    await page.goto(`/articles/${draftArticleSlug}/edit`, { waitUntil: "load" });
 
     const titleInput = page.getByPlaceholder("タイトルを入力");
     await expect(titleInput).toHaveValue(draftArticleTitle);
@@ -38,7 +38,7 @@ test.describe.serial("article edit tests", () => {
   });
 
   test("remove tag from article", async ({ page }: TestArgs) => {
-    await page.goto(`/articles/${multiTagArticleSlug}/edit`);
+    await page.goto(`/articles/${multiTagArticleSlug}/edit`, { waitUntil: "load" });
 
     await expect(page.getByPlaceholder("タイトルを入力")).toHaveValue(multiTagArticleTitle);
 
@@ -53,7 +53,7 @@ test.describe.serial("article edit tests", () => {
   });
 
   test("edit article content", async ({ page }: TestArgs) => {
-    await page.goto(`/articles/${publishedArticleSlug}/edit`);
+    await page.goto(`/articles/${publishedArticleSlug}/edit`, { waitUntil: "load" });
 
     await expect(page.getByPlaceholder("タイトルを入力")).toHaveValue(publishedArticleTitle);
 
@@ -68,7 +68,7 @@ test.describe.serial("article edit tests", () => {
   });
 
   test("toggle publish switch changes button", async ({ page }: TestArgs) => {
-    await page.goto(`/articles/${draftArticleSlug}/edit`);
+    await page.goto(`/articles/${draftArticleSlug}/edit`, { waitUntil: "load" });
 
     const publishSwitch = page.getByRole("checkbox");
     await expect(publishSwitch).not.toBeChecked();
@@ -91,7 +91,7 @@ test.describe.serial("article edit tests", () => {
   });
 
   test("editor toolbar is visible", async ({ page }: TestArgs) => {
-    await page.goto(`/articles/${publishedArticleSlug}/edit`);
+    await page.goto(`/articles/${publishedArticleSlug}/edit`, { waitUntil: "load" });
 
     await expect(page.getByPlaceholder("タイトルを入力")).toHaveValue(publishedArticleTitle);
 
@@ -101,7 +101,7 @@ test.describe.serial("article edit tests", () => {
   });
 
   test("image paste inserts placeholder into editor", async ({ page }: TestArgs) => {
-    await page.goto(`/articles/${publishedArticleSlug}/edit`);
+    await page.goto(`/articles/${publishedArticleSlug}/edit`, { waitUntil: "load" });
 
     await expect(page.getByPlaceholder("タイトルを入力")).toHaveValue(publishedArticleTitle);
 
@@ -136,7 +136,7 @@ test.describe.serial("article edit tests", () => {
   });
 
   test("image drag-and-drop inserts placeholder into editor", async ({ page }: TestArgs) => {
-    await page.goto(`/articles/${publishedArticleSlug}/edit`);
+    await page.goto(`/articles/${publishedArticleSlug}/edit`, { waitUntil: "load" });
 
     await expect(page.getByPlaceholder("タイトルを入力")).toHaveValue(publishedArticleTitle);
 

@@ -11,7 +11,7 @@ const series = {
 
 test.describe("series management", () => {
   test("series management page renders", async ({ page }: TestArgs) => {
-    await page.goto("/admin/series");
+    await page.goto("/admin/series", { waitUntil: "load" });
 
     await expect(
       page.getByRole("heading", { name: "連載の管理" }),
@@ -19,13 +19,13 @@ test.describe("series management", () => {
   });
 
   test("series list is displayed", async ({ page }: TestArgs) => {
-    await page.goto("/admin/series");
+    await page.goto("/admin/series", { waitUntil: "load" });
 
     await expect(page.locator("main")).toBeVisible({ timeout: 15000 });
   });
 
   test("displays seeded series title", async ({ page }: TestArgs) => {
-    await page.goto("/admin/series");
+    await page.goto("/admin/series", { waitUntil: "load" });
 
     await expect(
       page.getByText(series.title).first(),

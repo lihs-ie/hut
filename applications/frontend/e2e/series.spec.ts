@@ -32,13 +32,13 @@ const series = {
 test.describe("series list page", () => {
   test.describe("page structure", () => {
     test("page loads successfully", async ({ page }: TestArgs) => {
-      await page.goto("/series");
+      await page.goto("/series", { waitUntil: "load" });
 
       await expect(page.locator("main")).toBeVisible();
     });
 
     test("displays series list heading", async ({ page }: TestArgs) => {
-      await page.goto("/series");
+      await page.goto("/series", { waitUntil: "load" });
 
       await expect(
         page.getByRole("heading", { name: "連載" }),
@@ -46,7 +46,7 @@ test.describe("series list page", () => {
     });
 
     test("displays description text", async ({ page }: TestArgs) => {
-      await page.goto("/series");
+      await page.goto("/series", { waitUntil: "load" });
 
       await expect(
         page.getByText("技術書や体系的にまとめられたコンテンツ"),
@@ -56,13 +56,13 @@ test.describe("series list page", () => {
 
   test.describe("series card", () => {
     test("displays seeded series title", async ({ page }: TestArgs) => {
-      await page.goto("/series");
+      await page.goto("/series", { waitUntil: "load" });
 
       await expect(page.getByText(series.title).first()).toBeVisible();
     });
 
     test("series card links to detail page", async ({ page }: TestArgs) => {
-      await page.goto("/series");
+      await page.goto("/series", { waitUntil: "load" });
 
       const link = page
         .getByRole("link")
@@ -75,7 +75,7 @@ test.describe("series list page", () => {
     test("clicking series card navigates to detail page", async ({
       page,
     }: TestArgs) => {
-      await page.goto("/series");
+      await page.goto("/series", { waitUntil: "load" });
 
       const link = page
         .getByRole("link")
@@ -90,7 +90,7 @@ test.describe("series list page", () => {
   test.describe("responsiveness", () => {
     test("page is viewable on mobile viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/series");
+      await page.goto("/series", { waitUntil: "load" });
 
       await expect(
         page.getByRole("heading", { name: "連載" }),
@@ -99,7 +99,7 @@ test.describe("series list page", () => {
 
     test("page is viewable on tablet viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 768, height: 1024 });
-      await page.goto("/series");
+      await page.goto("/series", { waitUntil: "load" });
 
       await expect(
         page.getByRole("heading", { name: "連載" }),
@@ -112,7 +112,7 @@ test.describe("series detail page 404", () => {
   test("shows 404 for non-existent series slug", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/series/non-existent-slug");
+    await page.goto("/series/non-existent-slug", { waitUntil: "load" });
 
     const notFoundIndicators = page.locator(
       "text=/404|not found|見つかりません|ページが見つかりません/i",
@@ -125,6 +125,7 @@ test.describe("series detail page 404", () => {
   }: TestArgs) => {
     await page.goto(
       `/series/${series.slug}/chapters/non-existent`,
+      { waitUntil: "load" },
     );
 
     const notFoundIndicators = page.locator(
@@ -137,7 +138,7 @@ test.describe("series detail page 404", () => {
 test.describe("series detail page", () => {
   test.describe("page structure", () => {
     test("page loads successfully", async ({ page }: TestArgs) => {
-      await page.goto(`/series/${series.slug}`);
+      await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
       await expect(page.locator("main")).toBeVisible();
     });
@@ -145,7 +146,7 @@ test.describe("series detail page", () => {
     test("displays series title as h1 heading", async ({
       page,
     }: TestArgs) => {
-      await page.goto(`/series/${series.slug}`);
+      await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
       await expect(
         page.getByRole("heading", { name: series.title, level: 1 }),
@@ -153,13 +154,13 @@ test.describe("series detail page", () => {
     });
 
     test("displays series subtitle", async ({ page }: TestArgs) => {
-      await page.goto(`/series/${series.slug}`);
+      await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
       await expect(page.getByText(series.subTitle).first()).toBeVisible();
     });
 
     test("displays series description", async ({ page }: TestArgs) => {
-      await page.goto(`/series/${series.slug}`);
+      await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
       await expect(page.getByText(series.description).first()).toBeVisible();
     });
@@ -167,7 +168,7 @@ test.describe("series detail page", () => {
 
   test.describe("table of contents", () => {
     test("displays 目次 heading", async ({ page }: TestArgs) => {
-      await page.goto(`/series/${series.slug}`);
+      await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
       await expect(
         page.getByRole("heading", { name: "目次" }),
@@ -177,7 +178,7 @@ test.describe("series detail page", () => {
     test("displays all chapter titles in table of contents", async ({
       page,
     }: TestArgs) => {
-      await page.goto(`/series/${series.slug}`);
+      await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
       for (const chapter of series.chapters) {
         await expect(
@@ -189,7 +190,7 @@ test.describe("series detail page", () => {
     test("chapter links point to correct URLs", async ({
       page,
     }: TestArgs) => {
-      await page.goto(`/series/${series.slug}`);
+      await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
       for (const chapter of series.chapters) {
         const link = page
@@ -206,7 +207,7 @@ test.describe("series detail page", () => {
 
   test.describe("tags", () => {
     test("displays series tags", async ({ page }: TestArgs) => {
-      await page.goto(`/series/${series.slug}`);
+      await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
       for (const tag of series.tags) {
         await expect(page.getByText(tag).first()).toBeVisible();
@@ -217,7 +218,7 @@ test.describe("series detail page", () => {
   test.describe("responsiveness", () => {
     test("page is viewable on mobile viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto(`/series/${series.slug}`);
+      await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
       await expect(
         page.getByRole("heading", { name: series.title, level: 1 }),
@@ -226,7 +227,7 @@ test.describe("series detail page", () => {
 
     test("page is viewable on tablet viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 768, height: 1024 });
-      await page.goto(`/series/${series.slug}`);
+      await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
       await expect(
         page.getByRole("heading", { name: series.title, level: 1 }),
@@ -242,8 +243,9 @@ test.describe("chapter page", () => {
   test.describe("page structure", () => {
     test("page loads successfully", async ({ page }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       await expect(page.locator("article")).toBeVisible();
     });
@@ -252,8 +254,9 @@ test.describe("chapter page", () => {
       page,
     }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       await expect(
         page
@@ -264,8 +267,9 @@ test.describe("chapter page", () => {
 
     test("displays chapter number label", async ({ page }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       await expect(
         page.getByText(`Chapter ${firstChapter.number}`).first(),
@@ -274,8 +278,9 @@ test.describe("chapter page", () => {
 
     test("displays chapter markdown content", async ({ page }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       await expect(page.locator(".prose")).toBeVisible();
       await expect(
@@ -287,8 +292,9 @@ test.describe("chapter page", () => {
       page,
     }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       const codeBlocks = page.locator("pre code, .shiki");
       await expect(codeBlocks.first()).toBeVisible();
@@ -300,8 +306,9 @@ test.describe("chapter page", () => {
       page,
     }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       const seriesLink = page.getByRole("link", { name: series.title });
       await expect(seriesLink.first()).toBeVisible();
@@ -311,8 +318,9 @@ test.describe("chapter page", () => {
       page,
     }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       const seriesLink = page.getByRole("link", { name: series.title }).first();
       const href = await seriesLink.getAttribute("href");
@@ -323,8 +331,9 @@ test.describe("chapter page", () => {
       page,
     }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       for (const chapter of series.chapters) {
         await expect(page.getByText(chapter.title).first()).toBeVisible();
@@ -335,8 +344,9 @@ test.describe("chapter page", () => {
       page,
     }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       const activeItem = page.locator('[class*="nav-item-active"]');
       await expect(activeItem).toBeVisible();
@@ -349,8 +359,9 @@ test.describe("chapter page", () => {
   test.describe("chapter navigation", () => {
     test("first chapter has no 前の章 button", async ({ page }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       const prevButton = page.getByRole("link", { name: /前の章/ });
       await expect(prevButton).not.toBeVisible();
@@ -360,8 +371,9 @@ test.describe("chapter page", () => {
       page,
     }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       const nextButton = page.getByRole("link", { name: /次の章/ });
       await expect(nextButton).toBeVisible();
@@ -376,8 +388,9 @@ test.describe("chapter page", () => {
       page,
     }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${secondChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${secondChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       const prevButton = page.getByRole("link", { name: /前の章/ });
       await expect(prevButton).toBeVisible();
@@ -390,8 +403,9 @@ test.describe("chapter page", () => {
 
     test("last chapter has no 次の章 button", async ({ page }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${secondChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${secondChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       const nextButton = page.getByRole("link", { name: /次の章/ });
       await expect(nextButton).not.toBeVisible();
@@ -401,8 +415,9 @@ test.describe("chapter page", () => {
       page,
     }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       const nextButton = page.getByRole("link", { name: /次の章/ });
       await nextButton.click();
@@ -418,8 +433,9 @@ test.describe("chapter page", () => {
       page,
     }: TestArgs) => {
       await page.goto(
-        `/series/${series.slug}/chapters/${secondChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${secondChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       const prevButton = page.getByRole("link", { name: /前の章/ });
       await prevButton.click();
@@ -436,8 +452,9 @@ test.describe("chapter page", () => {
     test("page is viewable on mobile viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       await expect(
         page
@@ -449,8 +466,9 @@ test.describe("chapter page", () => {
     test("page is viewable on tablet viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 768, height: 1024 });
       await page.goto(
-        `/series/${series.slug}/chapters/${firstChapter.slug}`,
-      );
+      `/series/${series.slug}/chapters/${firstChapter.slug}`,
+      { waitUntil: "load" },
+    );
 
       await expect(
         page
@@ -465,7 +483,7 @@ test.describe("draft chapter visibility", () => {
   test("draft chapter is not listed on series detail page", async ({
     page,
   }: TestArgs) => {
-    await page.goto(`/series/${series.slug}`);
+    await page.goto(`/series/${series.slug}`, { waitUntil: "load" });
 
     for (const chapter of series.chapters) {
       await expect(
@@ -483,6 +501,7 @@ test.describe("draft chapter visibility", () => {
   }: TestArgs) => {
     await page.goto(
       `/series/${series.slug}/chapters/${series.draftChapter.slug}`,
+      { waitUntil: "load" },
     );
 
     const notFoundIndicators = page.locator(
@@ -498,6 +517,7 @@ test.describe("draft chapter visibility", () => {
 
     await page.goto(
       `/series/${series.slug}/chapters/${publishedChapter.slug}`,
+      { waitUntil: "load" },
     );
 
     await expect(

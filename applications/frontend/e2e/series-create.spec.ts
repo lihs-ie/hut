@@ -6,13 +6,13 @@ type TestArgs = {
 
 test.describe("series create page", () => {
   test("page is accessible", async ({ page }: TestArgs) => {
-    await page.goto("/series/new");
+    await page.goto("/series/new", { waitUntil: "load" });
 
     await expect(page.locator("main")).toBeVisible({ timeout: 15000 });
   });
 
   test("displays page title 連載を作成", async ({ page }: TestArgs) => {
-    await page.goto("/series/new");
+    await page.goto("/series/new", { waitUntil: "load" });
 
     await expect(
       page.getByRole("heading", { name: "連載を作成" }),
@@ -20,7 +20,7 @@ test.describe("series create page", () => {
   });
 
   test("title input field is present", async ({ page }: TestArgs) => {
-    await page.goto("/series/new");
+    await page.goto("/series/new", { waitUntil: "load" });
 
     await expect(
       page.getByPlaceholder("連載タイトルを入力"),
@@ -28,7 +28,7 @@ test.describe("series create page", () => {
   });
 
   test("slug input field is present", async ({ page }: TestArgs) => {
-    await page.goto("/series/new");
+    await page.goto("/series/new", { waitUntil: "load" });
 
     await expect(
       page.getByPlaceholder("series-slug"),
@@ -36,7 +36,7 @@ test.describe("series create page", () => {
   });
 
   test("save button is present", async ({ page }: TestArgs) => {
-    await page.goto("/series/new");
+    await page.goto("/series/new", { waitUntil: "load" });
 
     await expect(
       page.getByRole("button", { name: "保存" }),
@@ -44,7 +44,7 @@ test.describe("series create page", () => {
   });
 
   test("publish status toggle is present", async ({ page }: TestArgs) => {
-    await page.goto("/series/new");
+    await page.goto("/series/new", { waitUntil: "load" });
 
     await expect(
       page.getByRole("switch"),

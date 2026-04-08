@@ -6,7 +6,7 @@ type TestArgs = {
 
 test.describe("privacy policy edit", () => {
   test("privacy policy edit page renders", async ({ page }: TestArgs) => {
-    await page.goto("/admin/privacy/edit");
+    await page.goto("/admin/privacy/edit", { waitUntil: "load" });
 
     // Verify "プライバシーポリシー" heading is displayed
     await expect(
@@ -15,14 +15,14 @@ test.describe("privacy policy edit", () => {
   });
 
   test("save button is displayed", async ({ page }: TestArgs) => {
-    await page.goto("/admin/privacy/edit");
+    await page.goto("/admin/privacy/edit", { waitUntil: "load" });
 
     // Verify "保存する" button is displayed
     await expect(page.getByRole("button", { name: "保存する" })).toBeVisible();
   });
 
   test("add section button is displayed", async ({ page }: TestArgs) => {
-    await page.goto("/admin/privacy/edit");
+    await page.goto("/admin/privacy/edit", { waitUntil: "load" });
 
     // Verify "セクションを追加" button is displayed
     await expect(
@@ -33,7 +33,7 @@ test.describe("privacy policy edit", () => {
   test("add section button works (non-destructive)", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/privacy/edit");
+    await page.goto("/admin/privacy/edit", { waitUntil: "load" });
 
     // Wait for page to load
 

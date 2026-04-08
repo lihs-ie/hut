@@ -58,7 +58,7 @@ function extractStringValue(
  */
 test.describe.serial("profile edit", () => {
   test("profile edit page renders with heading", async ({ page }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Verify "プロフィール設定" heading is displayed
     await expect(
@@ -69,7 +69,7 @@ test.describe.serial("profile edit", () => {
   test("avatar upload section is displayed with change button", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Verify avatar change button is displayed
     await expect(page.getByText("変更する")).toBeVisible();
@@ -80,7 +80,7 @@ test.describe.serial("profile edit", () => {
   });
 
   test("avatar upload accepts image file", async ({ page }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Create a test image file
     const fileInput = page.locator('input[type="file"][accept="image/*"]');
@@ -106,7 +106,7 @@ test.describe.serial("profile edit", () => {
   test("display name input field exists and accepts input", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Find display name field by label
     const nameLabel = page.getByText("表示名", { exact: false });
@@ -128,7 +128,7 @@ test.describe.serial("profile edit", () => {
   });
 
   test("bio textarea exists and accepts input", async ({ page }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Find bio field by label
     const bioLabel = page.getByText("自己紹介");
@@ -148,7 +148,7 @@ test.describe.serial("profile edit", () => {
   test("GitHub username input exists and accepts input", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Find GitHub field by label
     const githubLabel = page.getByText("GitHubユーザーID");
@@ -169,7 +169,7 @@ test.describe.serial("profile edit", () => {
   test("X username input exists and accepts input", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Find X field by label
     const xLabel = page.getByText("XユーザーID");
@@ -190,7 +190,7 @@ test.describe.serial("profile edit", () => {
   test("tech stack section is displayed with add button", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Verify tech stack section header
     const techStackHeader = page.getByRole("heading", { name: "技術スタック" });
@@ -206,7 +206,7 @@ test.describe.serial("profile edit", () => {
   test("tech stack add button creates new entry", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Wait for page to load
 
@@ -234,7 +234,7 @@ test.describe.serial("profile edit", () => {
   });
 
   test("tech stack entry can be edited", async ({ page }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
 
     const techStackHeader = page.getByRole("heading", { name: "技術スタック" });
@@ -279,7 +279,7 @@ test.describe.serial("profile edit", () => {
   test("career section is displayed with add button", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Verify career section header
     const careerHeader = page.getByRole("heading", { name: "経歴" });
@@ -293,7 +293,7 @@ test.describe.serial("profile edit", () => {
   });
 
   test("career add button creates new entry", async ({ page }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
 
     // Count initial career entries
@@ -314,7 +314,7 @@ test.describe.serial("profile edit", () => {
   });
 
   test("career entry can be edited", async ({ page }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
 
     // Find and click add button in career section
@@ -352,7 +352,7 @@ test.describe.serial("profile edit", () => {
   });
 
   test("tech stack entry can be removed", async ({ page }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
 
     // Count initial tech stack entries
@@ -392,7 +392,7 @@ test.describe.serial("profile edit", () => {
   test("update button is displayed and enabled", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Verify "更新する" button is displayed and enabled
     const updateButton = page.getByRole("button", { name: "更新する" });
@@ -403,7 +403,7 @@ test.describe.serial("profile edit", () => {
   test("full form edit workflow (non-destructive)", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
 
     // Edit display name
@@ -534,7 +534,7 @@ test.describe.serial("profile save with Firestore verification", () => {
       }
     });
 
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Change display name to a unique test value
     const testName = `E2Eテスト_${Date.now()}`;
@@ -591,7 +591,7 @@ test.describe.serial("profile save with Firestore verification", () => {
   test("save tech stack with business experience type and verify in Firestore", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     const profileDataBefore = await getProfileFromFirestore();
     expect(profileDataBefore).not.toBeNull();
@@ -696,7 +696,7 @@ test.describe.serial("profile save with Firestore verification", () => {
       return;
     }
 
-    await page.goto("/admin/profile/edit");
+    await page.goto("/admin/profile/edit", { waitUntil: "load" });
 
     // Restore original name
     const nameInput = page
