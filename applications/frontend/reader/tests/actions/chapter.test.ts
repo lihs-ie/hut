@@ -11,8 +11,9 @@ import { SlugMold } from "../../../shared/tests/support/molds/domains/common/slu
 import { aggregateNotFoundError } from "@shared/aspects/error";
 import { PublishStatus } from "@shared/domains/common";
 import {
-  setupUnwrapWithResolvedValue,
-  setupUnwrapWithRejectedValue,
+  setupUnwrapForAsyncResult,
+  createSuccessAsyncResult,
+  createErrorAsyncResult,
 } from "../../../shared/tests/support/helpers";
 
 vi.mock("react", () => ({
@@ -48,19 +49,32 @@ describe("reader chapter actions", () => {
       const chapter = Forger(ChapterMold).forge({
         status: PublishStatus.PUBLISHED,
       });
-      const unwrapForNextJs = await setupUnwrapWithResolvedValue(chapter);
+      await setupUnwrapForAsyncResult();
+
+      const { ReaderChapterWorkflowProvider } = await import(
+        "@/providers/workflows/chapter"
+      );
+      vi.mocked(ReaderChapterWorkflowProvider.findBySlug).mockReturnValue(
+        createSuccessAsyncResult(chapter),
+      );
 
       const { findChapterBySlug } = await import("@/actions/chapter");
       const result = await findChapterBySlug(chapter.slug);
 
       expect(result).toEqual(chapter);
-      expect(unwrapForNextJs).toHaveBeenCalled();
     });
 
     it("下書きChapterはAggregateNotFoundErrorになる", async () => {
       const slug = Forger(SlugMold).forgeWithSeed(1);
-      await setupUnwrapWithRejectedValue(
-        aggregateNotFoundError("Chapter", "Chapter is not published"),
+      await setupUnwrapForAsyncResult();
+
+      const { ReaderChapterWorkflowProvider } = await import(
+        "@/providers/workflows/chapter"
+      );
+      vi.mocked(ReaderChapterWorkflowProvider.findBySlug).mockReturnValue(
+        createErrorAsyncResult(
+          aggregateNotFoundError("Chapter", "Chapter is not published"),
+        ),
       );
 
       const { findChapterBySlug } = await import("@/actions/chapter");
@@ -70,8 +84,15 @@ describe("reader chapter actions", () => {
 
     it("Chapterが存在しない場合はエラーがスローされる", async () => {
       const slug = Forger(SlugMold).forgeWithSeed(2);
-      await setupUnwrapWithRejectedValue(
-        aggregateNotFoundError("Chapter", "Chapter not found."),
+      await setupUnwrapForAsyncResult();
+
+      const { ReaderChapterWorkflowProvider } = await import(
+        "@/providers/workflows/chapter"
+      );
+      vi.mocked(ReaderChapterWorkflowProvider.findBySlug).mockReturnValue(
+        createErrorAsyncResult(
+          aggregateNotFoundError("Chapter", "Chapter not found."),
+        ),
       );
 
       const { findChapterBySlug } = await import("@/actions/chapter");
@@ -91,19 +112,14 @@ describe("reader chapter actions", () => {
       const allChapters = [publishedChapter, draftChapter];
       const identifiers = allChapters.map((chapter) => chapter.identifier);
 
+      await setupUnwrapForAsyncResult();
+
       const { ChapterRepositoryProvider } = await import(
         "@shared/providers/infrastructure/chapter"
       );
       vi.mocked(
         ChapterRepositoryProvider.firebase.ofIdentifiers,
-      ).mockResolvedValue(allChapters);
-
-      const { unwrapForNextJs } = await import(
-        "@shared/components/global/next-error"
-      );
-      vi.mocked(unwrapForNextJs).mockImplementation(
-        (asyncResult) => asyncResult,
-      );
+      ).mockReturnValue(createSuccessAsyncResult(allChapters));
 
       const { findPublishedChaptersByIdentifiers } = await import(
         "@/actions/chapter"
@@ -121,19 +137,14 @@ describe("reader chapter actions", () => {
       ];
       const identifiers = draftChapters.map((chapter) => chapter.identifier);
 
+      await setupUnwrapForAsyncResult();
+
       const { ChapterRepositoryProvider } = await import(
         "@shared/providers/infrastructure/chapter"
       );
       vi.mocked(
         ChapterRepositoryProvider.firebase.ofIdentifiers,
-      ).mockResolvedValue(draftChapters);
-
-      const { unwrapForNextJs } = await import(
-        "@shared/components/global/next-error"
-      );
-      vi.mocked(unwrapForNextJs).mockImplementation(
-        (asyncResult) => asyncResult,
-      );
+      ).mockReturnValue(createSuccessAsyncResult(draftChapters));
 
       const { findPublishedChaptersByIdentifiers } = await import(
         "@/actions/chapter"
@@ -144,19 +155,14 @@ describe("reader chapter actions", () => {
     });
 
     it("空の識別子リストを渡すと空配列を返す", async () => {
+      await setupUnwrapForAsyncResult();
+
       const { ChapterRepositoryProvider } = await import(
         "@shared/providers/infrastructure/chapter"
       );
       vi.mocked(
         ChapterRepositoryProvider.firebase.ofIdentifiers,
-      ).mockResolvedValue([]);
-
-      const { unwrapForNextJs } = await import(
-        "@shared/components/global/next-error"
-      );
-      vi.mocked(unwrapForNextJs).mockImplementation(
-        (asyncResult) => asyncResult,
-      );
+      ).mockReturnValue(createSuccessAsyncResult([]));
 
       const { findPublishedChaptersByIdentifiers } = await import(
         "@/actions/chapter"
@@ -168,8 +174,17 @@ describe("reader chapter actions", () => {
 
     it("Chapter取得に失敗した場合はエラーがスローされる", async () => {
       const identifier = Forger(ChapterIdentifierMold).forgeWithSeed(1);
-      await setupUnwrapWithRejectedValue(
-        aggregateNotFoundError("Chapter", "Chapter not found."),
+      await setupUnwrapForAsyncResult();
+
+      const { ChapterRepositoryProvider } = await import(
+        "@shared/providers/infrastructure/chapter"
+      );
+      vi.mocked(
+        ChapterRepositoryProvider.firebase.ofIdentifiers,
+      ).mockReturnValue(
+        createErrorAsyncResult(
+          aggregateNotFoundError("Chapter", "Chapter not found."),
+        ),
       );
 
       const { findPublishedChaptersByIdentifiers } = await import(
