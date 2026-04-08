@@ -12,15 +12,15 @@ const createRequest = (url: string = "https://example.com/") => {
   return new NextRequest(url);
 };
 
-describe("middleware", () => {
+describe("proxy", () => {
   beforeEach(() => {
     vi.resetModules();
   });
 
   it("nonce が生成され CSP ヘッダーに含まれる", async () => {
-    const { middleware } = await import("../src/middleware");
+    const { proxy } = await import("../src/proxy");
     const request = createRequest();
-    const response = middleware(request);
+    const response = proxy(request);
 
     const csp = response.headers.get("Content-Security-Policy");
     expect(csp).toBeDefined();
@@ -28,9 +28,9 @@ describe("middleware", () => {
   });
 
   it("CSP ヘッダーに nonce が含まれる", async () => {
-    const { middleware } = await import("../src/middleware");
+    const { proxy } = await import("../src/proxy");
     const request = createRequest();
-    const response = middleware(request);
+    const response = proxy(request);
 
     const csp = response.headers.get("Content-Security-Policy");
     expect(csp).toContain("nonce-");
@@ -38,9 +38,9 @@ describe("middleware", () => {
 
   it("CSP の script-src に unsafe-inline が含まれない", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    const { middleware } = await import("../src/middleware");
+    const { proxy } = await import("../src/proxy");
     const request = createRequest();
-    const response = middleware(request);
+    const response = proxy(request);
 
     const csp = response.headers.get("Content-Security-Policy");
     const scriptSrc = csp
@@ -51,41 +51,41 @@ describe("middleware", () => {
   });
 
   it("X-Nextjs-Cache ヘッダーがレスポンスに含まれない", async () => {
-    const { middleware } = await import("../src/middleware");
+    const { proxy } = await import("../src/proxy");
     const request = createRequest();
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("X-Nextjs-Cache")).toBeNull();
   });
 
   it("X-Nextjs-Prerender ヘッダーが削除される", async () => {
-    const { middleware } = await import("../src/middleware");
+    const { proxy } = await import("../src/proxy");
     const request = createRequest();
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("X-Nextjs-Prerender")).toBeNull();
   });
 
   it("X-Nextjs-Stale-Time ヘッダーが削除される", async () => {
-    const { middleware } = await import("../src/middleware");
+    const { proxy } = await import("../src/proxy");
     const request = createRequest();
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("X-Nextjs-Stale-Time")).toBeNull();
   });
 
   it("Server ヘッダーが削除される", async () => {
-    const { middleware } = await import("../src/middleware");
+    const { proxy } = await import("../src/proxy");
     const request = createRequest();
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("Server")).toBeNull();
   });
 
   it("CSP ヘッダーに default-src 'self' が含まれる", async () => {
-    const { middleware } = await import("../src/middleware");
+    const { proxy } = await import("../src/proxy");
     const request = createRequest();
-    const response = middleware(request);
+    const response = proxy(request);
 
     const csp = response.headers.get("Content-Security-Policy");
     expect(csp).toContain("default-src 'self'");
