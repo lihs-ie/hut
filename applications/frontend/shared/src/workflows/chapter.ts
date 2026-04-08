@@ -79,6 +79,10 @@ export type ChapterFindBySlugWorkflow = (
   ValidationError | AggregateNotFoundError<"Chapter"> | UnexpectedError
 >;
 
+type ChapterFilter = (
+  chapter: Chapter,
+) => Result<Chapter, AggregateNotFoundError<"Chapter">>;
+
 type FindChapterBySlug = (
   slug: Slug
 ) => AsyncResult<Chapter, AggregateNotFoundError<"Chapter"> | UnexpectedError>;
@@ -138,7 +142,8 @@ export const createChapterPersistWorkflow =
 export const createChapterFindBySlugWorkflow =
   (validate: ValidateSlug) =>
   (logger: Logger) =>
-  (findBySlug: FindChapterBySlug): ChapterFindBySlugWorkflow =>
+  (findBySlug: FindChapterBySlug) =>
+  (filter: ChapterFilter): ChapterFindBySlugWorkflow =>
   (command: ChapterFindBySlugCommand) => {
     logger.info("ChapterFindBySlugWorkflow started", {
       slug: command.payload.slug,
@@ -153,6 +158,7 @@ export const createChapterFindBySlugWorkflow =
         logger.warn("Validation failed", { error });
       })
       .andThen(findBySlug)
+      .andThen(filter)
       .tap((chapter) => {
         logger.info("ChapterFindBySlugWorkflow completed", {
           identifier: chapter.identifier,

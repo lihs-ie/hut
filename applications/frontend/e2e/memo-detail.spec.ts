@@ -31,7 +31,7 @@ const draftMemo = {
  */
 test.describe("memo detail page", () => {
   test("displays memo title as h1 heading", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
     await expect(
       page.getByRole("heading", { name: publishedMemo.title, level: 1 }).first(),
@@ -39,110 +39,73 @@ test.describe("memo detail page", () => {
   });
 
   test("displays publication date", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
-    // Wait for content to load
-    await page.waitForLoadState("networkidle");
-
-    // Check for "投稿日時：" label with date format (YYYY/MM/DD)
     const publishedDateText = page.locator("text=投稿日時：");
     await expect(publishedDateText).toBeVisible();
 
-    // Verify date format exists in content
     const datePattern = /\d{4}\/\d{2}\/\d{2}/;
     const mainContent = await page.locator("main").textContent();
     expect(mainContent).toMatch(datePattern);
   });
 
   test("displays last updated date", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
-    // Wait for content to load
-    await page.waitForLoadState("networkidle");
-
-    // Check for "最終更新日時：" label
     const updatedDateText = page.locator("text=最終更新日時：");
     await expect(updatedDateText).toBeVisible();
   });
 
   test("displays tag with link", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
-    // Wait for content to load
-    await page.waitForLoadState("networkidle");
-
-    // Check tag is displayed as a link
     const tagLink = page.getByRole("link", { name: publishedMemo.tags[0] });
     await expect(tagLink).toBeVisible();
 
-    // Verify tag link has href
     const href = await tagLink.getAttribute("href");
     expect(href).toBeTruthy();
   });
 
   test("displays multiple entries", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
-    // Wait for content to load
-    await page.waitForLoadState("networkidle");
-
-    // Check that both entries are displayed
-    // The first entry mentions "error インターフェース"
     await expect(page.getByText("Go言語ではエラーは値として扱う")).toBeVisible();
 
-    // The second entry mentions "goroutine"
     await expect(page.getByText("goroutineは軽量スレッド")).toBeVisible();
   });
 
   test("displays entry creation timestamps", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
-    // Wait for content to load
-    await page.waitForLoadState("networkidle");
-
-    // Each entry should have a timestamp in YYYY/MM/DD HH:mm format
     const timePattern = /\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}/;
     const mainContent = await page.locator("main").textContent();
 
-    // Should have at least 2 entry timestamps (for 2 entries)
     const matches = mainContent?.match(new RegExp(timePattern, "g"));
     expect(matches?.length).toBeGreaterThanOrEqual(2);
   });
 
   test("renders inline code in entry text", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
-    // Wait for content to load
-    await page.waitForLoadState("networkidle");
-
-    // Check for inline code elements
-    // The entries contain inline code like `error` and `go`
     const inlineCode = page.locator("code");
     const codeCount = await inlineCode.count();
     expect(codeCount).toBeGreaterThan(0);
 
-    // Verify specific inline code content
     await expect(page.locator("code", { hasText: "error" })).toBeVisible();
   });
 
   test("memo entries are displayed in sections", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
-    // Wait for content to load
-    await page.waitForLoadState("networkidle");
-
-    // Each entry should be in a section element
     const sections = page.locator("article section");
     const sectionCount = await sections.count();
 
-    // Should have at least 2 sections for 2 entries
     expect(sectionCount).toBeGreaterThanOrEqual(2);
   });
 
   test("shows 404 for non-existent memo slug", async ({ page }: TestArgs) => {
-    await page.goto("/memos/non-existent-memo-slug-xyz");
+    await page.goto("/memos/non-existent-memo-slug-xyz", { waitUntil: "load" });
 
-    // Check for not-found page content (Next.js returns 200 with not-found page)
     const notFoundIndicators = page.locator(
       "text=/404|not found|見つかりません|ページが見つかりません/i",
     );
@@ -150,9 +113,7 @@ test.describe("memo detail page", () => {
   });
 
   test("draft memo shows 404 on reader", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${draftMemo.slug}`);
-
-    await page.waitForLoadState("networkidle");
+    await page.goto(`/memos/${draftMemo.slug}`, { waitUntil: "load" });
 
     const notFoundIndicators = page.locator("text=/404|not found|見つかりません|ページが見つかりません/i");
     await expect(notFoundIndicators.first()).toBeVisible();
@@ -161,20 +122,15 @@ test.describe("memo detail page", () => {
   test("draft memo with three entries shows 404 on reader", async ({
     page,
   }: TestArgs) => {
-    await page.goto(`/memos/${draftMemo.slug}`);
-    await page.waitForLoadState("networkidle");
+    await page.goto(`/memos/${draftMemo.slug}`, { waitUntil: "load" });
 
     const notFoundIndicators = page.locator("text=/404|not found|見つかりません|ページが見つかりません/i");
     await expect(notFoundIndicators.first()).toBeVisible();
   });
 
   test("entry text is rendered as prose", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
-    // Wait for content to load
-    await page.waitForLoadState("networkidle");
-
-    // Check that memo content includes expected text
     await expect(
       page.getByText("Go言語ではエラーは値として扱う"),
     ).toBeVisible();
@@ -183,16 +139,11 @@ test.describe("memo detail page", () => {
   test("clock icon is displayed with entry timestamps", async ({
     page,
   }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
-    // Wait for content to load
-    await page.waitForLoadState("networkidle");
-
-    // Check for clock icons (span elements with role="img" within entry sections)
     const clockIcons = page.locator("section i span[role='img']");
     const iconCount = await clockIcons.count();
 
-    // Each entry should have a clock icon
     expect(iconCount).toBeGreaterThanOrEqual(2);
   });
 });

@@ -56,7 +56,6 @@ test.describe("home page", () => {
   test.describe("page structure", () => {
     test("page loads successfully", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Verify main content is displayed
       await expect(page.locator("main")).toBeVisible();
@@ -66,7 +65,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       const articleSection = page.getByRole("heading", { name: "ARTICLE" });
       const memoSection = page.getByRole("heading", { name: "MEMO" });
@@ -92,7 +90,6 @@ test.describe("home page", () => {
   test.describe("article section", () => {
     test("displays ARTICLE section heading", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: "ARTICLE", level: 2 }),
@@ -103,7 +100,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Find the "もっと見る" link in the article section
       const viewMoreLinks = page.getByRole("link", { name: /もっと見る/ });
@@ -116,7 +112,6 @@ test.describe("home page", () => {
 
     test("displays published articles count", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check that all published articles are displayed
       for (const article of publishedArticles) {
@@ -126,7 +121,6 @@ test.describe("home page", () => {
 
     test("does not display draft articles", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Draft article should not be visible
       await expect(page.getByText(draftArticle.title)).not.toBeVisible();
@@ -134,7 +128,6 @@ test.describe("home page", () => {
 
     test("article cards display 記事 badge", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check for "記事" badges (at least as many as published articles)
       const badges = page.locator("text=記事");
@@ -146,7 +139,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check for date format in article section
       const datePattern = /\d{4}\/\d{2}\/\d{2}/;
@@ -158,7 +150,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check for tags with # prefix
       await expect(page.getByText("#TypeScript").first()).toBeVisible();
@@ -168,7 +159,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Find and click the first article
       const articleLink = page
@@ -187,7 +177,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check that article links point to correct URLs
       for (const article of publishedArticles) {
@@ -202,7 +191,6 @@ test.describe("home page", () => {
 
     test("displays maximum 6 articles", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Count article cards in the article section (those with "記事" badge)
       // Note: This may be affected by page layout changes
@@ -218,7 +206,6 @@ test.describe("home page", () => {
   test.describe("memo section", () => {
     test("displays MEMO section heading", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: "MEMO", level: 2 }),
@@ -229,7 +216,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Find the "もっと見る" link that points to /memos
       const viewMoreLinks = page.getByRole("link", { name: /もっと見る/ });
@@ -249,7 +235,6 @@ test.describe("home page", () => {
 
     test("displays published memos", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check that published memo is displayed
       for (const memo of publishedMemos) {
@@ -259,7 +244,6 @@ test.describe("home page", () => {
 
     test("memo cards display メモ badge", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check for "メモ" badge
       const badges = page.locator("text=メモ");
@@ -271,7 +255,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check for Go tag with # prefix
       await expect(page.getByText("#Go").first()).toBeVisible();
@@ -281,7 +264,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Find and click the memo
       const memoLink = page
@@ -300,7 +282,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check that memo links point to correct URLs
       for (const memo of publishedMemos) {
@@ -317,7 +298,6 @@ test.describe("home page", () => {
   test.describe("profile card", () => {
     test("displays profile name", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: profile.name, level: 3 }),
@@ -326,14 +306,12 @@ test.describe("home page", () => {
 
     test("displays role text", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       await expect(page.getByText(profile.role)).toBeVisible();
     });
 
     test("displays bio text", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       await expect(page.getByText(profile.bio)).toBeVisible();
     });
@@ -342,7 +320,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       const profileLink = page.getByRole("link", {
         name: /詳しいプロフィールを見る/,
@@ -357,7 +334,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       const profileLink = page.getByRole("link", {
         name: /詳しいプロフィールを見る/,
@@ -369,7 +345,6 @@ test.describe("home page", () => {
 
     test("displays avatar image", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check for avatar image (img element with alt text matching profile name)
       const avatar = page.locator(`img[alt="${profile.name}"]`);
@@ -380,7 +355,6 @@ test.describe("home page", () => {
   test.describe("content card details", () => {
     test("article cards are clickable links", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Each article title should be within a link
       for (const article of publishedArticles) {
@@ -396,7 +370,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // HomeContentCard renders article elements
       const articles = page.locator("article");
@@ -412,7 +385,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Check section elements exist for ARTICLE and MEMO sections
       const sections = page.locator("section");
@@ -428,7 +400,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Click the first もっと見る link (should be for articles)
       const viewMoreLink = page
@@ -443,7 +414,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Find the もっと見る link for memos section
       const memoSection = page.locator("section").filter({
@@ -461,7 +431,6 @@ test.describe("home page", () => {
   test.describe("series section", () => {
     test("displays SERIES section heading", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { name: "SERIES" }),
@@ -470,7 +439,6 @@ test.describe("home page", () => {
 
     test("displays seeded series card title", async ({ page }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       await expect(page.getByText(seriesData.title).first()).toBeVisible();
     });
@@ -479,7 +447,6 @@ test.describe("home page", () => {
       page,
     }: TestArgs) => {
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       const seriesSection = page.locator("section").filter({
         has: page.getByRole("heading", { name: "SERIES" }),
@@ -498,7 +465,6 @@ test.describe("home page", () => {
     test("page is viewable on mobile viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Key elements should still be visible
       await expect(
@@ -513,7 +479,6 @@ test.describe("home page", () => {
     test("page is viewable on tablet viewport", async ({ page }: TestArgs) => {
       await page.setViewportSize({ width: 768, height: 1024 });
       await page.goto("/");
-      await page.waitForLoadState("networkidle");
 
       // Key elements should still be visible
       await expect(

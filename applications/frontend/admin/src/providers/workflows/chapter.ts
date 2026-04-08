@@ -8,6 +8,7 @@ import {
   createChapterPersistWithSeriesWorkflow,
   createChapterTerminateWithSeriesWorkflow,
 } from "@shared/workflows/chapter";
+import { createPassthroughFilter } from "@shared/workflows/common";
 import {
   createSeriesPersistWorkflow,
   createSeriesFindBySlugWorkflow,
@@ -39,7 +40,7 @@ export const AdminChapterWorkflowProvider = {
 
   findBySlug: createChapterFindBySlugWorkflow(validateSlug)(
     LoggerProvider.console,
-  )(ChapterRepositoryProvider.firebase.findBySlug),
+  )(ChapterRepositoryProvider.firebase.findBySlug)(createPassthroughFilter()),
 
   persistWithSeries: createChapterPersistWithSeriesWorkflow(chapterPersistWorkflow)(
     validateSlug,

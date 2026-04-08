@@ -59,6 +59,7 @@ export const SERIES_IDS = {
 export const CHAPTER_IDS = {
   series1Chapter1: ulid(),
   series1Chapter2: ulid(),
+  series1Chapter3Draft: ulid(),
   series2Chapter1: ulid(),
   series2Chapter2: ulid(),
   series2Chapter3: ulid(),

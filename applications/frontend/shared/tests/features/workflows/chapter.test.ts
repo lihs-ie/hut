@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 import { Forger } from "@lihs-ie/forger-ts";
 import { createChapterFindBySlugWorkflow } from "@shared/workflows/chapter";
+import { createPassthroughFilter } from "@shared/workflows/common";
 import { validateSlug } from "@shared/domains/common/slug";
 import { FirebaseChapterRepository } from "@shared/infrastructures/chapter";
 import {
@@ -46,7 +47,7 @@ describe("Feature: Chapter Workflow (実DB接続)", () => {
 
       const findBySlugWorkflow = createChapterFindBySlugWorkflow(validateSlug)(
         testLogger,
-      )(repository.findBySlug);
+      )(repository.findBySlug)(createPassthroughFilter());
 
       const result = await findBySlugWorkflow({
         now: new Date(),
@@ -66,7 +67,7 @@ describe("Feature: Chapter Workflow (実DB接続)", () => {
 
       const findBySlugWorkflow = createChapterFindBySlugWorkflow(validateSlug)(
         testLogger,
-      )(repository.findBySlug);
+      )(repository.findBySlug)(createPassthroughFilter());
 
       const result = await findBySlugWorkflow({
         now: new Date(),
@@ -86,7 +87,7 @@ describe("Feature: Chapter Workflow (実DB接続)", () => {
 
       const findBySlugWorkflow = createChapterFindBySlugWorkflow(validateSlug)(
         testLogger,
-      )(repository.findBySlug);
+      )(repository.findBySlug)(createPassthroughFilter());
 
       const result = await findBySlugWorkflow({
         now: new Date(),
