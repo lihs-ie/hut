@@ -146,7 +146,10 @@
 }
 
 .filter-button {
+  min-width: 6rem;
   font-size: 0.875rem;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .active-filters {
@@ -288,8 +291,14 @@
 }
 
 @media (max-width: 640px) {
+  .button-group {
+    flex-wrap: nowrap;
+  }
+
   .filter-button {
     flex: 1;
-    min-width: fit-content;
+    min-width: 0;
+    font-size: 0.75rem;
+    padding-inline: 0.5rem;
   }
 }
