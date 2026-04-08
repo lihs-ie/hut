@@ -46,8 +46,8 @@ export const metadata: Metadata = {
     creator: "@lihs_ie",
   },
   robots: {
-    index: true,
-    follow: true,
+    index: process.env.DISALLOW_ROBOTS !== "true",
+    follow: process.env.DISALLOW_ROBOTS !== "true",
   },
 };
 

@@ -4,6 +4,7 @@ import { parseImageRemotePatterns } from "./shared/src/config/image-remote-patte
 
 type Options = {
   readonly useFirebaseEmulator?: boolean;
+  readonly includeCSP?: boolean;
 };
 
 const EMULATOR_PATTERNS: ReadonlyArray<RemotePattern> = [
@@ -13,6 +14,7 @@ const EMULATOR_PATTERNS: ReadonlyArray<RemotePattern> = [
 export const createBaseNextConfig = (options?: Options): NextConfig => {
   const isProduction = process.env.NODE_ENV === "production";
   const useEmulator = options?.useFirebaseEmulator ?? false;
+  const includeCSP = options?.includeCSP ?? true;
 
   const remotePatterns: Array<RemotePattern> = [
     ...parseImageRemotePatterns(process.env.IMAGE_REMOTE_PATTERNS),
@@ -21,7 +23,7 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
 
   const allowedOrigins = process.env.SERVER_ACTIONS_ALLOWED_ORIGINS
     ? process.env.SERVER_ACTIONS_ALLOWED_ORIGINS.split(",")
-    : undefined;
+    : [];
 
   return {
     output: "standalone",
@@ -42,25 +44,29 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
           },
           {
             key: "Strict-Transport-Security",
-            value: "max-age=31536000; includeSubDomains",
+            value: "max-age=31536000; includeSubDomains; preload",
           },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              isProduction
-                ? "script-src 'self' 'unsafe-inline' https://apis.google.com https://*.firebaseio.com"
-                : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://*.firebaseio.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https:",
-              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com",
-              "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join("; "),
-          },
+          ...(includeCSP
+            ? [
+                {
+                  key: "Content-Security-Policy",
+                  value: [
+                    "default-src 'self'",
+                    isProduction
+                      ? "script-src 'self' 'unsafe-inline' https://apis.google.com https://*.firebaseio.com"
+                      : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://*.firebaseio.com",
+                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+                    "font-src 'self' https://fonts.gstatic.com",
+                    "img-src 'self' data: blob: https:",
+                    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com",
+                    "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com",
+                    "object-src 'none'",
+                    "base-uri 'self'",
+                    "form-action 'self'",
+                  ].join("; "),
+                },
+              ]
+            : []),
         ],
       },
     ],
@@ -74,10 +80,8 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
       remotePatterns,
       ...(useEmulator && { dangerouslyAllowLocalIP: true }),
     },
-    ...(allowedOrigins && {
-      experimental: {
-        serverActions: { allowedOrigins },
-      },
-    }),
+    experimental: {
+      serverActions: { allowedOrigins },
+    },
   };
 };

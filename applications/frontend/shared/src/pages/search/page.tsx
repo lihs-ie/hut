@@ -28,7 +28,7 @@ export default async function SearchPage(props: Props) {
       findAllTags={findAllTags}
       ofNamesTags={ofNames}
       unvalidatedCriteria={{
-        freeWord: parameters.freeWord ?? null,
+        freeWord: parameters.freeWord?.slice(0, 100) ?? null,
         tags: parameters.tags ? parseAsArray(parameters.tags) : null,
         type: parameters.type ?? null,
         sortBy: parameters.sortBy ?? null,
