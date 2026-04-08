@@ -23,6 +23,10 @@ const series = {
       number: "02",
     },
   ],
+  draftChapter: {
+    slug: "chapter-3-async-programming",
+    title: "第3章: 非同期プログラミング（下書き）",
+  },
 };
 
 test.describe("series list page", () => {
@@ -491,5 +495,55 @@ test.describe("chapter page", () => {
           .first(),
       ).toBeVisible();
     });
+  });
+});
+
+test.describe("draft chapter visibility", () => {
+  test("draft chapter is not listed on series detail page", async ({
+    page,
+  }: TestArgs) => {
+    await page.goto(`/series/${series.slug}`);
+    await page.waitForLoadState("networkidle");
+
+    for (const chapter of series.chapters) {
+      await expect(
+        page.getByRole("link").filter({ hasText: chapter.title }).first(),
+      ).toBeVisible();
+    }
+
+    await expect(
+      page.getByText(series.draftChapter.title),
+    ).not.toBeVisible();
+  });
+
+  test("draft chapter direct access shows 404", async ({
+    page,
+  }: TestArgs) => {
+    await page.goto(
+      `/series/${series.slug}/chapters/${series.draftChapter.slug}`,
+    );
+    await page.waitForLoadState("networkidle");
+
+    const notFoundIndicators = page.locator(
+      "text=/404|not found|見つかりません|ページが見つかりません/i",
+    );
+    await expect(notFoundIndicators.first()).toBeVisible();
+  });
+
+  test("published chapter detail page loads correctly", async ({
+    page,
+  }: TestArgs) => {
+    const publishedChapter = series.chapters[0];
+
+    await page.goto(
+      `/series/${series.slug}/chapters/${publishedChapter.slug}`,
+    );
+    await page.waitForLoadState("networkidle");
+
+    await expect(
+      page
+        .getByRole("heading", { name: publishedChapter.title, level: 1 })
+        .first(),
+    ).toBeVisible();
   });
 });

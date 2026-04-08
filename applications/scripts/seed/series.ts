@@ -45,6 +45,21 @@ Rustのメモリ管理の仕組みを理解します。
 `,
   },
   {
+    id: CHAPTER_IDS.series1Chapter3Draft,
+    title: "第3章: 非同期プログラミング（下書き）",
+    slug: "chapter-3-async-programming",
+    images: [],
+    status: "draft",
+    content: `# 第3章: 非同期プログラミング
+
+Rustの非同期プログラミングモデルを学びます。
+
+## async/await
+
+Rustでは async/await 構文で非同期処理を記述できます。
+`,
+  },
+  {
     id: CHAPTER_IDS.series2Chapter1,
     title: "第1章: 型駆動開発入門",
     slug: "chapter-1-type-driven-development",
@@ -143,7 +158,7 @@ const SERIES_DATA_INTERNAL = [
       "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800",
     tags: [TAG_IDS.rust],
     status: "published",
-    chapters: [CHAPTER_IDS.series1Chapter1, CHAPTER_IDS.series1Chapter2],
+    chapters: [CHAPTER_IDS.series1Chapter1, CHAPTER_IDS.series1Chapter2, CHAPTER_IDS.series1Chapter3Draft],
   },
   {
     id: SERIES_IDS.series2,
