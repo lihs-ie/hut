@@ -203,7 +203,6 @@ test.describe("admin unauthenticated access", () => {
       await page.goto("/admin/login");
 
       // Wait for page to load
-      await page.waitForLoadState("networkidle");
 
       // Login UI should be visible
       await expect(page.locator("main")).toBeVisible();

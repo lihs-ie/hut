@@ -39,7 +39,6 @@ test.describe("article management", () => {
     await page.goto("/admin/articles");
 
     // Wait for content to load
-    await page.waitForLoadState("networkidle");
 
     // Verify main content area is displayed
     await expect(page.locator("main")).toBeVisible();
@@ -61,7 +60,6 @@ test.describe("article management", () => {
 test.describe("article search functionality", () => {
   test("search by title updates URL", async ({ page }: TestArgs) => {
     await page.goto("/admin/articles");
-    await page.waitForLoadState("networkidle");
 
     // Fill title search field
     await page.getByPlaceholder("タイトルを入力").fill("テスト");
@@ -72,7 +70,6 @@ test.describe("article search functionality", () => {
 
   test("filter by published status updates URL", async ({ page }: TestArgs) => {
     await page.goto("/admin/articles");
-    await page.waitForLoadState("networkidle");
 
     // Select published status (first select controls 'sort' param with status values)
     await page.locator("select").first().selectOption("published");
@@ -83,7 +80,6 @@ test.describe("article search functionality", () => {
 
   test("filter by sort order updates URL", async ({ page }: TestArgs) => {
     await page.goto("/admin/articles");
-    await page.waitForLoadState("networkidle");
 
     // Select oldest sort order (second select controls 'status' param)
     await page.locator("select").nth(1).selectOption("oldest");
@@ -94,7 +90,6 @@ test.describe("article search functionality", () => {
 
   test("combined filters work together", async ({ page }: TestArgs) => {
     await page.goto("/admin/articles");
-    await page.waitForLoadState("networkidle");
 
     // Apply title filter
     await page.getByPlaceholder("タイトルを入力").fill("テスト");
@@ -116,7 +111,6 @@ test.describe("article navigation", () => {
     page,
   }: TestArgs) => {
     await page.goto("/admin/articles");
-    await page.waitForLoadState("networkidle");
 
     // Get first article title link
     const firstArticleLink = page.locator("article a").first();
@@ -138,7 +132,6 @@ test.describe("article navigation", () => {
     page,
   }: TestArgs) => {
     await page.goto("/admin/articles");
-    await page.waitForLoadState("networkidle");
 
     // Find edit link (contains /edit in href)
     const editButton = page
@@ -164,7 +157,6 @@ test.describe("article deletion", () => {
     page,
   }: TestArgs) => {
     await page.goto("/admin/articles");
-    await page.waitForLoadState("networkidle");
 
     // Find article cards (card container has article element inside)
     const cardContainers = page.locator("article").locator("..");
@@ -193,7 +185,6 @@ test.describe("article deletion", () => {
     page,
   }: TestArgs) => {
     await page.goto("/admin/articles");
-    await page.waitForLoadState("networkidle");
 
     // Find article card containers
     const cardContainers = page.locator("article").locator("..");
@@ -230,7 +221,6 @@ test.describe("article deletion", () => {
     page,
   }: TestArgs) => {
     await page.goto("/admin/articles");
-    await page.waitForLoadState("networkidle");
 
     // Find article card containers
     const cardContainers = page.locator("article").locator("..");
@@ -273,7 +263,6 @@ test.describe("article deletion", () => {
     ).not.toBeVisible({ timeout: 30000 });
 
     // Wait for page to update after deletion
-    await page.waitForLoadState("networkidle");
 
     // Wait for network requests to complete
     await page.waitForTimeout(2000);

@@ -4,7 +4,7 @@ import { cache } from "react";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { Series } from "@shared/domains/series";
 import { SeriesWorkflowProvider } from "@shared/providers/workflows/series";
-import { findChaptersByIdentifiers } from "@shared/actions/chapter";
+import { findPublishedChaptersByIdentifiers } from "@/actions/chapter";
 
 export const findBySlug = cache(async (slug: string): Promise<Series> => {
   return await unwrapForNextJs(
@@ -28,11 +28,8 @@ export const searchAllChapterParams = cache(
 
     const chapterResults = await Promise.all(
       seriesList.map(async (series) => {
-        const chapters = await findChaptersByIdentifiers(series.chapters);
-        const publishedChapters = chapters.filter(
-          (chapter) => chapter.status === "published",
-        );
-        return publishedChapters.map((chapter) => ({
+        const chapters = await findPublishedChaptersByIdentifiers(series.chapters);
+        return chapters.map((chapter) => ({
           slug: series.slug,
           chapter: chapter.slug,
         }));
