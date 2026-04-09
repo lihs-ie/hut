@@ -51,7 +51,10 @@ export const metadata: Metadata = {
   },
   alternates: {
     types: {
-      "application/rss+xml": `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://hut.lihs.dev"}/feed.xml`,
+      "application/rss+xml": new URL(
+        "/feed.xml",
+        process.env.NEXT_PUBLIC_SITE_URL ?? "https://hut.lihs.dev",
+      ).toString(),
     },
   },
 };

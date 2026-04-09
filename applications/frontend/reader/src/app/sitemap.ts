@@ -12,29 +12,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     searchSeriesSlugs(),
   ]);
 
+  const toUrl = (path: string) => new URL(path, siteUrl).toString();
+
   const staticPages: MetadataRoute.Sitemap = [
-    { url: `${siteUrl}/`, changeFrequency: "weekly", priority: 1.0 },
-    { url: `${siteUrl}/articles`, changeFrequency: "daily", priority: 0.9 },
-    { url: `${siteUrl}/memos`, changeFrequency: "daily", priority: 0.9 },
-    { url: `${siteUrl}/series`, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${siteUrl}/about`, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${siteUrl}/privacy`, changeFrequency: "yearly", priority: 0.3 },
+    { url: toUrl("/"), changeFrequency: "weekly", priority: 1.0 },
+    { url: toUrl("/articles"), changeFrequency: "daily", priority: 0.9 },
+    { url: toUrl("/memos"), changeFrequency: "daily", priority: 0.9 },
+    { url: toUrl("/series"), changeFrequency: "weekly", priority: 0.8 },
+    { url: toUrl("/about"), changeFrequency: "monthly", priority: 0.6 },
+    { url: toUrl("/privacy"), changeFrequency: "yearly", priority: 0.3 },
   ];
 
   const articleEntries: MetadataRoute.Sitemap = articleSlugs.map((slug) => ({
-    url: `${siteUrl}/articles/${slug}`,
+    url: toUrl(`/articles/${slug}`),
     changeFrequency: "monthly",
     priority: 0.7,
   }));
 
   const memoEntries: MetadataRoute.Sitemap = memoSlugs.map((slug) => ({
-    url: `${siteUrl}/memos/${slug}`,
+    url: toUrl(`/memos/${slug}`),
     changeFrequency: "monthly",
     priority: 0.7,
   }));
 
   const seriesEntries: MetadataRoute.Sitemap = seriesSlugs.map((slug) => ({
-    url: `${siteUrl}/series/${slug}`,
+    url: toUrl(`/series/${slug}`),
     changeFrequency: "monthly",
     priority: 0.8,
   }));

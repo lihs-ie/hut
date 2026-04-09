@@ -50,7 +50,7 @@ describe("GET /feed.xml", () => {
     const { GET } = await import("../../../src/app/feed.xml/route");
     const response = await GET();
 
-    expect(response.headers.get("Content-Type")).toContain("application/xml");
+    expect(response.headers.get("Content-Type")).toContain("application/rss+xml");
   });
 
   it("記事がfeedに含まれる", async () => {
