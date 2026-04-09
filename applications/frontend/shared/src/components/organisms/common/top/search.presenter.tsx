@@ -2,9 +2,13 @@ import Link from "next/link";
 
 import styles from "./search.module.css";
 import { HomeContentCard } from "@shared/components/molecules/list/card/home-content";
+import { ContentEmpty } from "@shared/components/molecules/empty/content";
 import { ContentType } from "@shared/domains/search-token";
 import { Slug } from "@shared/domains/common";
 import { TagName } from "@shared/domains/attributes/tag";
+import { FileTextIcon } from "@shared/components/atoms/icon/file-text";
+import { MessageIcon } from "@shared/components/atoms/icon/message";
+import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 
 export type LinkMode = "show" | "edit";
 
@@ -26,13 +30,38 @@ export type Props = {
   maxItems?: number;
 };
 
+const emptyIconFor = (type: ContentType): React.ReactNode => {
+  switch (type) {
+    case ContentType.ARTICLE:
+    case ContentType.CHAPTER:
+      return <FileTextIcon className={styles.emptyicon} />;
+    case ContentType.MEMO:
+      return <MessageIcon className={styles.emptyicon} />;
+    case ContentType.SERIES:
+      return <BookOpenIcon className={styles.emptyicon} />;
+    default:
+      return undefined;
+  }
+};
+
 export const ContentSectionPresenter = (props: Props) => {
   const displayContent = props.content
     .filter((item) => item.type === props.type)
     .slice(0, props.maxItems ?? 6);
 
   if (displayContent.length === 0) {
-    return null;
+    return (
+      <section className={styles.container}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>{props.title}</h2>
+        </div>
+        <ContentEmpty
+          title="まだコンテンツがありません"
+          description="コンテンツが公開されるとここに表示されます"
+          icon={emptyIconFor(props.type)}
+        />
+      </section>
+    );
   }
 
   return (

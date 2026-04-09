@@ -40,6 +40,11 @@
   gap: 0;
 }
 
+.emptyicon {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
 @media (max-width: 768px) {
   .container {
     margin-bottom: 3rem;
@@ -55,5 +60,10 @@
 
   .viewAll {
     font-size: 0.8125rem;
+  }
+
+  .emptyicon {
+    width: 2rem;
+    height: 2rem;
   }
 }
