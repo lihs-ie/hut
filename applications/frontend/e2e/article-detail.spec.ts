@@ -184,10 +184,20 @@ test.describe("article detail page", () => {
     const mermaidSvg = page.locator("svg.mermaid, svg[id^='mermaid']");
     await expect(mermaidSvg.first()).toBeVisible({ timeout: 10000 });
 
-    const svgContent = await mermaidSvg.first().innerHTML();
-    expect(svgContent).toContain("開始");
-    expect(svgContent).toContain("条件分岐");
-    expect(svgContent).toContain("終了");
+    await expect
+      .poll(
+        async () => {
+          const svgContent = await mermaidSvg.first().innerHTML();
+          return ["開始", "条件分岐", "終了"].every((text) =>
+            svgContent.includes(text),
+          );
+        },
+        {
+          timeout: 15000,
+          message: "Mermaid の SVG に期待するノードラベルが描画されること",
+        },
+      )
+      .toBe(true);
   });
 
   test("mermaid code block is not displayed as raw text", async ({ page }: TestArgs) => {
