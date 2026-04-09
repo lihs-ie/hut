@@ -71,6 +71,32 @@ test.describe("series edit page", () => {
       page.getByRole("link", { name: "編集" }).first(),
     ).toBeVisible({ timeout: 15000 });
   });
+
+  test("cover image file input is present", async ({ page }: TestArgs) => {
+    await page.goto(`/series/${series.slug}/edit`, { waitUntil: "load" });
+
+    const fileInput = page.locator('input[type="file"][accept="image/jpeg,image/png,image/webp,image/gif"]');
+    await expect(fileInput).toBeAttached({ timeout: 15000 });
+  });
+
+  test("cover image upload accepts image file", async ({ page }: TestArgs) => {
+    await page.goto(`/series/${series.slug}/edit`, { waitUntil: "load" });
+
+    const fileInput = page.locator('input[type="file"][accept="image/jpeg,image/png,image/webp,image/gif"]');
+
+    await fileInput.setInputFiles({
+      name: "test-cover.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    });
+
+    await expect(
+      page.getByRole("heading", { name: "連載を編集" }),
+    ).toBeVisible({ timeout: 15000 });
+  });
 });
 
 test.describe("series search token verification", () => {

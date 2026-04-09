@@ -50,4 +50,30 @@ test.describe("series create page", () => {
       page.getByRole("switch"),
     ).toBeVisible({ timeout: 15000 });
   });
+
+  test("cover image file input is present", async ({ page }: TestArgs) => {
+    await page.goto("/series/new", { waitUntil: "load" });
+
+    const fileInput = page.locator('input[type="file"][accept="image/jpeg,image/png,image/webp,image/gif"]');
+    await expect(fileInput).toBeAttached({ timeout: 15000 });
+  });
+
+  test("cover image upload accepts image file", async ({ page }: TestArgs) => {
+    await page.goto("/series/new", { waitUntil: "load" });
+
+    const fileInput = page.locator('input[type="file"][accept="image/jpeg,image/png,image/webp,image/gif"]');
+
+    await fileInput.setInputFiles({
+      name: "test-cover.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    });
+
+    await expect(
+      page.getByRole("heading", { name: "連載を作成" }),
+    ).toBeVisible({ timeout: 15000 });
+  });
 });
