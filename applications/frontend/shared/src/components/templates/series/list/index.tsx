@@ -1,30 +1,29 @@
+import {
+  ContentSection,
+  type Props as ContentSectionProps,
+} from "@shared/components/organisms/common/top/search";
 import { Series } from "@shared/domains/series";
 import { Tag } from "@shared/domains/attributes/tag";
-import { SeriesList } from "@shared/components/organisms/series/list";
+import { ContentType } from "@shared/domains/search-token";
 import styles from "./index.module.css";
 
 export type Props = {
-  seriesList: Series[];
+  search: () => Promise<Series[]>;
   findAllTags: (identifiers: string[]) => Promise<Tag[]>;
-  author?: {
-    name: string;
-    avatar?: string;
-  };
+  linkMode?: ContentSectionProps<Series>["linkMode"];
 };
 
-export const SeriesListIndex = (props: Props) => {
-  return (
-    <div className={styles.container}>
-      <div className={styles.wrapper}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>連載</h1>
-          <p className={styles.description}>
-            技術書や体系的にまとめられたコンテンツ
-          </p>
-        </div>
-
-        <SeriesList seriesList={props.seriesList} findAllTags={props.findAllTags} author={props.author} />
-      </div>
-    </div>
-  );
-};
+export const SeriesListIndex = (props: Props) => (
+  <div className={styles.container}>
+    <ContentSection
+      search={props.search}
+      findAllTags={props.findAllTags}
+      slugOf={(series) => series.slug}
+      titleOf={(series) => series.title}
+      dateOf={(series) => series.timeline.createdAt}
+      type={ContentType.SERIES}
+      maxItems={Infinity}
+      linkMode={props.linkMode}
+    />
+  </div>
+);

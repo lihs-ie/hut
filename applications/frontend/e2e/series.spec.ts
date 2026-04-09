@@ -41,15 +41,7 @@ test.describe("series list page", () => {
       await page.goto("/series", { waitUntil: "load" });
 
       await expect(
-        page.getByRole("heading", { name: "連載" }),
-      ).toBeVisible();
-    });
-
-    test("displays description text", async ({ page }: TestArgs) => {
-      await page.goto("/series", { waitUntil: "load" });
-
-      await expect(
-        page.getByText("技術書や体系的にまとめられたコンテンツ"),
+        page.getByRole("heading", { name: "SERIES" }),
       ).toBeVisible();
     });
   });
@@ -93,7 +85,7 @@ test.describe("series list page", () => {
       await page.goto("/series", { waitUntil: "load" });
 
       await expect(
-        page.getByRole("heading", { name: "連載" }),
+        page.getByRole("heading", { name: "SERIES" }),
       ).toBeVisible();
     });
 
@@ -102,7 +94,7 @@ test.describe("series list page", () => {
       await page.goto("/series", { waitUntil: "load" });
 
       await expect(
-        page.getByRole("heading", { name: "連載" }),
+        page.getByRole("heading", { name: "SERIES" }),
       ).toBeVisible();
     });
   });
