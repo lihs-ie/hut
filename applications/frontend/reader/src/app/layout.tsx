@@ -51,6 +51,9 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Reader アプリ全体の共通レイアウトを返す。
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

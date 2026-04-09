@@ -174,6 +174,23 @@ describe("next.config.shared - セキュリティヘッダー", () => {
       expect(header).toBeUndefined();
     });
 
+    it("contentSecurityPolicy が指定された場合はその値が使われる", async () => {
+      const customContentSecurityPolicy =
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'";
+      const config = createBaseNextConfig({
+        contentSecurityPolicy: customContentSecurityPolicy,
+      });
+      const headersResult = await config.headers?.();
+      const allRoutesHeader = headersResult!.find(
+        (h) => h.source === "/(.*)",
+      );
+
+      const header = allRoutesHeader!.headers.find(
+        (h) => h.key === "Content-Security-Policy",
+      );
+      expect(header?.value).toBe(customContentSecurityPolicy);
+    });
+
     it("デフォルトで CSP ヘッダーが含まれる", async () => {
       const config = createBaseNextConfig();
       const headersResult = await config.headers?.();

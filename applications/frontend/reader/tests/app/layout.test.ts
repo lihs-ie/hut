@@ -57,3 +57,18 @@ describe("layout metadata - robots", () => {
     expect(robots.follow).toBe(true);
   });
 });
+
+describe("RootLayout", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it("html 要素をルートとして返す", async () => {
+    const { default: RootLayout } = await import("../../src/app/layout");
+
+    const element = RootLayout({ children: null });
+
+    expect(element.type).toBe("html");
+    expect(element.props.lang).toBe("ja");
+  });
+});
