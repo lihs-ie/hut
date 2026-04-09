@@ -7,6 +7,7 @@ import { MailAddress } from "@shared/domains/user";
 import { GithubIcon } from "@shared/components/atoms/icon/github";
 import { XTwitterIcon } from "@shared/components/atoms/icon/x-twitter";
 import { MailIcon } from "@shared/components/atoms/icon/mail";
+import { RssIcon } from "@shared/components/atoms/icon/rss";
 
 export type Props = {
   mailAddress: MailAddress | null;
@@ -99,6 +100,12 @@ export const FooterPresenter = (props: Props) => (
               <MailIcon className={styles["social-icon"]} />
             </a>
           )}
+
+          <a href="/feed.xml" aria-label="RSS Feed">
+            <span className={styles.icon}>
+              <RssIcon className={styles["social-icon"]} />
+            </span>
+          </a>
         </div>
         <p className={styles.copyright}>© 2026 lihs. All rights reserved.</p>
       </div>
