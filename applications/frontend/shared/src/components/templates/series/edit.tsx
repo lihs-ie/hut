@@ -11,6 +11,7 @@ export type Props = {
   chapters?: Chapter[];
   seriesSlug?: SeriesSlug;
   terminateChapter?: (chapterIdentifier: string, seriesSlug: string) => Promise<void>;
+  uploadImage?: (file: File | Blob, path: string) => Promise<string>;
 };
 
 export const SeriesEdit = (props: Props) => (
@@ -22,6 +23,7 @@ export const SeriesEdit = (props: Props) => (
       chapters={props.chapters}
       seriesSlug={props.seriesSlug}
       terminateChapter={props.terminateChapter}
+      uploadImage={props.uploadImage}
     />
   </div>
 );

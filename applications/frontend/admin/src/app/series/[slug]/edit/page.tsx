@@ -2,6 +2,7 @@ import { findBySlug, persist as persistAction } from "@/actions/series";
 import { terminate as terminateChapterAction } from "@/actions/chapter";
 import { getAllTags } from "@/actions/tag";
 import { findChaptersByIdentifiers } from "@/actions/chapter";
+import { uploadImage } from "@/actions/common";
 import { SeriesEdit } from "@shared/components/templates/series/edit";
 import { UnvalidatedSeries } from "@shared/domains/series";
 import { slugSchema } from "@shared/domains/common/slug";
@@ -38,6 +39,7 @@ export default async function SeriesEditPage(props: Props) {
       chapters={chapters}
       seriesSlug={slugSchema.parse(slug)}
       terminateChapter={terminateChapter}
+      uploadImage={uploadImage}
     />
   );
 }

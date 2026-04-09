@@ -15,8 +15,10 @@ import { EnumMold, Forger, Mold } from "@lihs-ie/forger-ts";
 import { DateMold } from "../common/date";
 import { ArticleIdentifierMold } from "../article/common";
 import { MemoIdentifierMold } from "../memo/common";
+import { SeriesIdentifierMold } from "../series/common";
 import { ArticleIdentifier } from "@shared/domains/articles";
 import { MemoIdentifier } from "@shared/domains/memo";
+import { SeriesIdentifier } from "@shared/domains/series";
 
 export const ImageTypeMold = EnumMold(ImageType);
 
@@ -49,23 +51,31 @@ export const ImageURLMold = Mold<ImageURL, ImageURLProperties>({
 });
 
 export type ImageReferenceProperties = {
-  value: ArticleIdentifier | MemoIdentifier;
-  contentType: "article" | "memo";
+  value: ArticleIdentifier | MemoIdentifier | SeriesIdentifier;
+  contentType: "article" | "memo" | "series";
 };
 
 export const ImageReferenceMold = Mold<
-  ArticleIdentifier | MemoIdentifier,
+  ArticleIdentifier | MemoIdentifier | SeriesIdentifier,
   ImageReferenceProperties
 >({
   pour: (properties) => properties.value,
   prepare: (overrides, seed) => {
     const contentType =
-      overrides.contentType ?? (seed % 2 === 0 ? "article" : "memo");
+      overrides.contentType ??
+      (["article", "memo", "series"] as const)[seed % 3];
     if (contentType === "article") {
       return {
         value:
           overrides.value ?? Forger(ArticleIdentifierMold).forgeWithSeed(seed),
         contentType: "article",
+      };
+    }
+    if (contentType === "series") {
+      return {
+        value:
+          overrides.value ?? Forger(SeriesIdentifierMold).forgeWithSeed(seed),
+        contentType: "series",
       };
     }
     return {
@@ -80,8 +90,8 @@ export type ImageProperties = {
   type: ImageType;
   url: ImageURL | null;
   uploadStatus: UploadStatus;
-  reference: ArticleIdentifier | MemoIdentifier;
-  content: "article" | "memo";
+  reference: ArticleIdentifier | MemoIdentifier | SeriesIdentifier;
+  content: "article" | "memo" | "series";
 };
 
 export const ImageMold = Mold<Image, ImageProperties>({
@@ -102,7 +112,8 @@ export const ImageMold = Mold<Image, ImageProperties>({
         ? (overrides.url ?? Forger(ImageURLMold).forgeWithSeed(seed))
         : null;
     const contentType =
-      overrides.content ?? (seed % 2 === 0 ? "article" : "memo");
+      overrides.content ??
+      (["article", "memo", "series"] as const)[seed % 3];
     const reference =
       overrides.reference ??
       Forger(ImageReferenceMold).forgeWithSeed(seed, { contentType });
@@ -122,7 +133,7 @@ export const ImageMold = Mold<Image, ImageProperties>({
 export type CriteriaProperties = {
   type?: ImageType;
   uploadStatus?: UploadStatus;
-  reference?: ArticleIdentifier | MemoIdentifier;
+  reference?: ArticleIdentifier | MemoIdentifier | SeriesIdentifier;
 };
 
 export const ImageCriteriaMold = Mold<Criteria, CriteriaProperties>({

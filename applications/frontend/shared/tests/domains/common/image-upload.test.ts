@@ -38,11 +38,12 @@ describe("domains/common/image-upload", () => {
     });
 
     describe("CONTENT_TYPES", () => {
-      it("3つのコンテンツタイプを持つ", () => {
-        expect(CONTENT_TYPES).toHaveLength(3);
+      it("4つのコンテンツタイプを持つ", () => {
+        expect(CONTENT_TYPES).toHaveLength(4);
         expect(CONTENT_TYPES).toContain("article");
         expect(CONTENT_TYPES).toContain("memo");
         expect(CONTENT_TYPES).toContain("chapter");
+        expect(CONTENT_TYPES).toContain("series");
       });
     });
   });
@@ -87,19 +88,24 @@ describe("domains/common/image-upload", () => {
   });
 
   describe("generateUploadPath", () => {
-    it("articleの場合は正しいパスを生成する", () => {
+    it("articleの場合はimages/articles/プレフィックスのパスを生成する", () => {
       const path = generateUploadPath("article", "ref123", "image.webp");
-      expect(path).toBe("articles/ref123/image.webp");
+      expect(path).toBe("images/articles/ref123/image.webp");
     });
 
-    it("memoの場合は正しいパスを生成する", () => {
+    it("memoの場合はimages/memos/プレフィックスのパスを生成する", () => {
       const path = generateUploadPath("memo", "ref456", "photo.webp");
-      expect(path).toBe("memos/ref456/photo.webp");
+      expect(path).toBe("images/memos/ref456/photo.webp");
     });
 
     it("chapterの場合はimages/chapters/プレフィックスのパスを生成する", () => {
       const path = generateUploadPath("chapter", "ref789", "image.webp");
       expect(path).toBe("images/chapters/ref789/image.webp");
+    });
+
+    it("seriesの場合はimages/series/プレフィックスのパスを生成する", () => {
+      const path = generateUploadPath("series", "ref012", "cover.webp");
+      expect(path).toBe("images/series/ref012/cover.webp");
     });
   });
 

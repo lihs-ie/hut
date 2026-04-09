@@ -11,6 +11,7 @@ import z from "zod";
 import { ContentType, contentTypeSchema } from "../search-index";
 import { articleIdentifierSchema } from "../articles";
 import { memoIdentifierSchema } from "../memo";
+import { seriesIdentifierSchema } from "../series";
 import { ImageIdentifier, imageIdentifierSchema } from "./identifier";
 
 export type { ImageIdentifier } from "./identifier";
@@ -51,7 +52,7 @@ export const imageSchema = z
     type: imageTypeSchema,
     url: imageURLSchema.nullable(),
     uploadStatus: uploadStatusSchema,
-    reference: articleIdentifierSchema.or(memoIdentifierSchema), // TODO: seriesIdentifierSchemaを追加
+    reference: articleIdentifierSchema.or(memoIdentifierSchema).or(seriesIdentifierSchema),
     content: contentTypeSchema,
   })
   .refine(
@@ -92,10 +93,16 @@ export const generateUploadPath = (
 ): Result<string, ValidationError> => {
   switch (image.content) {
     case ContentType.ARTICLE:
+      return ok(
+        `images/articles/${image.reference}/${image.identifier}.${image.type}`,
+      );
     case ContentType.MEMO:
+      return ok(
+        `images/memos/${image.reference}/${image.identifier}.${image.type}`,
+      );
     case ContentType.SERIES:
       return ok(
-        `${image.content}s/${image.reference}/${image.identifier}.${image.type}`,
+        `images/series/${image.reference}/${image.identifier}.${image.type}`,
       );
     default:
       return err(
@@ -111,7 +118,7 @@ export const criteriaSchema = z
   .object({
     type: imageTypeSchema.optional(),
     uploadStatus: uploadStatusSchema.optional(),
-    reference: articleIdentifierSchema.or(memoIdentifierSchema).optional(), // TODO: seriesIdentifierSchemaを追加
+    reference: articleIdentifierSchema.or(memoIdentifierSchema).or(seriesIdentifierSchema).optional(),
   })
   .brand("Criteria");
 

@@ -8,6 +8,7 @@ const ALLOWED_PATH_PREFIXES = [
   "images/articles/",
   "images/memos/",
   "images/chapters/",
+  "images/series/",
 ] as const;
 
 const ALLOWED_IMAGE_CONTENT_TYPES = [

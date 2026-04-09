@@ -23,6 +23,7 @@ import {
   ImageCriteriaMold,
 } from "../../support/molds/domains/image";
 import { ArticleIdentifierMold } from "../../support/molds/domains/article";
+import { SeriesIdentifierMold } from "../../support/molds/domains/series";
 import {
   describeIdentifierSchema,
   describeEnumSchema,
@@ -119,6 +120,19 @@ describe("domains/image/common", () => {
           url: Forger(ImageURLMold).forge(),
         });
         const result = imageSchema.safeParse(image);
+        expect(result.success).toBe(true);
+      });
+
+      it("seriesのreferenceを持つ場合は有効", () => {
+        const seriesReference = Forger(SeriesIdentifierMold).forge();
+        const result = imageSchema.safeParse({
+          identifier: Forger(ImageIdentifierMold).forge(),
+          type: ImageType.PNG,
+          url: null,
+          uploadStatus: UploadStatus.PENDING,
+          reference: seriesReference,
+          content: "series",
+        });
         expect(result.success).toBe(true);
       });
 
@@ -241,7 +255,7 @@ describe("domains/image/common", () => {
       expect(result.isOk).toBe(true);
       if (result.isOk) {
         expect(result.unwrap()).toBe(
-          `articles/${image.reference}/${image.identifier}.${image.type}`,
+          `images/articles/${image.reference}/${image.identifier}.${image.type}`,
         );
       }
     });
@@ -256,7 +270,24 @@ describe("domains/image/common", () => {
       expect(result.isOk).toBe(true);
       if (result.isOk) {
         expect(result.unwrap()).toBe(
-          `memos/${image.reference}/${image.identifier}.${image.type}`,
+          `images/memos/${image.reference}/${image.identifier}.${image.type}`,
+        );
+      }
+    });
+
+    it("SERIESタイプの場合は正しいパスを生成する", () => {
+      const seriesReference = Forger(SeriesIdentifierMold).forge();
+      const image = Forger(ImageMold).forge({
+        uploadStatus: UploadStatus.PENDING,
+        url: null,
+        content: "series",
+        reference: seriesReference,
+      });
+      const result = generateUploadPath(image);
+      expect(result.isOk).toBe(true);
+      if (result.isOk) {
+        expect(result.unwrap()).toBe(
+          `images/series/${image.reference}/${image.identifier}.${image.type}`,
         );
       }
     });
