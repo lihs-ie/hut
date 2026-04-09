@@ -8,7 +8,7 @@ import {
 } from "@shared/aspects/error";
 import { AsyncResult, err, ok, Result } from "@shared/aspects/result";
 import z from "zod";
-import { ContentType, contentTypeSchema } from "../search-index";
+import { ContentType } from "../search-index";
 import { articleIdentifierSchema } from "../articles";
 import { memoIdentifierSchema } from "../memo";
 import { seriesIdentifierSchema } from "../series";
@@ -46,6 +46,12 @@ export const UploadStatus = {
   FAILED: "failed" as UploadStatus,
 } as const;
 
+export const imageContentTypeSchema = z
+  .enum(["article", "memo", "series"])
+  .brand("ContentType");
+
+export type ImageContentType = z.infer<typeof imageContentTypeSchema>;
+
 export const imageSchema = z
   .object({
     identifier: imageIdentifierSchema,
@@ -53,7 +59,7 @@ export const imageSchema = z
     url: imageURLSchema.nullable(),
     uploadStatus: uploadStatusSchema,
     reference: articleIdentifierSchema.or(memoIdentifierSchema).or(seriesIdentifierSchema),
-    content: contentTypeSchema,
+    content: imageContentTypeSchema,
   })
   .refine(
     (data) => {

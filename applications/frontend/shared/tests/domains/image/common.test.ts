@@ -201,6 +201,18 @@ describe("domains/image/common", () => {
         const result = imageSchema.safeParse(undefined);
         expect(result.success).toBe(false);
       });
+
+      it("contentが'all'の場合は無効", () => {
+        const result = imageSchema.safeParse({
+          identifier: Forger(ImageIdentifierMold).forge(),
+          type: ImageType.PNG,
+          url: null,
+          uploadStatus: UploadStatus.PENDING,
+          reference: Forger(ArticleIdentifierMold).forge(),
+          content: "all",
+        });
+        expect(result.success).toBe(false);
+      });
     });
   });
 

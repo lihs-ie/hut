@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Forger } from "@lihs-ie/forger-ts";
-import { render, act, fireEvent } from "@testing-library/react";
+import { render, act, fireEvent, waitFor } from "@testing-library/react";
 import { ToastProvider } from "@shared/components/molecules/toast";
 import {
   ChapterMold,
@@ -51,6 +51,10 @@ vi.mock("next/link", () => ({
     children: React.ReactNode;
     className?: string;
   }) => <a href={linkProps.href} className={linkProps.className}>{linkProps.children}</a>,
+}));
+
+vi.mock("next/image", () => ({
+  default: (imageProps: Record<string, unknown>) => <img {...imageProps} />,
 }));
 
 vi.mock("@shared/components/atoms/icon/plus", () => ({
@@ -325,5 +329,11 @@ describe("components/organisms/series/SeriesEditOrganism", () => {
     });
 
     expect(uploadImage).toHaveBeenCalled();
+
+    await waitFor(() => {
+      const preview = container.querySelector('img[alt="カバー画像プレビュー"]') as HTMLImageElement;
+      expect(preview).not.toBeNull();
+      expect(preview.src).toContain("https://example.com/cover.webp");
+    });
   });
 });
