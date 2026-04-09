@@ -49,6 +49,14 @@ export const metadata: Metadata = {
     index: process.env.DISALLOW_ROBOTS !== "true",
     follow: process.env.DISALLOW_ROBOTS !== "true",
   },
+  alternates: {
+    types: {
+      "application/rss+xml": new URL(
+        "/feed.xml",
+        process.env.NEXT_PUBLIC_SITE_URL ?? "https://hut.lihs.dev",
+      ).toString(),
+    },
+  },
 };
 
 /**
