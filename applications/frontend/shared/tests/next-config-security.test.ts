@@ -110,7 +110,7 @@ describe("next.config.shared - セキュリティヘッダー", () => {
         (h) => h.key === "Strict-Transport-Security",
       );
       expect(header?.value).toBe(
-        "max-age=31536000; includeSubDomains",
+        "max-age=31536000; includeSubDomains; preload",
       );
     });
 
@@ -159,6 +159,67 @@ describe("next.config.shared - セキュリティヘッダー", () => {
         .find((directive) => directive.trim().startsWith("script-src"));
       expect(scriptSrc).toBeDefined();
       expect(scriptSrc).not.toContain("unsafe-eval");
+    });
+
+    it("includeCSP が false の場合 CSP ヘッダーが含まれない", async () => {
+      const config = createBaseNextConfig({ includeCSP: false });
+      const headersResult = await config.headers?.();
+      const allRoutesHeader = headersResult!.find(
+        (h) => h.source === "/(.*)",
+      );
+
+      const header = allRoutesHeader!.headers.find(
+        (h) => h.key === "Content-Security-Policy",
+      );
+      expect(header).toBeUndefined();
+    });
+
+    it("contentSecurityPolicy が指定された場合はその値が使われる", async () => {
+      const customContentSecurityPolicy =
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'";
+      const config = createBaseNextConfig({
+        contentSecurityPolicy: customContentSecurityPolicy,
+      });
+      const headersResult = await config.headers?.();
+      const allRoutesHeader = headersResult!.find(
+        (h) => h.source === "/(.*)",
+      );
+
+      const header = allRoutesHeader!.headers.find(
+        (h) => h.key === "Content-Security-Policy",
+      );
+      expect(header?.value).toBe(customContentSecurityPolicy);
+    });
+
+    it("デフォルトで CSP ヘッダーが含まれる", async () => {
+      const config = createBaseNextConfig();
+      const headersResult = await config.headers?.();
+      const allRoutesHeader = headersResult!.find(
+        (h) => h.source === "/(.*)",
+      );
+
+      const header = allRoutesHeader!.headers.find(
+        (h) => h.key === "Content-Security-Policy",
+      );
+      expect(header).toBeDefined();
+    });
+  });
+
+  describe("allowedOrigins", () => {
+    it("SERVER_ACTIONS_ALLOWED_ORIGINS が未設定でも serverActions が設定される", () => {
+      delete process.env.SERVER_ACTIONS_ALLOWED_ORIGINS;
+      const config = createBaseNextConfig();
+      expect(config.experimental?.serverActions).toBeDefined();
+      expect(config.experimental?.serverActions?.allowedOrigins).toEqual([]);
+    });
+
+    it("SERVER_ACTIONS_ALLOWED_ORIGINS が設定されている場合その値が使われる", () => {
+      process.env.SERVER_ACTIONS_ALLOWED_ORIGINS = "https://example.com,https://admin.example.com";
+      const config = createBaseNextConfig();
+      expect(config.experimental?.serverActions?.allowedOrigins).toEqual([
+        "https://example.com",
+        "https://admin.example.com",
+      ]);
     });
   });
 

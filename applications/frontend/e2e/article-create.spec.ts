@@ -43,7 +43,7 @@ const saveNewArticleAsDraft = async ({ page }: TestArgs): Promise<void> => {
   const testSlug = generateTestSlug();
   const testTitle = "E2Eテスト記事（下書き）";
 
-  await page.goto(newArticlePath);
+  await page.goto(newArticlePath, { waitUntil: "load" });
 
   await page.getByPlaceholder("タイトルを入力").fill(testTitle);
 
@@ -74,7 +74,7 @@ const publishNewArticle = async ({ page }: TestArgs): Promise<void> => {
   const testSlug = generateTestSlug();
   const testTitle = "E2Eテスト記事（公開）";
 
-  await page.goto(newArticlePath);
+  await page.goto(newArticlePath, { waitUntil: "load" });
 
   await page.getByPlaceholder("タイトルを入力").fill(testTitle);
 
@@ -109,7 +109,7 @@ const publishNewArticle = async ({ page }: TestArgs): Promise<void> => {
 const saveButtonDisabledWithoutTitle = async ({
   page,
 }: TestArgs): Promise<void> => {
-  await page.goto(newArticlePath);
+  await page.goto(newArticlePath, { waitUntil: "load" });
 
   const titleInput = page.getByPlaceholder("タイトルを入力");
   await expect(titleInput).toHaveValue("");
@@ -127,7 +127,7 @@ const saveButtonDisabledWithoutTitle = async ({
 };
 
 const tagSelectionWorks = async ({ page }: TestArgs): Promise<void> => {
-  await page.goto(newArticlePath);
+  await page.goto(newArticlePath, { waitUntil: "load" });
 
   await expect(page.getByText("クリックして追加")).toBeVisible();
 

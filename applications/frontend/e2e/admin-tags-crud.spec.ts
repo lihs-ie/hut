@@ -158,7 +158,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
 
   test.describe("tag creation", () => {
     test("displays tag creation form correctly", async ({ page }: TestArgs) => {
-      await page.goto("/admin/tags/new");
+      await page.goto("/admin/tags/new", { waitUntil: "load" });
 
       // Verify form elements
       await expect(
@@ -179,7 +179,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     test("create button is disabled when name is empty", async ({
       page,
     }: TestArgs) => {
-      await page.goto("/admin/tags/new");
+      await page.goto("/admin/tags/new", { waitUntil: "load" });
 
       const createButton = page.getByRole("button", { name: "作成する" });
       await expect(createButton).toBeDisabled();
@@ -188,7 +188,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     test("create button is enabled when name and logo are filled", async ({
       page,
     }: TestArgs) => {
-      await page.goto("/admin/tags/new");
+      await page.goto("/admin/tags/new", { waitUntil: "load" });
 
       await page.getByPlaceholder("例: Next.js").fill("テストタグ");
       await page
@@ -202,7 +202,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     test("creates new tag and verifies in Firestore", async ({
       page,
     }: TestArgs) => {
-      await page.goto("/admin/tags/new");
+      await page.goto("/admin/tags/new", { waitUntil: "load" });
 
       const nameInput = page.getByPlaceholder("例: Next.js");
       await expect(nameInput).toBeVisible();
@@ -238,7 +238,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     test("new tag appears in tag list and can be searched", async ({
       page,
     }: TestArgs) => {
-      await page.goto("/admin/tags");
+      await page.goto("/admin/tags", { waitUntil: "load" });
 
       // Search for the created tag
       await page.getByPlaceholder("タグ名で検索").fill(testTagName);
@@ -259,7 +259,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     test("navigates to edit page from tag list", async ({ page }: TestArgs) => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
-      await page.goto("/admin/tags");
+      await page.goto("/admin/tags", { waitUntil: "load" });
 
       // Search for the tag
       await page.getByPlaceholder("タグ名で検索").fill(testTagName);
@@ -278,7 +278,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     }: TestArgs) => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
-      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
+      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`, { waitUntil: "load" });
 
       // Verify form heading
       await expect(
@@ -306,7 +306,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     }: TestArgs) => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
-      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
+      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`, { waitUntil: "load" });
 
       // Clear and update name
       const nameInput = page.getByPlaceholder("例: Next.js");
@@ -343,7 +343,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     }: TestArgs) => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
-      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
+      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`, { waitUntil: "load" });
 
       // Modify name but don't save
       const nameInput = page.getByPlaceholder("例: Next.js");
@@ -367,7 +367,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     test("displays delete confirmation modal", async ({ page }: TestArgs) => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
-      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
+      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`, { waitUntil: "load" });
 
       // Click delete button
       await page.getByRole("button", { name: "タグを削除" }).click();
@@ -385,7 +385,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     }: TestArgs) => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
-      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
+      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`, { waitUntil: "load" });
 
       // Click delete button
       await page.getByRole("button", { name: "タグを削除" }).click();
@@ -415,7 +415,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
     }: TestArgs) => {
       test.skip(!createdTagIdentifier, "No tag was created in previous test");
 
-      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`);
+      await page.goto(`/admin/tags/${createdTagIdentifier}/edit`, { waitUntil: "load" });
 
       // Get current tag name for verification
       const nameInput = page.getByPlaceholder("例: Next.js");
@@ -457,7 +457,7 @@ test.describe.serial("tag CRUD operations with Firestore", () => {
  */
 test.describe("tag list page", () => {
   test("displays all seed tags", async ({ page }: TestArgs) => {
-    await page.goto("/admin/tags");
+    await page.goto("/admin/tags", { waitUntil: "load" });
 
     // Verify all seed tags are displayed
     for (const tag of seedTags) {
@@ -466,7 +466,7 @@ test.describe("tag list page", () => {
   });
 
   test("search filters tags by name", async ({ page }: TestArgs) => {
-    await page.goto("/admin/tags");
+    await page.goto("/admin/tags", { waitUntil: "load" });
 
     // Search for TypeScript
     await page.getByPlaceholder("タグ名で検索").fill("Type");
@@ -483,7 +483,7 @@ test.describe("tag list page", () => {
   test("search shows no results message for non-existent tag", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/tags");
+    await page.goto("/admin/tags", { waitUntil: "load" });
 
     // Search for non-existent tag
     await page.getByPlaceholder("タグ名で検索").fill("存在しないタグ12345");
@@ -496,7 +496,7 @@ test.describe("tag list page", () => {
   test("new tag button navigates to creation page", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/tags");
+    await page.goto("/admin/tags", { waitUntil: "load" });
 
     await page.getByRole("link", { name: "新規作成" }).click();
 
@@ -509,7 +509,7 @@ test.describe("tag list page", () => {
   test("tag rows are clickable and navigate to edit page", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/tags");
+    await page.goto("/admin/tags", { waitUntil: "load" });
 
     // Click on TypeScript tag
     await page.getByText("TypeScript").first().click();
@@ -520,7 +520,7 @@ test.describe("tag list page", () => {
   });
 
   test("displays tag logos", async ({ page }: TestArgs) => {
-    await page.goto("/admin/tags");
+    await page.goto("/admin/tags", { waitUntil: "load" });
 
     // At least some logos should be visible (depends on UI implementation)
     const logoCount = await page.locator("img").count();
@@ -534,7 +534,7 @@ test.describe("tag list page", () => {
  */
 test.describe("seed tag editing (non-destructive)", () => {
   test("can view TypeScript tag edit page", async ({ page }: TestArgs) => {
-    await page.goto("/admin/tags");
+    await page.goto("/admin/tags", { waitUntil: "load" });
 
     // Click TypeScript tag
     await page.getByText("TypeScript").first().click();
@@ -549,7 +549,7 @@ test.describe("seed tag editing (non-destructive)", () => {
   test("can modify seed tag form without saving", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/tags");
+    await page.goto("/admin/tags", { waitUntil: "load" });
 
     // Click React tag
     await page.getByText("React").first().click();

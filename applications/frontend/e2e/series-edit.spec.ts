@@ -15,13 +15,13 @@ const series = {
 
 test.describe("series edit page", () => {
   test("page is accessible", async ({ page }: TestArgs) => {
-    await page.goto(`/series/${series.slug}/edit`);
+    await page.goto(`/series/${series.slug}/edit`, { waitUntil: "load" });
 
     await expect(page.locator("main")).toBeVisible({ timeout: 15000 });
   });
 
   test("displays page title 連載を編集", async ({ page }: TestArgs) => {
-    await page.goto(`/series/${series.slug}/edit`);
+    await page.goto(`/series/${series.slug}/edit`, { waitUntil: "load" });
 
     await expect(
       page.getByRole("heading", { name: "連載を編集" }),
@@ -29,7 +29,7 @@ test.describe("series edit page", () => {
   });
 
   test("existing title is prefilled in input", async ({ page }: TestArgs) => {
-    await page.goto(`/series/${series.slug}/edit`);
+    await page.goto(`/series/${series.slug}/edit`, { waitUntil: "load" });
 
     await expect(
       page.getByPlaceholder("連載タイトルを入力"),
@@ -37,7 +37,7 @@ test.describe("series edit page", () => {
   });
 
   test("save button is present", async ({ page }: TestArgs) => {
-    await page.goto(`/series/${series.slug}/edit`);
+    await page.goto(`/series/${series.slug}/edit`, { waitUntil: "load" });
 
     await expect(
       page.getByRole("button", { name: "保存" }),
@@ -45,7 +45,7 @@ test.describe("series edit page", () => {
   });
 
   test("displays chapter management section", async ({ page }: TestArgs) => {
-    await page.goto(`/series/${series.slug}/edit`);
+    await page.goto(`/series/${series.slug}/edit`, { waitUntil: "load" });
 
     await expect(
       page.getByRole("heading", { name: "チャプター管理" }),
@@ -53,7 +53,7 @@ test.describe("series edit page", () => {
   });
 
   test("displays add chapter link", async ({ page }: TestArgs) => {
-    await page.goto(`/series/${series.slug}/edit`);
+    await page.goto(`/series/${series.slug}/edit`, { waitUntil: "load" });
 
     await expect(
       page.getByRole("link", { name: /チャプターを追加/ }),
@@ -61,7 +61,7 @@ test.describe("series edit page", () => {
   });
 
   test("displays chapter list with edit links", async ({ page }: TestArgs) => {
-    await page.goto(`/series/${series.slug}/edit`);
+    await page.goto(`/series/${series.slug}/edit`, { waitUntil: "load" });
 
     await expect(
       page.getByText("第1章: Rustの基礎").first(),

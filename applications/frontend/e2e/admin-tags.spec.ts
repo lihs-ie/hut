@@ -9,21 +9,21 @@ type TestArgs = {
  */
 test.describe.serial("tag management", () => {
   test("tag list page renders", async ({ page }: TestArgs) => {
-    await page.goto("/admin/tags");
+    await page.goto("/admin/tags", { waitUntil: "load" });
 
     // Verify "タグ管理" heading is displayed
     await expect(page.getByRole("heading", { name: "タグ管理" })).toBeVisible();
   });
 
   test("new tag creation link exists", async ({ page }: TestArgs) => {
-    await page.goto("/admin/tags");
+    await page.goto("/admin/tags", { waitUntil: "load" });
 
     // Verify "新規作成" link is displayed
     await expect(page.getByRole("link", { name: "新規作成" })).toBeVisible();
   });
 
   test("tag creation page renders", async ({ page }: TestArgs) => {
-    await page.goto("/admin/tags/new");
+    await page.goto("/admin/tags/new", { waitUntil: "load" });
 
     // Verify "新規タグ作成" heading is displayed
     await expect(
@@ -39,7 +39,7 @@ test.describe.serial("tag management", () => {
   test("tag creation form elements are displayed", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/tags/new");
+    await page.goto("/admin/tags/new", { waitUntil: "load" });
 
     // Verify form elements
     await expect(page.getByPlaceholder("例: Next.js")).toBeVisible();
@@ -57,7 +57,7 @@ test.describe.serial("tag management", () => {
   test("create button is disabled when name is empty", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/tags/new");
+    await page.goto("/admin/tags/new", { waitUntil: "load" });
 
     // Verify create button is disabled when name is empty
     const createButton = page.getByRole("button", { name: "作成する" });
@@ -67,7 +67,7 @@ test.describe.serial("tag management", () => {
   test("create button is enabled when name and logo are filled", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/tags/new");
+    await page.goto("/admin/tags/new", { waitUntil: "load" });
 
     // Fill in the name and logo
     await page.getByPlaceholder("例: Next.js").fill("テストタグ");
@@ -83,7 +83,7 @@ test.describe.serial("tag management", () => {
   test("cancel button navigates back to tag list", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/admin/tags/new");
+    await page.goto("/admin/tags/new", { waitUntil: "load" });
 
     // Click cancel button
     await page.getByRole("button", { name: "キャンセル" }).click();

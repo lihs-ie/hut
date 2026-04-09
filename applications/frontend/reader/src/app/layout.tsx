@@ -46,11 +46,14 @@ export const metadata: Metadata = {
     creator: "@lihs_ie",
   },
   robots: {
-    index: true,
-    follow: true,
+    index: process.env.DISALLOW_ROBOTS !== "true",
+    follow: process.env.DISALLOW_ROBOTS !== "true",
   },
 };
 
+/**
+ * Reader アプリ全体の共通レイアウトを返す。
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -22,7 +22,7 @@ const fillCodeMirrorEditor = async (page: Page, content: string): Promise<void> 
 
 test.describe("memo creation", () => {
   test("displays memo creation form", async ({ page }: TestArgs) => {
-    await page.goto("/memos/new");
+    await page.goto("/memos/new", { waitUntil: "load" });
 
 
     await expect(page.getByPlaceholder("Enter title...")).toBeVisible();
@@ -36,7 +36,7 @@ test.describe("memo creation", () => {
   test("create button is disabled when title and slug are empty", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/memos/new");
+    await page.goto("/memos/new", { waitUntil: "load" });
 
 
     const createButton = page.getByRole("button", { name: "メモを作成" });
@@ -46,7 +46,7 @@ test.describe("memo creation", () => {
   test("create button is enabled when title and slug are entered", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/memos/new");
+    await page.goto("/memos/new", { waitUntil: "load" });
 
 
     await page.getByPlaceholder("Enter title...").fill("テストメモ");
@@ -59,7 +59,7 @@ test.describe("memo creation", () => {
   test("displays status dropdown with draft and published options", async ({
     page,
   }: TestArgs) => {
-    await page.goto("/memos/new");
+    await page.goto("/memos/new", { waitUntil: "load" });
 
 
     const dropdownTrigger = page.getByRole("button", { name: "下書き" });
@@ -73,7 +73,7 @@ test.describe("memo creation", () => {
 
 test.describe("memo editing", () => {
   test("displays memo edit page with title", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await expect(
@@ -84,7 +84,7 @@ test.describe("memo editing", () => {
   test("displays entry editor with Markdown tab", async ({
     page,
   }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await expect(page.getByRole("button", { name: "Markdown" })).toBeVisible();
@@ -92,21 +92,21 @@ test.describe("memo editing", () => {
   });
 
   test("displays codemirror editor for entry input", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await expect(page.locator(".cm-editor")).toBeVisible();
   });
 
   test("displays submit button", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await expect(page.getByRole("button", { name: "投稿する" })).toBeVisible();
   });
 
   test("displays existing entries", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await expect(page.getByText("Go言語ではエラーは値として扱う")).toBeVisible();
@@ -117,7 +117,7 @@ test.describe("memo entry preview", () => {
   test("switches to preview tab and shows empty message when no content", async ({
     page,
   }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await page.getByRole("button", { name: "Preview" }).click();
@@ -128,7 +128,7 @@ test.describe("memo entry preview", () => {
   });
 
   test("previews plain text content", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await fillCodeMirrorEditor(page, "これはテストテキストです。");
@@ -139,7 +139,7 @@ test.describe("memo entry preview", () => {
   });
 
   test("previews inline code", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await fillCodeMirrorEditor(page, "変数は `const value = 123` のように定義します。");
@@ -150,7 +150,7 @@ test.describe("memo entry preview", () => {
   });
 
   test("previews code block", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await fillCodeMirrorEditor(page, "以下はTypeScriptのコード例です。\n\n```typescript\nfunction greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n```");
@@ -161,7 +161,7 @@ test.describe("memo entry preview", () => {
   });
 
   test("previews link", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await fillCodeMirrorEditor(
@@ -177,7 +177,7 @@ test.describe("memo entry preview", () => {
   });
 
   test("previews bold and italic text", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await fillCodeMirrorEditor(page, "これは**太字**と*斜体*のテストです。");
@@ -189,7 +189,7 @@ test.describe("memo entry preview", () => {
   });
 
   test("previews list", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await fillCodeMirrorEditor(page, "買い物リスト：\n\n- りんご\n- バナナ\n- オレンジ");
@@ -202,7 +202,7 @@ test.describe("memo entry preview", () => {
   });
 
   test("previews blockquote", async ({ page }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     await fillCodeMirrorEditor(page, "> これは引用文です。\n> 複数行にわたることもあります。");
@@ -215,7 +215,7 @@ test.describe("memo entry preview", () => {
   test("switches back to Markdown tab and preserves content", async ({
     page,
   }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     const testContent = "タブ切り替えテスト用のコンテンツ";
@@ -237,7 +237,7 @@ test.describe("memo entry submission", () => {
   test("can submit entry and see it in the list", async ({
     page,
   }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}/edit`);
+    await page.goto(`/memos/${publishedMemo.slug}/edit`, { waitUntil: "load" });
 
 
     const uniqueContent = `E2Eテストエントリ ${Date.now()}`;
@@ -276,7 +276,7 @@ test.describe("memo preview page", () => {
   test("displays entry content on memo detail page", async ({
     page,
   }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
 
     await expect(
@@ -289,7 +289,7 @@ test.describe("memo preview page", () => {
   test("renders inline code on memo detail page", async ({
     page,
   }: TestArgs) => {
-    await page.goto(`/memos/${publishedMemo.slug}`);
+    await page.goto(`/memos/${publishedMemo.slug}`, { waitUntil: "load" });
 
 
     await expect(page.locator("code", { hasText: "error" })).toBeVisible();

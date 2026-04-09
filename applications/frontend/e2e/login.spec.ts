@@ -12,7 +12,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
  */
 test.describe("login page", () => {
   test("login page renders with Google button", async ({ page }: TestArgs) => {
-    await page.goto("/admin/login");
+    await page.goto("/admin/login", { waitUntil: "load" });
 
     // Verify "管理者ログイン" heading is displayed
     await expect(
@@ -31,7 +31,7 @@ test.describe("login page", () => {
   });
 
   test("allowed account hint is displayed", async ({ page }: TestArgs) => {
-    await page.goto("/admin/login");
+    await page.goto("/admin/login", { waitUntil: "load" });
 
     // Verify the hint about allowed accounts is displayed
     await expect(
