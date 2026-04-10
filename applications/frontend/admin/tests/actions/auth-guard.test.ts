@@ -53,6 +53,13 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
+vi.mock("@/config/revalidation", () => ({
+  revalidation: {
+    readerEndpoint: "https://reader.example.com",
+    secret: "test-secret",
+  },
+}));
+
 vi.mock("@/providers/infrastructure/storage", () => ({
   AdminImageUploaderProvider: {
     firebaseAdmin: {

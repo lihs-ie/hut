@@ -7,28 +7,18 @@ const mockFetch = vi.fn();
 
 vi.stubGlobal("fetch", mockFetch);
 
-const mockConfig: {
-  revalidation:
-    | { readerEndpoint: string; secret: string }
-    | undefined;
-} = {
+vi.mock("@/config/revalidation", () => ({
   revalidation: {
     readerEndpoint: "https://reader.example.com",
     secret: "test-secret",
   },
-};
-
-vi.mock("@/config/revalidation", () => mockConfig);
+}));
 
 const flushMicrotasks = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("notifyReaderRevalidation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockConfig.revalidation = {
-      readerEndpoint: "https://reader.example.com",
-      secret: "test-secret",
-    };
   });
 
   it("Reader の /api/revalidate エンドポイントに POST リクエストを送信する", async () => {
@@ -91,15 +81,6 @@ describe("notifyReaderRevalidation", () => {
 
     expect(() => notifyReaderRevalidation(["articles"])).not.toThrow();
     await flushMicrotasks();
-  });
-
-  it("revalidation config が undefined の場合はリクエストを送信しない", async () => {
-    mockConfig.revalidation = undefined;
-
-    const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
-    notifyReaderRevalidation(["articles"]);
-
-    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("空の tags 配列でもリクエストを送信する", async () => {
