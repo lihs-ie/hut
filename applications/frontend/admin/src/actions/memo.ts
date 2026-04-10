@@ -14,6 +14,8 @@ import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { revalidateTag } from "next/cache";
 import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
+import { notifyReaderRevalidation } from "@/lib/revalidation";
+import { REVALIDATION_TAGS, memoEntriesTag } from "@shared/config/revalidation";
 
 export async function findBySlug(slug: string): Promise<Memo> {
   await requireAdmin();
@@ -37,6 +39,7 @@ export async function create(unvalidated: UnvalidatedMemo): Promise<void> {
   );
 
   revalidateTag("memos", {});
+  await notifyReaderRevalidation([REVALIDATION_TAGS.MEMOS]);
 }
 
 export async function addEntry(
@@ -53,6 +56,7 @@ export async function addEntry(
   );
 
   revalidateTag(`memo-entries-${slug}`, { expire: 3600 });
+  await notifyReaderRevalidation([memoEntriesTag(slug)]);
 }
 
 export async function edit(
@@ -68,6 +72,7 @@ export async function edit(
   );
 
   revalidateTag("memos", {});
+  await notifyReaderRevalidation([REVALIDATION_TAGS.MEMOS]);
 }
 
 export async function search(
@@ -93,4 +98,5 @@ export async function terminate(identifier: string): Promise<void> {
   );
 
   revalidateTag("memos", {});
+  await notifyReaderRevalidation([REVALIDATION_TAGS.MEMOS]);
 }

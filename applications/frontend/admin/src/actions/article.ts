@@ -11,6 +11,8 @@ import {
 import { AdminArticleWorkflowProvider } from "@/providers/workflows/article";
 import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/aspects/auth-guard";
+import { notifyReaderRevalidation } from "@/lib/revalidation";
+import { REVALIDATION_TAGS } from "@shared/config/revalidation";
 
 export async function create(unvalidated: UnvalidatedArticle): Promise<void> {
   await requireAdmin();
@@ -22,6 +24,7 @@ export async function create(unvalidated: UnvalidatedArticle): Promise<void> {
   );
 
   revalidateTag(`articles`, {});
+  await notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
 }
 
 export async function edit(
@@ -37,6 +40,7 @@ export async function edit(
   );
 
   revalidateTag(`articles`, {});
+  await notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
 }
 
 export async function terminate(identifier: string): Promise<void> {
@@ -49,6 +53,7 @@ export async function terminate(identifier: string): Promise<void> {
   );
 
   revalidateTag(`articles`, {});
+  await notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
 }
 
 export async function findBySlug(slug: string): Promise<Article> {

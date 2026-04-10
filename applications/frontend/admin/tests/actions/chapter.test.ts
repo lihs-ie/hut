@@ -9,6 +9,7 @@ const mockRevalidateTag = vi.fn();
 const mockUnwrapForNextJs = vi.fn();
 const mockChapterWorkflowFindBySlug = vi.fn();
 const mockEventBrokerPublish = vi.fn();
+const mockNotifyReaderRevalidation = vi.fn();
 
 vi.mock("@/aspects/auth-guard", () => ({
   requireAdmin: mockRequireAdmin,
@@ -28,6 +29,10 @@ vi.mock("@/providers/domain/event", () => ({
       publish: mockEventBrokerPublish,
     },
   },
+}));
+
+vi.mock("@/lib/revalidation", () => ({
+  notifyReaderRevalidation: mockNotifyReaderRevalidation,
 }));
 
 const mockChapterWorkflowTerminate = vi.fn();
@@ -65,6 +70,7 @@ describe("actions/chapter", () => {
     mockRequireAdmin.mockResolvedValue(undefined);
     mockUnwrapForNextJs.mockImplementation((asyncResult: Promise<unknown>) => asyncResult);
     mockEventBrokerPublish.mockReturnValue(ok(undefined).toAsync());
+    mockNotifyReaderRevalidation.mockResolvedValue(undefined);
   });
 
   describe("persist", () => {
@@ -105,6 +111,16 @@ describe("actions/chapter", () => {
 
       expect(mockRevalidateTag).toHaveBeenCalledWith("chapters", {});
       expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});
+    });
+
+    it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
+      const { persist } = await import("@/actions/chapter");
+
+      await persist(unvalidated);
+
+      expect(mockNotifyReaderRevalidation).toHaveBeenCalledWith(
+        expect.arrayContaining(["chapters", "series"]),
+      );
     });
   });
 
@@ -176,6 +192,16 @@ describe("actions/chapter", () => {
 
       expect(mockRevalidateTag).toHaveBeenCalledWith("chapters", {});
       expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});
+    });
+
+    it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
+      const { terminate } = await import("@/actions/chapter");
+
+      await terminate("01HWXYZ0000000000000000000", "test-series");
+
+      expect(mockNotifyReaderRevalidation).toHaveBeenCalledWith(
+        expect.arrayContaining(["chapters", "series"]),
+      );
     });
   });
 });
