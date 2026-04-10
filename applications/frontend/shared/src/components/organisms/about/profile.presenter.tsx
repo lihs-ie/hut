@@ -35,7 +35,7 @@ export const ProfilePresenter = (props: Props) => (
         <p className={styles.bio}>{props.profile.bio}</p>
         <div className={styles.links}>
           <ExternalServiceLinks services={props.profile.externalServices} />
-          <Link className={styles.email} href={`mailto:${props.profile.email}`}>
+          <Link className={styles.email} href={`mailto:${props.profile.email}`} aria-label="メール">
             <MailIcon />
           </Link>
         </div>
