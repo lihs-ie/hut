@@ -1,0 +1,8 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:domain-event-logger"
+    - path: "app"
+      component: "exe:app"
+    - path: "test"
+      component: "test:spec"
