@@ -23,6 +23,10 @@ import {
 import { ChapterIdentifier } from "@shared/domains/series/chapter";
 import { Command } from "./common";
 
+type SeriesFilter = (
+  series: Series,
+) => Result<Series, AggregateNotFoundError<"Series">>;
+
 type ValidateIdentifier = (
   identifier: string
 ) => Result<SeriesIdentifier, ValidationError>;
@@ -82,7 +86,8 @@ type FindBySLug = {
 export const createSeriesFindBySlugWorkflow =
   (validate: ValidateSlug) =>
   (logger: Logger) =>
-  (findBySlug: FindBySLug): SeriesFindBySlugWorkflow =>
+  (findBySlug: FindBySLug) =>
+  (filter: SeriesFilter): SeriesFindBySlugWorkflow =>
   (command: SeriesFindBySlugCommand) => {
     logger.info("SeriesFindBySlugWorkflow started", {
       slug: command.payload.slug,
@@ -97,6 +102,7 @@ export const createSeriesFindBySlugWorkflow =
         logger.warn("Validation failed", { error });
       })
       .andThen(findBySlug)
+      .andThen(filter)
       .tap((series) => {
         logger.info("SeriesFindBySlugWorkflow completed", {
           identifier: series.identifier,

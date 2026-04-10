@@ -27,7 +27,7 @@ const chapterTerminateWorkflow = createChapterTerminateWorkflow(validateChapterI
 
 const seriesFindBySlugWorkflow = createSeriesFindBySlugWorkflow(validateSlug)(
   LoggerProvider.console,
-)(SeriesRepositoryProvider.firebase.findBySlug);
+)(SeriesRepositoryProvider.firebase.findBySlug)(createPassthroughFilter());
 
 const seriesPersistWorkflow = createSeriesPersistWorkflow(validateSeries)(
   SeriesRepositoryProvider.firebase.persist,
