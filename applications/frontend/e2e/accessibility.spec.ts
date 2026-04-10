@@ -22,7 +22,14 @@ test.describe("accessibility", () => {
     }: TestArgs) => {
       const response = await page.goto(path, { waitUntil: "load" });
 
-      expect(response?.status()).toBeLessThan(400);
+      expect(
+        response,
+        `Navigation to ${name} page (${path}) did not return a response`,
+      ).not.toBeNull();
+      expect(
+        response!.status(),
+        `Navigation to ${name} page (${path}) returned HTTP ${response!.status()}`,
+      ).toBeLessThan(400);
       await expect(page.locator("main")).toBeVisible();
 
       const results = await new AxeBuilder({ page })
