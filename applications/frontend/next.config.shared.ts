@@ -29,9 +29,10 @@ const createDefaultContentSecurityPolicy = (
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
-    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com${useEmulator ? ` ${EMULATOR_ORIGIN}` : ""}`,
+    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://*.ingest.sentry.io${useEmulator ? ` ${EMULATOR_ORIGIN}` : ""}`,
     `frame-src 'self' https://accounts.google.com https://*.firebaseapp.com${useEmulator ? ` ${EMULATOR_ORIGIN}` : ""}`,
     "object-src 'none'",
+    "worker-src 'self' blob:",
     "base-uri 'self'",
     "form-action 'self'",
   ].join("; ");

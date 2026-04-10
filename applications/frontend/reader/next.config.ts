@@ -1,4 +1,5 @@
 import MDX from "@next/mdx";
+import { withSentryConfig } from "@sentry/nextjs";
 import { createBaseNextConfig } from "../next.config.shared";
 
 const withMDX = MDX({ extension: /\.mdx?$/ });
@@ -11,18 +12,31 @@ const readerContentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com",
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://*.ingest.sentry.io",
   "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
+  "worker-src 'self' blob:",
 ].join("; ");
 
-export default withMDX(
-  createBaseNextConfig({
-    useFirebaseEmulator:
-      process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true",
-    contentSecurityPolicy: readerContentSecurityPolicy,
-  }),
+export default withSentryConfig(
+  withMDX(
+    createBaseNextConfig({
+      useFirebaseEmulator:
+        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true",
+      contentSecurityPolicy: readerContentSecurityPolicy,
+    }),
+  ),
+  {
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    silent: !process.env.CI,
+    widenClientFileUpload: true,
+    disableLogger: true,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    sourcemaps: { deleteSourcemapsAfterUpload: true },
+    tunnelRoute: "/monitoring",
+  },
 );

@@ -173,6 +173,10 @@ jobs:
             ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_FIREBASE_APP_ID={0}', secrets.FIREBASE_APP_ID) || '' }}
             ${{ steps.vars.outputs.app_type == 'frontend' && format('SERVER_ACTIONS_ALLOWED_ORIGINS={0}', secrets.SERVER_ACTIONS_ALLOWED_ORIGINS) || '' }}
             ${{ steps.vars.outputs.app_type == 'frontend' && format('IMAGE_REMOTE_PATTERNS={0}', secrets.IMAGE_REMOTE_PATTERNS) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_SENTRY_DSN={0}', secrets.SENTRY_DSN) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('SENTRY_ORG={0}', secrets.SENTRY_ORG) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('SENTRY_PROJECT={0}', secrets.SENTRY_PROJECT) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('SENTRY_AUTH_TOKEN={0}', secrets.SENTRY_AUTH_TOKEN) || '' }}
 
       - name: Deploy to Cloud Run
         run: |

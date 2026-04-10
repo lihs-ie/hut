@@ -12,6 +12,9 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "next.config.ts",
+    "sentry.client.config.ts",
+    "sentry.server.config.ts",
+    "sentry.edge.config.ts",
     "../shared/src/actions",
     "../shared/types"
   ]
