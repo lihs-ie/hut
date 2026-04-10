@@ -22,7 +22,7 @@ vi.mock("@shared/components/global/next-error", () => ({
   unwrapForNextJs: mockUnwrapForNextJs,
 }));
 
-vi.mock("@/lib/revalidation", () => ({
+vi.mock("@/aspects/revalidation", () => ({
   notifyReaderRevalidation: mockNotifyReaderRevalidation,
 }));
 

@@ -33,7 +33,7 @@ vi.mock("@/providers/domain/event", () => ({
   },
 }));
 
-vi.mock("@/lib/revalidation", () => ({
+vi.mock("@/aspects/revalidation", () => ({
   notifyReaderRevalidation: mockNotifyReaderRevalidation,
 }));
 

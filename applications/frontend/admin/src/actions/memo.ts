@@ -14,7 +14,7 @@ import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { revalidateTag } from "next/cache";
 import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
-import { notifyReaderRevalidation } from "@/lib/revalidation";
+import { notifyReaderRevalidation } from "@/aspects/revalidation";
 import { REVALIDATION_TAGS, memoEntriesTag } from "@shared/config/revalidation";
 
 export async function findBySlug(slug: string): Promise<Memo> {

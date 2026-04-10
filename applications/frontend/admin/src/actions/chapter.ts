@@ -13,7 +13,7 @@ import { AdminChapterWorkflowProvider } from "@/providers/workflows/chapter";
 import { ChapterRepositoryProvider } from "@shared/providers/infrastructure/chapter";
 import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
-import { notifyReaderRevalidation } from "@/lib/revalidation";
+import { notifyReaderRevalidation } from "@/aspects/revalidation";
 import { REVALIDATION_TAGS } from "@shared/config/revalidation";
 
 export async function persist(

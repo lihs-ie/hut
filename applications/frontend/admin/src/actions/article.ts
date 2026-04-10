@@ -11,7 +11,7 @@ import {
 import { AdminArticleWorkflowProvider } from "@/providers/workflows/article";
 import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/aspects/auth-guard";
-import { notifyReaderRevalidation } from "@/lib/revalidation";
+import { notifyReaderRevalidation } from "@/aspects/revalidation";
 import { REVALIDATION_TAGS } from "@shared/config/revalidation";
 
 export async function create(unvalidated: UnvalidatedArticle): Promise<void> {

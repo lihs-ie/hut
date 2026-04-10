@@ -8,7 +8,7 @@ import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/aspects/auth-guard";
 import { err, ok } from "@shared/aspects/result";
 import { aggregateNotFoundError } from "@shared/aspects/error";
-import { notifyReaderRevalidation } from "@/lib/revalidation";
+import { notifyReaderRevalidation } from "@/aspects/revalidation";
 import { REVALIDATION_TAGS } from "@shared/config/revalidation";
 
 export const find = cache(async (identifier: string): Promise<Tag> => {
