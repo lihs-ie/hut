@@ -12,6 +12,7 @@ on:
           - admin
           - search-token-worker
           - image-cleanup-worker
+          - domain-event-logger
       environment:
         description: "Target environment"
         required: true
@@ -114,6 +115,18 @@ jobs:
               echo "context=applications/image-cleanup-worker" >> "${GITHUB_OUTPUT}"
               echo "app_type=worker" >> "${GITHUB_OUTPUT}"
               echo "app_name=image-cleanup-worker" >> "${GITHUB_OUTPUT}"
+              echo "app_port=8080" >> "${GITHUB_OUTPUT}"
+              ;;
+            domain-event-logger)
+              if [ "${ENV}" = "prd" ]; then
+                echo "service_name=domain-event-logger" >> "${GITHUB_OUTPUT}"
+              else
+                echo "service_name=stg-domain-event-logger" >> "${GITHUB_OUTPUT}"
+              fi
+              echo "dockerfile=applications/domain-event-logger/Dockerfile" >> "${GITHUB_OUTPUT}"
+              echo "context=applications/domain-event-logger" >> "${GITHUB_OUTPUT}"
+              echo "app_type=worker" >> "${GITHUB_OUTPUT}"
+              echo "app_name=domain-event-logger" >> "${GITHUB_OUTPUT}"
               echo "app_port=8080" >> "${GITHUB_OUTPUT}"
               ;;
           esac

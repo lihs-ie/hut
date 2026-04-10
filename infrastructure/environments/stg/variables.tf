@@ -28,6 +28,11 @@ variable "search_token_worker_container_image" {
   type        = string
 }
 
+variable "domain_event_logger_container_image" {
+  description = "Container image URL for the domain event logger Cloud Run service"
+  type        = string
+}
+
 variable "authorized_members" {
   description = "List of IAM members authorized to invoke Cloud Run services (e.g. user:example@gmail.com)"
   type        = list(string)

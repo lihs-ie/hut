@@ -65,6 +65,13 @@ module "iam" {
         "roles/eventarc.eventReceiver",
       ]
     }
+    "hut-prd-domain-event-logger" = {
+      display_name = "HUT PRD Domain Event Logger Service Account"
+      description  = "Service account for the PRD domain event logger"
+      roles = [
+        "roles/eventarc.eventReceiver",
+      ]
+    }
   }
 }
 
@@ -271,6 +278,23 @@ module "cloudrun_search_token_worker" {
   labels = local.common_labels
 }
 
+module "cloudrun_domain_event_logger" {
+  source = "../../modules/cloudrun_service"
+
+  project_id            = var.project_id
+  region                = var.region
+  service_name          = "domain-event-logger"
+  container_image       = var.domain_event_logger_container_image
+  service_account_email = module.iam.service_account_emails["hut-prd-domain-event-logger"]
+  allow_unauthenticated = false
+
+  environment_variables = {
+    FIREBASE_PROJECT_ID = var.project_id
+  }
+
+  labels = local.common_labels
+}
+
 resource "google_cloud_run_v2_service_iam_member" "invoker" {
   for_each = { for binding in local.invoker_bindings : binding.key => binding }
 
@@ -314,6 +338,28 @@ resource "google_cloud_run_v2_service_iam_member" "search_token_worker_invoker" 
   name     = module.cloudrun_search_token_worker.service_name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${module.iam.service_account_emails["hut-prd-search-token-worker"]}"
+}
+
+module "eventarc_domain_event_logger" {
+  source = "../../modules/eventarc_trigger"
+
+  project_id            = var.project_id
+  region                = var.region
+  trigger_name          = "prd-domain-event-logger-trigger"
+  pubsub_topic_id       = module.pubsub_app_events.topic_id
+  cloudrun_service_name = module.cloudrun_domain_event_logger.service_name
+  service_account_email = module.iam.service_account_emails["hut-prd-domain-event-logger"]
+  destination_path      = "/events"
+
+  labels = local.common_labels
+}
+
+resource "google_cloud_run_v2_service_iam_member" "domain_event_logger_invoker" {
+  project  = var.project_id
+  location = var.region
+  name     = module.cloudrun_domain_event_logger.service_name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${module.iam.service_account_emails["hut-prd-domain-event-logger"]}"
 }
 
 module "github_actions_iam" {

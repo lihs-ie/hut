@@ -89,12 +89,36 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  domain-event-logger:
+    build:
+      context: domain-event-logger
+      dockerfile: Dockerfile
+    container_name: domain-event-logger
+    working_dir: /var/www/app
+    command: sh -c "cabal update && cabal run app"
+    ports:
+      - "8001:8080"
+    environment:
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - FIREBASE_PROJECT_ID=demo-hut
+    volumes:
+      - ../domain-event-logger:/var/www/app
+      - domain-event-logger-cabal-store:/root/.cabal/store
+      - domain-event-logger-cabal-packages:/root/.cabal/packages
+      - domain-event-logger-dist:/var/www/app/dist-newstyle
+    depends_on:
+      pubsub-emulator:
+        condition: service_healthy
+    restart: unless-stopped
+
   pubsub-push-init:
     image: curlimages/curl:latest
     container_name: hut-pubsub-push-init
     depends_on:
       pubsub-emulator:
         condition: service_healthy
+      domain-event-logger:
+        condition: service_started
     entrypoint: ["sh", "-c"]
     command:
       - |
@@ -107,10 +131,22 @@ services:
           -H "Content-Type: application/json" \
           -d '{"topic":"projects/demo-hut/topics/events","pushConfig":{"pushEndpoint":"http://search-token-worker:8080/events"}}'
         echo ""
-        echo "Push subscription created."
+        echo "Waiting for domain-event-logger..."
+        until curl -sf http://domain-event-logger:8080/health > /dev/null 2>&1; do
+          sleep 5
+        done
+        echo "Creating domain-event-logger push subscription..."
+        curl -s -X PUT "http://pubsub-emulator:8085/v1/projects/demo-hut/subscriptions/domain-event-logger-subscription" \
+          -H "Content-Type: application/json" \
+          -d '{"topic":"projects/demo-hut/topics/events","pushConfig":{"pushEndpoint":"http://domain-event-logger:8080/events"}}'
+        echo ""
+        echo "Push subscriptions created."
     restart: "no"
 
 volumes:
   worker-cabal-store:
   worker-cabal-packages:
   worker-dist:
+  domain-event-logger-cabal-store:
+  domain-event-logger-cabal-packages:
+  domain-event-logger-dist:
