@@ -19,7 +19,7 @@ export const HeaderPresenter = (props: Props) => (
       <HeaderLogo />
     </NavigableLink>
     <div className={styles.contents}>
-      <NavigableLink href={Routes.page.search} className={styles.searchLink}>
+      <NavigableLink href={Routes.page.search} className={styles.searchLink} aria-label="検索">
         <SearchIcon />
       </NavigableLink>
       <ThemeToggle />
