@@ -563,6 +563,61 @@ describe("workflows/memo", () => {
       expect(persistMock).toHaveBeenCalled();
     });
 
+    it("無効なslugでバリデーションエラーを返す", async () => {
+      const findBySlugMock = vi.fn();
+      const persistMock = vi.fn();
+
+      const workflow = createPersistMemoEntryWorkflow(validateSlug)(
+        validateEntry,
+      )(findBySlugMock)(persistMock)(mockLogger);
+
+      const command: Command<{
+        slug: string;
+        unvalidated: { text: string; createdAt: Date };
+        images: ImageIdentifier[];
+      }> = {
+        now: new Date(),
+        payload: {
+          slug: "Invalid Slug With Spaces",
+          unvalidated: { text: "test entry", createdAt: new Date() },
+          images: [],
+        },
+      };
+
+      const result = workflow(command);
+
+      expect(await result.match({ ok: () => false, err: () => true })).toBe(true);
+      expect(findBySlugMock).not.toHaveBeenCalled();
+    });
+
+    it("無効なエントリでバリデーションエラーを返す", async () => {
+      const memo = Forger(MemoMold).forgeWithSeed(2);
+      const findBySlugMock = vi.fn().mockReturnValue(ok(memo).toAsync());
+      const persistMock = vi.fn();
+
+      const workflow = createPersistMemoEntryWorkflow(validateSlug)(
+        validateEntry,
+      )(findBySlugMock)(persistMock)(mockLogger);
+
+      const command: Command<{
+        slug: string;
+        unvalidated: { text: string; createdAt: Date };
+        images: ImageIdentifier[];
+      }> = {
+        now: new Date(),
+        payload: {
+          slug: memo.slug,
+          unvalidated: { text: "", createdAt: new Date() },
+          images: [],
+        },
+      };
+
+      const result = workflow(command);
+
+      expect(await result.match({ ok: () => false, err: () => true })).toBe(true);
+      expect(persistMock).not.toHaveBeenCalled();
+    });
+
     it("imagesを含むエントリ追加ができる", async () => {
       const existingImage = Forger(ImageIdentifierMold).forgeWithSeed(1);
       const newImage = Forger(ImageIdentifierMold).forgeWithSeed(2);

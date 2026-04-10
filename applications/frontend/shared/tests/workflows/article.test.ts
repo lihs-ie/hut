@@ -5,12 +5,15 @@ import {
   createArticleFindBySlugWorkflow,
   createArticleSearchWorkflow,
   createArticleCreateWorkflow,
+  createArticleEditWorkflow,
   createArticleTerminateWorkflow,
 } from "@shared/workflows/article";
 import {
   validateArticleIdentifier,
   validateArticle,
   validateCriteria,
+  toSnapshot,
+  ArticleSnapshot,
 } from "@shared/domains/articles";
 import { validateSlug } from "@shared/domains/common/slug";
 import { Logger, Environment } from "@shared/aspects/logger";
@@ -468,6 +471,159 @@ describe("workflows/article", () => {
       const result = await workflow(command).unwrapError();
 
       expect(result).toEqual(notFoundError);
+    });
+  });
+
+  describe("createArticleEditWorkflow", () => {
+    type EditCommand = Command<{
+      unvalidated: {
+        identifier: string;
+        title: string;
+        content: string;
+        excerpt: string;
+        slug: string;
+        status: string;
+        tags: string[];
+        images: string[];
+        timeline: { createdAt: Date; updatedAt: Date };
+      };
+      before: ArticleSnapshot;
+    }>;
+
+    it("有効な記事データで記事を編集しArticleEditedEventを返す", async () => {
+      const article = Forger(ArticleMold).forgeWithSeed(1);
+      const before = toSnapshot(Forger(ArticleMold).forgeWithSeed(2));
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createArticleEditWorkflow(validateArticle)(persistMock)(
+        mockLogger
+      );
+
+      const command: EditCommand = {
+        now: new Date(),
+        payload: {
+          unvalidated: {
+            identifier: article.identifier,
+            title: article.title,
+            content: article.content,
+            excerpt: article.excerpt,
+            slug: article.slug,
+            status: article.status,
+            tags: article.tags,
+            images: article.images,
+            timeline: article.timeline,
+          },
+          before,
+        },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result.payload.next.identifier).toBe(article.identifier);
+      expect(result.occurredAt).toBeDefined();
+      expect(persistMock).toHaveBeenCalled();
+    });
+
+    it("無効な記事データでValidationErrorを返す", async () => {
+      const before = toSnapshot(Forger(ArticleMold).forgeWithSeed(1));
+      const persistMock = vi.fn();
+
+      const workflow = createArticleEditWorkflow(validateArticle)(persistMock)(
+        mockLogger
+      );
+
+      const command: EditCommand = {
+        now: new Date(),
+        payload: {
+          unvalidated: {
+            identifier: "invalid",
+            title: "",
+            content: "",
+            excerpt: "",
+            slug: "test-slug",
+            status: "published",
+            tags: [],
+            images: [],
+            timeline: { createdAt: new Date(), updatedAt: new Date() },
+          },
+          before,
+        },
+      };
+
+      const result = workflow(command);
+
+      expect(await result.match({ ok: () => false, err: () => true })).toBe(
+        true
+      );
+      expect(persistMock).not.toHaveBeenCalled();
+    });
+
+    it("永続化でエラーが発生した場合はエラーを返す", async () => {
+      const article = Forger(ArticleMold).forgeWithSeed(1);
+      const before = toSnapshot(Forger(ArticleMold).forgeWithSeed(2));
+      const error = unexpectedError("Persist failed");
+      const persistMock = vi.fn().mockReturnValue(err(error).toAsync());
+
+      const workflow = createArticleEditWorkflow(validateArticle)(persistMock)(
+        mockLogger
+      );
+
+      const command: EditCommand = {
+        now: new Date(),
+        payload: {
+          unvalidated: {
+            identifier: article.identifier,
+            title: article.title,
+            content: article.content,
+            excerpt: article.excerpt,
+            slug: article.slug,
+            status: article.status,
+            tags: article.tags,
+            images: article.images,
+            timeline: article.timeline,
+          },
+          before,
+        },
+      };
+
+      const result = await workflow(command).unwrapError();
+
+      expect(result).toEqual(error);
+    });
+
+    it("返されたイベントのpayloadにnextとbeforeのスナップショットが含まれる", async () => {
+      const article = Forger(ArticleMold).forgeWithSeed(1);
+      const beforeArticle = Forger(ArticleMold).forgeWithSeed(2);
+      const before = toSnapshot(beforeArticle);
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createArticleEditWorkflow(validateArticle)(persistMock)(
+        mockLogger
+      );
+
+      const command: EditCommand = {
+        now: new Date(),
+        payload: {
+          unvalidated: {
+            identifier: article.identifier,
+            title: article.title,
+            content: article.content,
+            excerpt: article.excerpt,
+            slug: article.slug,
+            status: article.status,
+            tags: article.tags,
+            images: article.images,
+            timeline: article.timeline,
+          },
+          before,
+        },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result.payload.next.identifier).toBe(article.identifier);
+      expect(result.payload.before).toEqual(before);
+      expect(result.payload.before.identifier).toBe(beforeArticle.identifier);
     });
   });
 });

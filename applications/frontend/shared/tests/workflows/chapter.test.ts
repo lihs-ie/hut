@@ -4,6 +4,10 @@ import {
   createChapterFindBySlugWorkflow,
   createChapterPersistWorkflow,
   createChapterTerminateWorkflow,
+  createChapterPersistWithSeriesWorkflow,
+  createChapterTerminateWithSeriesWorkflow,
+  ChapterPersistWorkflow,
+  ChapterTerminateWorkflow,
 } from "@shared/workflows/chapter";
 import {
   createPassthroughFilter,
@@ -24,6 +28,7 @@ import {
   ChapterIdentifierMold,
 } from "../support/molds/domains/series/chapter";
 import { SlugMold } from "../support/molds/domains/common/slug";
+import { SeriesMold } from "../support/molds/domains/series/common";
 import { Command } from "@shared/workflows/common";
 
 describe("workflows/chapter", () => {
@@ -372,6 +377,346 @@ describe("workflows/chapter", () => {
           }),
         }),
       );
+    });
+  });
+
+  describe("createChapterPersistWithSeriesWorkflow", () => {
+    it("チャプター永続化とシリーズへの新規追加が正常に完了する", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(1);
+      const series = Forger(SeriesMold).forgeWithSeed(1, { chapters: [] });
+      const slug = series.slug;
+
+      const persistChapterMock: ChapterPersistWorkflow = vi.fn().mockReturnValue(
+        ok({ type: "chapter.persisted", payload: { chapter: chapter.identifier } }).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn().mockReturnValue(ok(series).toAsync());
+      const persistSeriesMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createChapterPersistWithSeriesWorkflow(persistChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(
+        {
+          identifier: chapter.identifier,
+          title: chapter.title,
+          slug: chapter.slug,
+          content: chapter.content,
+          images: chapter.images,
+          status: chapter.status,
+          timeline: chapter.timeline,
+        },
+        slug,
+      );
+
+      expect(await result.match({ ok: () => true, err: () => false })).toBe(true);
+      expect(persistChapterMock).toHaveBeenCalled();
+      expect(findSeriesBySlugMock).toHaveBeenCalledWith(slug);
+      expect(persistSeriesMock).toHaveBeenCalled();
+    });
+
+    it("チャプターが既にシリーズに含まれている場合はシリーズ更新をスキップする", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(2);
+      const series = Forger(SeriesMold).forgeWithSeed(2, {
+        chapters: [chapter.identifier],
+      });
+      const slug = series.slug;
+
+      const persistChapterMock: ChapterPersistWorkflow = vi.fn().mockReturnValue(
+        ok({ type: "chapter.persisted", payload: { chapter: chapter.identifier } }).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn().mockReturnValue(ok(series).toAsync());
+      const persistSeriesMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createChapterPersistWithSeriesWorkflow(persistChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(
+        {
+          identifier: chapter.identifier,
+          title: chapter.title,
+          slug: chapter.slug,
+          content: chapter.content,
+          images: chapter.images,
+          status: chapter.status,
+          timeline: chapter.timeline,
+        },
+        slug,
+      );
+
+      expect(await result.match({ ok: () => true, err: () => false })).toBe(true);
+      expect(persistSeriesMock).not.toHaveBeenCalled();
+    });
+
+    it("persistChapterが失敗した場合はエラーを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(3);
+      const error = aggregateNotFoundError("Chapter", "Chapter not found");
+      const slug = Forger(SlugMold).forgeWithSeed(3);
+
+      const persistChapterMock: ChapterPersistWorkflow = vi.fn().mockReturnValue(
+        err(error).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn();
+      const persistSeriesMock = vi.fn();
+
+      const workflow = createChapterPersistWithSeriesWorkflow(persistChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(
+        {
+          identifier: chapter.identifier,
+          title: chapter.title,
+          slug: chapter.slug,
+          content: chapter.content,
+          images: chapter.images,
+          status: chapter.status,
+          timeline: chapter.timeline,
+        },
+        slug,
+      ).unwrapError();
+
+      expect(result).toEqual(error);
+      expect(findSeriesBySlugMock).not.toHaveBeenCalled();
+    });
+
+    it("validateSlugが失敗した場合はエラーを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(4);
+
+      const persistChapterMock: ChapterPersistWorkflow = vi.fn().mockReturnValue(
+        ok({ type: "chapter.persisted", payload: { chapter: chapter.identifier } }).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn();
+      const persistSeriesMock = vi.fn();
+
+      const workflow = createChapterPersistWithSeriesWorkflow(persistChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(
+        {
+          identifier: chapter.identifier,
+          title: chapter.title,
+          slug: chapter.slug,
+          content: chapter.content,
+          images: chapter.images,
+          status: chapter.status,
+          timeline: chapter.timeline,
+        },
+        "Invalid Slug With Spaces",
+      );
+
+      expect(await result.match({ ok: () => false, err: () => true })).toBe(true);
+      expect(findSeriesBySlugMock).not.toHaveBeenCalled();
+    });
+
+    it("findSeriesBySlugが失敗した場合はエラーを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(5);
+      const error = aggregateNotFoundError("Series", "Series not found");
+      const slug = Forger(SlugMold).forgeWithSeed(5);
+
+      const persistChapterMock: ChapterPersistWorkflow = vi.fn().mockReturnValue(
+        ok({ type: "chapter.persisted", payload: { chapter: chapter.identifier } }).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn().mockReturnValue(err(error).toAsync());
+      const persistSeriesMock = vi.fn();
+
+      const workflow = createChapterPersistWithSeriesWorkflow(persistChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(
+        {
+          identifier: chapter.identifier,
+          title: chapter.title,
+          slug: chapter.slug,
+          content: chapter.content,
+          images: chapter.images,
+          status: chapter.status,
+          timeline: chapter.timeline,
+        },
+        slug,
+      ).unwrapError();
+
+      expect(result).toEqual(error);
+      expect(persistSeriesMock).not.toHaveBeenCalled();
+    });
+
+    it("subTitleとcoverがnullのシリーズでも正常に完了する", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(7);
+      const baseSeries = Forger(SeriesMold).forgeWithSeed(7, { chapters: [] });
+      const series = { ...baseSeries, subTitle: null, cover: null };
+      const slug = series.slug;
+
+      const persistChapterMock: ChapterPersistWorkflow = vi.fn().mockReturnValue(
+        ok({ type: "chapter.persisted", payload: { chapter: chapter.identifier } }).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn().mockReturnValue(ok(series).toAsync());
+      const persistSeriesMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createChapterPersistWithSeriesWorkflow(persistChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(
+        {
+          identifier: chapter.identifier,
+          title: chapter.title,
+          slug: chapter.slug,
+          content: chapter.content,
+          images: chapter.images,
+          status: chapter.status,
+          timeline: chapter.timeline,
+        },
+        slug,
+      );
+
+      expect(await result.match({ ok: () => true, err: () => false })).toBe(true);
+      expect(persistSeriesMock).toHaveBeenCalled();
+    });
+
+    it("persistSeriesが失敗した場合はエラーを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(6);
+      const series = Forger(SeriesMold).forgeWithSeed(6, { chapters: [] });
+      const error = aggregateNotFoundError("Series", "Series not found");
+      const slug = series.slug;
+
+      const persistChapterMock: ChapterPersistWorkflow = vi.fn().mockReturnValue(
+        ok({ type: "chapter.persisted", payload: { chapter: chapter.identifier } }).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn().mockReturnValue(ok(series).toAsync());
+      const persistSeriesMock = vi.fn().mockReturnValue(err(error).toAsync());
+
+      const workflow = createChapterPersistWithSeriesWorkflow(persistChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(
+        {
+          identifier: chapter.identifier,
+          title: chapter.title,
+          slug: chapter.slug,
+          content: chapter.content,
+          images: chapter.images,
+          status: chapter.status,
+          timeline: chapter.timeline,
+        },
+        slug,
+      ).unwrapError();
+
+      expect(result).toEqual(error);
+    });
+  });
+
+  describe("createChapterTerminateWithSeriesWorkflow", () => {
+    it("チャプター削除とシリーズからのチャプター除去が正常に完了する", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(1);
+      const series = Forger(SeriesMold).forgeWithSeed(1, {
+        chapters: [chapter.identifier],
+      });
+      const slug = series.slug;
+
+      const terminateChapterMock: ChapterTerminateWorkflow = vi.fn().mockReturnValue(
+        ok({ type: "chapter.terminated", payload: { chapter: chapter.identifier } }).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn().mockReturnValue(ok(series).toAsync());
+      const persistSeriesMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createChapterTerminateWithSeriesWorkflow(terminateChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(chapter.identifier, slug);
+
+      expect(await result.match({ ok: () => true, err: () => false })).toBe(true);
+      expect(terminateChapterMock).toHaveBeenCalledWith(chapter.identifier);
+      expect(findSeriesBySlugMock).toHaveBeenCalledWith(slug);
+      expect(persistSeriesMock).toHaveBeenCalled();
+    });
+
+    it("terminateChapterが失敗した場合はエラーを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(2);
+      const error = aggregateNotFoundError("Chapter", "Chapter not found");
+      const slug = Forger(SlugMold).forgeWithSeed(2);
+
+      const terminateChapterMock: ChapterTerminateWorkflow = vi.fn().mockReturnValue(
+        err(error).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn();
+      const persistSeriesMock = vi.fn();
+
+      const workflow = createChapterTerminateWithSeriesWorkflow(terminateChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(chapter.identifier, slug).unwrapError();
+
+      expect(result).toEqual(error);
+      expect(findSeriesBySlugMock).not.toHaveBeenCalled();
+    });
+
+    it("validateSlugが失敗した場合はエラーを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(3);
+
+      const terminateChapterMock: ChapterTerminateWorkflow = vi.fn().mockReturnValue(
+        ok({ type: "chapter.terminated", payload: { chapter: chapter.identifier } }).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn();
+      const persistSeriesMock = vi.fn();
+
+      const workflow = createChapterTerminateWithSeriesWorkflow(terminateChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(chapter.identifier, "Invalid Slug With Spaces");
+
+      expect(await result.match({ ok: () => false, err: () => true })).toBe(true);
+      expect(findSeriesBySlugMock).not.toHaveBeenCalled();
+    });
+
+    it("findSeriesBySlugが失敗した場合はエラーを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(4);
+      const error = aggregateNotFoundError("Series", "Series not found");
+      const slug = Forger(SlugMold).forgeWithSeed(4);
+
+      const terminateChapterMock: ChapterTerminateWorkflow = vi.fn().mockReturnValue(
+        ok({ type: "chapter.terminated", payload: { chapter: chapter.identifier } }).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn().mockReturnValue(err(error).toAsync());
+      const persistSeriesMock = vi.fn();
+
+      const workflow = createChapterTerminateWithSeriesWorkflow(terminateChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(chapter.identifier, slug).unwrapError();
+
+      expect(result).toEqual(error);
+      expect(persistSeriesMock).not.toHaveBeenCalled();
+    });
+
+    it("persistSeriesが失敗した場合はエラーを返す", async () => {
+      const chapter = Forger(ChapterMold).forgeWithSeed(5);
+      const series = Forger(SeriesMold).forgeWithSeed(5, {
+        chapters: [chapter.identifier],
+      });
+      const error = aggregateNotFoundError("Series", "Series not found");
+      const slug = series.slug;
+
+      const terminateChapterMock: ChapterTerminateWorkflow = vi.fn().mockReturnValue(
+        ok({ type: "chapter.terminated", payload: { chapter: chapter.identifier } }).toAsync(),
+      );
+      const findSeriesBySlugMock = vi.fn().mockReturnValue(ok(series).toAsync());
+      const persistSeriesMock = vi.fn().mockReturnValue(err(error).toAsync());
+
+      const workflow = createChapterTerminateWithSeriesWorkflow(terminateChapterMock)(validateSlug)(
+        findSeriesBySlugMock,
+      )(persistSeriesMock)(mockLogger);
+
+      const result = await workflow(chapter.identifier, slug).unwrapError();
+
+      expect(result).toEqual(error);
     });
   });
 });

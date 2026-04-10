@@ -10,6 +10,7 @@
     "build": "pnpm -r build",
     "lint": "eslint shared/ reader/ admin/ e2e/",
     "test": "vitest run --project unit",
+    "test:coverage": "vitest run --project unit --coverage",
     "typecheck": "pnpm --filter @hut/shared typecheck && pnpm --filter @hut/reader typecheck && pnpm --filter @hut/admin typecheck",
     "e2e": "playwright test",
     "storybook": "storybook dev -p 6006 -c .storybook"
