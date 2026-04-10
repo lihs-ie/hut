@@ -38,8 +38,8 @@ export async function persist(
     ),
   );
 
-  revalidateTag("chapters");
-  revalidateTag("series");
+  revalidateTag("chapters", {});
+  revalidateTag("series", {});
   notifyReaderRevalidation([REVALIDATION_TAGS.CHAPTERS, REVALIDATION_TAGS.SERIES]);
 }
 
@@ -59,8 +59,8 @@ export async function terminate(
     ),
   );
 
-  revalidateTag("chapters");
-  revalidateTag("series");
+  revalidateTag("chapters", {});
+  revalidateTag("series", {});
   notifyReaderRevalidation([REVALIDATION_TAGS.CHAPTERS, REVALIDATION_TAGS.SERIES]);
 }
 

@@ -109,8 +109,8 @@ describe("actions/chapter", () => {
 
       await persist(unvalidated);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("chapters");
-      expect(mockRevalidateTag).toHaveBeenCalledWith("series");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("chapters", {});
+      expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
@@ -190,8 +190,8 @@ describe("actions/chapter", () => {
 
       await terminate("01HWXYZ0000000000000000000", "test-series");
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("chapters");
-      expect(mockRevalidateTag).toHaveBeenCalledWith("series");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("chapters", {});
+      expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {

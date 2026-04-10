@@ -64,7 +64,7 @@ describe("actions/tag", () => {
 
       await persist(unvalidated);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("tags");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("tags", {});
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
@@ -90,7 +90,7 @@ describe("actions/tag", () => {
 
       await terminate(identifier);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("tags");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("tags", {});
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {

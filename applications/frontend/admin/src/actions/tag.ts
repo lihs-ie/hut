@@ -65,7 +65,7 @@ export async function persist(unvalidated: UnvalidatedTag): Promise<void> {
     AdminTagWorkflowProvider.persist({ payload: unvalidated, now: new Date() }),
   );
 
-  revalidateTag("tags");
+  revalidateTag("tags", {});
   notifyReaderRevalidation([REVALIDATION_TAGS.TAGS]);
 }
 
@@ -75,6 +75,6 @@ export async function terminate(identifier: string): Promise<void> {
     AdminTagWorkflowProvider.terminate({ payload: identifier, now: new Date() }),
   );
 
-  revalidateTag("tags");
+  revalidateTag("tags", {});
   notifyReaderRevalidation([REVALIDATION_TAGS.TAGS]);
 }

@@ -57,7 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .andThen(parseBody)
     .tap((data) => {
       for (const tag of data.tags) {
-        revalidateTag(tag);
+        revalidateTag(tag, {});
       }
     })
     .match({

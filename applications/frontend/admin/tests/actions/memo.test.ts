@@ -84,7 +84,7 @@ describe("actions/memo", () => {
 
       await create(unvalidated);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("memos");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("memos", {});
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
@@ -118,6 +118,7 @@ describe("actions/memo", () => {
 
       expect(mockRevalidateTag).toHaveBeenCalledWith(
         `memo-entries-${slug}`,
+        {},
       );
     });
 
@@ -154,7 +155,7 @@ describe("actions/memo", () => {
 
       await edit(unvalidated, before);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("memos");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("memos", {});
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
@@ -182,7 +183,7 @@ describe("actions/memo", () => {
 
       await terminate(identifier);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("memos");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("memos", {});
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {

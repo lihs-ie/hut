@@ -38,7 +38,7 @@ export async function create(unvalidated: UnvalidatedMemo): Promise<void> {
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag("memos");
+  revalidateTag("memos", {});
   notifyReaderRevalidation([REVALIDATION_TAGS.MEMOS]);
 }
 
@@ -55,7 +55,7 @@ export async function addEntry(
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag(memoEntriesTag(slug));
+  revalidateTag(memoEntriesTag(slug), {});
   notifyReaderRevalidation([memoEntriesTag(slug)]);
 }
 
@@ -71,7 +71,7 @@ export async function edit(
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag("memos");
+  revalidateTag("memos", {});
   notifyReaderRevalidation([REVALIDATION_TAGS.MEMOS]);
 }
 
@@ -97,6 +97,6 @@ export async function terminate(identifier: string): Promise<void> {
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag("memos");
+  revalidateTag("memos", {});
   notifyReaderRevalidation([REVALIDATION_TAGS.MEMOS]);
 }

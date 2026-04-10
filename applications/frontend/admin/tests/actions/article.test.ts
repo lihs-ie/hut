@@ -85,7 +85,7 @@ describe("actions/article", () => {
 
       await create(unvalidated);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("articles");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("articles", {});
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
@@ -123,7 +123,7 @@ describe("actions/article", () => {
 
       await edit(unvalidated, before);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("articles");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("articles", {});
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
@@ -151,7 +151,7 @@ describe("actions/article", () => {
 
       await terminate(identifier);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("articles");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("articles", {});
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {

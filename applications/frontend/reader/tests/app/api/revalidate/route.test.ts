@@ -155,7 +155,7 @@ describe("POST /api/revalidate", () => {
 
       await POST(request);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("articles");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("articles", {});
     });
 
     it("複数タグが指定された場合は全タグで revalidateTag を呼び出す", async () => {
@@ -171,9 +171,9 @@ describe("POST /api/revalidate", () => {
 
       await POST(request);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("articles");
-      expect(mockRevalidateTag).toHaveBeenCalledWith("series");
-      expect(mockRevalidateTag).toHaveBeenCalledWith("chapters");
+      expect(mockRevalidateTag).toHaveBeenCalledWith("articles", {});
+      expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});
+      expect(mockRevalidateTag).toHaveBeenCalledWith("chapters", {});
       expect(mockRevalidateTag).toHaveBeenCalledTimes(3);
     });
 

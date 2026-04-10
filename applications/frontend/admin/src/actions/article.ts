@@ -23,7 +23,7 @@ export async function create(unvalidated: UnvalidatedArticle): Promise<void> {
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag("articles");
+  revalidateTag("articles", {});
   notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
 }
 
@@ -39,7 +39,7 @@ export async function edit(
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag("articles");
+  revalidateTag("articles", {});
   notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
 }
 
@@ -52,7 +52,7 @@ export async function terminate(identifier: string): Promise<void> {
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag("articles");
+  revalidateTag("articles", {});
   notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
 }
 
