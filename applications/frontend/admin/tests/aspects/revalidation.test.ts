@@ -20,6 +20,8 @@ const mockConfig: {
 
 vi.mock("@/config/revalidation", () => mockConfig);
 
+const flushMicrotasks = () => new Promise((resolve) => setTimeout(resolve, 0));
+
 describe("notifyReaderRevalidation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -33,7 +35,7 @@ describe("notifyReaderRevalidation", () => {
     mockFetch.mockResolvedValue({ ok: true, status: 200 });
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
-    await notifyReaderRevalidation(["articles"]);
+    notifyReaderRevalidation(["articles"]);
 
     expect(mockFetch).toHaveBeenCalledWith(
       "https://reader.example.com/api/revalidate",
@@ -47,7 +49,7 @@ describe("notifyReaderRevalidation", () => {
     mockFetch.mockResolvedValue({ ok: true, status: 200 });
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
-    await notifyReaderRevalidation(["articles"]);
+    notifyReaderRevalidation(["articles"]);
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.any(String),
@@ -63,7 +65,7 @@ describe("notifyReaderRevalidation", () => {
     mockFetch.mockResolvedValue({ ok: true, status: 200 });
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
-    await notifyReaderRevalidation(["articles", "series"]);
+    notifyReaderRevalidation(["articles", "series"]);
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.any(String),
@@ -78,7 +80,8 @@ describe("notifyReaderRevalidation", () => {
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
 
-    await expect(notifyReaderRevalidation(["articles"])).resolves.not.toThrow();
+    expect(() => notifyReaderRevalidation(["articles"])).not.toThrow();
+    await flushMicrotasks();
   });
 
   it("レスポンスが 4xx/5xx でもエラーをスローしない", async () => {
@@ -86,14 +89,15 @@ describe("notifyReaderRevalidation", () => {
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
 
-    await expect(notifyReaderRevalidation(["articles"])).resolves.not.toThrow();
+    expect(() => notifyReaderRevalidation(["articles"])).not.toThrow();
+    await flushMicrotasks();
   });
 
   it("revalidation config が undefined の場合はリクエストを送信しない", async () => {
     mockConfig.revalidation = undefined;
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
-    await notifyReaderRevalidation(["articles"]);
+    notifyReaderRevalidation(["articles"]);
 
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -102,7 +106,7 @@ describe("notifyReaderRevalidation", () => {
     mockFetch.mockResolvedValue({ ok: true, status: 200 });
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
-    await notifyReaderRevalidation([]);
+    notifyReaderRevalidation([]);
 
     expect(mockFetch).toHaveBeenCalled();
   });

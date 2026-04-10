@@ -63,7 +63,7 @@ describe("actions/memo", () => {
       (asyncResult: Promise<unknown>) => asyncResult,
     );
     mockEventBrokerPublish.mockReturnValue(ok(undefined).toAsync());
-    mockNotifyReaderRevalidation.mockResolvedValue(undefined);
+    mockNotifyReaderRevalidation.mockReturnValue(undefined);
   });
 
   describe("create", () => {
@@ -84,7 +84,7 @@ describe("actions/memo", () => {
 
       await create(unvalidated);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("memos", {});
+      expect(mockRevalidateTag).toHaveBeenCalledWith("memos");
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
@@ -118,7 +118,6 @@ describe("actions/memo", () => {
 
       expect(mockRevalidateTag).toHaveBeenCalledWith(
         `memo-entries-${slug}`,
-        { expire: 3600 },
       );
     });
 
@@ -155,7 +154,7 @@ describe("actions/memo", () => {
 
       await edit(unvalidated, before);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("memos", {});
+      expect(mockRevalidateTag).toHaveBeenCalledWith("memos");
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
@@ -183,7 +182,7 @@ describe("actions/memo", () => {
 
       await terminate(identifier);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("memos", {});
+      expect(mockRevalidateTag).toHaveBeenCalledWith("memos");
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {

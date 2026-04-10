@@ -58,7 +58,7 @@ describe("actions/series", () => {
       (asyncResult: Promise<unknown>) => asyncResult,
     );
     mockEventBrokerPublish.mockReturnValue(ok(undefined).toAsync());
-    mockNotifyReaderRevalidation.mockResolvedValue(undefined);
+    mockNotifyReaderRevalidation.mockReturnValue(undefined);
   });
 
   describe("persist", () => {
@@ -83,7 +83,7 @@ describe("actions/series", () => {
 
       await persist(unvalidated);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});
+      expect(mockRevalidateTag).toHaveBeenCalledWith("series");
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {
@@ -111,7 +111,7 @@ describe("actions/series", () => {
 
       await terminate(identifier);
 
-      expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});
+      expect(mockRevalidateTag).toHaveBeenCalledWith("series");
     });
 
     it("Reader の revalidation を notifyReaderRevalidation で通知する", async () => {

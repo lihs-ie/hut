@@ -23,8 +23,8 @@ export async function create(unvalidated: UnvalidatedArticle): Promise<void> {
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag(`articles`, {});
-  await notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
+  revalidateTag("articles");
+  notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
 }
 
 export async function edit(
@@ -39,8 +39,8 @@ export async function edit(
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag(`articles`, {});
-  await notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
+  revalidateTag("articles");
+  notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
 }
 
 export async function terminate(identifier: string): Promise<void> {
@@ -52,8 +52,8 @@ export async function terminate(identifier: string): Promise<void> {
     }).andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag(`articles`, {});
-  await notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
+  revalidateTag("articles");
+  notifyReaderRevalidation([REVALIDATION_TAGS.ARTICLES]);
 }
 
 export async function findBySlug(slug: string): Promise<Article> {

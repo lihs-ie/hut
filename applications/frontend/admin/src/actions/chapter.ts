@@ -38,9 +38,9 @@ export async function persist(
     ),
   );
 
-  revalidateTag("chapters", {});
-  revalidateTag("series", {});
-  await notifyReaderRevalidation([REVALIDATION_TAGS.CHAPTERS, REVALIDATION_TAGS.SERIES]);
+  revalidateTag("chapters");
+  revalidateTag("series");
+  notifyReaderRevalidation([REVALIDATION_TAGS.CHAPTERS, REVALIDATION_TAGS.SERIES]);
 }
 
 export async function terminate(
@@ -59,9 +59,9 @@ export async function terminate(
     ),
   );
 
-  revalidateTag("chapters", {});
-  revalidateTag("series", {});
-  await notifyReaderRevalidation([REVALIDATION_TAGS.CHAPTERS, REVALIDATION_TAGS.SERIES]);
+  revalidateTag("chapters");
+  revalidateTag("series");
+  notifyReaderRevalidation([REVALIDATION_TAGS.CHAPTERS, REVALIDATION_TAGS.SERIES]);
 }
 
 export async function findBySlug(slug: string): Promise<Chapter> {

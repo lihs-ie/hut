@@ -44,7 +44,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   for (const tag of parseResult.data.tags) {
-    revalidateTag(tag, {});
+    revalidateTag(tag);
   }
 
   return NextResponse.json({ revalidated: true });

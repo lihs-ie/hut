@@ -26,8 +26,8 @@ export async function persist(unvalidated: UnvalidatedSeries): Promise<void> {
       .andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag("series", {});
-  await notifyReaderRevalidation([REVALIDATION_TAGS.SERIES]);
+  revalidateTag("series");
+  notifyReaderRevalidation([REVALIDATION_TAGS.SERIES]);
 }
 
 export async function terminate(identifier: string): Promise<void> {
@@ -37,8 +37,8 @@ export async function terminate(identifier: string): Promise<void> {
       .andThen(EventBrokerProvider.pubSub.publish),
   );
 
-  revalidateTag("series", {});
-  await notifyReaderRevalidation([REVALIDATION_TAGS.SERIES]);
+  revalidateTag("series");
+  notifyReaderRevalidation([REVALIDATION_TAGS.SERIES]);
 }
 
 export async function search(unvalidated: UnvalidatedCriteria): Promise<Series[]> {
