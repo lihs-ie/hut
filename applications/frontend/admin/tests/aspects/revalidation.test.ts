@@ -8,10 +8,12 @@ const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 const mockConfig: {
-  revalidation: { readerUrl: string | undefined; secret: string | undefined };
+  revalidation:
+    | { readerEndpoint: string; secret: string }
+    | undefined;
 } = {
   revalidation: {
-    readerUrl: "https://reader.example.com",
+    readerEndpoint: "https://reader.example.com",
     secret: "test-secret",
   },
 };
@@ -22,7 +24,7 @@ describe("notifyReaderRevalidation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockConfig.revalidation = {
-      readerUrl: "https://reader.example.com",
+      readerEndpoint: "https://reader.example.com",
       secret: "test-secret",
     };
   });
@@ -87,23 +89,8 @@ describe("notifyReaderRevalidation", () => {
     await expect(notifyReaderRevalidation(["articles"])).resolves.not.toThrow();
   });
 
-  it("readerUrl が未設定の場合はリクエストを送信しない", async () => {
-    mockConfig.revalidation = {
-      readerUrl: undefined,
-      secret: "test-secret",
-    };
-
-    const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
-    await notifyReaderRevalidation(["articles"]);
-
-    expect(mockFetch).not.toHaveBeenCalled();
-  });
-
-  it("secret が未設定の場合はリクエストを送信しない", async () => {
-    mockConfig.revalidation = {
-      readerUrl: "https://reader.example.com",
-      secret: undefined,
-    };
+  it("revalidation config が undefined の場合はリクエストを送信しない", async () => {
+    mockConfig.revalidation = undefined;
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
     await notifyReaderRevalidation(["articles"]);

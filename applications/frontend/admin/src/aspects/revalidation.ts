@@ -1,18 +1,16 @@
 import { revalidation } from "@/config/revalidation";
 
 export async function notifyReaderRevalidation(tags: string[]): Promise<void> {
-  const { readerUrl, secret } = revalidation;
-
-  if (!readerUrl || !secret) {
+  if (!revalidation) {
     return;
   }
 
   try {
-    await fetch(`${readerUrl}/api/revalidate`, {
+    await fetch(`${revalidation.readerEndpoint}/api/revalidate`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-revalidation-secret": secret,
+        "x-revalidation-secret": revalidation.secret,
       },
       body: JSON.stringify({ tags }),
     });
