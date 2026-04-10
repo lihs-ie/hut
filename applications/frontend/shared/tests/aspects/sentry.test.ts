@@ -21,6 +21,12 @@ describe("createSentryConfiguration", () => {
     expect(configuration.enabled).toBe(false);
   });
 
+  it("DSNが空白のみの場合、enabledがfalseになる", () => {
+    const configuration = createSentryConfiguration("  ", undefined);
+    expect(configuration.enabled).toBe(false);
+    expect(configuration.dsn).toBeUndefined();
+  });
+
   it("エミュレータ使用時はenabledがfalseになる", () => {
     const configuration = createSentryConfiguration(
       "https://xxx@sentry.io/123",
@@ -37,11 +43,11 @@ describe("createSentryConfiguration", () => {
     expect(configuration.enabled).toBe(true);
   });
 
-  it("tracesSampleRateが1.0である", () => {
+  it("tracesSampleRateがデフォルト値0.1である", () => {
     const configuration = createSentryConfiguration(
       "https://xxx@sentry.io/123",
       undefined,
     );
-    expect(configuration.tracesSampleRate).toBe(1.0);
+    expect(configuration.tracesSampleRate).toBe(0.1);
   });
 });

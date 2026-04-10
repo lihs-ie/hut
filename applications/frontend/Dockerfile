@@ -28,7 +28,6 @@ ARG IMAGE_REMOTE_PATTERNS=""
 ARG NEXT_PUBLIC_SENTRY_DSN=""
 ARG SENTRY_ORG=""
 ARG SENTRY_PROJECT=""
-ARG SENTRY_AUTH_TOKEN=""
 
 ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
 ENV NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY}
@@ -41,7 +40,6 @@ ENV IMAGE_REMOTE_PATTERNS=${IMAGE_REMOTE_PATTERNS}
 ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
 ENV SENTRY_ORG=${SENTRY_ORG}
 ENV SENTRY_PROJECT=${SENTRY_PROJECT}
-ENV SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
 
 COPY . .
 
@@ -53,7 +51,9 @@ RUN find ${APP_NAME}/public -type l -delete 2>/dev/null; \
 
 RUN --mount=type=secret,id=gcp_credentials,target=/tmp/gcp-credentials.json \
     --mount=type=secret,id=gcp_oidc_token,target=/tmp/gcp-oidc-token \
+    --mount=type=secret,id=sentry_auth_token \
     GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json \
+    SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token 2>/dev/null || true)" \
     pnpm --filter @hut/${APP_NAME} build
 
 FROM node:22-slim AS runner

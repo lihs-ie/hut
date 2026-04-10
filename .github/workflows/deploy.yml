@@ -162,6 +162,8 @@ jobs:
           secret-files: |
             gcp_credentials=${{ steps.docker-creds.outputs.cred_file }}
             ${{ steps.docker-creds.outputs.token_file != '' && format('gcp_oidc_token={0}', steps.docker-creds.outputs.token_file) || '' }}
+          secrets: |
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('sentry_auth_token={0}', secrets.SENTRY_AUTH_TOKEN) || '' }}
           build-args: |
             ${{ steps.vars.outputs.app_type == 'frontend' && format('APP_NAME={0}', steps.vars.outputs.app_name) || '' }}
             ${{ steps.vars.outputs.app_type == 'frontend' && format('APP_PORT={0}', steps.vars.outputs.app_port) || '' }}
@@ -176,7 +178,6 @@ jobs:
             ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_SENTRY_DSN={0}', secrets.SENTRY_DSN) || '' }}
             ${{ steps.vars.outputs.app_type == 'frontend' && format('SENTRY_ORG={0}', secrets.SENTRY_ORG) || '' }}
             ${{ steps.vars.outputs.app_type == 'frontend' && format('SENTRY_PROJECT={0}', secrets.SENTRY_PROJECT) || '' }}
-            ${{ steps.vars.outputs.app_type == 'frontend' && format('SENTRY_AUTH_TOKEN={0}', secrets.SENTRY_AUTH_TOKEN) || '' }}
 
       - name: Deploy to Cloud Run
         run: |

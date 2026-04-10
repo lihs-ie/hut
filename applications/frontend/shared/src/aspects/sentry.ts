@@ -4,11 +4,17 @@ type SentryConfiguration = {
   tracesSampleRate: number;
 };
 
+const DEFAULT_TRACES_SAMPLE_RATE = 0.1;
+
 export const createSentryConfiguration = (
   dsn: string | undefined,
   useFirebaseEmulator: string | undefined,
-): SentryConfiguration => ({
-  dsn,
-  enabled: dsn !== undefined && dsn !== "" && useFirebaseEmulator !== "true",
-  tracesSampleRate: 1.0,
-});
+): SentryConfiguration => {
+  const normalizedDsn = dsn?.trim() || undefined;
+
+  return {
+    dsn: normalizedDsn,
+    enabled: normalizedDsn !== undefined && useFirebaseEmulator !== "true",
+    tracesSampleRate: DEFAULT_TRACES_SAMPLE_RATE,
+  };
+};
