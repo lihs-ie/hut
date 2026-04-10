@@ -205,6 +205,59 @@ describe("next.config.shared - セキュリティヘッダー", () => {
     });
   });
 
+  describe("エミュレーター使用時のCSP", () => {
+    const getCSPDirective = async (
+      directiveName: string,
+      options?: Parameters<typeof createBaseNextConfig>[0],
+    ): Promise<string | undefined> => {
+      const config = createBaseNextConfig(options);
+      const headersResult = await config.headers?.();
+      const allRoutesHeader = headersResult!.find(
+        (h) => h.source === "/(.*)",
+      );
+      const header = allRoutesHeader!.headers.find(
+        (h) => h.key === "Content-Security-Policy",
+      );
+      return header?.value
+        ?.split(";")
+        .map((d) => d.trim())
+        .find((d) => d.startsWith(directiveName));
+    };
+
+    it("useFirebaseEmulator が true の場合 frame-src に http://localhost:9099 が含まれる", async () => {
+      const frameSrc = await getCSPDirective("frame-src", {
+        useFirebaseEmulator: true,
+      });
+      expect(frameSrc).toContain("http://localhost:9099");
+    });
+
+    it("useFirebaseEmulator が true の場合 connect-src に http://localhost:9099 が含まれる", async () => {
+      const connectSrc = await getCSPDirective("connect-src", {
+        useFirebaseEmulator: true,
+      });
+      expect(connectSrc).toContain("http://localhost:9099");
+    });
+
+    it("useFirebaseEmulator が false の場合 frame-src に http://localhost:9099 が含まれない", async () => {
+      const frameSrc = await getCSPDirective("frame-src", {
+        useFirebaseEmulator: false,
+      });
+      expect(frameSrc).not.toContain("http://localhost:9099");
+    });
+
+    it("useFirebaseEmulator が false の場合 connect-src に http://localhost:9099 が含まれない", async () => {
+      const connectSrc = await getCSPDirective("connect-src", {
+        useFirebaseEmulator: false,
+      });
+      expect(connectSrc).not.toContain("http://localhost:9099");
+    });
+
+    it("useFirebaseEmulator 未指定の場合 frame-src に http://localhost:9099 が含まれない", async () => {
+      const frameSrc = await getCSPDirective("frame-src");
+      expect(frameSrc).not.toContain("http://localhost:9099");
+    });
+  });
+
   describe("allowedOrigins", () => {
     it("SERVER_ACTIONS_ALLOWED_ORIGINS が未設定でも serverActions が設定される", () => {
       delete process.env.SERVER_ACTIONS_ALLOWED_ORIGINS;
