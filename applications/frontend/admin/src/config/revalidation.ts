@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const revalidationSchema = z.object({
-  readerEndpoint: z.string().url(),
+  readerEndpoint: z.url(),
   secret: z.string().min(1),
 });
 
