@@ -20,6 +20,29 @@ export default defineConfig({
     exclude: ["**/node_modules/**"],
     environment: "jsdom",
     globals: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov", "json-summary"],
+      reportsDirectory: "./coverage",
+      include: [
+        "shared/src/domains/**/*.ts",
+        "shared/src/workflows/**/*.ts",
+      ],
+      exclude: [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/node_modules/**",
+        "**/*.d.ts",
+        "**/index.ts",
+        "**/collections/**",
+      ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 75,
+        statements: 80,
+      },
+    },
     projects: [
       {
         extends: true,

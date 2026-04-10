@@ -51,5 +51,30 @@ jobs:
         run: docker compose -f ${{ env.FIREBASE_COMPOSE_FILE }} down
 
       - name: Test
-        run: pnpm test
+        run: pnpm test:coverage
         working-directory: applications/frontend
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: applications/frontend/coverage/
+
+      - name: Coverage Summary
+        if: always() && hashFiles('applications/frontend/coverage/coverage-summary.json') != ''
+        run: |
+          SUMMARY=$(cat applications/frontend/coverage/coverage-summary.json)
+          LINES=$(echo "$SUMMARY" | jq '.total.lines.pct')
+          STATEMENTS=$(echo "$SUMMARY" | jq '.total.statements.pct')
+          FUNCTIONS=$(echo "$SUMMARY" | jq '.total.functions.pct')
+          BRANCHES=$(echo "$SUMMARY" | jq '.total.branches.pct')
+          {
+            echo "## Coverage Summary"
+            echo "| Metric | Coverage |"
+            echo "|--------|----------|"
+            echo "| Lines | ${LINES}% |"
+            echo "| Statements | ${STATEMENTS}% |"
+            echo "| Functions | ${FUNCTIONS}% |"
+            echo "| Branches | ${BRANCHES}% |"
+          } >> "$GITHUB_STEP_SUMMARY"
