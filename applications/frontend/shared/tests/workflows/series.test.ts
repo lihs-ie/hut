@@ -16,7 +16,16 @@ import {
 import { validateSlug } from "@shared/domains/common/slug";
 import { Logger, Environment } from "@shared/aspects/logger";
 import { ok, err } from "@shared/aspects/result";
-import { aggregateNotFoundError, unexpectedError } from "@shared/aspects/error";
+import {
+  aggregateNotFoundError,
+  isAggregateNotFoundError,
+  unexpectedError,
+} from "@shared/aspects/error";
+import { PublishStatus } from "@shared/domains/common";
+import {
+  createPassthroughFilter,
+  createPublishedOnlyFilter,
+} from "@shared/workflows/common";
 import {
   SeriesMold,
   SeriesIdentifierMold,
@@ -89,7 +98,7 @@ describe("workflows/series", () => {
 
       const workflow = createSeriesFindBySlugWorkflow(validateSlug)(mockLogger)(
         findBySlugMock
-      );
+      )(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -107,7 +116,7 @@ describe("workflows/series", () => {
 
       const workflow = createSeriesFindBySlugWorkflow(validateSlug)(mockLogger)(
         findBySlugMock
-      );
+      )(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -134,7 +143,7 @@ describe("workflows/series", () => {
 
       const workflow = createSeriesFindBySlugWorkflow(validateSlug)(mockLogger)(
         findBySlugMock
-      );
+      )(createPassthroughFilter());
 
       const command: Command<{ slug: string }> = {
         now: new Date(),
@@ -144,6 +153,86 @@ describe("workflows/series", () => {
       const result = await workflow(command).unwrapError();
 
       expect(result).toEqual(notFoundError);
+    });
+
+    it("createPublishedOnlyFilterでdraft状態の連載はAggregateNotFoundErrorを返す", async () => {
+      const series = Forger(SeriesMold).forgeWithSeed(1, {
+        status: PublishStatus.DRAFT,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(series).toAsync());
+
+      const workflow = createSeriesFindBySlugWorkflow(validateSlug)(mockLogger)(
+        findBySlugMock
+      )(createPublishedOnlyFilter("Series"));
+
+      const command: Command<{ slug: string }> = {
+        now: new Date(),
+        payload: { slug: series.slug },
+      };
+
+      const error = await workflow(command).unwrapError();
+
+      expect(isAggregateNotFoundError(error)).toBe(true);
+    });
+
+    it("createPublishedOnlyFilterでarchived状態の連載はAggregateNotFoundErrorを返す", async () => {
+      const series = Forger(SeriesMold).forgeWithSeed(1, {
+        status: PublishStatus.ARCHIVED,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(series).toAsync());
+
+      const workflow = createSeriesFindBySlugWorkflow(validateSlug)(mockLogger)(
+        findBySlugMock
+      )(createPublishedOnlyFilter("Series"));
+
+      const command: Command<{ slug: string }> = {
+        now: new Date(),
+        payload: { slug: series.slug },
+      };
+
+      const error = await workflow(command).unwrapError();
+
+      expect(isAggregateNotFoundError(error)).toBe(true);
+    });
+
+    it("createPublishedOnlyFilterでpublished状態の連載は正常に返す", async () => {
+      const series = Forger(SeriesMold).forgeWithSeed(1, {
+        status: PublishStatus.PUBLISHED,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(series).toAsync());
+
+      const workflow = createSeriesFindBySlugWorkflow(validateSlug)(mockLogger)(
+        findBySlugMock
+      )(createPublishedOnlyFilter("Series"));
+
+      const command: Command<{ slug: string }> = {
+        now: new Date(),
+        payload: { slug: series.slug },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result).toEqual(series);
+    });
+
+    it("createPassthroughFilterでdraft状態の連載も取得できる", async () => {
+      const series = Forger(SeriesMold).forgeWithSeed(1, {
+        status: PublishStatus.DRAFT,
+      });
+      const findBySlugMock = vi.fn().mockReturnValue(ok(series).toAsync());
+
+      const workflow = createSeriesFindBySlugWorkflow(validateSlug)(mockLogger)(
+        findBySlugMock
+      )(createPassthroughFilter());
+
+      const command: Command<{ slug: string }> = {
+        now: new Date(),
+        payload: { slug: series.slug },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result).toEqual(series);
     });
   });
 

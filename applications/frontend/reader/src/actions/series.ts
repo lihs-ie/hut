@@ -4,11 +4,12 @@ import { cache } from "react";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { Series } from "@shared/domains/series";
 import { SeriesWorkflowProvider } from "@shared/providers/workflows/series";
+import { ReaderSeriesWorkflowProvider } from "@/providers/workflows/series";
 import { findPublishedChaptersByIdentifiers } from "@/actions/chapter";
 
 export const findBySlug = cache(async (slug: string): Promise<Series> => {
   return await unwrapForNextJs(
-    SeriesWorkflowProvider.findBySlug({ payload: { slug }, now: new Date() }),
+    ReaderSeriesWorkflowProvider.findBySlug({ payload: { slug }, now: new Date() }),
   );
 });
 

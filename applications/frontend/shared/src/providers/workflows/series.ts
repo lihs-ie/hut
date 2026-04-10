@@ -10,6 +10,7 @@ import {
   createSeriesSearchWorkflow,
   createSeriesTerminateWorkflow,
 } from "@shared/workflows/series";
+import { createPassthroughFilter } from "@shared/workflows/common";
 import { SeriesRepositoryProvider } from "../infrastructure/series";
 import { LoggerProvider } from "../infrastructure/logger";
 import { validateSlug } from "@shared/domains/common";
@@ -21,7 +22,7 @@ export const SeriesWorkflowProvider = {
 
   findBySlug: createSeriesFindBySlugWorkflow(validateSlug)(
     LoggerProvider.console
-  )(SeriesRepositoryProvider.firebase.findBySlug),
+  )(SeriesRepositoryProvider.firebase.findBySlug)(createPassthroughFilter()),
 
   search: createSeriesSearchWorkflow(validateCriteria)(
     SeriesRepositoryProvider.firebase.search

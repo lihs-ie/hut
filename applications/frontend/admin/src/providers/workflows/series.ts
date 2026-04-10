@@ -11,6 +11,7 @@ import {
   createSeriesTerminateWithChaptersWorkflow,
   createSeriesTerminateWorkflow,
 } from "@shared/workflows/series";
+import { createPassthroughFilter } from "@shared/workflows/common";
 import { SeriesRepositoryProvider } from "@shared/providers/infrastructure/series";
 import { ChapterRepositoryProvider } from "@shared/providers/infrastructure/chapter";
 import { LoggerProvider } from "@shared/providers/infrastructure/logger";
@@ -23,7 +24,7 @@ export const AdminSeriesWorkflowProvider = {
 
   findBySlug: createSeriesFindBySlugWorkflow(validateSlug)(
     LoggerProvider.console
-  )(SeriesRepositoryProvider.firebase.findBySlug),
+  )(SeriesRepositoryProvider.firebase.findBySlug)(createPassthroughFilter()),
 
   search: createSeriesSearchWorkflow(validateCriteria)(
     SeriesRepositoryProvider.firebase.search

@@ -7,6 +7,7 @@ import {
   createSeriesPersistWorkflow,
   createSeriesTerminateWorkflow,
 } from "@shared/workflows/series";
+import { createPassthroughFilter } from "@shared/workflows/common";
 import {
   validateSeries,
   validateSeriesIdentifier,
@@ -143,7 +144,7 @@ describe("Feature: Series Workflow (実DB接続)", () => {
 
       const findBySlugWorkflow = createSeriesFindBySlugWorkflow(validateSlug)(
         testLogger
-      )(repository.findBySlug);
+      )(repository.findBySlug)(createPassthroughFilter());
 
       const result = await findBySlugWorkflow({
         now: new Date(),
