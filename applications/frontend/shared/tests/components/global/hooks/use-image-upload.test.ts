@@ -313,7 +313,7 @@ describe("hooks/useImageUpload", () => {
 
       expect(mockUploadAction).toHaveBeenCalledWith(
         expect.any(File),
-        expect.stringContaining("articles/my-article/"),
+        expect.stringContaining("images/articles/my-article/"),
       );
     });
 
@@ -333,7 +333,27 @@ describe("hooks/useImageUpload", () => {
 
       expect(mockUploadAction).toHaveBeenCalledWith(
         expect.any(File),
-        expect.stringContaining("memos/my-memo/"),
+        expect.stringContaining("images/memos/my-memo/"),
+      );
+    });
+
+    it("seriesタイプでアップロードパスが生成される", async () => {
+      const mockUploadAction = vi
+        .fn()
+        .mockResolvedValue("https://example.com/image.webp");
+      const { result } = renderHook(() =>
+        useImageUpload({ uploadAction: mockUploadAction }),
+      );
+
+      const file = new File(["test"], "cover.jpg", { type: "image/jpeg" });
+
+      await act(async () => {
+        await result.current.uploadImage(file, "series", "my-series");
+      });
+
+      expect(mockUploadAction).toHaveBeenCalledWith(
+        expect.any(File),
+        expect.stringContaining("images/series/my-series/"),
       );
     });
   });

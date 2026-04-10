@@ -276,6 +276,15 @@
   color: var(--accent);
 }
 
+.coverpreview {
+  width: 100%;
+  max-width: 20rem;
+  height: auto;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  display: block;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;

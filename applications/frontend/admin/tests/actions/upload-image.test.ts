@@ -130,6 +130,32 @@ describe("uploadImage - パストラバーサル防止", () => {
     });
   });
 
+  describe("images/series/ プレフィックスも許可される", () => {
+    beforeEach(async () => {
+      const { isAdmin } = await import("@/actions/auth");
+      vi.mocked(isAdmin).mockResolvedValue(true);
+
+      const { AdminImageUploaderProvider } = await import(
+        "@/providers/infrastructure/storage"
+      );
+      vi.mocked(AdminImageUploaderProvider.firebaseAdmin.upload).mockReturnValue(
+        {
+          match: ({ ok }: { ok: (value: string) => string }) =>
+            Promise.resolve(ok("https://example.com/series-image.png")),
+        } as never,
+      );
+    });
+
+    it("images/series/ プレフィックスのパスは通過する", async () => {
+      const { uploadImage } = await import("@/actions/common");
+      const imageFile = new Blob(["image data"], { type: "image/png" });
+
+      await expect(
+        uploadImage(imageFile, "images/series/ref012/cover.png"),
+      ).resolves.toBe("https://example.com/series-image.png");
+    });
+  });
+
   describe("images/chapters/ プレフィックスも許可される", () => {
     beforeEach(async () => {
       const { isAdmin } = await import("@/actions/auth");

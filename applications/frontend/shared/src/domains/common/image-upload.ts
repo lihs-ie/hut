@@ -20,7 +20,7 @@ export const IMAGE_COMPRESSION_CONFIG = {
   quality: 0.8,
 } as const;
 
-export const CONTENT_TYPES = ["article", "memo", "chapter"] as const;
+export const CONTENT_TYPES = ["article", "memo", "chapter", "series"] as const;
 export type ContentType = (typeof CONTENT_TYPES)[number];
 
 export const imageUploadPathSchema = z.string().brand("ImageUploadPath");
@@ -39,15 +39,19 @@ export const generateUploadPath = (
   switch (contentType) {
     case "article":
       return imageUploadPathSchema.parse(
-        `articles/${reference}/${imageObjectName}`,
+        `images/articles/${reference}/${imageObjectName}`,
       );
     case "memo":
       return imageUploadPathSchema.parse(
-        `memos/${reference}/${imageObjectName}`,
+        `images/memos/${reference}/${imageObjectName}`,
       );
     case "chapter":
       return imageUploadPathSchema.parse(
         `images/chapters/${reference}/${imageObjectName}`,
+      );
+    case "series":
+      return imageUploadPathSchema.parse(
+        `images/series/${reference}/${imageObjectName}`,
       );
   }
 };

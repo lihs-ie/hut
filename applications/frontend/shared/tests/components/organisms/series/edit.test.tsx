@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Forger } from "@lihs-ie/forger-ts";
-import { render, act, fireEvent } from "@testing-library/react";
+import { render, act, fireEvent, waitFor } from "@testing-library/react";
 import { ToastProvider } from "@shared/components/molecules/toast";
 import {
   ChapterMold,
@@ -53,12 +53,38 @@ vi.mock("next/link", () => ({
   }) => <a href={linkProps.href} className={linkProps.className}>{linkProps.children}</a>,
 }));
 
+vi.mock("next/image", () => ({
+  default: (imageProps: Record<string, unknown>) => <img {...imageProps} />,
+}));
+
 vi.mock("@shared/components/atoms/icon/plus", () => ({
   PlusIcon: () => <span>PlusIcon</span>,
 }));
 
 vi.mock("@shared/components/atoms/icon/ballpen", () => ({
   BallpenIcon: () => <span>BallpenIcon</span>,
+}));
+
+vi.mock("@shared/components/global/hooks/use-image-compression", () => ({
+  compressImageToWebP: vi.fn().mockImplementation((file: File) => ({
+    _tag: "AsyncResult",
+    match: vi.fn().mockImplementation(
+      async (handlers: { ok: (value: unknown) => unknown; err: (error: unknown) => unknown }) =>
+        handlers.ok({
+          blob: file,
+          originalSize: file.size,
+          compressedSize: file.size,
+          width: 100,
+          height: 100,
+          mimeType: "image/webp",
+        }),
+    ),
+    unwrap: vi.fn(),
+  })),
+  getCompressedFileName: vi.fn().mockImplementation((name: string) =>
+    name.replace(/\.[^.]+$/, ".webp"),
+  ),
+  CompressedImage: {},
 }));
 
 describe("components/organisms/series/SeriesEditOrganism", () => {
@@ -247,5 +273,67 @@ describe("components/organisms/series/SeriesEditOrganism", () => {
     );
 
     expect(queryByText("チャプター管理")).not.toBeInTheDocument();
+  });
+
+  it("uploadImageが渡された場合、カバー画像アップロードボタンが表示される", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+    const uploadImage = vi
+      .fn()
+      .mockResolvedValue("https://example.com/cover.webp");
+
+    const { SeriesEditOrganism } = await import(
+      "@shared/components/organisms/series/edit"
+    );
+
+    const { container } = render(
+      <ToastProvider>
+        <SeriesEditOrganism
+          persist={persist}
+          tags={[]}
+          uploadImage={uploadImage}
+        />
+      </ToastProvider>,
+    );
+
+    const fileInput = container.querySelector('input[type="file"]');
+    expect(fileInput).not.toBeNull();
+  });
+
+  it("カバー画像をアップロードするとURLが設定される", async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+    const uploadImage = vi
+      .fn()
+      .mockResolvedValue("https://example.com/cover.webp");
+
+    const { SeriesEditOrganism } = await import(
+      "@shared/components/organisms/series/edit"
+    );
+
+    const { container } = render(
+      <ToastProvider>
+        <SeriesEditOrganism
+          persist={persist}
+          tags={[]}
+          uploadImage={uploadImage}
+        />
+      </ToastProvider>,
+    );
+
+    const fileInput = container.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    const file = new File(["cover"], "cover.jpg", { type: "image/jpeg" });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
+
+    expect(uploadImage).toHaveBeenCalled();
+
+    await waitFor(() => {
+      const preview = container.querySelector('img[alt="カバー画像プレビュー"]') as HTMLImageElement;
+      expect(preview).not.toBeNull();
+      expect(preview.src).toContain("https://example.com/cover.webp");
+    });
   });
 });

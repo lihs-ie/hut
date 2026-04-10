@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import styles from "./edit.module.css";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ulid } from "ulid";
 import { PublishStatus } from "@shared/domains/common";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
+import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { Series, SeriesSlug, UnvalidatedSeries } from "@shared/domains/series";
 import { Chapter } from "@shared/domains/series/chapter";
@@ -28,6 +30,7 @@ export type Props = {
   chapters?: Chapter[];
   seriesSlug?: SeriesSlug;
   terminateChapter?: (chapterIdentifier: string, seriesSlug: string) => Promise<void>;
+  uploadImage?: (file: File | Blob, path: string) => Promise<string>;
 };
 
 export const SeriesEditOrganism = (props: Props) => {
@@ -54,6 +57,25 @@ export const SeriesEditOrganism = (props: Props) => {
   const handleTagsChange = useCallback((newTags: TagIdentifier[]) => {
     setTags(newTags);
   }, []);
+
+  const noopUploadAction = useMemo(() => async () => "", []);
+
+  const imageUploadHook = useImageUpload({
+    uploadAction: props.uploadImage ?? noopUploadAction,
+  });
+
+  const handleCoverFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (!props.uploadImage) return;
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const result = await imageUploadHook.uploadImage(file, "series", identifier);
+      if (result.isOk) {
+        setCover(result.unwrap().url);
+      }
+    },
+    [props.uploadImage, imageUploadHook, identifier],
+  );
 
   const { execute, error, isLoading, reset } = useServerAction(
     async () => {
@@ -159,17 +181,38 @@ export const SeriesEditOrganism = (props: Props) => {
 
           <div className={styles.field}>
             <label htmlFor="cover" className={styles.label}>
-              カバー画像URL
+              カバー画像
             </label>
-            <input
-              id="cover"
-              name="cover"
-              type="url"
-              value={cover}
-              onChange={(event) => setCover(event.target.value)}
-              placeholder="https://example.com/cover.png"
-              className={styles.input}
-            />
+            {props.uploadImage && (
+              <input
+                id="cover"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleCoverFileChange}
+                className={styles.input}
+              />
+            )}
+            {!props.uploadImage && (
+              <input
+                id="cover"
+                name="cover"
+                type="url"
+                value={cover}
+                onChange={(event) => setCover(event.target.value)}
+                placeholder="https://example.com/cover.png"
+                className={styles.input}
+              />
+            )}
+            {cover && (
+              <Image
+                src={cover}
+                alt="カバー画像プレビュー"
+                width={320}
+                height={180}
+                unoptimized
+                className={styles.coverpreview}
+              />
+            )}
           </div>
 
           <div className={styles.field}>
