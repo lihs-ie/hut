@@ -32,12 +32,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate input combination
+        env:
+          APPLICATION: ${{ inputs.application }}
+          ENVIRONMENT: ${{ inputs.environment }}
         run: |
-          if [ "${{ inputs.application }}" = "reader" ] && [ "${{ inputs.environment }}" = "prd" ]; then
+          if [ "${APPLICATION}" = "reader" ] && [ "${ENVIRONMENT}" = "prd" ]; then
             echo "::error::reader cannot be deployed to prd environment"
             exit 1
           fi
-          if [ "${{ inputs.application }}" = "image-cleanup-worker" ] && [ "${{ inputs.environment }}" = "stg" ]; then
+          if [ "${APPLICATION}" = "image-cleanup-worker" ] && [ "${ENVIRONMENT}" = "stg" ]; then
             echo "::error::image-cleanup-worker cannot be deployed to stg environment"
             exit 1
           fi
@@ -52,11 +55,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Authenticate to Google Cloud
         id: gcp-auth
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
@@ -66,16 +69,21 @@ jobs:
 
       - name: Set deployment variables
         id: vars
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_APPLICATION: ${{ inputs.application }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          GIT_SHA: ${{ github.sha }}
         run: |
-          TAG="${{ inputs.tag }}"
+          TAG="${INPUT_TAG}"
           if [ -z "${TAG}" ]; then
-            TAG="${{ github.sha }}"
+            TAG="${GIT_SHA}"
           fi
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
 
-          ENV="${{ inputs.environment }}"
+          ENV="${INPUT_ENVIRONMENT}"
 
-          case "${{ inputs.application }}" in
+          case "${INPUT_APPLICATION}" in
             reader)
               echo "service_name=hut-stg-reader" >> "${GITHUB_OUTPUT}"
               echo "dockerfile=applications/frontend/Dockerfile" >> "${GITHUB_OUTPUT}"
@@ -121,8 +129,10 @@ jobs:
       - name: Prepare GCP credentials for Docker build
         id: docker-creds
         if: steps.vars.outputs.app_type == 'frontend'
+        env:
+          GCP_CRED_FILE: ${{ steps.gcp-auth.outputs.credentials_file_path }}
         run: |
-          CRED_FILE="${{ steps.gcp-auth.outputs.credentials_file_path }}"
+          CRED_FILE="${GCP_CRED_FILE}"
           TOKEN_FILE=$(python3 -c "
           import json
           with open('${CRED_FILE}') as f:
@@ -147,10 +157,10 @@ jobs:
           fi
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
         id: build
         with:
           context: ${{ steps.vars.outputs.context }}
@@ -180,21 +190,29 @@ jobs:
             ${{ steps.vars.outputs.app_type == 'frontend' && format('SENTRY_PROJECT={0}', secrets.SENTRY_PROJECT) || '' }}
 
       - name: Deploy to Cloud Run
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_APPLICATION: ${{ inputs.application }}
+          APP_TYPE: ${{ steps.vars.outputs.app_type }}
+          APP_PORT: ${{ steps.vars.outputs.app_port }}
+          SERVICE_NAME: ${{ steps.vars.outputs.service_name }}
+          IMAGE_TAG: ${{ steps.vars.outputs.tag }}
         run: |
-          IMAGE="${REGION}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/hut-${{ inputs.environment }}/${{ inputs.application }}:${{ steps.vars.outputs.tag }}"
+          IMAGE="${REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/hut-${INPUT_ENVIRONMENT}/${INPUT_APPLICATION}:${IMAGE_TAG}"
 
           DEPLOY_ARGS=(
             --image "${IMAGE}"
-            --port "${{ steps.vars.outputs.app_port }}"
+            --port "${APP_PORT}"
             --region "${REGION}"
-            --project "${{ secrets.GCP_PROJECT_ID }}"
+            --project "${GCP_PROJECT_ID}"
           )
 
-          if [ "${{ steps.vars.outputs.app_type }}" = "frontend" ]; then
+          if [ "${APP_TYPE}" = "frontend" ]; then
             DEPLOY_ARGS+=(
-              --update-env-vars "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},NEXT_PUBLIC_USE_FIREBASE_EMULATOR=false"
+              --update-env-vars "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},NEXT_PUBLIC_USE_FIREBASE_EMULATOR=false"
             )
           fi
 
-          gcloud run services update "${{ steps.vars.outputs.service_name }}" \
+          gcloud run services update "${SERVICE_NAME}" \
             "${DEPLOY_ARGS[@]}"
