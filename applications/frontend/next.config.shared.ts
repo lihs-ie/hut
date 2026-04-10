@@ -15,7 +15,12 @@ const EMULATOR_PATTERNS: ReadonlyArray<RemotePattern> = [
 /**
  * アプリ共通で利用する既定の Content Security Policy を生成する。
  */
-const createDefaultContentSecurityPolicy = (isProduction: boolean): string =>
+const EMULATOR_ORIGIN = "http://localhost:9099";
+
+const createDefaultContentSecurityPolicy = (
+  isProduction: boolean,
+  useEmulator: boolean,
+): string =>
   [
     "default-src 'self'",
     isProduction
@@ -24,8 +29,8 @@ const createDefaultContentSecurityPolicy = (isProduction: boolean): string =>
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com",
-    "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com",
+    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com${useEmulator ? ` ${EMULATOR_ORIGIN}` : ""}`,
+    `frame-src 'self' https://accounts.google.com https://*.firebaseapp.com${useEmulator ? ` ${EMULATOR_ORIGIN}` : ""}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -40,7 +45,7 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
   const includeCSP = options?.includeCSP ?? true;
   const contentSecurityPolicy =
     options?.contentSecurityPolicy ??
-    createDefaultContentSecurityPolicy(isProduction);
+    createDefaultContentSecurityPolicy(isProduction, useEmulator);
 
   const remotePatterns: Array<RemotePattern> = [
     ...parseImageRemotePatterns(process.env.IMAGE_REMOTE_PATTERNS),
