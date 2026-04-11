@@ -9,22 +9,18 @@ export type Props = {
 
 export const TechStackList = (props: Props) => (
   <SectionCard title="技術スタック">
-    <div className={styles.list}>
-      {Array.from(props.techStacks.entries()).map(([category, stacks]) => (
-        <div key={category} className={styles.items}>
-          <h3 className={styles.category}>{category.toUpperCase()}</h3>
-
-          {stacks.map((stack, index) => (
-            <TechStackCard
-              key={index}
-              from={stack.from}
-              now={props.now}
-              techStackName={stack.name}
-              techStackLogo={stack.logo}
-            />
-          ))}
-        </div>
-      ))}
+    <div className={styles.items}>
+      {Array.from(props.techStacks.values())
+        .flat()
+        .map((stack, index) => (
+          <TechStackCard
+            key={index}
+            from={stack.from}
+            now={props.now}
+            techStackName={stack.name}
+            techStackLogo={stack.logo}
+          />
+        ))}
     </div>
   </SectionCard>
 );
