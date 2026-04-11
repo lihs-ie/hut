@@ -1,11 +1,17 @@
 import { z } from "zod";
 
-export const revalidation = z
-  .object({
-    readerEndpoint: z.url(),
-    secret: z.string().min(1),
-  })
-  .parse({
-    readerEndpoint: process.env.READER_ENDPOINT,
-    secret: process.env.REVALIDATION_SECRET,
-  });
+const revalidationSchema = z.object({
+  readerEndpoint: z.url(),
+  secret: z.string().min(1),
+});
+
+type Revalidation = z.infer<typeof revalidationSchema>;
+
+const parsed = revalidationSchema.safeParse({
+  readerEndpoint: process.env.READER_ENDPOINT,
+  secret: process.env.REVALIDATION_SECRET,
+});
+
+export const revalidation: Revalidation | undefined = parsed.success
+  ? parsed.data
+  : undefined;
