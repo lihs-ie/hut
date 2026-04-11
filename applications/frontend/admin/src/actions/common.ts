@@ -16,8 +16,9 @@ const ALLOWED_IMAGE_CONTENT_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
-  "image/svg+xml",
 ] as const;
+
+const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
 const validateUploadPath = (path: string): void => {
   if (path.includes("..") || path.startsWith("./")) {
@@ -56,6 +57,16 @@ const validateImageContentType = (file: File | Blob): void => {
   }
 };
 
+const validateImageFileSize = (file: File | Blob): void => {
+  if (file.size > MAX_IMAGE_SIZE_BYTES) {
+    throw new ValidationHttpError("ファイルサイズが大きすぎます", [
+      {
+        message: `ファイルサイズは${MAX_IMAGE_SIZE_BYTES / (1024 * 1024)}MB以下にしてください`,
+      },
+    ]);
+  }
+};
+
 export async function uploadImage(
   file: File | Blob,
   path: string,
@@ -64,6 +75,7 @@ export async function uploadImage(
 
   validateUploadPath(path);
   validateImageContentType(file);
+  validateImageFileSize(file);
 
   return unwrapForNextJs(
     AdminImageUploaderProvider.firebaseAdmin.upload(file, path),

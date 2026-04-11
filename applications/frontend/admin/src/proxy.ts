@@ -14,10 +14,45 @@ export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|logo).*)"],
 };
 
+const resolveAllowedHosts = (): ReadonlyArray<string> | null => {
+  const allowedOrigins = process.env.SERVER_ACTIONS_ALLOWED_ORIGINS;
+
+  if (!allowedOrigins) {
+    return null;
+  }
+
+  return allowedOrigins
+    .split(",")
+    .map((origin) => {
+      try {
+        return new URL(origin.trim()).host;
+      } catch {
+        return null;
+      }
+    })
+    .filter((host): host is string => host !== null);
+};
+
+const isAllowedHost = (request: NextRequest): boolean => {
+  const allowedHosts = resolveAllowedHosts();
+
+  if (allowedHosts === null) {
+    return true;
+  }
+
+  const requestHost = request.headers.get("host");
+
+  return requestHost !== null && allowedHosts.includes(requestHost);
+};
+
 /**
  * Enforce access control for admin routes.
  */
 export async function proxy(request: NextRequest) {
+  if (!isAllowedHost(request)) {
+    return new NextResponse("Misdirected Request", { status: 421 });
+  }
+
   const adminSession = request.cookies.get("admin_session")?.value ?? null;
   const pathname = request.nextUrl.pathname;
   const isLoginPage = pathname === "/admin/login";
@@ -49,7 +84,11 @@ export async function proxy(request: NextRequest) {
 
     if (adminSession) {
       return await OIDCServerProvider.verifySessionCookie(adminSession).match({
-        ok: () => NextResponse.redirect(new URL("/", request.url)),
+        ok: () => {
+          const redirectUrl = request.nextUrl.clone();
+          redirectUrl.pathname = "/";
+          return NextResponse.redirect(redirectUrl);
+        },
         err: (error: OidcAuthError) => {
           if (isRecoverableAuthError(error)) {
             const response = NextResponse.next();
@@ -66,16 +105,18 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!adminSession) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/admin/login";
+    return NextResponse.redirect(loginUrl);
   }
 
   return await OIDCServerProvider.verifySessionCookie(adminSession).match({
     ok: () => NextResponse.next(),
     err: (error: OidcAuthError) => {
       if (isRecoverableAuthError(error)) {
-        const response = NextResponse.redirect(
-          new URL("/admin/login", request.url),
-        );
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = "/admin/login";
+        const response = NextResponse.redirect(loginUrl);
         response.cookies.delete("admin_session");
         return response;
       }

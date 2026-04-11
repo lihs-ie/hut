@@ -128,6 +128,58 @@ describe("uploadImage - パストラバーサル防止", () => {
         uploadImage(phpFile, "images/articles/test.php"),
       ).rejects.toThrow();
     });
+
+    it("SVGファイル (image/svg+xml) を拒否する", async () => {
+      const { uploadImage } = await import("@/actions/common");
+      const svgFile = new Blob(
+        ['<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'],
+        { type: "image/svg+xml" },
+      );
+
+      await expect(
+        uploadImage(svgFile, "images/articles/test.svg"),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe("ファイルサイズ制限", () => {
+    beforeEach(async () => {
+      const { isAdmin } = await import("@/actions/auth");
+      vi.mocked(isAdmin).mockResolvedValue(true);
+    });
+
+    it("10MBを超えるファイルを拒否する", async () => {
+      const { uploadImage } = await import("@/actions/common");
+      const largeContent = new Uint8Array(10 * 1024 * 1024 + 1);
+      const largeFile = new Blob([largeContent], { type: "image/png" });
+
+      await expect(
+        uploadImage(largeFile, "images/articles/large.png"),
+      ).rejects.toThrow();
+    });
+
+    it("10MB以下のファイルは通過する", async () => {
+      const { isAdmin } = await import("@/actions/auth");
+      vi.mocked(isAdmin).mockResolvedValue(true);
+
+      const { AdminImageUploaderProvider } = await import(
+        "@/providers/infrastructure/storage"
+      );
+      vi.mocked(AdminImageUploaderProvider.firebaseAdmin.upload).mockReturnValue(
+        {
+          match: ({ ok }: { ok: (value: string) => string }) =>
+            Promise.resolve(ok("https://example.com/image.png")),
+        } as never,
+      );
+
+      const { uploadImage } = await import("@/actions/common");
+      const content = new Uint8Array(10 * 1024 * 1024);
+      const file = new Blob([content], { type: "image/png" });
+
+      await expect(
+        uploadImage(file, "images/articles/ok.png"),
+      ).resolves.toBe("https://example.com/image.png");
+    });
   });
 
   describe("images/series/ プレフィックスも許可される", () => {

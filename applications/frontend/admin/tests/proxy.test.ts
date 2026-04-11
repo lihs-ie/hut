@@ -27,10 +27,18 @@ import { OIDCServerProvider } from "@/providers/acl/oidc/server";
 
 const createMockRequest = (
   path: string,
-  options?: { method?: string; cookies?: Record<string, string> },
+  options?: {
+    method?: string;
+    cookies?: Record<string, string>;
+    headers?: Record<string, string>;
+  },
 ): NextRequest => {
   const request = new NextRequest(new URL(path, "http://localhost:3001"), {
     method: options?.method ?? "GET",
+    headers: {
+      host: "localhost:3001",
+      ...options?.headers,
+    },
   });
 
   if (options?.cookies) {
@@ -43,18 +51,66 @@ const createMockRequest = (
 };
 
 describe("proxy", () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env = { ...originalEnv };
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    process.env = originalEnv;
   });
 
   describe("config", () => {
     it("matcher が設定されている", () => {
       expect(config.matcher).toBeDefined();
       expect(config.matcher.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Hostヘッダー検証", () => {
+    it("SERVER_ACTIONS_ALLOWED_ORIGINS 未設定の場合は全ホストを許可する", async () => {
+      delete process.env.SERVER_ACTIONS_ALLOWED_ORIGINS;
+      vi.mocked(enforceLoginRateLimit).mockResolvedValue({ allowed: true });
+
+      const request = createMockRequest("/admin/login");
+      const response = await proxy(request);
+
+      expect(response.status).not.toBe(421);
+    });
+
+    it("許可されていないホストからのリクエストは 421 を返す", async () => {
+      process.env.SERVER_ACTIONS_ALLOWED_ORIGINS = "https://admin.example.com";
+
+      const request = createMockRequest("/admin/login", {
+        headers: { host: "evil.com" },
+      });
+      const response = await proxy(request);
+
+      expect(response.status).toBe(421);
+    });
+
+    it("許可されたホストからのリクエストは通過する", async () => {
+      process.env.SERVER_ACTIONS_ALLOWED_ORIGINS = "http://localhost:3001";
+      vi.mocked(enforceLoginRateLimit).mockResolvedValue({ allowed: true });
+
+      const request = createMockRequest("/admin/login");
+      const response = await proxy(request);
+
+      expect(response.status).not.toBe(421);
+    });
+
+    it("複数の許可オリジンからホストを正しく抽出する", async () => {
+      process.env.SERVER_ACTIONS_ALLOWED_ORIGINS =
+        "https://admin.example.com,http://localhost:3001";
+      vi.mocked(enforceLoginRateLimit).mockResolvedValue({ allowed: true });
+
+      const request = createMockRequest("/admin/login");
+      const response = await proxy(request);
+
+      expect(response.status).not.toBe(421);
     });
   });
 
