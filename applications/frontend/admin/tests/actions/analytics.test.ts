@@ -14,6 +14,7 @@ const ULID_M1 = "01JMABCDEF0123456789ABCDE5";
 const ULID_TAG1 = "01JMABCDEF0123456789ABCDE6";
 const ULID_TAG2 = "01JMABCDEF0123456789ABCDE7";
 
+const mockRequireAdmin = vi.fn();
 const mockLoadCurrentPageViews = vi.fn();
 const mockLoadPreviousPageViews = vi.fn();
 const mockLoadCurrentEngagement = vi.fn();
@@ -26,6 +27,10 @@ const mockLoadZeroHitSearchRecords = vi.fn();
 const mockLoadAllArticles = vi.fn();
 const mockLoadAllMemos = vi.fn();
 const mockLoadAllTags = vi.fn();
+
+vi.mock("@/aspects/auth-guard", () => ({
+  requireAdmin: (...args: unknown[]) => mockRequireAdmin(...args),
+}));
 
 vi.mock("@/actions/analytics/loader", () => ({
   loadCurrentPageViews: (...args: unknown[]) =>
@@ -161,6 +166,38 @@ function buildMemo(identifier: string, title: string) {
 describe("analytics server actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockRequireAdmin.mockResolvedValue(undefined);
+  });
+
+  describe("認証ガード", () => {
+    const actionNames = [
+      "getTotalPageViews",
+      "getPageViewTrend",
+      "getReferrerRanking",
+      "getDeviceDistribution",
+      "getUniqueVisitors",
+      "getAverageDwellTime",
+      "getDwellTimeRanking",
+      "getScrollDepthDistribution",
+      "getSearchCount",
+      "getSearchKeywordRanking",
+      "getSearchCountTrend",
+      "getZeroHitKeywords",
+      "getContentRanking",
+      "getTagPageViews",
+      "getContentTypeComparison",
+    ] as const;
+
+    actionNames.forEach((actionName) => {
+      it(`${actionName} は未認証の場合エラーをスローする`, async () => {
+        mockRequireAdmin.mockRejectedValue(new Error("認証が必要です"));
+
+        const analytics = await import("@/actions/analytics");
+        const action = analytics[actionName] as (period: string) => Promise<unknown>;
+
+        await expect(action("30d")).rejects.toThrow("認証が必要です");
+      });
+    });
   });
 
   describe("getTotalPageViews", () => {

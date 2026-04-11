@@ -1,5 +1,6 @@
 "use server";
 
+import { requireAdmin } from "@/aspects/auth-guard";
 import {
   loadCurrentPageViews,
   loadPreviousPageViews,
@@ -49,6 +50,8 @@ import {
 export async function getTotalPageViews(
   period: string,
 ): Promise<PeriodComparison> {
+  await requireAdmin();
+
   const [current, previous] = await Promise.all([
     loadCurrentPageViews(period),
     loadPreviousPageViews(period),
@@ -60,6 +63,8 @@ export async function getTotalPageViews(
 }
 
 export async function getPageViewTrend(period: string): Promise<TrendPoint[]> {
+  await requireAdmin();
+
   const pageViews = await loadCurrentPageViews(period);
   return aggregateByDate(pageViews);
 }
@@ -67,6 +72,8 @@ export async function getPageViewTrend(period: string): Promise<TrendPoint[]> {
 export async function getReferrerRanking(
   period: string,
 ): Promise<RankedItem[]> {
+  await requireAdmin();
+
   const pageViews = await loadCurrentPageViews(period);
   return aggregateByReferrer(pageViews);
 }
@@ -74,6 +81,8 @@ export async function getReferrerRanking(
 export async function getDeviceDistribution(
   period: string,
 ): Promise<Distribution[]> {
+  await requireAdmin();
+
   const pageViews = await loadCurrentPageViews(period);
   return aggregateByDevice(pageViews);
 }
@@ -81,6 +90,8 @@ export async function getDeviceDistribution(
 export async function getUniqueVisitors(
   period: string,
 ): Promise<PeriodComparison> {
+  await requireAdmin();
+
   const [current, previous] = await Promise.all([
     loadCurrentUniqueVisitors(period),
     loadPreviousUniqueVisitors(period),
@@ -94,6 +105,8 @@ export async function getUniqueVisitors(
 export async function getAverageDwellTime(
   period: string,
 ): Promise<PeriodComparison> {
+  await requireAdmin();
+
   const [current, previous] = await Promise.all([
     loadCurrentEngagement(period),
     loadPreviousEngagement(period),
@@ -107,6 +120,8 @@ export async function getAverageDwellTime(
 export async function getDwellTimeRanking(
   period: string,
 ): Promise<RankedItem[]> {
+  await requireAdmin();
+
   const [records, articles, memos] = await Promise.all([
     loadCurrentEngagement(period),
     loadAllArticles(),
@@ -120,6 +135,8 @@ export async function getDwellTimeRanking(
 export async function getScrollDepthDistribution(
   period: string,
 ): Promise<Distribution[]> {
+  await requireAdmin();
+
   const records = await loadCurrentEngagement(period);
   return aggregateScrollDepth(records);
 }
@@ -127,6 +144,8 @@ export async function getScrollDepthDistribution(
 export async function getSearchCount(
   period: string,
 ): Promise<PeriodComparison> {
+  await requireAdmin();
+
   const [current, previous] = await Promise.all([
     loadCurrentSearchRecords(period),
     loadPreviousSearchRecords(period),
@@ -140,6 +159,8 @@ export async function getSearchCount(
 export async function getSearchKeywordRanking(
   period: string,
 ): Promise<RankedItem[]> {
+  await requireAdmin();
+
   const records = await loadCurrentSearchRecords(period);
   return aggregateByKeyword(records);
 }
@@ -147,6 +168,8 @@ export async function getSearchKeywordRanking(
 export async function getSearchCountTrend(
   period: string,
 ): Promise<TrendPoint[]> {
+  await requireAdmin();
+
   const records = await loadCurrentSearchRecords(period);
   return aggregateSearchByDate(records);
 }
@@ -154,11 +177,15 @@ export async function getSearchCountTrend(
 export async function getZeroHitKeywords(
   period: string,
 ): Promise<RankedItem[]> {
+  await requireAdmin();
+
   const records = await loadZeroHitSearchRecords(period);
   return aggregateByKeyword(records);
 }
 
 export async function getContentRanking(period: string): Promise<RankedItem[]> {
+  await requireAdmin();
+
   const [pageViews, articles, memos] = await Promise.all([
     loadCurrentPageViews(period),
     loadAllArticles(),
@@ -170,6 +197,8 @@ export async function getContentRanking(period: string): Promise<RankedItem[]> {
 }
 
 export async function getTagPageViews(period: string): Promise<RankedItem[]> {
+  await requireAdmin();
+
   const [pageViews, articles, tags] = await Promise.all([
     loadCurrentPageViews(period),
     loadAllArticles(),
@@ -183,6 +212,8 @@ export async function getTagPageViews(period: string): Promise<RankedItem[]> {
 export async function getContentTypeComparison(
   period: string,
 ): Promise<Distribution[]> {
+  await requireAdmin();
+
   const pageViews = await loadCurrentPageViews(period);
   return aggregateByContentType(pageViews);
 }

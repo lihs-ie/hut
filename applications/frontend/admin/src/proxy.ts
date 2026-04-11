@@ -49,7 +49,11 @@ export async function proxy(request: NextRequest) {
 
     if (adminSession) {
       return await OIDCServerProvider.verifySessionCookie(adminSession).match({
-        ok: () => NextResponse.redirect(new URL("/", request.url)),
+        ok: () => {
+          const redirectUrl = request.nextUrl.clone();
+          redirectUrl.pathname = "/";
+          return NextResponse.redirect(redirectUrl);
+        },
         err: (error: OidcAuthError) => {
           if (isRecoverableAuthError(error)) {
             const response = NextResponse.next();
@@ -66,16 +70,18 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!adminSession) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/admin/login";
+    return NextResponse.redirect(loginUrl);
   }
 
   return await OIDCServerProvider.verifySessionCookie(adminSession).match({
     ok: () => NextResponse.next(),
     err: (error: OidcAuthError) => {
       if (isRecoverableAuthError(error)) {
-        const response = NextResponse.redirect(
-          new URL("/admin/login", request.url),
-        );
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = "/admin/login";
+        const response = NextResponse.redirect(loginUrl);
         response.cookies.delete("admin_session");
         return response;
       }
