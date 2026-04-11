@@ -79,6 +79,7 @@ const adminBaseURL = process.env.ADMIN_BASE_URL ?? "http://localhost:3001";
 const readerBaseURL = process.env.READER_BASE_URL ?? "http://localhost:3000";
 
 const readerTestFiles = [
+  "**/accessibility.spec.ts",
   "**/article-detail.spec.ts",
   "**/memo-detail.spec.ts",
   "**/home.spec.ts",
