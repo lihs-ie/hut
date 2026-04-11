@@ -55,6 +55,11 @@ variable "oauth_client_secret" {
   sensitive   = true
 }
 
+variable "reader_endpoint" {
+  description = "URL of the reader application (Cloudflare Workers) for on-demand revalidation"
+  type        = string
+}
+
 variable "billing_export_service_account" {
   description = "Service account email used by GCP Billing to write export data to BigQuery"
   type        = string
