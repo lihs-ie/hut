@@ -59,9 +59,9 @@ const validateImageContentType = (file: File | Blob): void => {
 
 const validateImageFileSize = (file: File | Blob): void => {
   if (file.size > MAX_IMAGE_SIZE_BYTES) {
-    throw new ValidationHttpError("ファイルサ���ズが大きすぎます", [
+    throw new ValidationHttpError("ファイルサイズが大きすぎます", [
       {
-        message: `ファイル���イズは${MAX_IMAGE_SIZE_BYTES / (1024 * 1024)}MB以下にしてください`,
+        message: `ファイルサイズは${MAX_IMAGE_SIZE_BYTES / (1024 * 1024)}MB以下にしてください`,
       },
     ]);
   }
