@@ -60,7 +60,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         revalidateTag(tag, {});
       }
     })
-    .match({
+    .match<NextResponse>({
       ok: () => NextResponse.json({ revalidated: true }),
       err: (error) =>
         NextResponse.json({ message: error.message }, { status: error.status }),
