@@ -16,6 +16,13 @@ const applyViteConfig: StorybookConfig["viteFinal"] = async (config) => {
   return {
     ...config,
     plugins,
+    resolve: {
+      ...config.resolve,
+      alias: {
+        ...(config.resolve?.alias as Record<string, string>),
+        "@/": `${path.resolve(workspaceRoot, "admin/src")}/`,
+      },
+    },
   };
 };
 
