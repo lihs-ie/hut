@@ -32,13 +32,20 @@
   height: 100%;
   width: 2px;
   background-color: var(--border);
-  left: 5%;
+  left: 0;
   top: 0;
+  transform: translateX(-50%);
+}
+
+@media (min-width: 768px) {
+  .line {
+    left: 1.5rem;
+  }
 }
 
 .point {
   position: absolute;
-  left: calc(5% - 5px);
+  left: 0;
   top: 0;
   width: 0.75rem;
   height: 0.75rem;
@@ -46,6 +53,13 @@
   border: 2px solid var(--primary);
   background-color: var(--background);
   z-index: 1;
+  transform: translateX(-50%);
+}
+
+@media (min-width: 768px) {
+  .point {
+    left: 1.5rem;
+  }
 }
 
 .card {
