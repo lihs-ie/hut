@@ -85,6 +85,7 @@ module "identity_platform" {
     "localhost",
     "${var.project_id}.firebaseapp.com",
     "${var.project_id}.web.app",
+    replace(module.cloudrun_admin.service_uri, "https://", ""),
   ]
   oauth_client_id     = var.oauth_client_id
   oauth_client_secret = var.oauth_client_secret
