@@ -18,6 +18,17 @@ module "firestore" {
   delete_protection   = true
   enable_daily_backup = true
   backup_retention    = "604800s"
+
+  composite_indexes = [
+    {
+      name       = "articles-status-created-at"
+      collection = "articles"
+      fields = [
+        { field_path = "status", order = "ASCENDING" },
+        { field_path = "timeline.createdAt", order = "DESCENDING" },
+      ]
+    },
+  ]
 }
 ```
 
@@ -31,6 +42,8 @@ module "firestore" {
 | delete_protection | Whether to enable delete protection on the database | `bool` | `false` | no |
 | enable_daily_backup | Whether to enable daily automatic backup of the Firestore database | `bool` | `false` | no |
 | backup_retention | Retention period for Firestore backups in duration format (e.g. 604800s for 7 days) | `string` | `"604800s"` | no |
+| rules_file | Path to the Firestore security rules file | `string` | `null` | no |
+| composite_indexes | Composite indexes to create on the Firestore database | `list(object)` | `[]` | no |
 
 ## Outputs
 

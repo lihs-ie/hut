@@ -37,3 +37,17 @@ variable "rules_file" {
   type        = string
   default     = null
 }
+
+variable "composite_indexes" {
+  description = "Composite indexes to create on the Firestore database"
+  type = list(object({
+    name        = string
+    collection  = string
+    query_scope = optional(string, "COLLECTION")
+    fields = list(object({
+      field_path = string
+      order      = optional(string)
+    }))
+  }))
+  default = []
+}
