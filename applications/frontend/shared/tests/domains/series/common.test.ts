@@ -14,6 +14,7 @@ import {
   criteriaSchema,
   validateCriteria,
 } from "@shared/domains/series";
+import { SortByField, Order } from "@shared/domains/common/sort";
 import { chapterIdentifierSchema } from "@shared/domains/series/chapter";
 import { PublishStatus } from "@shared/domains/common";
 import {
@@ -411,6 +412,97 @@ describe("domains/series/common", () => {
     it("無効なCriteriaでerrを返す", () => {
       const result = validateCriteria({ slug: "Invalid Slug", tags: null, status: null, freeWord: null });
       expect(result.isErr).toBe(true);
+    });
+  });
+
+  describe("criteriaSchema sortBy/order", () => {
+    it("sortByにcreatedAtを指定できる", () => {
+      const result = criteriaSchema.safeParse({
+        slug: null,
+        tags: null,
+        status: null,
+        freeWord: null,
+        sortBy: SortByField.CREATED_AT,
+        order: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("sortByにupdatedAtを指定できる", () => {
+      const result = criteriaSchema.safeParse({
+        slug: null,
+        tags: null,
+        status: null,
+        freeWord: null,
+        sortBy: SortByField.UPDATED_AT,
+        order: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("orderにascを指定できる", () => {
+      const result = criteriaSchema.safeParse({
+        slug: null,
+        tags: null,
+        status: null,
+        freeWord: null,
+        sortBy: null,
+        order: Order.ASC,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("orderにdescを指定できる", () => {
+      const result = criteriaSchema.safeParse({
+        slug: null,
+        tags: null,
+        status: null,
+        freeWord: null,
+        sortBy: null,
+        order: Order.DESC,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("sortByとorderを省略しても有効", () => {
+      const result = criteriaSchema.safeParse({ slug: null, tags: null, status: null, freeWord: null });
+      expect(result.success).toBe(true);
+    });
+
+    it("不正なsortByは無効", () => {
+      const result = criteriaSchema.safeParse({
+        slug: null,
+        tags: null,
+        status: null,
+        freeWord: null,
+        sortBy: "invalid-field",
+        order: null,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("不正なorderは無効", () => {
+      const result = criteriaSchema.safeParse({
+        slug: null,
+        tags: null,
+        status: null,
+        freeWord: null,
+        sortBy: null,
+        order: "invalid-order",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("sortByとorderを指定して有効なCriteriaを生成できる", () => {
+      const result = validateCriteria({
+        slug: null,
+        tags: null,
+        status: null,
+        freeWord: null,
+        sortBy: "createdAt",
+        order: "desc",
+      });
+      expect(result.isOk).toBe(true);
     });
   });
 });

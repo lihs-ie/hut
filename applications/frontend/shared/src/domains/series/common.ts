@@ -1,6 +1,7 @@
 import z from "zod";
 import { publishStatusSchema, Slug, slugSchema } from "../common";
 import { timelineSchema } from "../common/date";
+import { sortByFieldSchema, orderSchema } from "../common/sort";
 import { AsyncResult, err, ok, Result } from "@shared/aspects/result";
 import {
   AggregateNotFoundError,
@@ -117,6 +118,8 @@ export const criteriaSchema = z
     tags: z.array(tagIdentifierSchema).nullable(),
     status: publishStatusSchema.nullable(),
     freeWord: z.string().min(1).max(100).nullable(),
+    sortBy: sortByFieldSchema.nullable().default(null),
+    order: orderSchema.nullable().default(null),
   })
   .brand("Criteria");
 
@@ -127,6 +130,8 @@ export type UnvalidatedCriteria = {
   tags: string[] | null;
   status: string | null;
   freeWord: string | null;
+  sortBy?: string | null;
+  order?: string | null;
 };
 
 export const validateCriteria = (
