@@ -11,7 +11,6 @@ on:
           - reader
           - admin
           - search-token-worker
-          - image-cleanup-worker
       environment:
         description: "Target environment"
         required: true
@@ -23,6 +22,27 @@ on:
         description: "Image tag (defaults to git SHA)"
         required: false
         type: string
+  workflow_call:
+    inputs:
+      application:
+        description: "Application to deploy"
+        required: true
+        type: string
+      environment:
+        description: "Target environment"
+        required: true
+        type: string
+      tag:
+        description: "Image tag (defaults to git SHA)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.application }}-${{ inputs.environment }}
+  cancel-in-progress: false
 
 env:
   REGION: asia-northeast1
@@ -36,12 +56,22 @@ jobs:
           APPLICATION: ${{ inputs.application }}
           ENVIRONMENT: ${{ inputs.environment }}
         run: |
+          case "${APPLICATION}" in
+            reader|admin|search-token-worker) ;;
+            *)
+              echo "::error::unsupported application: ${APPLICATION}"
+              exit 1
+              ;;
+          esac
+          case "${ENVIRONMENT}" in
+            stg|prd) ;;
+            *)
+              echo "::error::unsupported environment: ${ENVIRONMENT}"
+              exit 1
+              ;;
+          esac
           if [ "${APPLICATION}" = "reader" ] && [ "${ENVIRONMENT}" = "prd" ]; then
             echo "::error::reader cannot be deployed to prd environment"
-            exit 1
-          fi
-          if [ "${APPLICATION}" = "image-cleanup-worker" ] && [ "${ENVIRONMENT}" = "stg" ]; then
-            echo "::error::image-cleanup-worker cannot be deployed to stg environment"
             exit 1
           fi
 
@@ -65,7 +95,7 @@ jobs:
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
 
       - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${REGION}-docker.pkg.dev
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev"
 
       - name: Set deployment variables
         id: vars
@@ -114,14 +144,6 @@ jobs:
               echo "context=applications/search-token-worker" >> "${GITHUB_OUTPUT}"
               echo "app_type=worker" >> "${GITHUB_OUTPUT}"
               echo "app_name=search-token-worker" >> "${GITHUB_OUTPUT}"
-              echo "app_port=8080" >> "${GITHUB_OUTPUT}"
-              ;;
-            image-cleanup-worker)
-              echo "service_name=image-cleanup-worker" >> "${GITHUB_OUTPUT}"
-              echo "dockerfile=applications/image-cleanup-worker/Dockerfile" >> "${GITHUB_OUTPUT}"
-              echo "context=applications/image-cleanup-worker" >> "${GITHUB_OUTPUT}"
-              echo "app_type=worker" >> "${GITHUB_OUTPUT}"
-              echo "app_name=image-cleanup-worker" >> "${GITHUB_OUTPUT}"
               echo "app_port=8080" >> "${GITHUB_OUTPUT}"
               ;;
           esac

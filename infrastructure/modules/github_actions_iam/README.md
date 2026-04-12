@@ -30,7 +30,9 @@ module "github_actions_iam" {
 | pool\_id | Workload Identity Pool ID | `string` | `"github-actions"` | no |
 | provider\_id | WIF Provider ID | `string` | `"github-oidc"` | no |
 | service\_account\_id | Deployer service account ID | `string` | `"github-deployer"` | no |
-| deployer\_roles | IAM roles for the deployer | `list(string)` | `["roles/run.developer", "roles/artifactregistry.writer", "roles/iam.serviceAccountUser"]` | no |
+| deployer\_roles | IAM roles for the deployer | `list(string)` | `["roles/run.developer", "roles/artifactregistry.writer", "roles/iam.serviceAccountUser", "roles/datastore.user", "roles/viewer"]` | no |
+
+`roles/viewer` is included by default because the deployer SA is also used by the Terraform CI workflow (`terraform-ci.yml`) to read the GCS backend state and existing GCP resources during `terraform plan`. Remove it if plan permissions are managed by a separate service account.
 
 ## Outputs
 
