@@ -113,6 +113,7 @@ module "firebase_storage" {
   bucket_name        = "${var.project_id}.firebasestorage.app"
   location           = var.region
   versioning_enabled = true
+  rules_file         = "${path.module}/../../../storage.rules"
 
   labels = local.common_labels
 }

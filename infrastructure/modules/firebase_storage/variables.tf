@@ -54,3 +54,9 @@ variable "labels" {
   type        = map(string)
   default     = {}
 }
+
+variable "rules_file" {
+  description = "Path to the Firebase Storage security rules file. If null, rules are not managed by Terraform."
+  type        = string
+  default     = null
+}
