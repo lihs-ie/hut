@@ -419,6 +419,7 @@
 * start infrastructure work for issue [#64](https://github.com/lihs-ie/hut/issues/64) ([e6f6642](https://github.com/lihs-ie/hut/commit/e6f6642df9a6da98ed6a3d1d2f5aa8799b95d4fe))
 * start ISR/SSG optimization for Reader App ([a7e8867](https://github.com/lihs-ie/hut/commit/a7e8867efbe85549ef8c0f7ec9c5e3493fcf3bd5))
 * start work on issue [#114](https://github.com/lihs-ie/hut/issues/114) ([ceafd39](https://github.com/lihs-ie/hut/commit/ceafd39c6cf70e2f85697b1f24a3c640475ef0d0))
+* sync staging to main ([a8800ad](https://github.com/lihs-ie/hut/commit/a8800ad018574934e488c6ee8a56dab80aca67b3))
 * **testing:** E2Eテストにアクセシビリティ自動チェックを導入 ([1240230](https://github.com/lihs-ie/hut/commit/1240230742076eb9faceebf8f2faa42ed5873f9e))
 * **testing:** initialize vitest coverage configuration ([431e86e](https://github.com/lihs-ie/hut/commit/431e86e5a70962e5d0d0eda9ad540b2220d9fb50))
 * **testing:** Vitestのテストカバレッジ計測を有効化 ([362a477](https://github.com/lihs-ie/hut/commit/362a477b960366e99d6e56c597fea67acc347e6b)), closes [#154](https://github.com/lihs-ie/hut/issues/154)
