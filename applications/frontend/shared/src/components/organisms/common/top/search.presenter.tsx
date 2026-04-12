@@ -57,7 +57,6 @@ export const ContentSectionPresenter = (props: Props) => {
         </div>
         <ContentEmpty
           title="まだコンテンツがありません"
-          description="コンテンツが公開されるとここに表示されます"
           icon={emptyIconFor(props.type)}
         />
       </section>
