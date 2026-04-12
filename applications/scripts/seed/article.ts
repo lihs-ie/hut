@@ -8,6 +8,7 @@ export async function seedArticles(): Promise<void> {
   console.log("\n--- Creating Articles ---");
 
   const now = new Date();
+  const oneDayMs = 24 * 60 * 60 * 1000;
 
   const articles = [
     {
@@ -49,6 +50,7 @@ function identity<T>(arg: T): T {
         "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800",
       status: "published",
       tags: [TAG_IDS.typescript],
+      createdAt: new Date(now.getTime() - 5 * oneDayMs),
     },
     {
       id: ARTICLE_IDS.article2,
@@ -83,6 +85,7 @@ Reactでコンポーネントを設計する際の主要なパターンを紹介
         "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800",
       status: "published",
       tags: [TAG_IDS.react, TAG_IDS.typescript],
+      createdAt: new Date(now.getTime() - 4 * oneDayMs),
     },
     {
       id: ARTICLE_IDS.article3,
@@ -117,6 +120,7 @@ Next.js 13で導入されたApp Routerは、新しいルーティングシステ
         "https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800",
       status: "draft",
       tags: [TAG_IDS.nextjs, TAG_IDS.react, TAG_IDS.typescript],
+      createdAt: new Date(now.getTime() - 3 * oneDayMs),
     },
     {
       id: ARTICLE_IDS.article4,
@@ -159,6 +163,7 @@ Markdown記法を使えば、テキスト・画像・コードを組み合わせ
         "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800",
       status: "published",
       tags: [TAG_IDS.typescript, TAG_IDS.react],
+      createdAt: new Date(now.getTime() - 2 * oneDayMs),
     },
     {
       id: ARTICLE_IDS.article5,
@@ -195,6 +200,7 @@ Mermaid記法を使えば、テキストベースで図を管理できます。
         "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800",
       status: "published",
       tags: [TAG_IDS.typescript],
+      createdAt: new Date(now.getTime() - 1 * oneDayMs),
     },
     {
       id: ARTICLE_IDS.article6,
@@ -352,6 +358,7 @@ gitGraph
         "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800",
       status: "published",
       tags: [TAG_IDS.typescript],
+      createdAt: now,
     },
   ];
 
@@ -367,8 +374,8 @@ gitGraph
       tags: article.tags,
       images: [],
       timeline: {
-        createdAt: now,
-        updatedAt: now,
+        createdAt: article.createdAt,
+        updatedAt: article.createdAt,
       },
       version: 1,
     });

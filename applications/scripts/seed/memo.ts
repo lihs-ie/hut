@@ -8,7 +8,8 @@ export async function seedMemos(): Promise<void> {
   console.log("\n--- Creating Memos ---");
 
   const now = new Date();
-  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const yesterday = new Date(now.getTime() - oneDayMs);
 
   const memos = [
     {
@@ -17,6 +18,7 @@ export async function seedMemos(): Promise<void> {
       slug: "go-tips",
       tags: [TAG_IDS.go],
       status: "published",
+      createdAt: now,
       entries: [
         {
           text: "Go言語ではエラーは値として扱う。`error`インターフェースを実装すれば独自エラー型を作れる。",
@@ -34,6 +36,7 @@ export async function seedMemos(): Promise<void> {
       slug: "typescript-config",
       tags: [TAG_IDS.typescript],
       status: "draft",
+      createdAt: yesterday,
       entries: [
         {
           text: "`strict: true`は必須。型安全性を最大限に活用するため。",
@@ -63,7 +66,7 @@ export async function seedMemos(): Promise<void> {
         images: [],
         entries: memo.entries,
         timeline: {
-          createdAt: yesterday,
+          createdAt: memo.createdAt,
           updatedAt: now,
         },
         version: 1,
