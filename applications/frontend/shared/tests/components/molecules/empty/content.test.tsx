@@ -7,15 +7,31 @@ import { ContentEmpty } from "@shared/components/molecules/empty/content";
 
 describe("components/molecules/empty/ContentEmpty", () => {
   describe("デフォルト表示", () => {
-    it("タイトルと説明文が表示される", () => {
-      render(
-        <ContentEmpty title="記事がありません" description="記事が公開されるとここに表示されます" />
-      );
+    it("タイトルが常に表示される", () => {
+      render(<ContentEmpty title="記事がありません" />);
 
       expect(screen.getByText("記事がありません")).toBeInTheDocument();
+    });
+
+    it("descriptionが渡された場合、説明文が表示される", () => {
+      render(
+        <ContentEmpty
+          title="記事がありません"
+          description="記事が公開されるとここに表示されます"
+        />
+      );
+
       expect(
         screen.getByText("記事が公開されるとここに表示されます")
       ).toBeInTheDocument();
+    });
+
+    it("descriptionが渡されない場合、説明文の要素は描画されない", () => {
+      const { container } = render(
+        <ContentEmpty title="記事がありません" />
+      );
+
+      expect(container.querySelector("p")).toBeNull();
     });
   });
 
@@ -45,8 +61,11 @@ describe("components/molecules/empty/ContentEmpty", () => {
         <ContentEmpty title="テスト" description="説明" />
       );
 
-      const className = (container.firstChild as HTMLElement).className;
-      expect(className).toMatch(/container/);
+      const firstChild = container.firstChild;
+      if (!(firstChild instanceof HTMLElement)) {
+        throw new Error("firstChild is not an HTMLElement");
+      }
+      expect(firstChild.className).toMatch(/container/);
     });
   });
 });

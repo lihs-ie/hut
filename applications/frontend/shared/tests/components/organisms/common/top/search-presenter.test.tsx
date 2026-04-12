@@ -26,12 +26,12 @@ describe("components/organisms/common/top/ContentSectionPresenter", () => {
       ).toBeInTheDocument();
     });
 
-    it("コンテンツが0件の場合、説明文が表示される", () => {
+    it("コンテンツが0件の場合、廃止された説明文は表示されない", () => {
       render(<ContentSectionPresenter {...createProps()} />);
 
       expect(
-        screen.getByText("コンテンツが公開されるとここに表示されます")
-      ).toBeInTheDocument();
+        screen.queryByText(/コンテンツが公開される/)
+      ).not.toBeInTheDocument();
     });
   });
 
