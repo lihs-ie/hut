@@ -75,6 +75,33 @@ module "firestore" {
   location_id   = var.firestore_location
   database_name = "(default)"
   rules_file    = "${path.module}/../../../firestore.rules"
+
+  composite_indexes = [
+    {
+      name       = "articles-status-created-at"
+      collection = "articles"
+      fields = [
+        { field_path = "status", order = "ASCENDING" },
+        { field_path = "timeline.createdAt", order = "DESCENDING" },
+      ]
+    },
+    {
+      name       = "memos-status-created-at"
+      collection = "memos"
+      fields = [
+        { field_path = "status", order = "ASCENDING" },
+        { field_path = "timeline.createdAt", order = "DESCENDING" },
+      ]
+    },
+    {
+      name       = "series-status-created-at"
+      collection = "series"
+      fields = [
+        { field_path = "status", order = "ASCENDING" },
+        { field_path = "timeline.createdAt", order = "DESCENDING" },
+      ]
+    },
+  ]
 }
 
 module "identity_platform" {

@@ -36,3 +36,20 @@ resource "google_firestore_backup_schedule" "daily" {
 
   daily_recurrence {}
 }
+
+resource "google_firestore_index" "composite" {
+  for_each = { for index in var.composite_indexes : index.name => index }
+
+  project     = var.project_id
+  database    = google_firestore_database.this.name
+  collection  = each.value.collection
+  query_scope = each.value.query_scope
+
+  dynamic "fields" {
+    for_each = each.value.fields
+    content {
+      field_path = fields.value.field_path
+      order      = fields.value.order
+    }
+  }
+}
