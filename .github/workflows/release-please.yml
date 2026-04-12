@@ -1,0 +1,98 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Run release-please
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - name: Run release-please-action
+        id: release
+        uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  changes:
+    name: Detect deployable changes
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      admin: ${{ steps.filter.outputs.admin }}
+      reader: ${{ steps.filter.outputs.reader }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ needs.release-please.outputs.sha }}
+          fetch-depth: 0
+
+      - name: Resolve previous release tag
+        id: previous
+        env:
+          RELEASE_SHA: ${{ needs.release-please.outputs.sha }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          git fetch --tags --force --quiet
+          PREVIOUS_TAG=$(git tag --list 'v*' --sort=-version:refname | grep -F -v -x "${RELEASE_TAG}" | head -n 1 || true)
+          if [ -z "${PREVIOUS_TAG}" ]; then
+            PREVIOUS_SHA=$(git rev-list --max-parents=0 "${RELEASE_SHA}" | tail -n 1)
+            echo "previous release tag not found. falling back to root commit ${PREVIOUS_SHA}"
+          else
+            PREVIOUS_SHA=$(git rev-parse "${PREVIOUS_TAG}^{commit}")
+            echo "previous release tag: ${PREVIOUS_TAG} (${PREVIOUS_SHA})"
+          fi
+          echo "sha=${PREVIOUS_SHA}" >> "${GITHUB_OUTPUT}"
+
+      - name: Detect paths changed since previous release
+        id: filter
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        with:
+          base: ${{ steps.previous.outputs.sha }}
+          ref: ${{ needs.release-please.outputs.sha }}
+          filters: |
+            admin:
+              - 'applications/frontend/admin/**'
+              - 'applications/frontend/shared/**'
+              - 'applications/frontend/package.json'
+              - 'applications/frontend/pnpm-lock.yaml'
+              - 'applications/docker/**'
+            reader:
+              - 'applications/frontend/reader/**'
+              - 'applications/frontend/shared/**'
+
+  deploy-admin-prd:
+    name: Deploy admin to prd
+    needs: [release-please, changes]
+    if: needs.release-please.outputs.releases_created == 'true' && needs.changes.outputs.admin == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      application: admin
+      environment: prd
+      tag: ${{ needs.release-please.outputs.tag_name }}

@@ -32,12 +32,13 @@ variable "service_account_id" {
 }
 
 variable "deployer_roles" {
-  description = "IAM roles to grant to the deployer service account"
+  description = "IAM roles to grant to the deployer service account. Includes roles/viewer so the SA can run terraform plan against the state bucket and read existing resources in CI."
   type        = list(string)
   default = [
     "roles/run.developer",
     "roles/artifactregistry.writer",
     "roles/iam.serviceAccountUser",
     "roles/datastore.user",
+    "roles/viewer",
   ]
 }
