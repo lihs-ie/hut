@@ -1,0 +1,173 @@
+name: Terraform CI
+
+on:
+  pull_request:
+    paths:
+      - "infrastructure/**"
+      - ".github/workflows/terraform-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TERRAFORM_VERSION: "1.14.8"
+  TFLINT_VERSION: "v0.58.1"
+
+jobs:
+  fmt:
+    name: Terraform fmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Run terraform fmt
+        working-directory: infrastructure
+        run: terraform fmt -check -recursive
+
+  plan:
+    name: Terraform plan (${{ matrix.environment }})
+    needs: fmt
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [stg, prd]
+    environment: ${{ matrix.environment }}
+    defaults:
+      run:
+        working-directory: infrastructure/environments/${{ matrix.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6 # v4
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+
+      - name: Cache TFLint plugins
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ runner.os }}-${{ hashFiles('infrastructure/.tflint.hcl') }}
+
+      - name: TFLint init
+        working-directory: infrastructure
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: TFLint
+        working-directory: infrastructure
+        run: tflint --recursive --format compact
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Terraform init
+        run: terraform init -input=false -lockfile=readonly
+
+      - name: Terraform validate
+        run: terraform validate -no-color
+
+      - name: Terraform plan
+        id: plan
+        env:
+          TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_VAR_region: asia-northeast1
+          TF_VAR_firestore_location: asia-northeast1
+          TF_VAR_github_repository: ${{ github.repository }}
+          TF_VAR_billing_export_service_account: billing-export-bigquery@system.gserviceaccount.com
+          TF_VAR_billing_export_location: asia-northeast1
+          TF_VAR_reader_container_image: us-docker.pkg.dev/cloudrun/container/hello:latest
+          TF_VAR_admin_container_image: us-docker.pkg.dev/cloudrun/container/hello:latest
+          TF_VAR_image_cleanup_worker_container_image: us-docker.pkg.dev/cloudrun/container/hello:latest
+          TF_VAR_search_token_worker_container_image: us-docker.pkg.dev/cloudrun/container/hello:latest
+          TF_VAR_authorized_members: ${{ secrets.TF_VAR_AUTHORIZED_MEMBERS }}
+          TF_VAR_oauth_client_id: ${{ secrets.TF_VAR_OAUTH_CLIENT_ID }}
+          TF_VAR_oauth_client_secret: ${{ secrets.TF_VAR_OAUTH_CLIENT_SECRET }}
+        run: |
+          set +e
+          terraform plan -input=false -no-color -lock=false -out=tfplan | tee plan.txt
+          STATUS=${PIPESTATUS[0]}
+          {
+            echo "plan_exit=${STATUS}"
+          } >> "${GITHUB_OUTPUT}"
+          exit "${STATUS}"
+
+      - name: Read plan output
+        if: always()
+        id: plan-output
+        env:
+          PLAN_FILE: plan.txt
+        run: |
+          if [ ! -f "${PLAN_FILE}" ]; then
+            echo "plan=" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          {
+            echo 'plan<<EOF'
+            tail -c 60000 "${PLAN_FILE}"
+            echo
+            echo EOF
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Upsert PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          MATRIX_ENV: ${{ matrix.environment }}
+          PLAN_TEXT: ${{ steps.plan-output.outputs.plan }}
+          PLAN_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const marker = `<!-- terraform-plan:${process.env.MATRIX_ENV} -->`;
+            const status = process.env.PLAN_STATUS;
+            const planText = (process.env.PLAN_TEXT || '').trim() || '(no plan output)';
+            const body = [
+              marker,
+              `### Terraform plan (${process.env.MATRIX_ENV}) — ${status}`,
+              '',
+              '<details><summary>Plan output</summary>',
+              '',
+              '```hcl',
+              planText,
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }

@@ -55,4 +55,9 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           INPUT_MIGRATION: ${{ inputs.migration }}
           DRY_RUN_FLAG: ${{ inputs.dry_run && '--dry-run' || '' }}
-        run: npx tsx "migrate/${INPUT_MIGRATION}.ts" ${DRY_RUN_FLAG}
+        run: |
+          if [ -n "${DRY_RUN_FLAG}" ]; then
+            npx tsx "migrate/${INPUT_MIGRATION}.ts" "${DRY_RUN_FLAG}"
+          else
+            npx tsx "migrate/${INPUT_MIGRATION}.ts"
+          fi
