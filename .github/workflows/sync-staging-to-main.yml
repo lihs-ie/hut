@@ -28,10 +28,14 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          existing=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number // empty')
-          if [ -n "${existing}" ]; then
-            echo "PR #${existing} already exists. Updating body."
-            gh pr edit "${existing}" --body "$(cat <<'BODY'
+
+          ahead=$(git rev-list --count origin/main..origin/staging)
+          if [ "${ahead}" -eq 0 ]; then
+            echo "staging has no new commits ahead of main. Skipping PR creation."
+            exit 0
+          fi
+
+          body=$(cat <<'BODY'
           ## 概要
           `staging` ブランチを `main` に同期する自動生成 PR。
 
@@ -43,24 +47,17 @@ jobs:
           ---
           このPRは `Sync staging to main` workflow が staging への push 時に自動生成・更新する。
           BODY
-          )"
+          )
+
+          existing=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number // empty')
+          if [ -n "${existing}" ]; then
+            echo "PR #${existing} already exists. Updating body."
+            gh pr edit "${existing}" --body "${body}"
           else
             echo "Creating new staging→main PR"
             gh pr create \
               --base main \
               --head staging \
               --title "chore: sync staging to main" \
-              --body "$(cat <<'BODY'
-          ## 概要
-          `staging` ブランチを `main` に同期する自動生成 PR。
-
-          ## マージ前確認事項
-          - [ ] CI / E2E が pass している
-          - [ ] 含まれる commit を確認
-          - [ ] release-please workflow が走るタイミングを意識する
-
-          ---
-          このPRは `Sync staging to main` workflow が staging への push 時に自動生成・更新する。
-          BODY
-          )"
+              --body "${body}"
           fi
