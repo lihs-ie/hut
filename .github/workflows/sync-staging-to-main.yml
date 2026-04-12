@@ -35,18 +35,37 @@ jobs:
             exit 0
           fi
 
-          body=$(cat <<'BODY'
+          pr_numbers=$(git log origin/main..origin/staging --merges --reverse --pretty=format:'%s' \
+            | grep -oE 'Merge pull request #[0-9]+' \
+            | grep -oE '[0-9]+' || true)
+          prs=""
+          pr_count=0
+          for num in ${pr_numbers}; do
+            title=$(gh pr view "${num}" --json title --jq .title 2>/dev/null || echo "(取得失敗)")
+            prs+="- #${num}: ${title}"$'\n'
+            pr_count=$((pr_count + 1))
+          done
+          if [ -z "${prs}" ]; then
+            prs="(該当 PR なし)"
+          else
+            prs=${prs%$'\n'}
+          fi
+
+          body=$(cat <<EOF
           ## 概要
-          `staging` ブランチを `main` に同期する自動生成 PR。
+          \`staging\` ブランチを \`main\` に同期する自動生成 PR。
+
+          ## 含まれる PR (${pr_count} 件 / ahead ${ahead})
+
+          ${prs}
 
           ## マージ前確認事項
           - [ ] CI / E2E が pass している
-          - [ ] 含まれる commit を確認
           - [ ] release-please workflow が走るタイミングを意識する
 
           ---
-          このPRは `Sync staging to main` workflow が staging への push 時に自動生成・更新する。
-          BODY
+          この PR は \`Sync staging to main\` workflow が staging への push 時に自動生成・更新する。
+          EOF
           )
 
           existing=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number // empty')
