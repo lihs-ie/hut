@@ -24,6 +24,7 @@ import {
   type ArticleSlug,
 } from "@shared/domains/articles";
 import type { FirestoreOperations } from "@shared/infrastructures/common";
+import { TimelineMold } from "../support/molds/domains/common/date";
 
 describe("infrastructures/articles", () => {
   let firestore: Firestore;
@@ -48,12 +49,16 @@ describe("infrastructures/articles", () => {
     status?: PublishStatus | null;
     freeWord?: string | null;
     tags?: TagIdentifier[] | null;
+    sortBy?: string | null;
+    order?: string | null;
   }): Criteria => {
     return validateCriteria({
       slug: params.slug ?? null,
       status: params.status ?? null,
       freeWord: params.freeWord ?? null,
       tags: params.tags ?? null,
+      sortBy: params.sortBy ?? null,
+      order: params.order ?? null,
     }).unwrap();
   };
 
@@ -455,6 +460,99 @@ describe("infrastructures/articles", () => {
 
         expect(found.length).toBe(1);
         expect(found[0]?.identifier).toBe(article1.identifier);
+      });
+    });
+
+    describe("search ordering", () => {
+      it("デフォルトでcreatedAt降順で返る", async () => {
+        const repository = FirebaseArticleRepository(
+          firestore,
+          getOperations(),
+        );
+        const timeline1 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-01-01T00:00:00Z"),
+        });
+        const timeline2 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-02-01T00:00:00Z"),
+          updatedAt: new Date("2024-02-01T00:00:00Z"),
+        });
+        const timeline3 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-03-01T00:00:00Z"),
+          updatedAt: new Date("2024-03-01T00:00:00Z"),
+        });
+
+        const article1 = Forger(ArticleMold).forgeWithSeed(300, { timeline: timeline1 });
+        const article2 = Forger(ArticleMold).forgeWithSeed(301, { timeline: timeline2 });
+        const article3 = Forger(ArticleMold).forgeWithSeed(302, { timeline: timeline3 });
+
+        await repository.persist(article1).unwrap();
+        await repository.persist(article2).unwrap();
+        await repository.persist(article3).unwrap();
+
+        const criteria = createCriteria({});
+        const found = await repository.search(criteria).unwrap();
+
+        expect(found.length).toBe(3);
+        expect(found[0]?.identifier).toBe(article3.identifier);
+        expect(found[1]?.identifier).toBe(article2.identifier);
+        expect(found[2]?.identifier).toBe(article1.identifier);
+      });
+
+      it("order: ascを指定すると昇順で返る", async () => {
+        const repository = FirebaseArticleRepository(
+          firestore,
+          getOperations(),
+        );
+        const timeline1 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-01-01T00:00:00Z"),
+        });
+        const timeline2 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-02-01T00:00:00Z"),
+          updatedAt: new Date("2024-02-01T00:00:00Z"),
+        });
+
+        const article1 = Forger(ArticleMold).forgeWithSeed(310, { timeline: timeline1 });
+        const article2 = Forger(ArticleMold).forgeWithSeed(311, { timeline: timeline2 });
+
+        await repository.persist(article1).unwrap();
+        await repository.persist(article2).unwrap();
+
+        const criteria = createCriteria({ order: "asc" });
+        const found = await repository.search(criteria).unwrap();
+
+        expect(found.length).toBe(2);
+        expect(found[0]?.identifier).toBe(article1.identifier);
+        expect(found[1]?.identifier).toBe(article2.identifier);
+      });
+
+      it("sortBy: updatedAtを指定するとupdatedAt降順で返る", async () => {
+        const repository = FirebaseArticleRepository(
+          firestore,
+          getOperations(),
+        );
+        const timeline1 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-03-01T00:00:00Z"),
+        });
+        const timeline2 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-02-01T00:00:00Z"),
+        });
+
+        const article1 = Forger(ArticleMold).forgeWithSeed(320, { timeline: timeline1 });
+        const article2 = Forger(ArticleMold).forgeWithSeed(321, { timeline: timeline2 });
+
+        await repository.persist(article1).unwrap();
+        await repository.persist(article2).unwrap();
+
+        const criteria = createCriteria({ sortBy: "updatedAt", order: "desc" });
+        const found = await repository.search(criteria).unwrap();
+
+        expect(found.length).toBe(2);
+        expect(found[0]?.identifier).toBe(article1.identifier);
+        expect(found[1]?.identifier).toBe(article2.identifier);
       });
     });
 
