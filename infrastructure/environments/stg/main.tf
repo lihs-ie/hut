@@ -97,6 +97,7 @@ module "firebase_storage" {
   project_id  = var.project_id
   bucket_name = "${var.project_id}.firebasestorage.app"
   location    = "US-EAST1"
+  rules_file  = "${path.module}/../../../storage.rules"
 
   labels = local.common_labels
 }

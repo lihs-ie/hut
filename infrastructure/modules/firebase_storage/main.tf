@@ -22,3 +22,22 @@ resource "google_storage_bucket" "this" {
 
   labels = var.labels
 }
+
+resource "google_firebaserules_ruleset" "storage" {
+  count   = var.rules_file != null ? 1 : 0
+  project = var.project_id
+
+  source {
+    files {
+      name    = "storage.rules"
+      content = file(var.rules_file)
+    }
+  }
+}
+
+resource "google_firebaserules_release" "storage" {
+  count        = var.rules_file != null ? 1 : 0
+  project      = var.project_id
+  name         = "firebase.storage/${google_storage_bucket.this.name}"
+  ruleset_name = google_firebaserules_ruleset.storage[0].name
+}
