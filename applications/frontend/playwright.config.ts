@@ -81,11 +81,14 @@ const readerBaseURL = process.env.READER_BASE_URL ?? "http://localhost:3000";
 const readerTestFiles = [
   "**/accessibility.spec.ts",
   "**/article-detail.spec.ts",
+  "**/articles-list.spec.ts",
   "**/memo-detail.spec.ts",
+  "**/memos-list.spec.ts",
   "**/home.spec.ts",
   "**/public-pages.spec.ts",
   "**/search.spec.ts",
   "**/series.spec.ts",
+  "**/series-list.spec.ts",
 ];
 
 /**

@@ -217,10 +217,31 @@ export class QueryEngine {
     return false
   }
 
+  private static isTimestamp(value: unknown): value is { seconds: number; nanoseconds: number; toDate: () => Date } {
+    return (
+      value !== null &&
+      typeof value === "object" &&
+      "seconds" in value &&
+      "nanoseconds" in value &&
+      "toDate" in value &&
+      typeof value.toDate === "function"
+    )
+  }
+
   private static compareValues(a: unknown, b: unknown): number {
     if (a == null && b == null) return 0
     if (a == null) return -1
     if (b == null) return 1
+
+    if (this.isTimestamp(a) && this.isTimestamp(b)) {
+      const diff = a.seconds - b.seconds
+      if (diff !== 0) return diff
+      return a.nanoseconds - b.nanoseconds
+    }
+
+    if (a instanceof Date && b instanceof Date) {
+      return a.getTime() - b.getTime()
+    }
 
     if (typeof a !== typeof b) {
       return typeof a < typeof b ? -1 : 1
