@@ -328,6 +328,7 @@ module "github_actions_iam" {
     "roles/artifactregistry.writer",
     "roles/iam.serviceAccountUser",
     "roles/datastore.user",
+    "roles/viewer",
   ]
 }
 
