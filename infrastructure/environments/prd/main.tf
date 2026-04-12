@@ -331,6 +331,7 @@ module "github_actions_iam" {
     "roles/datastore.user",
     "roles/viewer",
     "roles/serviceusage.serviceUsageConsumer",
+    "roles/firebaserules.viewer",
   ]
 }
 

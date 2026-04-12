@@ -32,7 +32,7 @@ variable "service_account_id" {
 }
 
 variable "deployer_roles" {
-  description = "IAM roles to grant to the deployer service account. Includes roles/viewer and roles/serviceusage.serviceUsageConsumer so the SA can run terraform plan against the state bucket, read existing resources, and call project APIs (e.g. firebaserules) in CI."
+  description = "IAM roles to grant to the deployer service account. Includes roles/viewer, roles/serviceusage.serviceUsageConsumer, and roles/firebaserules.viewer so the SA can run terraform plan against the state bucket, read existing resources, call project APIs, and read Firebase rules in CI."
   type        = list(string)
   default = [
     "roles/run.developer",
@@ -41,5 +41,6 @@ variable "deployer_roles" {
     "roles/datastore.user",
     "roles/viewer",
     "roles/serviceusage.serviceUsageConsumer",
+    "roles/firebaserules.viewer",
   ]
 }
