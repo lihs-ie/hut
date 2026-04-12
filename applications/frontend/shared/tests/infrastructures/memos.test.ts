@@ -21,6 +21,7 @@ import { validateCriteria, type Criteria } from "@shared/domains/memo";
 import { PublishStatus } from "@shared/domains/common";
 import { TagIdentifierMold } from "../support/molds/domains/attributes/tag";
 import type { TagIdentifier } from "@shared/domains/attributes/tag";
+import { TimelineMold } from "../support/molds/domains/common/date";
 
 describe("infrastructures/memos", () => {
   let firestore: Firestore;
@@ -44,11 +45,15 @@ describe("infrastructures/memos", () => {
     tags?: TagIdentifier[] | null;
     freeWord?: string | null;
     status?: PublishStatus | null;
+    sortBy?: string | null;
+    order?: string | null;
   }): Criteria => {
     return validateCriteria({
       tags: params.tags ?? null,
       freeWord: params.freeWord ?? null,
       status: params.status ?? null,
+      sortBy: params.sortBy ?? null,
+      order: params.order ?? null,
     }).unwrap();
   };
 
@@ -374,6 +379,90 @@ describe("infrastructures/memos", () => {
 
         expect(found.length).toBe(1);
         expect(found[0]?.identifier).toBe(memo1.identifier);
+      });
+    });
+
+    describe("search ordering", () => {
+      it("デフォルトでcreatedAt降順で返る", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const timeline1 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-01-01T00:00:00Z"),
+        });
+        const timeline2 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-02-01T00:00:00Z"),
+          updatedAt: new Date("2024-02-01T00:00:00Z"),
+        });
+        const timeline3 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-03-01T00:00:00Z"),
+          updatedAt: new Date("2024-03-01T00:00:00Z"),
+        });
+
+        const memo1 = Forger(MemoMold).forgeWithSeed(400, { timeline: timeline1 });
+        const memo2 = Forger(MemoMold).forgeWithSeed(401, { timeline: timeline2 });
+        const memo3 = Forger(MemoMold).forgeWithSeed(402, { timeline: timeline3 });
+
+        await repository.persist(memo1).unwrap();
+        await repository.persist(memo2).unwrap();
+        await repository.persist(memo3).unwrap();
+
+        const criteria = createCriteria({});
+        const found = await repository.search(criteria).unwrap();
+
+        expect(found.length).toBe(3);
+        expect(found[0]?.identifier).toBe(memo3.identifier);
+        expect(found[1]?.identifier).toBe(memo2.identifier);
+        expect(found[2]?.identifier).toBe(memo1.identifier);
+      });
+
+      it("order: ascを指定すると昇順で返る", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const timeline1 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-01-01T00:00:00Z"),
+        });
+        const timeline2 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-02-01T00:00:00Z"),
+          updatedAt: new Date("2024-02-01T00:00:00Z"),
+        });
+
+        const memo1 = Forger(MemoMold).forgeWithSeed(410, { timeline: timeline1 });
+        const memo2 = Forger(MemoMold).forgeWithSeed(411, { timeline: timeline2 });
+
+        await repository.persist(memo1).unwrap();
+        await repository.persist(memo2).unwrap();
+
+        const criteria = createCriteria({ order: "asc" });
+        const found = await repository.search(criteria).unwrap();
+
+        expect(found.length).toBe(2);
+        expect(found[0]?.identifier).toBe(memo1.identifier);
+        expect(found[1]?.identifier).toBe(memo2.identifier);
+      });
+
+      it("sortBy: updatedAtを指定するとupdatedAt降順で返る", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const timeline1 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-03-01T00:00:00Z"),
+        });
+        const timeline2 = Forger(TimelineMold).forgeWithSeed(0, {
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-02-01T00:00:00Z"),
+        });
+
+        const memo1 = Forger(MemoMold).forgeWithSeed(420, { timeline: timeline1 });
+        const memo2 = Forger(MemoMold).forgeWithSeed(421, { timeline: timeline2 });
+
+        await repository.persist(memo1).unwrap();
+        await repository.persist(memo2).unwrap();
+
+        const criteria = createCriteria({ sortBy: "updatedAt", order: "desc" });
+        const found = await repository.search(criteria).unwrap();
+
+        expect(found.length).toBe(2);
+        expect(found[0]?.identifier).toBe(memo1.identifier);
+        expect(found[1]?.identifier).toBe(memo2.identifier);
       });
     });
 

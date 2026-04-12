@@ -15,6 +15,7 @@ import {
   slugSchema,
   timelineSchema,
 } from "../common";
+import { sortByFieldSchema, orderSchema } from "../common/sort";
 import { tagIdentifierSchema } from "../attributes/tag";
 import { imageIdentifierSchema } from "../image/identifier";
 
@@ -120,6 +121,8 @@ export const criteriaSchema = z
     status: publishStatusSchema.nullish(),
     freeWord: z.string().min(1).max(100).nullish(),
     tags: z.array(tagIdentifierSchema).nullish(),
+    sortBy: sortByFieldSchema.nullish(),
+    order: orderSchema.nullish(),
   })
   .brand("Criteria");
 
@@ -134,6 +137,8 @@ export type UnvalidatedCriteria = {
   status?: string | null;
   freeWord?: string | null;
   tags?: string[] | null;
+  sortBy?: string | null;
+  order?: string | null;
 };
 
 export const articleSnapshotSchema = z
