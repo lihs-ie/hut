@@ -1,0 +1,12 @@
+# Default owner for all files
+*                                       @lihs-ie
+
+# Security-sensitive paths
+/.github/                               @lihs-ie
+/.github/workflows/                     @lihs-ie
+/.github/actions/                       @lihs-ie
+/infrastructure/                        @lihs-ie
+/applications/frontend/package.json     @lihs-ie
+/applications/frontend/pnpm-lock.yaml   @lihs-ie
+/SECURITY.md                            @lihs-ie
+/.github/CODEOWNERS                     @lihs-ie
