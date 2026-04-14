@@ -4,7 +4,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
 
 vi.mock("next/server", () => ({
   after: (callback: () => Promise<void> | void) => {
@@ -18,24 +17,34 @@ describe("notifyReaderRevalidation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
+    vi.stubGlobal("fetch", mockFetch);
     process.env = {
       ...originalEnv,
       READER_ENDPOINT: "http://reader.test",
       REVALIDATION_SECRET: "test-secret",
     };
-    mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.startsWith("http://metadata.google.internal")) {
+        return new Response(null, { status: 404 });
+      }
+      return new Response(null, { status: 200 });
+    });
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     process.env = originalEnv;
   });
+
+  const waitForAfter = () =>
+    new Promise((resolve) => setTimeout(resolve, 10));
 
   it("正しい URL に POST リクエストを送信する", async () => {
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
 
     notifyReaderRevalidation(["articles"]);
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await waitForAfter();
 
     expect(mockFetch).toHaveBeenCalledWith(
       "http://reader.test/api/revalidate",
@@ -49,11 +58,10 @@ describe("notifyReaderRevalidation", () => {
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
 
     notifyReaderRevalidation(["articles"]);
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await waitForAfter();
 
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.any(String),
+      "http://reader.test/api/revalidate",
       expect.objectContaining({
         headers: expect.objectContaining({
           "content-type": "application/json",
@@ -67,11 +75,10 @@ describe("notifyReaderRevalidation", () => {
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
 
     notifyReaderRevalidation(["articles", "series"]);
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await waitForAfter();
 
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.any(String),
+      "http://reader.test/api/revalidate",
       expect.objectContaining({
         body: JSON.stringify({ tags: ["articles", "series"] }),
       }),
@@ -82,26 +89,132 @@ describe("notifyReaderRevalidation", () => {
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
 
     notifyReaderRevalidation(["articles"]);
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await waitForAfter();
 
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.any(String),
+      "http://reader.test/api/revalidate",
       expect.objectContaining({
         signal: expect.any(AbortSignal),
       }),
     );
   });
 
+  it("metadata server から ID トークンを取得して Authorization ヘッダを付与する", async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.startsWith("http://metadata.google.internal")) {
+        return new Response("test-identity-token", { status: 200 });
+      }
+      return new Response(null, { status: 200 });
+    });
+
+    const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
+
+    notifyReaderRevalidation(["articles"]);
+    await waitForAfter();
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity",
+      ),
+      expect.objectContaining({
+        headers: { "Metadata-Flavor": "Google" },
+      }),
+    );
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://reader.test/api/revalidate",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          authorization: "Bearer test-identity-token",
+        }),
+      }),
+    );
+  });
+
+  it("metadata server から audience に reader endpoint を指定する", async () => {
+    const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
+
+    notifyReaderRevalidation(["articles"]);
+    await waitForAfter();
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining(
+        `audience=${encodeURIComponent("http://reader.test")}`,
+      ),
+      expect.any(Object),
+    );
+  });
+
+  it("metadata server が 404 を返す場合は Authorization ヘッダを付与しない", async () => {
+    const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
+
+    notifyReaderRevalidation(["articles"]);
+    await waitForAfter();
+
+    const readerCall = mockFetch.mock.calls.find(
+      ([url]: [string]) => url === "http://reader.test/api/revalidate",
+    );
+    expect(readerCall).toBeDefined();
+    expect(readerCall?.[1].headers).not.toHaveProperty("authorization");
+  });
+
+  it("metadata server への fetch が失敗した場合は Authorization ヘッダを付与しない", async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.startsWith("http://metadata.google.internal")) {
+        throw new Error("ECONNREFUSED");
+      }
+      return new Response(null, { status: 200 });
+    });
+
+    const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
+
+    notifyReaderRevalidation(["articles"]);
+    await waitForAfter();
+
+    const readerCall = mockFetch.mock.calls.find(
+      ([url]: [string]) => url === "http://reader.test/api/revalidate",
+    );
+    expect(readerCall).toBeDefined();
+    expect(readerCall?.[1].headers).not.toHaveProperty("authorization");
+  });
+
+  it("metadata server が空文字列を返す場合は Authorization ヘッダを付与しない", async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.startsWith("http://metadata.google.internal")) {
+        return new Response("   ", { status: 200 });
+      }
+      return new Response(null, { status: 200 });
+    });
+
+    const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
+
+    notifyReaderRevalidation(["articles"]);
+    await waitForAfter();
+
+    const readerCall = mockFetch.mock.calls.find(
+      ([url]: [string]) => url === "http://reader.test/api/revalidate",
+    );
+    expect(readerCall).toBeDefined();
+    expect(readerCall?.[1].headers).not.toHaveProperty("authorization");
+  });
+
   it("fetch が失敗しても throw しない", async () => {
-    mockFetch.mockRejectedValue(new Error("Network error"));
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.startsWith("http://metadata.google.internal")) {
+        return new Response(null, { status: 404 });
+      }
+      throw new Error("Network error");
+    });
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
 
     await expect(
       (async () => {
         notifyReaderRevalidation(["articles"]);
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await waitForAfter();
       })(),
     ).resolves.not.toThrow();
   });
@@ -110,12 +223,18 @@ describe("notifyReaderRevalidation", () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")
       .mockImplementation(() => {});
-    mockFetch.mockRejectedValue(new Error("Network error"));
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.startsWith("http://metadata.google.internal")) {
+        return new Response(null, { status: 404 });
+      }
+      throw new Error("Network error");
+    });
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
 
     notifyReaderRevalidation(["articles"]);
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await waitForAfter();
 
     expect(consoleErrorSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
@@ -128,7 +247,7 @@ describe("notifyReaderRevalidation", () => {
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
 
     notifyReaderRevalidation(["articles"]);
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await waitForAfter();
 
     expect(mockFetch).not.toHaveBeenCalled();
   });
