@@ -1,11 +1,29 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 
-const createRequest = (url: string = "https://example.com/") => {
-  return new NextRequest(url);
+const createRequest = (
+  url: string = "https://example.com/",
+  init?: RequestInit,
+) => {
+  return new NextRequest(url, init);
+};
+
+const rememberEnvironmentVariable = (key: string): string | undefined => {
+  return process.env[key];
+};
+
+const restoreEnvironmentVariable = (
+  key: string,
+  value: string | undefined,
+): void => {
+  if (value === undefined) {
+    delete process.env[key];
+  } else {
+    process.env[key] = value;
+  }
 };
 
 describe("proxy", () => {
@@ -51,5 +69,71 @@ describe("proxy", () => {
     const response = proxy(request);
 
     expect(response.headers.get("Server")).toBeNull();
+  });
+
+  describe("Cloudflare access guard (D-01)", () => {
+    let originalNodeEnv: string | undefined;
+    let originalDisableFlag: string | undefined;
+
+    beforeEach(() => {
+      originalNodeEnv = rememberEnvironmentVariable("NODE_ENV");
+      originalDisableFlag = rememberEnvironmentVariable(
+        "READER_DISABLE_CLOUDFLARE_GUARD",
+      );
+    });
+
+    afterEach(() => {
+      restoreEnvironmentVariable("NODE_ENV", originalNodeEnv);
+      restoreEnvironmentVariable(
+        "READER_DISABLE_CLOUDFLARE_GUARD",
+        originalDisableFlag,
+      );
+    });
+
+    it("production 環境で CF-Connecting-IP が無い場合は 403 を返す", async () => {
+      process.env.NODE_ENV = "production";
+      delete process.env.READER_DISABLE_CLOUDFLARE_GUARD;
+
+      const { proxy } = await import("../src/proxy");
+      const request = createRequest("https://hut.lihs.dev/");
+      const response = proxy(request);
+
+      expect(response.status).toBe(403);
+    });
+
+    it("production 環境で CF-Connecting-IP ヘッダが存在する場合は通過する", async () => {
+      process.env.NODE_ENV = "production";
+      delete process.env.READER_DISABLE_CLOUDFLARE_GUARD;
+
+      const { proxy } = await import("../src/proxy");
+      const request = createRequest("https://hut.lihs.dev/", {
+        headers: { "CF-Connecting-IP": "203.0.113.10" },
+      });
+      const response = proxy(request);
+
+      expect(response.status).toBe(200);
+    });
+
+    it("development 環境では CF-Connecting-IP の有無に関わらず通過する", async () => {
+      process.env.NODE_ENV = "development";
+      delete process.env.READER_DISABLE_CLOUDFLARE_GUARD;
+
+      const { proxy } = await import("../src/proxy");
+      const request = createRequest("http://localhost:3000/");
+      const response = proxy(request);
+
+      expect(response.status).toBe(200);
+    });
+
+    it("READER_DISABLE_CLOUDFLARE_GUARD=true のときは production でも通過する", async () => {
+      process.env.NODE_ENV = "production";
+      process.env.READER_DISABLE_CLOUDFLARE_GUARD = "true";
+
+      const { proxy } = await import("../src/proxy");
+      const request = createRequest("https://hut.lihs.dev/");
+      const response = proxy(request);
+
+      expect(response.status).toBe(200);
+    });
   });
 });
