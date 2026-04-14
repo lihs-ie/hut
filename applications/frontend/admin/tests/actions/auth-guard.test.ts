@@ -8,6 +8,14 @@ vi.mock("@/actions/auth", () => ({
   isAdmin: vi.fn(),
 }));
 
+vi.mock("@/config/revalidation", () => ({
+  revalidation: { readerEndpoint: "http://reader.test", secret: "secret" },
+}));
+
+vi.mock("@/aspects/revalidation", () => ({
+  notifyReaderRevalidation: vi.fn(),
+}));
+
 vi.mock("@/providers/workflows/article", () => ({
   AdminArticleWorkflowProvider: {
     create: vi.fn(),

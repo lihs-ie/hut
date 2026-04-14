@@ -58,7 +58,7 @@ export default defineConfig({
             "**/node_modules/**",
             "**/features/**",
             "**/infrastructures/**",
-            "admin/tests/actions/!(analytics|auth-guard|upload-image|rate-limit|chapter)**",
+            "admin/tests/actions/!(analytics|auth-guard|upload-image|rate-limit|chapter|article|memo|series|tag)**",
             "admin/tests/aspects/auth/**",
             "admin/tests/components/global/hooks/login.test.ts",
             "admin/tests/infrastructure/event.test.ts",
