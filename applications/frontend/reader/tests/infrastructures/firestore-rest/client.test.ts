@@ -208,4 +208,58 @@ describe("infrastructures/firestore-rest/client", () => {
       ).rejects.toThrow();
     });
   });
+
+  describe("emulator mode", () => {
+    it("baseUrl を指定すると emulator エンドポイントを叩く", async () => {
+      const mockFetch = vi.fn().mockResolvedValue(
+        createMockResponse({
+          name: `projects/${projectId}/databases/(default)/documents/articles/doc-1`,
+          fields: { identifier: { stringValue: "doc-1" } },
+        }),
+      );
+      globalThis.fetch = mockFetch;
+
+      const emulatorClient = createFirestoreRestClient({
+        projectId,
+        baseUrl: "http://127.0.0.1:8085/v1",
+      });
+
+      await emulatorClient.getDocument("articles/doc-1");
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `http://127.0.0.1:8085/v1/projects/${projectId}/databases/(default)/documents/articles/doc-1`,
+        expect.objectContaining({
+          method: "GET",
+          headers: expect.objectContaining({
+            Authorization: "Bearer owner",
+          }),
+        }),
+      );
+    });
+
+    it("accessTokenProvider を省略すると owner トークンで runQuery を送信する", async () => {
+      const mockFetch = vi.fn().mockResolvedValue(createMockResponse([]));
+      globalThis.fetch = mockFetch;
+
+      const emulatorClient = createFirestoreRestClient({
+        projectId,
+        baseUrl: "http://127.0.0.1:8085/v1",
+      });
+
+      await emulatorClient.runQuery({
+        collectionId: "articles",
+        where: [],
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `http://127.0.0.1:8085/v1/projects/${projectId}/databases/(default)/documents:runQuery`,
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            Authorization: "Bearer owner",
+          }),
+        }),
+      );
+    });
+  });
 });

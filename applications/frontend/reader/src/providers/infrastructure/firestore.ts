@@ -13,6 +13,8 @@ import type { ChapterRepository } from "@shared/domains/series/chapter";
 import type { MemoRepository } from "@shared/domains/memo";
 import type { SeriesRepository } from "@shared/domains/series";
 
+const DEFAULT_EMULATOR_HOST = "127.0.0.1:8085";
+
 const readRequiredEnvironmentVariable = (name: string): string => {
   const value = process.env[name];
   if (typeof value !== "string" || value.length === 0) {
@@ -21,10 +23,25 @@ const readRequiredEnvironmentVariable = (name: string): string => {
   return value;
 };
 
+const isEmulatorEnabled = (): boolean =>
+  process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true";
+
+const resolveEmulatorBaseUrl = (): string => {
+  const host = process.env.FIRESTORE_EMULATOR_HOST ?? DEFAULT_EMULATOR_HOST;
+  return `http://${host}/v1`;
+};
+
 const readProjectId = (): string => {
   const explicit = process.env.FIREBASE_PROJECT_ID;
   if (typeof explicit === "string" && explicit.length > 0) {
     return explicit;
+  }
+  if (isEmulatorEnabled()) {
+    const emulatorProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    if (typeof emulatorProjectId === "string" && emulatorProjectId.length > 0) {
+      return emulatorProjectId;
+    }
+    return "demo-hut";
   }
   return readRequiredEnvironmentVariable("NEXT_PUBLIC_FIREBASE_PROJECT_ID");
 };
@@ -57,6 +74,14 @@ let cachedClient: FirestoreRestClient | null = null;
 
 const getClient = (): FirestoreRestClient => {
   if (cachedClient !== null) {
+    return cachedClient;
+  }
+
+  if (isEmulatorEnabled()) {
+    cachedClient = createFirestoreRestClient({
+      projectId: readProjectId(),
+      baseUrl: resolveEmulatorBaseUrl(),
+    });
     return cachedClient;
   }
 

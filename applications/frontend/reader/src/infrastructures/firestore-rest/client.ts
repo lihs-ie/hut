@@ -1,12 +1,14 @@
 import { firestoreFieldsToObject, type JsonValue } from "./value-converter";
 import type { AccessTokenProvider } from "./access-token";
 
-const FIRESTORE_BASE_URL = "https://firestore.googleapis.com/v1";
+const DEFAULT_FIRESTORE_BASE_URL = "https://firestore.googleapis.com/v1";
+const EMULATOR_OWNER_TOKEN = "owner";
 
 export type FirestoreClientConfig = {
   projectId: string;
   databaseId?: string;
-  accessTokenProvider: AccessTokenProvider;
+  baseUrl?: string;
+  accessTokenProvider?: AccessTokenProvider;
 };
 
 export type FirestoreQueryValue =
@@ -77,14 +79,19 @@ const isRunQueryEntry = (value: unknown): value is RunQueryEntry => {
 };
 
 const buildDocumentUrl = (
+  baseUrl: string,
   projectId: string,
   databaseId: string,
   path: string,
 ): string =>
-  `${FIRESTORE_BASE_URL}/projects/${projectId}/databases/${databaseId}/documents/${path}`;
+  `${baseUrl}/projects/${projectId}/databases/${databaseId}/documents/${path}`;
 
-const buildRunQueryUrl = (projectId: string, databaseId: string): string =>
-  `${FIRESTORE_BASE_URL}/projects/${projectId}/databases/${databaseId}/documents:runQuery`;
+const buildRunQueryUrl = (
+  baseUrl: string,
+  projectId: string,
+  databaseId: string,
+): string =>
+  `${baseUrl}/projects/${projectId}/databases/${databaseId}/documents:runQuery`;
 
 const buildStructuredQuery = (input: FirestoreQueryInput): Record<string, unknown> => {
   const structuredQuery: Record<string, unknown> = {
@@ -142,15 +149,25 @@ export const createFirestoreRestClient = (
   config: FirestoreClientConfig,
 ): FirestoreRestClient => {
   const databaseId = config.databaseId ?? "(default)";
+  const baseUrl = config.baseUrl ?? DEFAULT_FIRESTORE_BASE_URL;
+  const accessTokenProvider = config.accessTokenProvider;
+
+  const resolveAuthorization = async (): Promise<string> => {
+    if (accessTokenProvider === undefined) {
+      return `Bearer ${EMULATOR_OWNER_TOKEN}`;
+    }
+    const accessToken = await accessTokenProvider.getAccessToken();
+    return `Bearer ${accessToken}`;
+  };
 
   const getDocument: FirestoreRestClient["getDocument"] = async (path) => {
-    const accessToken = await config.accessTokenProvider.getAccessToken();
+    const authorization = await resolveAuthorization();
     const response = await fetch(
-      buildDocumentUrl(config.projectId, databaseId, path),
+      buildDocumentUrl(baseUrl, config.projectId, databaseId, path),
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: authorization,
         },
       },
     );
@@ -170,15 +187,15 @@ export const createFirestoreRestClient = (
   };
 
   const runQuery: FirestoreRestClient["runQuery"] = async (input) => {
-    const accessToken = await config.accessTokenProvider.getAccessToken();
+    const authorization = await resolveAuthorization();
     const body = buildStructuredQuery(input);
 
     const response = await fetch(
-      buildRunQueryUrl(config.projectId, databaseId),
+      buildRunQueryUrl(baseUrl, config.projectId, databaseId),
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: authorization,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
