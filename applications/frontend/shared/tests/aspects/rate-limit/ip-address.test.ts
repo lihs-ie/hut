@@ -74,11 +74,11 @@ describe("resolveIP", () => {
     expect(result).toBe("ip:10.0.0.1");
   });
 
-  it("x-forwarded-for も x-real-ip もない場合は unknown を返す", () => {
+  it("x-forwarded-for も x-real-ip もない場合は ip:unknown を返す", () => {
     const request = createRequest({});
 
     const result = resolveIP(request);
 
-    expect(result).toBe("unknown");
+    expect(result).toBe("ip:unknown");
   });
 });

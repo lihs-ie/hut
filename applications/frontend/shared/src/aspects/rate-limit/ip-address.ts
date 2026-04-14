@@ -31,5 +31,5 @@ export const resolveIP = (request: NextRequest): string => {
     return `ip:${normalizeIPv4MappedIPv6(realIp)}`;
   }
 
-  return "unknown";
+  return "ip:unknown";
 };

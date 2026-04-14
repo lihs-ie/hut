@@ -146,6 +146,7 @@ jobs:
         env:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "true"
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
+          READER_RATE_LIMIT_ALLOWLIST: "unknown"
 
       - name: Run E2E tests (Shard ${{ matrix.shard }}/${{ env.SHARD_TOTAL }})
         run: pnpm e2e --shard=${{ matrix.shard }}/${{ env.SHARD_TOTAL }}
