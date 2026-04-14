@@ -1,13 +1,21 @@
-import { createSeriesFindBySlugWorkflow } from "@shared/workflows/series";
+import {
+  createSeriesFindBySlugWorkflow,
+  createSeriesSearchWorkflow,
+} from "@shared/workflows/series";
 import { createPublishedOnlyFilter } from "@shared/workflows/common";
-import { SeriesRepositoryProvider } from "@shared/providers/infrastructure/series";
 import { LoggerProvider } from "@shared/providers/infrastructure/logger";
 import { validateSlug } from "@shared/domains/common";
+import { validateCriteria } from "@shared/domains/series";
+import { ReaderFirestoreProvider } from "@/providers/infrastructure/firestore";
 
 export const ReaderSeriesWorkflowProvider = {
   findBySlug: createSeriesFindBySlugWorkflow(validateSlug)(
     LoggerProvider.console,
-  )(SeriesRepositoryProvider.firebase.findBySlug)(
+  )(ReaderFirestoreProvider.seriesRepository.findBySlug)(
     createPublishedOnlyFilter("Series"),
   ),
+
+  search: createSeriesSearchWorkflow(validateCriteria)(
+    ReaderFirestoreProvider.seriesRepository.search,
+  )(LoggerProvider.console),
 } as const;

@@ -30,10 +30,38 @@ vi.mock("@/providers/workflows/chapter", () => ({
   },
 }));
 
-vi.mock("@shared/providers/infrastructure/chapter", () => ({
-  ChapterRepositoryProvider: {
-    firebase: {
+vi.mock("@/providers/infrastructure/firestore", () => ({
+  ReaderFirestoreProvider: {
+    chapterRepository: {
+      find: vi.fn(),
+      findBySlug: vi.fn(),
       ofIdentifiers: vi.fn(),
+      persist: vi.fn(),
+      terminate: vi.fn(),
+    },
+    articleRepository: {
+      find: vi.fn(),
+      findBySlug: vi.fn(),
+      ofIdentifiers: vi.fn(),
+      search: vi.fn(),
+      persist: vi.fn(),
+      terminate: vi.fn(),
+    },
+    memoRepository: {
+      find: vi.fn(),
+      findBySlug: vi.fn(),
+      ofIdentifiers: vi.fn(),
+      search: vi.fn(),
+      persist: vi.fn(),
+      terminate: vi.fn(),
+    },
+    seriesRepository: {
+      find: vi.fn(),
+      findBySlug: vi.fn(),
+      ofIdentifiers: vi.fn(),
+      search: vi.fn(),
+      persist: vi.fn(),
+      terminate: vi.fn(),
     },
   },
 }));
@@ -114,11 +142,11 @@ describe("reader chapter actions", () => {
 
       await setupUnwrapForAsyncResult();
 
-      const { ChapterRepositoryProvider } = await import(
-        "@shared/providers/infrastructure/chapter"
+      const { ReaderFirestoreProvider } = await import(
+        "@/providers/infrastructure/firestore"
       );
       vi.mocked(
-        ChapterRepositoryProvider.firebase.ofIdentifiers,
+        ReaderFirestoreProvider.chapterRepository.ofIdentifiers,
       ).mockReturnValue(createSuccessAsyncResult(allChapters));
 
       const { findPublishedChaptersByIdentifiers } = await import(
@@ -139,11 +167,11 @@ describe("reader chapter actions", () => {
 
       await setupUnwrapForAsyncResult();
 
-      const { ChapterRepositoryProvider } = await import(
-        "@shared/providers/infrastructure/chapter"
+      const { ReaderFirestoreProvider } = await import(
+        "@/providers/infrastructure/firestore"
       );
       vi.mocked(
-        ChapterRepositoryProvider.firebase.ofIdentifiers,
+        ReaderFirestoreProvider.chapterRepository.ofIdentifiers,
       ).mockReturnValue(createSuccessAsyncResult(draftChapters));
 
       const { findPublishedChaptersByIdentifiers } = await import(
@@ -157,11 +185,11 @@ describe("reader chapter actions", () => {
     it("空の識別子リストを渡すと空配列を返す", async () => {
       await setupUnwrapForAsyncResult();
 
-      const { ChapterRepositoryProvider } = await import(
-        "@shared/providers/infrastructure/chapter"
+      const { ReaderFirestoreProvider } = await import(
+        "@/providers/infrastructure/firestore"
       );
       vi.mocked(
-        ChapterRepositoryProvider.firebase.ofIdentifiers,
+        ReaderFirestoreProvider.chapterRepository.ofIdentifiers,
       ).mockReturnValue(createSuccessAsyncResult([]));
 
       const { findPublishedChaptersByIdentifiers } = await import(
@@ -176,11 +204,11 @@ describe("reader chapter actions", () => {
       const identifier = Forger(ChapterIdentifierMold).forgeWithSeed(1);
       await setupUnwrapForAsyncResult();
 
-      const { ChapterRepositoryProvider } = await import(
-        "@shared/providers/infrastructure/chapter"
+      const { ReaderFirestoreProvider } = await import(
+        "@/providers/infrastructure/firestore"
       );
       vi.mocked(
-        ChapterRepositoryProvider.firebase.ofIdentifiers,
+        ReaderFirestoreProvider.chapterRepository.ofIdentifiers,
       ).mockReturnValue(
         createErrorAsyncResult(
           aggregateNotFoundError("Chapter", "Chapter not found."),
