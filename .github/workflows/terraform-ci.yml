@@ -36,7 +36,7 @@ jobs:
         run: terraform fmt -check -recursive
 
   plan:
-    name: Terraform plan (${{ matrix.environment }})
+    name: Terraform plan (${{ matrix.name }})
     needs: fmt
     runs-on: ubuntu-latest
     permissions:
@@ -46,11 +46,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        environment: [stg, prd]
-    environment: ${{ matrix.environment }}
+        include:
+          - name: stg
+            plan_env: stg-plan
+          - name: prd
+            plan_env: prd-plan
+    # plan_env は PR トリガで参照するため deployment_branch_policy を
+    # 付けない plan 専用環境 (stg-plan / prd-plan)。
+    # deploy/migrate 用の stg / prd 環境は main/staging のみ許可される。
+    environment: ${{ matrix.plan_env }}
     defaults:
       run:
-        working-directory: infrastructure/environments/${{ matrix.environment }}
+        working-directory: infrastructure/environments/${{ matrix.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -140,7 +147,7 @@ jobs:
         if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          MATRIX_ENV: ${{ matrix.environment }}
+          MATRIX_ENV: ${{ matrix.name }}
           PLAN_TEXT: ${{ steps.plan-output.outputs.plan }}
           PLAN_STATUS: ${{ job.status }}
         with:
