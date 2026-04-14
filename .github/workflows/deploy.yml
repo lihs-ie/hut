@@ -50,8 +50,11 @@ env:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    outputs:
+      route: ${{ steps.route.outputs.route }}
     steps:
       - name: Validate input combination
+        id: route
         env:
           APPLICATION: ${{ inputs.application }}
           ENVIRONMENT: ${{ inputs.environment }}
@@ -71,12 +74,24 @@ jobs:
               ;;
           esac
           if [ "${APPLICATION}" = "reader" ] && [ "${ENVIRONMENT}" = "prd" ]; then
-            echo "::error::reader cannot be deployed to prd environment"
-            exit 1
+            echo "route=cloudflare" >> "${GITHUB_OUTPUT}"
+            echo "::notice::reader prd is served by Cloudflare Workers. Use deploy-cloudflare.yml instead."
+          else
+            echo "route=cloudrun" >> "${GITHUB_OUTPUT}"
           fi
+
+  deploy-cloudflare:
+    needs: validate
+    if: needs.validate.outputs.route == 'cloudflare'
+    uses: ./.github/workflows/deploy-cloudflare.yml
+    with:
+      environment: ${{ inputs.environment }}
+      tag: ${{ inputs.tag }}
+    secrets: inherit
 
   deploy:
     needs: validate
+    if: needs.validate.outputs.route == 'cloudrun'
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     permissions:
