@@ -371,3 +371,15 @@ module "billing_export" {
 
   labels = local.common_labels
 }
+
+module "billing_budget" {
+  source = "../../modules/billing_budget"
+
+  project_id         = var.project_id
+  billing_account_id = var.billing_account_id
+  display_name       = "${var.project_id} monthly budget"
+  budget_amount_jpy  = 10000
+  notification_email = var.notification_email
+
+  labels = local.common_labels
+}

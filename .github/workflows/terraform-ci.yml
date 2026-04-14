@@ -117,6 +117,8 @@ jobs:
           TF_VAR_authorized_members: ${{ secrets.TF_VAR_AUTHORIZED_MEMBERS }}
           TF_VAR_oauth_client_id: ${{ secrets.TF_VAR_OAUTH_CLIENT_ID }}
           TF_VAR_oauth_client_secret: ${{ secrets.TF_VAR_OAUTH_CLIENT_SECRET }}
+          TF_VAR_billing_account_id: ${{ secrets.TF_VAR_BILLING_ACCOUNT_ID }}
+          TF_VAR_notification_email: ${{ secrets.TF_VAR_NOTIFICATION_EMAIL }}
         run: |
           set +e
           terraform plan -input=false -no-color -lock=false -out=tfplan | tee plan.txt
