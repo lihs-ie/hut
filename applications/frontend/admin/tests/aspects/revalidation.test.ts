@@ -6,6 +6,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+vi.mock("next/server", () => ({
+  after: (callback: () => Promise<void> | void) => {
+    void callback();
+  },
+}));
+
 describe("notifyReaderRevalidation", () => {
   const originalEnv = process.env;
 
@@ -72,6 +78,21 @@ describe("notifyReaderRevalidation", () => {
     );
   });
 
+  it("AbortSignal.timeout を signal として設定する", async () => {
+    const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
+
+    notifyReaderRevalidation(["articles"]);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+      }),
+    );
+  });
+
   it("fetch が失敗しても throw しない", async () => {
     mockFetch.mockRejectedValue(new Error("Network error"));
 
@@ -86,7 +107,9 @@ describe("notifyReaderRevalidation", () => {
   });
 
   it("fetch が失敗した場合 console.error を呼び出す", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     mockFetch.mockRejectedValue(new Error("Network error"));
 
     const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
@@ -96,5 +119,17 @@ describe("notifyReaderRevalidation", () => {
 
     expect(consoleErrorSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
+  });
+
+  it("revalidation が undefined の場合 fetch を呼び出さない", async () => {
+    delete process.env.READER_ENDPOINT;
+    delete process.env.REVALIDATION_SECRET;
+
+    const { notifyReaderRevalidation } = await import("@/aspects/revalidation");
+
+    notifyReaderRevalidation(["articles"]);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

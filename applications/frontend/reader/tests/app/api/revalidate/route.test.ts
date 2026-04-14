@@ -139,6 +139,38 @@ describe("POST /api/revalidate", () => {
 
       expect(response.status).toBe(200);
     });
+
+    it("body が不正な JSON の場合 400 を返す", async () => {
+      const { POST } = await import("@/app/api/revalidate/route");
+      const request = new NextRequest("http://localhost/api/revalidate", {
+        method: "POST",
+        headers: {
+          "x-revalidation-secret": "test-secret-token",
+          "content-type": "application/json",
+        },
+        body: "not a json",
+      });
+
+      const response = await POST(request);
+
+      expect(response.status).toBe(400);
+    });
+
+    it("body が null の場合 400 を返す", async () => {
+      const { POST } = await import("@/app/api/revalidate/route");
+      const request = new NextRequest("http://localhost/api/revalidate", {
+        method: "POST",
+        headers: {
+          "x-revalidation-secret": "test-secret-token",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(null),
+      });
+
+      const response = await POST(request);
+
+      expect(response.status).toBe(400);
+    });
   });
 
   describe("revalidateTag 呼び出し", () => {
