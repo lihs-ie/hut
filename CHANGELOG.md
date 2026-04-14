@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.2.1](https://github.com/lihs-ie/hut/compare/v0.2.0...v0.2.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* **frontend:** ContentEmpty の「コンテンツが公開されるとここに表示されます」文言を削除 ([f7e54cb](https://github.com/lihs-ie/hut/commit/f7e54cbf6532c84bf7b40a20316c37f157c6235c))
+* **frontend:** トップページ空状態の説明文を削除 ([dad688b](https://github.com/lihs-ie/hut/commit/dad688b8e929a5c51c835396ef9d4a508350ca56))
+* **frontend:** 記事・チャプター詳細のコードブロック font-size を PC 16px / SP 14px に修正 ([fe180bf](https://github.com/lihs-ie/hut/commit/fe180bfe128d8b1ca9f42c6d1ac033d441b7702b))
+
+
+### Miscellaneous Chores
+
+* **ci:** add CODEOWNERS, SECURITY.md, and pin reusable action to SHA ([b0c627a](https://github.com/lihs-ie/hut/commit/b0c627a7cd9495f3ae8ad256f7f9e2f149450772))
+* **ci:** address review feedback for CODEOWNERS coverage and action pin comments ([c059e21](https://github.com/lihs-ie/hut/commit/c059e212742df20143f25ff350bb22016f5e77bb))
+* **ci:** drop redundant push triggers from CI and E2E workflows ([4cdd22c](https://github.com/lihs-ie/hut/commit/4cdd22c979408a6be9c87a12fd304d88b1b468a4))
+* **ci:** drop redundant push triggers from CI and E2E workflows ([382b5d3](https://github.com/lihs-ie/hut/commit/382b5d38f7450761fc591f9641ad94ef686da394))
+* **ci:** split terraform-ci plan into dedicated plan environments ([e98542f](https://github.com/lihs-ie/hut/commit/e98542f426b73b6f03e6d94b2e96521d5b01445d))
+* **ci:** split terraform-ci plan into dedicated plan environments ([7f456ec](https://github.com/lihs-ie/hut/commit/7f456ec6de9a934c7c39eafd1c74dc4ba9cd5577))
+* **deps:** bump actions/github-script from 8.0.0 to 9.0.0 ([2dae5e4](https://github.com/lihs-ie/hut/commit/2dae5e49245ff416d856413b653168c45259b16a))
+* **deps:** bump actions/github-script from 8.0.0 to 9.0.0 ([3abb380](https://github.com/lihs-ie/hut/commit/3abb38084bfaec84ddaedd476c7762874cf229c3))
+* **deps:** bump dorny/paths-filter from 3.0.2 to 4.0.1 ([bd7acaf](https://github.com/lihs-ie/hut/commit/bd7acaf78986f4ffeeac1a0a40a251806a67fdb7))
+* **deps:** bump dorny/paths-filter from 3.0.2 to 4.0.1 ([a8d2ccc](https://github.com/lihs-ie/hut/commit/a8d2cccf06d00965e7ef9895f1317c714ff7e1c6))
+* **deps:** bump hashicorp/setup-terraform from 3.1.2 to 4.0.0 ([fbdef27](https://github.com/lihs-ie/hut/commit/fbdef27fefd583976f644badf890ac2fc65b65ee))
+* **deps:** bump hashicorp/setup-terraform from 3.1.2 to 4.0.0 ([3d8f572](https://github.com/lihs-ie/hut/commit/3d8f572bba6c15f1b4dec932ae5e857213479ac2))
+* **deps:** bump katex from 0.16.44 to 0.16.45 in /applications/frontend ([e0f7b9d](https://github.com/lihs-ie/hut/commit/e0f7b9dbce75e709b60cc2302d5634b8be1bbd5e))
+* **deps:** bump katex in /applications/frontend ([27f3336](https://github.com/lihs-ie/hut/commit/27f3336870b8c9938a0145e9e27223bf7ae5471a))
+* **deps:** bump terraform-linters/setup-tflint from 4.1.1 to 6.2.2 ([b9c1a48](https://github.com/lihs-ie/hut/commit/b9c1a481396f51231a4501dac4f5104c322668b4))
+* **deps:** bump terraform-linters/setup-tflint from 4.1.1 to 6.2.2 ([963b6af](https://github.com/lihs-ie/hut/commit/963b6af0c6f17e73a203c14960a5082148fe6039))
+* **frontend:** initialize fix/empty-list-text branch ([46c80d1](https://github.com/lihs-ie/hut/commit/46c80d1212d6ecc7e71debe994bc84a18c22137c))
+* **ipo-frontend:** add pnpm overrides to patch transitive vulnerabilities ([f2bf403](https://github.com/lihs-ie/hut/commit/f2bf403a0e99a8742af41ea209ab7ddc92eabe01))
+* **security:** initialize environment-protection-split branch ([2872e39](https://github.com/lihs-ie/hut/commit/2872e39552fd1a7236ed392a324d97a8ee6e202f))
+* **security:** initialize security-hardening branch ([9ec663d](https://github.com/lihs-ie/hut/commit/9ec663dd9d36391b383aa42330c95aac6ae80b11))
+* **security:** remove SECURITY.md (single-maintainer project) ([7adbc41](https://github.com/lihs-ie/hut/commit/7adbc41f28ef9b39e624914beafed8c0593108d5))
+* **security:** repository security hardening ([ec328f1](https://github.com/lihs-ie/hut/commit/ec328f1c83af463bad1499ebd686e7a0162111fe))
+
 ## [0.2.0](https://github.com/lihs-ie/hut/compare/v0.1.0...v0.2.0) (2026-04-12)
 
 
