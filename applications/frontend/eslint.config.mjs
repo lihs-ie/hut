@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     "**/node_modules/**",
     "**/.next/**",
+    "**/.open-next/**",
+    "**/.wrangler/**",
     "**/out/**",
     "**/build/**",
     "**/storybook-static/**",
