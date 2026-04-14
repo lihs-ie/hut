@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/lihs-ie/hut/compare/v0.2.2...v0.2.3) (2026-04-14)
+
+
+### Miscellaneous Chores
+
+* sync staging to main ([#70](https://github.com/lihs-ie/hut/issues/70)) ([8bb1836](https://github.com/lihs-ie/hut/commit/8bb18361f462f4efe1bdbc7042b42eed47aa2322))
+
 ## [0.2.2](https://github.com/lihs-ie/hut/compare/v0.2.1...v0.2.2) (2026-04-14)
 
 
