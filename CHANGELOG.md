@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/lihs-ie/hut/compare/v0.2.1...v0.2.2) (2026-04-14)
+
+
+### Miscellaneous Chores
+
+* **ci:** restore push trigger on staging to propagate checks for bot PRs ([c1a3246](https://github.com/lihs-ie/hut/commit/c1a324601d0ac37d3a4115ac988d1d34f13216da))
+* **ci:** restore push trigger on staging to unblock bot-authored sync PRs ([0d7c193](https://github.com/lihs-ie/hut/commit/0d7c1932c293ce1e0c2130d0cdd53bec10c9e9e0))
+
 ## [0.2.1](https://github.com/lihs-ie/hut/compare/v0.2.0...v0.2.1) (2026-04-14)
 
 
