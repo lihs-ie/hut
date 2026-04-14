@@ -37,6 +37,6 @@ resource "google_billing_budget" "this" {
     monitoring_notification_channels = [
       google_monitoring_notification_channel.email.id,
     ]
-    disable_default_iam_recipients = false
+    disable_default_iam_recipients = true
   }
 }
