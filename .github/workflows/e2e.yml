@@ -48,6 +48,7 @@ jobs:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "true"
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
           E2E_AUTH_ENABLED: "true"
+          READER_RATE_LIMIT_ALLOWLIST: "unknown"
 
       - name: Stop Firebase Emulator
         if: always()
