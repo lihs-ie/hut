@@ -148,6 +148,84 @@ describe("proxy", () => {
       expect(secondResponse.headers.get("X-RateLimit-Reset")).not.toBeNull();
     });
 
+    it("429 レスポンスに X-RateLimit-Remaining ヘッダーが含まれる", async () => {
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_LIMIT", "1");
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_WINDOW_MS", "60000");
+
+      const { proxy } = await import("../src/proxy");
+      const requestIp = "10.0.0.10";
+      const makeRequest = () =>
+        createRequest("https://example.com/some-page", {
+          "x-forwarded-for": requestIp,
+        });
+
+      await proxy(makeRequest());
+      const secondResponse = await proxy(makeRequest());
+
+      expect(secondResponse.headers.get("X-RateLimit-Remaining")).toBe("0");
+    });
+
+    it("200 OK レスポンスにも X-RateLimit-Limit ヘッダーが含まれる", async () => {
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_LIMIT", "10");
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_WINDOW_MS", "60000");
+
+      const { proxy } = await import("../src/proxy");
+      const request = createRequest("https://example.com/some-page", {
+        "x-forwarded-for": "10.0.0.11",
+      });
+
+      const response = await proxy(request);
+
+      expect(response.headers.get("X-RateLimit-Limit")).toBe("10");
+    });
+
+    it("200 OK レスポンスにも X-RateLimit-Remaining ヘッダーが含まれる", async () => {
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_LIMIT", "10");
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_WINDOW_MS", "60000");
+
+      const { proxy } = await import("../src/proxy");
+      const request = createRequest("https://example.com/some-page", {
+        "x-forwarded-for": "10.0.0.12",
+      });
+
+      const response = await proxy(request);
+
+      expect(response.headers.get("X-RateLimit-Remaining")).toBe("9");
+    });
+
+    it("200 OK レスポンスにも X-RateLimit-Reset ヘッダーが含まれる", async () => {
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_LIMIT", "10");
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_WINDOW_MS", "60000");
+
+      const { proxy } = await import("../src/proxy");
+      const request = createRequest("https://example.com/some-page", {
+        "x-forwarded-for": "10.0.0.13",
+      });
+
+      const response = await proxy(request);
+
+      expect(response.headers.get("X-RateLimit-Reset")).not.toBeNull();
+    });
+
+    it("429 レスポンスの Content-Type は application/json", async () => {
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_LIMIT", "1");
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_WINDOW_MS", "60000");
+
+      const { proxy } = await import("../src/proxy");
+      const requestIp = "10.0.0.14";
+      const makeRequest = () =>
+        createRequest("https://example.com/some-page", {
+          "x-forwarded-for": requestIp,
+        });
+
+      await proxy(makeRequest());
+      const secondResponse = await proxy(makeRequest());
+
+      expect(secondResponse.headers.get("Content-Type")).toContain(
+        "application/json",
+      );
+    });
+
     it("allowlist に含まれる IP は制限を超えても通過する", async () => {
       vi.stubEnv("READER_RATE_LIMIT_DEFAULT_LIMIT", "1");
       vi.stubEnv("READER_RATE_LIMIT_DEFAULT_WINDOW_MS", "60000");
@@ -194,6 +272,44 @@ describe("proxy", () => {
       const requestIp = "10.0.0.6";
       const makeRequest = () =>
         createRequest("https://example.com/feed", {
+          "x-forwarded-for": requestIp,
+        });
+
+      await proxy(makeRequest());
+      const secondResponse = await proxy(makeRequest());
+
+      expect(secondResponse.status).toBe(429);
+    });
+
+    it("/searching のように prefix が一致するだけのパスは default エンドポイント扱い", async () => {
+      vi.stubEnv("READER_RATE_LIMIT_SEARCH_LIMIT", "1");
+      vi.stubEnv("READER_RATE_LIMIT_SEARCH_WINDOW_MS", "60000");
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_LIMIT", "100");
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_WINDOW_MS", "60000");
+
+      const { proxy } = await import("../src/proxy");
+      const requestIp = "10.0.0.7";
+      const makeRequest = () =>
+        createRequest("https://example.com/searching", {
+          "x-forwarded-for": requestIp,
+        });
+
+      await proxy(makeRequest());
+      const secondResponse = await proxy(makeRequest());
+
+      expect(secondResponse.status).not.toBe(429);
+    });
+
+    it("/search/query のように子パスも SEARCH エンドポイント扱い", async () => {
+      vi.stubEnv("READER_RATE_LIMIT_SEARCH_LIMIT", "1");
+      vi.stubEnv("READER_RATE_LIMIT_SEARCH_WINDOW_MS", "60000");
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_LIMIT", "100");
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_WINDOW_MS", "60000");
+
+      const { proxy } = await import("../src/proxy");
+      const requestIp = "10.0.0.8";
+      const makeRequest = () =>
+        createRequest("https://example.com/search/articles", {
           "x-forwarded-for": requestIp,
         });
 

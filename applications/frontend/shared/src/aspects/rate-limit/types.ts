@@ -12,5 +12,6 @@ export type RateLimitDecision = {
   allowed: boolean;
   count: number;
   limit: number;
+  remaining: number;
   resetAtMs: number;
 };

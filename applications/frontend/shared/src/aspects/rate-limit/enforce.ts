@@ -1,25 +1,49 @@
 import { ok, err } from "../result";
-import { resourceExhaustedError } from "../error";
 import type { AsyncResult } from "../result";
 import type {
-  ResourceExhaustedError,
   ServiceUnavailableError,
   UnexpectedError,
 } from "../error";
 import type { RateLimitStorage } from "./storage";
-import type { RateLimitPolicy, RateLimitDecision } from "./types";
+import type {
+  RateLimitPolicy,
+  RateLimitDecision,
+  RateLimitWindow,
+} from "./types";
 
 type EnforcePolicy = RateLimitPolicy & {
   failOpen: boolean;
-  allowlist?: string[];
+  allowlist?: ReadonlyArray<string>;
 };
 
-const ALLOWLISTED_DECISION: RateLimitDecision = {
-  allowed: true,
-  count: 0,
-  limit: 0,
-  resetAtMs: 0,
-};
+const createAllowlistedDecision = (policy: EnforcePolicy): RateLimitDecision =>
+  Object.freeze({
+    allowed: true,
+    count: 0,
+    limit: policy.limit,
+    remaining: policy.limit,
+    resetAtMs: Date.now() + policy.windowMs,
+  });
+
+const createFailOpenDecision = (policy: EnforcePolicy): RateLimitDecision =>
+  Object.freeze({
+    allowed: true,
+    count: 0,
+    limit: policy.limit,
+    remaining: policy.limit,
+    resetAtMs: Date.now() + policy.windowMs,
+  });
+
+const toDecision = (
+  policy: EnforcePolicy,
+  window: RateLimitWindow,
+): RateLimitDecision => ({
+  allowed: window.count <= policy.limit,
+  count: window.count,
+  limit: policy.limit,
+  remaining: Math.max(0, policy.limit - window.count),
+  resetAtMs: window.resetAtMs,
+});
 
 export const enforceRateLimit = (
   storage: RateLimitStorage,
@@ -27,37 +51,26 @@ export const enforceRateLimit = (
   identifier: string,
 ): AsyncResult<
   RateLimitDecision,
-  ResourceExhaustedError | ServiceUnavailableError | UnexpectedError
+  ServiceUnavailableError | UnexpectedError
 > => {
   if (policy.allowlist?.includes(identifier)) {
-    return ok(ALLOWLISTED_DECISION).toAsync();
+    return ok<RateLimitDecision, ServiceUnavailableError | UnexpectedError>(
+      createAllowlistedDecision(policy),
+    ).toAsync();
   }
 
   return storage
     .increment(identifier, policy.windowMs)
+    .map((window) => toDecision(policy, window))
     .orElse((error) => {
       if (policy.failOpen) {
-        return ok({
-          allowed: true,
-          count: 0,
-          limit: policy.limit,
-          resetAtMs: Date.now() + policy.windowMs,
-        }).toAsync();
-      }
-      return err(error).toAsync();
-    })
-    .andThen((window) => {
-      if (window.count > policy.limit) {
-        return err(
-          resourceExhaustedError("Rate limit exceeded"),
+        return ok<RateLimitDecision, ServiceUnavailableError | UnexpectedError>(
+          createFailOpenDecision(policy),
         ).toAsync();
       }
 
-      return ok({
-        allowed: true,
-        count: window.count,
-        limit: policy.limit,
-        resetAtMs: window.resetAtMs,
-      }).toAsync();
+      return err<RateLimitDecision, ServiceUnavailableError | UnexpectedError>(
+        error,
+      ).toAsync();
     });
 };

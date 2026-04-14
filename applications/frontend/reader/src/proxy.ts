@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { Logger, Environment } from "@shared/aspects/logger";
+import type { Logger as LoggerType } from "@shared/aspects/logger";
 import {
   resolveIP,
   createInMemoryRateLimitStorage,
@@ -8,9 +9,12 @@ import {
   createRedisClientFromEnv,
   enforceRateLimit,
 } from "@shared/aspects/rate-limit";
-import type { RateLimitStorage, RateLimitDecision } from "@shared/aspects/rate-limit";
 import type {
-  ResourceExhaustedError,
+  RateLimitStorage,
+  RateLimitDecision,
+  RateLimitPolicy,
+} from "@shared/aspects/rate-limit";
+import type {
   ServiceUnavailableError,
   UnexpectedError,
 } from "@shared/aspects/error";
@@ -28,29 +32,35 @@ const DEFAULT_WINDOW_MS = 60000;
 type EndpointKind = "search" | "feed" | "default";
 
 const resolveEndpointKind = (pathname: string): EndpointKind => {
-  if (pathname.startsWith("/search")) return "search";
-  if (pathname.startsWith("/feed")) return "feed";
+  if (pathname === "/search" || pathname.startsWith("/search/")) return "search";
+  if (pathname === "/feed" || pathname.startsWith("/feed/")) return "feed";
   return "default";
 };
 
-const parseEnvInt = (value: string | undefined, fallback: number): number => {
+const parseEnvironmentInteger = (
+  value: string | undefined,
+  fallback: number,
+): number => {
   if (!value) return fallback;
   const parsed = parseInt(value, 10);
   return Number.isNaN(parsed) ? fallback : parsed;
 };
 
-const resolvePolicy = (kind: EndpointKind) => {
+const resolvePolicy = (kind: EndpointKind): RateLimitPolicy => {
   const prefix = `READER_RATE_LIMIT_${kind.toUpperCase()}`;
   return {
-    limit: parseEnvInt(process.env[`${prefix}_LIMIT`], DEFAULT_LIMIT),
-    windowMs: parseEnvInt(
+    limit: parseEnvironmentInteger(
+      process.env[`${prefix}_LIMIT`],
+      DEFAULT_LIMIT,
+    ),
+    windowMs: parseEnvironmentInteger(
       process.env[`${prefix}_WINDOW_MS`],
       DEFAULT_WINDOW_MS,
     ),
   };
 };
 
-const resolveAllowlist = (): string[] => {
+const resolveAllowlist = (): ReadonlyArray<string> => {
   const raw = process.env.READER_RATE_LIMIT_ALLOWLIST;
   if (!raw) return [];
   return raw
@@ -63,92 +73,118 @@ const resolveAllowlist = (): string[] => {
 const isFailOpen = (): boolean =>
   process.env.READER_RATE_LIMIT_FAIL_OPEN === "true";
 
-let storage: RateLimitStorage | null = null;
+let cachedStorage: RateLimitStorage | null = null;
 
 const getStorage = (): RateLimitStorage => {
-  if (storage) return storage;
+  if (cachedStorage) return cachedStorage;
 
   if (process.env.UPSTASH_REDIS_REST_URL) {
-    storage = createUpstashRedisRateLimitStorage(createRedisClientFromEnv());
+    cachedStorage = createUpstashRedisRateLimitStorage(
+      createRedisClientFromEnv(),
+    );
   } else {
-    storage = createInMemoryRateLimitStorage();
+    cachedStorage = createInMemoryRateLimitStorage();
   }
 
-  return storage;
+  return cachedStorage;
 };
 
-const logger = Logger(
-  (process.env.NODE_ENV as Environment) ?? Environment.DEVELOPMENT,
-);
+const resolveEnvironment = (): Environment => {
+  const value: string | undefined = process.env.NODE_ENV;
+  if (value === Environment.PRODUCTION) return Environment.PRODUCTION;
+  if (value === Environment.STAGING) return Environment.STAGING;
+  return Environment.DEVELOPMENT;
+};
+
+const logger: LoggerType = Logger(resolveEnvironment());
+
+const applyRateLimitHeaders = (
+  response: NextResponse,
+  decision: RateLimitDecision,
+): void => {
+  response.headers.set("X-RateLimit-Limit", String(decision.limit));
+  response.headers.set("X-RateLimit-Remaining", String(decision.remaining));
+  response.headers.set(
+    "X-RateLimit-Reset",
+    String(Math.ceil(decision.resetAtMs / 1000)),
+  );
+};
+
+const buildRateLimitedResponse = (
+  decision: RateLimitDecision,
+): NextResponse => {
+  const retryAfterSeconds = Math.max(
+    1,
+    Math.ceil((decision.resetAtMs - Date.now()) / 1000),
+  );
+
+  const response = NextResponse.json(
+    { error: "Too Many Requests" },
+    { status: 429 },
+  );
+  response.headers.set("Retry-After", String(retryAfterSeconds));
+  applyRateLimitHeaders(response, decision);
+  return response;
+};
+
+const stripInformationLeakHeaders = (response: NextResponse): void => {
+  for (const header of INFORMATION_LEAK_HEADERS) {
+    response.headers.delete(header);
+  }
+};
 
 export async function proxy(request: NextRequest) {
-  const url = new URL(request.url);
-  const kind = resolveEndpointKind(url.pathname);
+  const kind = resolveEndpointKind(request.nextUrl.pathname);
   const policy = resolvePolicy(kind);
   const allowlist = resolveAllowlist();
   const failOpen = isFailOpen();
   const identifier = resolveIP(request);
 
-  type MatchResult =
-    | { type: "ok"; decision: RateLimitDecision }
-    | {
-        type: "err";
-        error: ResourceExhaustedError | ServiceUnavailableError | UnexpectedError;
-      };
+  type RateLimitOutcome =
+    | { kind: "ok"; decision: RateLimitDecision }
+    | { kind: "err"; error: ServiceUnavailableError | UnexpectedError };
 
-  const rateLimitResult: MatchResult = await enforceRateLimit(
+  const rateLimitOutcome: RateLimitOutcome = await enforceRateLimit(
     getStorage(),
     { ...policy, failOpen, allowlist },
     identifier,
-  ).match({
-    ok: (decision): MatchResult => ({ type: "ok", decision }),
-    err: (error): MatchResult => ({ type: "err", error }),
+  ).match<RateLimitOutcome>({
+    ok: (decision) => ({ kind: "ok", decision }),
+    err: (error) => ({ kind: "err", error }),
   });
 
-  if (rateLimitResult.type === "err") {
-    const error = rateLimitResult.error;
+  if (rateLimitOutcome.kind === "err") {
+    logger.error("rate_limit_storage_unavailable", {
+      identifier,
+      endpoint: kind,
+      limit: policy.limit,
+      windowMs: policy.windowMs,
+      error: rateLimitOutcome.error.message,
+    });
+    const errorResponse = new NextResponse(null, { status: 503 });
+    stripInformationLeakHeaders(errorResponse);
+    return errorResponse;
+  }
 
-    if (error._tag === Symbol.for("ResourceExhaustedError")) {
-      logger.warn("rate_limit_exceeded", {
-        identifier,
-        endpoint: kind,
-        limit: policy.limit,
-        windowMs: policy.windowMs,
-      });
+  const decision = rateLimitOutcome.decision;
 
-      const retryAfterSeconds = Math.ceil(policy.windowMs / 1000);
-      const resetAtMs = Date.now() + policy.windowMs;
-
-      const tooManyRequestsResponse = new NextResponse(
-        JSON.stringify({ error: "Too Many Requests" }),
-        { status: 429 },
-      );
-      tooManyRequestsResponse.headers.set(
-        "Retry-After",
-        String(retryAfterSeconds),
-      );
-      tooManyRequestsResponse.headers.set(
-        "X-RateLimit-Limit",
-        String(policy.limit),
-      );
-      tooManyRequestsResponse.headers.set(
-        "X-RateLimit-Reset",
-        String(Math.ceil(resetAtMs / 1000)),
-      );
-      return tooManyRequestsResponse;
-    }
-
-    if (!failOpen) {
-      return new NextResponse(null, { status: 503 });
-    }
+  if (!decision.allowed) {
+    logger.warn("rate_limit_exceeded", {
+      identifier,
+      endpoint: kind,
+      limit: decision.limit,
+      count: decision.count,
+      windowMs: policy.windowMs,
+      resetAtMs: decision.resetAtMs,
+    });
+    const tooManyRequestsResponse = buildRateLimitedResponse(decision);
+    stripInformationLeakHeaders(tooManyRequestsResponse);
+    return tooManyRequestsResponse;
   }
 
   const response = NextResponse.next();
-
-  for (const header of INFORMATION_LEAK_HEADERS) {
-    response.headers.delete(header);
-  }
-
+  applyRateLimitHeaders(response, decision);
+  stripInformationLeakHeaders(response);
   return response;
 }
 

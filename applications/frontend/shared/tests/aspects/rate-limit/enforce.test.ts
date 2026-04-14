@@ -7,7 +7,10 @@ import { serviceUnavailableError } from "@shared/aspects/error";
 import { enforceRateLimit } from "@shared/aspects/rate-limit/enforce";
 import type { RateLimitStorage } from "@shared/aspects/rate-limit/storage";
 
-const createAllowedStorage = (count: number, resetAtMs: number): RateLimitStorage => ({
+const createAllowedStorage = (
+  count: number,
+  resetAtMs: number,
+): RateLimitStorage => ({
   increment: () => ok({ count, resetAtMs }).toAsync(),
 });
 
@@ -35,18 +38,22 @@ describe("enforceRateLimit", () => {
     expect(result?.allowed).toBe(true);
     expect(result?.count).toBe(5);
     expect(result?.limit).toBe(10);
+    expect(result?.remaining).toBe(5);
   });
 
-  it("リクエスト数が制限を超えた場合 ResourceExhaustedError を返す", async () => {
+  it("リクエスト数が制限を超えた場合 allowed=false を返す", async () => {
     const resetAtMs = Date.now() + 60000;
     const storage = createAllowedStorage(11, resetAtMs);
 
     const result = await enforceRateLimit(storage, basePolicy, "ip:1.2.3.4").match({
-      ok: () => null,
-      err: (error) => error,
+      ok: (decision) => decision,
+      err: () => null,
     });
 
-    expect(result?._tag).toBe(Symbol.for("ResourceExhaustedError"));
+    expect(result).not.toBeNull();
+    expect(result?.allowed).toBe(false);
+    expect(result?.count).toBe(11);
+    expect(result?.remaining).toBe(0);
   });
 
   it("ちょうど制限値の場合は allowed=true を返す", async () => {
@@ -59,6 +66,7 @@ describe("enforceRateLimit", () => {
     });
 
     expect(result?.allowed).toBe(true);
+    expect(result?.remaining).toBe(0);
   });
 
   describe("failOpen モード", () => {
@@ -72,6 +80,7 @@ describe("enforceRateLimit", () => {
       });
 
       expect(result?.allowed).toBe(true);
+      expect(result?.limit).toBe(policy.limit);
     });
 
     it("failOpen=false の場合はストレージエラー時に ServiceUnavailableError を返す", async () => {
@@ -102,6 +111,8 @@ describe("enforceRateLimit", () => {
       });
 
       expect(result?.allowed).toBe(true);
+      expect(result?.limit).toBe(policy.limit);
+      expect(result?.remaining).toBe(policy.limit);
     });
 
     it("allowlist に含まれない識別子は通常の制限チェックを受ける", async () => {
@@ -132,5 +143,29 @@ describe("enforceRateLimit", () => {
     });
 
     expect(result?.resetAtMs).toBe(resetAtMs);
+  });
+
+  it("remaining は limit - count で算出される", async () => {
+    const resetAtMs = Date.now() + 60000;
+    const storage = createAllowedStorage(3, resetAtMs);
+
+    const result = await enforceRateLimit(storage, basePolicy, "ip:1.2.3.4").match({
+      ok: (decision) => decision,
+      err: () => null,
+    });
+
+    expect(result?.remaining).toBe(basePolicy.limit - 3);
+  });
+
+  it("count が limit を超えた場合 remaining は 0 になる", async () => {
+    const resetAtMs = Date.now() + 60000;
+    const storage = createAllowedStorage(15, resetAtMs);
+
+    const result = await enforceRateLimit(storage, basePolicy, "ip:1.2.3.4").match({
+      ok: (decision) => decision,
+      err: () => null,
+    });
+
+    expect(result?.remaining).toBe(0);
   });
 });
