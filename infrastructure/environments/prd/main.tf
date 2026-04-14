@@ -186,6 +186,11 @@ module "secrets" {
         "serviceAccount:${module.iam.service_account_emails["hut-prd-admin"]}",
       ]
     }
+    "prd-revalidation-secret" = {
+      accessor_members = [
+        "serviceAccount:${module.iam.service_account_emails["hut-prd-admin"]}",
+      ]
+    }
   }
 
   labels = local.common_labels
@@ -223,6 +228,7 @@ module "cloudrun_admin" {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID   = var.project_id
     FIREBASE_PROJECT_ID               = var.project_id
     NEXT_PUBLIC_USE_FIREBASE_EMULATOR = "false"
+    READER_ENDPOINT                   = var.reader_endpoint
   }
 
   labels = local.common_labels
@@ -261,6 +267,11 @@ module "cloudrun_admin" {
     {
       name      = "EVENT_PUBSUB_TOPIC_NAME"
       secret_id = module.secrets.secret_ids["prd-event-pubsub-topic-name"]
+      version   = "latest"
+    },
+    {
+      name      = "REVALIDATION_SECRET"
+      secret_id = module.secrets.secret_ids["prd-revalidation-secret"]
       version   = "latest"
     },
   ]

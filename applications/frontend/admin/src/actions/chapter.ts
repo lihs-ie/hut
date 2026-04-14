@@ -13,6 +13,8 @@ import { AdminChapterWorkflowProvider } from "@/providers/workflows/chapter";
 import { ChapterRepositoryProvider } from "@shared/providers/infrastructure/chapter";
 import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
+import { notifyReaderRevalidation } from "@/aspects/revalidation";
+import { REVALIDATION_TAGS } from "@shared/config/revalidation";
 
 export async function persist(
   unvalidated: UnvalidatedChapter,
@@ -38,6 +40,7 @@ export async function persist(
 
   revalidateTag("chapters", {});
   revalidateTag("series", {});
+  notifyReaderRevalidation([REVALIDATION_TAGS.CHAPTERS, REVALIDATION_TAGS.SERIES]);
 }
 
 export async function terminate(
@@ -58,6 +61,7 @@ export async function terminate(
 
   revalidateTag("chapters", {});
   revalidateTag("series", {});
+  notifyReaderRevalidation([REVALIDATION_TAGS.CHAPTERS, REVALIDATION_TAGS.SERIES]);
 }
 
 export async function findBySlug(slug: string): Promise<Chapter> {

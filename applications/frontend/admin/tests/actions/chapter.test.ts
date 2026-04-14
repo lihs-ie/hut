@@ -9,9 +9,25 @@ const mockRevalidateTag = vi.fn();
 const mockUnwrapForNextJs = vi.fn();
 const mockChapterWorkflowFindBySlug = vi.fn();
 const mockEventBrokerPublish = vi.fn();
+const mockNotifyReaderRevalidation = vi.fn();
 
 vi.mock("@/aspects/auth-guard", () => ({
   requireAdmin: mockRequireAdmin,
+}));
+
+vi.mock("@/aspects/revalidation", () => ({
+  notifyReaderRevalidation: mockNotifyReaderRevalidation,
+}));
+
+vi.mock("@shared/config/revalidation", () => ({
+  REVALIDATION_TAGS: {
+    ARTICLES: "articles",
+    MEMOS: "memos",
+    SERIES: "series",
+    CHAPTERS: "chapters",
+    TAGS: "tags",
+    PRIVACY_POLICY: "privacy-policy",
+  },
 }));
 
 vi.mock("next/cache", () => ({
@@ -106,6 +122,14 @@ describe("actions/chapter", () => {
       expect(mockRevalidateTag).toHaveBeenCalledWith("chapters", {});
       expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});
     });
+
+    it("notifyReaderRevalidation を CHAPTERS と SERIES タグで呼び出す", async () => {
+      const { persist } = await import("@/actions/chapter");
+
+      await persist(unvalidated);
+
+      expect(mockNotifyReaderRevalidation).toHaveBeenCalledWith(["chapters", "series"]);
+    });
   });
 
   describe("findBySlug", () => {
@@ -176,6 +200,14 @@ describe("actions/chapter", () => {
 
       expect(mockRevalidateTag).toHaveBeenCalledWith("chapters", {});
       expect(mockRevalidateTag).toHaveBeenCalledWith("series", {});
+    });
+
+    it("notifyReaderRevalidation を CHAPTERS と SERIES タグで呼び出す", async () => {
+      const { terminate } = await import("@/actions/chapter");
+
+      await terminate("01HWXYZ0000000000000000000", "test-series");
+
+      expect(mockNotifyReaderRevalidation).toHaveBeenCalledWith(["chapters", "series"]);
     });
   });
 });

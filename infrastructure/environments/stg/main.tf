@@ -175,6 +175,12 @@ module "secrets" {
         "serviceAccount:${module.iam.service_account_emails["hut-stg-admin"]}",
       ]
     }
+    "stg-revalidation-secret" = {
+      accessor_members = [
+        "serviceAccount:${module.iam.service_account_emails["hut-stg-reader"]}",
+        "serviceAccount:${module.iam.service_account_emails["hut-stg-admin"]}",
+      ]
+    }
   }
 
   labels = local.common_labels
@@ -232,6 +238,11 @@ module "cloudrun_reader" {
       secret_id = module.secrets.secret_ids["stg-firebase-app-id"]
       version   = "latest"
     },
+    {
+      name      = "REVALIDATION_SECRET"
+      secret_id = module.secrets.secret_ids["stg-revalidation-secret"]
+      version   = "latest"
+    },
   ]
 }
 
@@ -250,6 +261,7 @@ module "cloudrun_admin" {
     FIREBASE_PROJECT_ID             = var.project_id
     DISALLOW_ROBOTS                 = "true"
     DISABLE_SECURE_COOKIE           = "true"
+    READER_ENDPOINT                 = module.cloudrun_reader.service_uri
   }
 
   labels = local.common_labels
@@ -288,6 +300,11 @@ module "cloudrun_admin" {
     {
       name      = "EVENT_PUBSUB_TOPIC_NAME"
       secret_id = module.secrets.secret_ids["stg-event-pubsub-topic-name"]
+      version   = "latest"
+    },
+    {
+      name      = "REVALIDATION_SECRET"
+      secret_id = module.secrets.secret_ids["stg-revalidation-secret"]
       version   = "latest"
     },
   ]
@@ -340,6 +357,14 @@ resource "google_cloud_run_v2_service_iam_member" "search_token_worker_invoker" 
   name     = module.cloudrun_search_token_worker.service_name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${module.iam.service_account_emails["hut-stg-search-token-worker"]}"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "admin_reader_invoker" {
+  project  = var.project_id
+  location = var.region
+  name     = module.cloudrun_reader.service_name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${module.iam.service_account_emails["hut-stg-admin"]}"
 }
 
 module "github_actions_iam" {

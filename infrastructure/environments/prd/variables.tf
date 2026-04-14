@@ -55,6 +55,16 @@ variable "oauth_client_secret" {
   sensitive   = true
 }
 
+variable "reader_endpoint" {
+  type        = string
+  description = "Reader endpoint URL (Cloudflare Workers deployment URL) for revalidation webhook. Must be an https URL without a trailing slash."
+
+  validation {
+    condition     = can(regex("^https://[^/]+(/[^/]+)*$", var.reader_endpoint)) && !endswith(var.reader_endpoint, "/")
+    error_message = "The reader_endpoint must be an https URL without a trailing slash (e.g. https://reader.example.com)."
+  }
+}
+
 variable "billing_export_service_account" {
   description = "Service account email used by GCP Billing to write export data to BigQuery"
   type        = string

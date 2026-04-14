@@ -119,6 +119,9 @@ jobs:
           TF_VAR_oauth_client_secret: ${{ secrets.TF_VAR_OAUTH_CLIENT_SECRET }}
         run: |
           set +e
+          if [ "${{ matrix.name }}" = "prd" ]; then
+            export TF_VAR_reader_endpoint=https://reader.example.com
+          fi
           terraform plan -input=false -no-color -lock=false -out=tfplan | tee plan.txt
           STATUS=${PIPESTATUS[0]}
           {

@@ -6,6 +6,8 @@ import { Series, UnvalidatedCriteria, UnvalidatedSeries } from "@shared/domains/
 import { AdminSeriesWorkflowProvider } from "@/providers/workflows/series";
 import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
+import { notifyReaderRevalidation } from "@/aspects/revalidation";
+import { REVALIDATION_TAGS } from "@shared/config/revalidation";
 
 export async function findBySlug(slug: string): Promise<Series> {
   await requireAdmin();
@@ -25,6 +27,7 @@ export async function persist(unvalidated: UnvalidatedSeries): Promise<void> {
   );
 
   revalidateTag("series", {});
+  notifyReaderRevalidation([REVALIDATION_TAGS.SERIES]);
 }
 
 export async function terminate(identifier: string): Promise<void> {
@@ -35,6 +38,7 @@ export async function terminate(identifier: string): Promise<void> {
   );
 
   revalidateTag("series", {});
+  notifyReaderRevalidation([REVALIDATION_TAGS.SERIES]);
 }
 
 export async function search(unvalidated: UnvalidatedCriteria): Promise<Series[]> {
