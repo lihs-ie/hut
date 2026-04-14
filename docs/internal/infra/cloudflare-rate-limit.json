@@ -1,0 +1,15 @@
+{
+  "rules": [
+    {
+      "description": "reader search rate limit",
+      "expression": "http.request.uri.path eq \"/search\"",
+      "action": "managed_challenge",
+      "ratelimit": {
+        "characteristics": ["ip.src"],
+        "period": 60,
+        "requests_per_period": 30,
+        "mitigation_timeout": 600
+      }
+    }
+  ]
+}
