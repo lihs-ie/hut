@@ -74,11 +74,15 @@ describe("proxy", () => {
   describe("Cloudflare access guard (D-01)", () => {
     let originalNodeEnv: string | undefined;
     let originalDisableFlag: string | undefined;
+    let originalEmulatorFlag: string | undefined;
 
     beforeEach(() => {
       originalNodeEnv = rememberEnvironmentVariable("NODE_ENV");
       originalDisableFlag = rememberEnvironmentVariable(
         "READER_DISABLE_CLOUDFLARE_GUARD",
+      );
+      originalEmulatorFlag = rememberEnvironmentVariable(
+        "NEXT_PUBLIC_USE_FIREBASE_EMULATOR",
       );
     });
 
@@ -87,6 +91,10 @@ describe("proxy", () => {
       restoreEnvironmentVariable(
         "READER_DISABLE_CLOUDFLARE_GUARD",
         originalDisableFlag,
+      );
+      restoreEnvironmentVariable(
+        "NEXT_PUBLIC_USE_FIREBASE_EMULATOR",
+        originalEmulatorFlag,
       );
     });
 
@@ -128,6 +136,18 @@ describe("proxy", () => {
     it("READER_DISABLE_CLOUDFLARE_GUARD=true のときは production でも通過する", async () => {
       process.env.NODE_ENV = "production";
       process.env.READER_DISABLE_CLOUDFLARE_GUARD = "true";
+
+      const { proxy } = await import("../src/proxy");
+      const request = createRequest("https://hut.lihs.dev/");
+      const response = proxy(request);
+
+      expect(response.status).toBe(200);
+    });
+
+    it("NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true のときは production でも通過する", async () => {
+      process.env.NODE_ENV = "production";
+      delete process.env.READER_DISABLE_CLOUDFLARE_GUARD;
+      process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = "true";
 
       const { proxy } = await import("../src/proxy");
       const request = createRequest("https://hut.lihs.dev/");

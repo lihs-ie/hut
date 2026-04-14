@@ -16,6 +16,9 @@ const isCloudflareGuardDisabled = (): boolean => {
   if (nodeEnvironment !== "production") {
     return true;
   }
+  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === DISABLE_GUARD_FLAG) {
+    return true;
+  }
   const disableFlag = process.env.READER_DISABLE_CLOUDFLARE_GUARD;
   return disableFlag === DISABLE_GUARD_FLAG;
 };
