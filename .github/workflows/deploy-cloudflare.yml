@@ -1,0 +1,91 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (prd only)"
+        required: true
+        type: choice
+        options:
+          - prd
+      tag:
+        description: "Deployment tag (defaults to git SHA)"
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      environment:
+        description: "Target environment (prd only)"
+        required: true
+        type: string
+      tag:
+        description: "Deployment tag (defaults to git SHA)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-cloudflare-reader-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate input combination
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          if [ "${ENVIRONMENT}" != "prd" ]; then
+            echo "::error::Cloudflare Workers deploy only supports prd environment (got: ${ENVIRONMENT})"
+            exit 1
+          fi
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup frontend workspace
+        uses: ./.github/actions/setup-frontend
+
+      - name: Resolve deployment tag
+        id: vars
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          TAG="${INPUT_TAG}"
+          if [ -z "${TAG}" ]; then
+            TAG="${GIT_SHA}"
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build Reader worker bundle
+        run: pnpm --filter @hut/reader build:worker
+        working-directory: applications/frontend
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: applications/frontend/reader
+          command: deploy
+          packageManager: pnpm
+
+      - name: List recent deployments
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: applications/frontend/reader
+        run: pnpm exec wrangler deployments list
