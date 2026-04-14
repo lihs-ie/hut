@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false
@@ -36,7 +36,7 @@ jobs:
         run: terraform fmt -check -recursive
 
   plan:
-    name: Terraform plan (${{ matrix.environment }})
+    name: Terraform plan (${{ matrix.name }})
     needs: fmt
     runs-on: ubuntu-latest
     permissions:
@@ -46,23 +46,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        environment: [stg, prd]
-    environment: ${{ matrix.environment }}
+        include:
+          - name: stg
+            plan_env: stg-plan
+          - name: prd
+            plan_env: prd-plan
+    # plan_env は PR トリガで参照するため deployment_branch_policy を
+    # 付けない plan 専用環境 (stg-plan / prd-plan)。
+    # deploy/migrate 用の stg / prd 環境は main/staging のみ許可される。
+    environment: ${{ matrix.plan_env }}
     defaults:
       run:
-        working-directory: infrastructure/environments/${{ matrix.environment }}
+        working-directory: infrastructure/environments/${{ matrix.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false
 
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6 # v4
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
         with:
           tflint_version: ${{ env.TFLINT_VERSION }}
 
@@ -138,9 +145,9 @@ jobs:
 
       - name: Upsert PR comment
         if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          MATRIX_ENV: ${{ matrix.environment }}
+          MATRIX_ENV: ${{ matrix.name }}
           PLAN_TEXT: ${{ steps.plan-output.outputs.plan }}
           PLAN_STATUS: ${{ job.status }}
         with:

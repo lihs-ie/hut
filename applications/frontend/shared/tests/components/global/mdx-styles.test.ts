@@ -58,4 +58,19 @@ describe("components/global/mdx.module.css", () => {
     const preSection = css.slice(preStart, css.indexOf("}", preStart) + 1);
     expect(preSection).toMatch(/padding/);
   });
+
+  it(".pre の PC 時 font-size が 1rem (16px)", () => {
+    const preStart = css.indexOf(".pre {");
+    const preSection = css.slice(preStart, css.indexOf("}", preStart) + 1);
+    expect(preSection).toContain("font-size: 1rem");
+  });
+
+  it(".pre の SP 時 font-size が 0.875rem (14px)", () => {
+    const mediaStart = css.indexOf("@media (max-width: 768px)");
+    const mediaSection = css.slice(mediaStart);
+    const preStart = mediaSection.indexOf(".pre {");
+    const preEnd = mediaSection.indexOf("}", preStart) + 1;
+    const preSection = mediaSection.slice(preStart, preEnd);
+    expect(preSection).toContain("font-size: 0.875rem");
+  });
 });

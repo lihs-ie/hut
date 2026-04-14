@@ -33,6 +33,28 @@ const draftArticle = {
   title: "Next.js App Routerの使い方",
 };
 
+const publishedArticlesNewestFirst = [
+  {
+    slug: "mermaid-all-diagrams",
+    title: "Mermaid図 全サンプル集",
+  },
+  {
+    slug: "mermaid-diagram-test",
+    title: "Mermaid図を使った技術ドキュメント",
+  },
+];
+
+const publishedSeriesNewestFirst = [
+  {
+    slug: "typescript-design-patterns",
+    title: "実践TypeScript設計パターン",
+  },
+  {
+    slug: "rust-system-programming",
+    title: "Rustで学ぶシステムプログラミング",
+  },
+];
+
 // シードデータの公開メモ情報 (下書きを除く)
 const publishedMemos = [
   {
@@ -458,6 +480,93 @@ test.describe("home page", () => {
 
       const href = await viewMoreLink.getAttribute("href");
       expect(href).toBe("/series");
+    });
+  });
+
+  test.describe("display order", () => {
+    test("article section lists cards in newest first order", async ({
+      page,
+    }: TestArgs) => {
+      await page.goto("/", { waitUntil: "load" });
+
+      const articleSection = page.locator("section").filter({
+        has: page.getByRole("heading", { name: "ARTICLE" }),
+      });
+
+      const articleCardLinks = articleSection
+        .getByRole("link")
+        .filter({ has: page.locator("article") });
+
+      await expect(articleCardLinks.first()).toBeVisible();
+
+      const firstHref = await articleCardLinks.first().getAttribute("href");
+      expect(firstHref).toContain(
+        `/articles/${publishedArticlesNewestFirst[0].slug}`,
+      );
+
+      const hrefs = await articleCardLinks.evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("href") ?? ""),
+      );
+      const newestIndex = hrefs.findIndex((href) =>
+        href.includes(`/articles/${publishedArticlesNewestFirst[0].slug}`),
+      );
+      const secondIndex = hrefs.findIndex((href) =>
+        href.includes(`/articles/${publishedArticlesNewestFirst[1].slug}`),
+      );
+      expect(newestIndex).toBeGreaterThanOrEqual(0);
+      expect(secondIndex).toBeGreaterThan(newestIndex);
+    });
+
+    test("memo section lists the newest memo as the first card", async ({
+      page,
+    }: TestArgs) => {
+      await page.goto("/", { waitUntil: "load" });
+
+      const memoSection = page.locator("section").filter({
+        has: page.getByRole("heading", { name: "MEMO" }),
+      });
+
+      const memoCardLinks = memoSection
+        .getByRole("link")
+        .filter({ has: page.locator("article") });
+
+      await expect(memoCardLinks.first()).toBeVisible();
+
+      const firstHref = await memoCardLinks.first().getAttribute("href");
+      expect(firstHref).toContain(`/memos/${publishedMemos[0].slug}`);
+    });
+
+    test("series section lists cards in newest first order", async ({
+      page,
+    }: TestArgs) => {
+      await page.goto("/", { waitUntil: "load" });
+
+      const seriesSection = page.locator("section").filter({
+        has: page.getByRole("heading", { name: "SERIES" }),
+      });
+
+      const seriesCardLinks = seriesSection
+        .getByRole("link")
+        .filter({ has: page.locator("article") });
+
+      await expect(seriesCardLinks.first()).toBeVisible();
+
+      const firstHref = await seriesCardLinks.first().getAttribute("href");
+      expect(firstHref).toContain(
+        `/series/${publishedSeriesNewestFirst[0].slug}`,
+      );
+
+      const hrefs = await seriesCardLinks.evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("href") ?? ""),
+      );
+      const newestIndex = hrefs.findIndex((href) =>
+        href.includes(`/series/${publishedSeriesNewestFirst[0].slug}`),
+      );
+      const olderIndex = hrefs.findIndex((href) =>
+        href.includes(`/series/${publishedSeriesNewestFirst[1].slug}`),
+      );
+      expect(newestIndex).toBeGreaterThanOrEqual(0);
+      expect(olderIndex).toBeGreaterThan(newestIndex);
     });
   });
 

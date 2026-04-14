@@ -219,7 +219,15 @@ export async function seedSeries(): Promise<void> {
 
   console.log("\n--- Creating Series ---");
 
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const seriesCreatedAts: Record<string, Date> = {
+    [SERIES_IDS.series1]: new Date(now.getTime() - 2 * oneDayMs),
+    [SERIES_IDS.series2]: new Date(now.getTime() - 1 * oneDayMs),
+    [SERIES_IDS.series3]: now,
+  };
+
   for (const series of SERIES_DATA_INTERNAL) {
+    const seriesCreatedAt = seriesCreatedAts[series.id] ?? now;
     await createDocument(
       "series",
       series.id,
@@ -234,8 +242,8 @@ export async function seedSeries(): Promise<void> {
         chapters: series.chapters,
         status: series.status,
         timeline: {
-          createdAt: now,
-          updatedAt: now,
+          createdAt: seriesCreatedAt,
+          updatedAt: seriesCreatedAt,
         },
         version: 1,
       },

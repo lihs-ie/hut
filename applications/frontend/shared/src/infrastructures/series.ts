@@ -21,6 +21,7 @@ import {
   SeriesSlug,
   validateSeries,
 } from "@shared/domains/series";
+import { Order, SortByField } from "@shared/domains/common/sort";
 import { fromPromise } from "@shared/aspects/result";
 import {
   aggregateNotFoundError,
@@ -222,6 +223,12 @@ export const FirebaseSeriesRepository = (
             operations.where("tags", "array-contains-any", criteria.tags),
           );
         }
+
+        const sortByField = criteria.sortBy ?? SortByField.CREATED_AT;
+        const sortOrder = criteria.order ?? Order.DESC;
+        constraints.push(
+          operations.orderBy(`timeline.${sortByField}`, sortOrder),
+        );
 
         const q = operations.query(collection, ...constraints);
         const querySnapshot = await operations.getDocs(q);
