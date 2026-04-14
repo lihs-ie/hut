@@ -359,6 +359,14 @@ resource "google_cloud_run_v2_service_iam_member" "search_token_worker_invoker" 
   member   = "serviceAccount:${module.iam.service_account_emails["hut-stg-search-token-worker"]}"
 }
 
+resource "google_cloud_run_v2_service_iam_member" "admin_reader_invoker" {
+  project  = var.project_id
+  location = var.region
+  name     = module.cloudrun_reader.service_name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${module.iam.service_account_emails["hut-stg-admin"]}"
+}
+
 module "github_actions_iam" {
   source = "../../modules/github_actions_iam"
 
