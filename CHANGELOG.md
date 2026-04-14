@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.2](https://github.com/lihs-ie/hut/compare/v0.2.1...v0.2.2) (2026-04-14)
+
+
+### Miscellaneous Chores
+
+* **ci:** pin release-please target-branch to main ([c024384](https://github.com/lihs-ie/hut/commit/c024384e543b29532290fb076f295a34da63df39))
+* **ci:** pin release-please target-branch to main ([49ffa55](https://github.com/lihs-ie/hut/commit/49ffa5565949a54b07a7b3a096484dd0199a4f88))
+* **ci:** restore push trigger on staging to propagate checks for bot PRs ([c1a3246](https://github.com/lihs-ie/hut/commit/c1a324601d0ac37d3a4115ac988d1d34f13216da))
+* **ci:** restore push trigger on staging to unblock bot-authored sync PRs ([0d7c193](https://github.com/lihs-ie/hut/commit/0d7c1932c293ce1e0c2130d0cdd53bec10c9e9e0))
+* sync staging to main ([837cb4d](https://github.com/lihs-ie/hut/commit/837cb4d6d2b35a6a8b197b06552a0940d5cff1e8))
+* sync staging to main ([04111b1](https://github.com/lihs-ie/hut/commit/04111b1953f1b023d3052c01e0940e3c45327160))
+
 ## [0.2.1](https://github.com/lihs-ie/hut/compare/v0.2.0...v0.2.1) (2026-04-14)
 
 
