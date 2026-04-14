@@ -13,17 +13,22 @@ export type FirestoreFields = Record<string, FirestoreValue>;
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
-const hasKey = <K extends string>(
-  value: object,
-  key: K,
-): value is { [P in K]: unknown } => key in value;
+const isPlainObject = (
+  value: unknown,
+): value is Record<string, unknown> => {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+};
 
-const convertValue = (value: FirestoreValue): JsonValue => {
-  if (hasKey(value, "stringValue") && typeof value.stringValue === "string") {
+const convertValue = (value: unknown): JsonValue => {
+  if (!isPlainObject(value)) {
+    return null;
+  }
+
+  if (typeof value.stringValue === "string") {
     return value.stringValue;
   }
 
-  if (hasKey(value, "integerValue")) {
+  if ("integerValue" in value) {
     const raw = value.integerValue;
     if (typeof raw === "number") {
       return raw;
@@ -34,38 +39,34 @@ const convertValue = (value: FirestoreValue): JsonValue => {
     return 0;
   }
 
-  if (hasKey(value, "doubleValue") && typeof value.doubleValue === "number") {
+  if (typeof value.doubleValue === "number") {
     return value.doubleValue;
   }
 
-  if (hasKey(value, "booleanValue") && typeof value.booleanValue === "boolean") {
+  if (typeof value.booleanValue === "boolean") {
     return value.booleanValue;
   }
 
-  if (hasKey(value, "nullValue")) {
+  if ("nullValue" in value) {
     return null;
   }
 
-  if (hasKey(value, "timestampValue") && typeof value.timestampValue === "string") {
+  if (typeof value.timestampValue === "string") {
     return value.timestampValue;
   }
 
-  if (hasKey(value, "arrayValue") && typeof value.arrayValue === "object" && value.arrayValue !== null) {
-    const arrayObject = value.arrayValue;
-    if (hasKey(arrayObject, "values") && Array.isArray(arrayObject.values)) {
-      return arrayObject.values.map((item) => convertValue(item as FirestoreValue));
+  if (isPlainObject(value.arrayValue)) {
+    const items = value.arrayValue.values;
+    if (Array.isArray(items)) {
+      return items.map((item) => convertValue(item));
     }
     return [];
   }
 
-  if (hasKey(value, "mapValue") && typeof value.mapValue === "object" && value.mapValue !== null) {
-    const mapObject = value.mapValue;
-    if (
-      hasKey(mapObject, "fields") &&
-      typeof mapObject.fields === "object" &&
-      mapObject.fields !== null
-    ) {
-      return firestoreFieldsToObject(mapObject.fields as FirestoreFields);
+  if (isPlainObject(value.mapValue)) {
+    const nestedFields = value.mapValue.fields;
+    if (isPlainObject(nestedFields)) {
+      return firestoreFieldsToObject(nestedFields);
     }
     return {};
   }
@@ -74,7 +75,7 @@ const convertValue = (value: FirestoreValue): JsonValue => {
 };
 
 export const firestoreFieldsToObject = (
-  fields: FirestoreFields | undefined,
+  fields: Record<string, unknown> | undefined,
 ): Record<string, JsonValue> => {
   if (fields === undefined) {
     return {};

@@ -1,4 +1,4 @@
-import { firestoreFieldsToObject, type FirestoreFields, type JsonValue } from "./value-converter";
+import { firestoreFieldsToObject, type JsonValue } from "./value-converter";
 import type { AccessTokenProvider } from "./access-token";
 
 const FIRESTORE_BASE_URL = "https://firestore.googleapis.com/v1";
@@ -40,22 +40,37 @@ export type FirestoreRestClient = {
 
 type DocumentResponse = {
   name?: string;
-  fields?: FirestoreFields;
+  fields?: Record<string, unknown>;
 };
 
 type RunQueryEntry = {
   document?: DocumentResponse;
 };
 
+const isPlainObject = (
+  value: unknown,
+): value is Record<string, unknown> => {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+};
+
 const isDocumentResponse = (value: unknown): value is DocumentResponse => {
-  if (value === null || typeof value !== "object") {
+  if (!isPlainObject(value)) {
+    return false;
+  }
+  if (value.name !== undefined && typeof value.name !== "string") {
+    return false;
+  }
+  if (value.fields !== undefined && !isPlainObject(value.fields)) {
     return false;
   }
   return true;
 };
 
 const isRunQueryEntry = (value: unknown): value is RunQueryEntry => {
-  if (value === null || typeof value !== "object") {
+  if (!isPlainObject(value)) {
+    return false;
+  }
+  if (value.document !== undefined && !isDocumentResponse(value.document)) {
     return false;
   }
   return true;
@@ -150,7 +165,7 @@ export const createFirestoreRestClient = (
       );
     }
 
-    const body = (await response.json()) as unknown;
+    const body: unknown = await response.json();
     return toDocument(body);
   };
 
@@ -176,7 +191,7 @@ export const createFirestoreRestClient = (
       );
     }
 
-    const parsed = (await response.json()) as unknown;
+    const parsed: unknown = await response.json();
     if (!Array.isArray(parsed)) {
       return [];
     }

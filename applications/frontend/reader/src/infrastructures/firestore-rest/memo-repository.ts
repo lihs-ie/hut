@@ -21,7 +21,12 @@ import type {
   FirestoreRestClient,
 } from "./client";
 import type { JsonValue } from "./value-converter";
-import { describeError, toStringArray, toTimeline } from "./mapping";
+import {
+  describeError,
+  isJsonObject,
+  toStringArray,
+  toTimeline,
+} from "./mapping";
 
 const MEMOS_COLLECTION = "memos";
 
@@ -31,12 +36,11 @@ const toEntries = (value: JsonValue): UnvalidatedEntry[] => {
   }
   const entries: UnvalidatedEntry[] = [];
   for (const item of value) {
-    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+    if (!isJsonObject(item)) {
       continue;
     }
-    const record = item as Record<string, JsonValue>;
-    const text = record.text;
-    const createdAt = record.createdAt;
+    const text = item.text;
+    const createdAt = item.createdAt;
     if (typeof text !== "string" || typeof createdAt !== "string") {
       continue;
     }

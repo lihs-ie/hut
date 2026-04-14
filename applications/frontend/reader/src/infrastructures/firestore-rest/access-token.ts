@@ -24,25 +24,19 @@ type TokenResponse = {
   expiresIn: number;
 };
 
-const isTokenResponse = (value: unknown): value is TokenResponse => {
-  if (value === null || typeof value !== "object") {
-    return false;
-  }
-  const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.accessToken === "string" &&
-    typeof candidate.expiresIn === "number"
-  );
+const isPlainObject = (
+  value: unknown,
+): value is Record<string, unknown> => {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 };
 
 const parseTokenResponse = (body: unknown): TokenResponse => {
-  if (body === null || typeof body !== "object") {
+  if (!isPlainObject(body)) {
     throw new Error("Invalid access token response body");
   }
 
-  const record = body as Record<string, unknown>;
-  const accessTokenValue = record.access_token;
-  const expiresInValue = record.expires_in;
+  const accessTokenValue = body.access_token;
+  const expiresInValue = body.expires_in;
 
   if (typeof accessTokenValue !== "string") {
     throw new Error("Access token response is missing access_token");
@@ -53,16 +47,10 @@ const parseTokenResponse = (body: unknown): TokenResponse => {
       ? expiresInValue
       : DEFAULT_EXPIRATION_SECONDS;
 
-  const result = {
+  return {
     accessToken: accessTokenValue,
     expiresIn,
   };
-
-  if (!isTokenResponse(result)) {
-    throw new Error("Access token response failed validation");
-  }
-
-  return result;
 };
 
 const createSignedAssertion = async (
@@ -105,7 +93,7 @@ const requestAccessToken = async (
     );
   }
 
-  const parsed = (await response.json()) as unknown;
+  const parsed: unknown = await response.json();
   return parseTokenResponse(parsed);
 };
 
