@@ -75,10 +75,16 @@ const isFailOpen = (): boolean =>
 
 let cachedStorage: RateLimitStorage | null = null;
 
+const shouldUseRedis = (): boolean =>
+  Boolean(
+    process.env.UPSTASH_REDIS_REST_URL &&
+      process.env.UPSTASH_REDIS_REST_TOKEN,
+  );
+
 const getStorage = (): RateLimitStorage => {
   if (cachedStorage) return cachedStorage;
 
-  if (process.env.UPSTASH_REDIS_REST_URL) {
+  if (shouldUseRedis()) {
     cachedStorage = createUpstashRedisRateLimitStorage(
       createRedisClientFromEnv(),
     );

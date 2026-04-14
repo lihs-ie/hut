@@ -81,4 +81,39 @@ describe("resolveIP", () => {
 
     expect(result).toBe("ip:unknown");
   });
+
+  it("cf-connecting-ip ヘッダーを最優先で返す", () => {
+    const request = createRequest({
+      "cf-connecting-ip": "198.51.100.7",
+      "true-client-ip": "198.51.100.8",
+      "x-forwarded-for": "10.0.0.1, 192.168.1.1",
+      "x-real-ip": "10.0.0.2",
+    });
+
+    const result = resolveIP(request);
+
+    expect(result).toBe("ip:198.51.100.7");
+  });
+
+  it("cf-connecting-ip がない場合は true-client-ip を次に参照する", () => {
+    const request = createRequest({
+      "true-client-ip": "198.51.100.8",
+      "x-forwarded-for": "10.0.0.1, 192.168.1.1",
+      "x-real-ip": "10.0.0.2",
+    });
+
+    const result = resolveIP(request);
+
+    expect(result).toBe("ip:198.51.100.8");
+  });
+
+  it("cf-connecting-ip の IPv4-mapped IPv6 を正規化する", () => {
+    const request = createRequest({
+      "cf-connecting-ip": "::ffff:198.51.100.7",
+    });
+
+    const result = resolveIP(request);
+
+    expect(result).toBe("ip:198.51.100.7");
+  });
 });

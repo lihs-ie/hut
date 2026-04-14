@@ -319,10 +319,34 @@ describe("proxy", () => {
       expect(secondResponse.status).toBe(429);
     });
 
-    it("READER_RATE_LIMIT_FAIL_OPEN=true の場合はストレージ障害時も通過する", async () => {
+    it("ストレージ障害時に READER_RATE_LIMIT_FAIL_OPEN=true なら通過する", async () => {
       vi.stubEnv("READER_RATE_LIMIT_DEFAULT_LIMIT", "10");
       vi.stubEnv("READER_RATE_LIMIT_DEFAULT_WINDOW_MS", "60000");
       vi.stubEnv("READER_RATE_LIMIT_FAIL_OPEN", "true");
+
+      vi.doMock("@shared/aspects/rate-limit", async () => {
+        const actual =
+          await vi.importActual<typeof import("@shared/aspects/rate-limit")>(
+            "@shared/aspects/rate-limit",
+          );
+        const { err } =
+          await vi.importActual<typeof import("@shared/aspects/result")>(
+            "@shared/aspects/result",
+          );
+        const { serviceUnavailableError } =
+          await vi.importActual<typeof import("@shared/aspects/error")>(
+            "@shared/aspects/error",
+          );
+        return {
+          ...actual,
+          createInMemoryRateLimitStorage: () => ({
+            increment: () =>
+              err(
+                serviceUnavailableError("mocked storage outage", true),
+              ).toAsync(),
+          }),
+        };
+      });
 
       const { proxy } = await import("../src/proxy");
       const request = createRequest("https://example.com/some-page", {
@@ -332,6 +356,50 @@ describe("proxy", () => {
       const response = await proxy(request);
 
       expect(response.status).not.toBe(429);
+      expect(response.status).not.toBe(503);
+
+      vi.doUnmock("@shared/aspects/rate-limit");
+    });
+
+    it("ストレージ障害時に READER_RATE_LIMIT_FAIL_OPEN=false なら 503 を返す", async () => {
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_LIMIT", "10");
+      vi.stubEnv("READER_RATE_LIMIT_DEFAULT_WINDOW_MS", "60000");
+      vi.stubEnv("READER_RATE_LIMIT_FAIL_OPEN", "false");
+
+      vi.doMock("@shared/aspects/rate-limit", async () => {
+        const actual =
+          await vi.importActual<typeof import("@shared/aspects/rate-limit")>(
+            "@shared/aspects/rate-limit",
+          );
+        const { err } =
+          await vi.importActual<typeof import("@shared/aspects/result")>(
+            "@shared/aspects/result",
+          );
+        const { serviceUnavailableError } =
+          await vi.importActual<typeof import("@shared/aspects/error")>(
+            "@shared/aspects/error",
+          );
+        return {
+          ...actual,
+          createInMemoryRateLimitStorage: () => ({
+            increment: () =>
+              err(
+                serviceUnavailableError("mocked storage outage", true),
+              ).toAsync(),
+          }),
+        };
+      });
+
+      const { proxy } = await import("../src/proxy");
+      const request = createRequest("https://example.com/some-page", {
+        "x-forwarded-for": "1.2.3.4",
+      });
+
+      const response = await proxy(request);
+
+      expect(response.status).toBe(503);
+
+      vi.doUnmock("@shared/aspects/rate-limit");
     });
   });
 });

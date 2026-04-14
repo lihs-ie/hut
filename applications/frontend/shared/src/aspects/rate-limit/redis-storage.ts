@@ -33,21 +33,38 @@ export const createUpstashRedisRateLimitStorage = (
   increment(key, windowMs) {
     return fromPromise(
       (async () => {
-        const pipeline = client.pipeline();
-        pipeline.incr(key);
-        pipeline.pexpire(key, windowMs);
-        pipeline.pttl(key);
+        const incrementPipeline = client.pipeline();
+        incrementPipeline.incr(key);
 
-        const results = await pipeline.exec();
+        const incrementResults = await incrementPipeline.exec();
 
-        if (!Array.isArray(results) || results.length < 3) {
+        if (!Array.isArray(incrementResults) || incrementResults.length < 1) {
           throw new Error(
-            `Unexpected Redis pipeline result shape: ${JSON.stringify(results)}`,
+            `Unexpected Redis pipeline result shape: ${JSON.stringify(incrementResults)}`,
           );
         }
 
-        const count = toFiniteNumber(results[0], 0);
-        const remainingMs = toFiniteNumber(results[2], -1);
+        const count = toFiniteNumber(incrementResults[0], 0);
+
+        const ttlPipeline = client.pipeline();
+        if (count === 1) {
+          ttlPipeline.pexpire(key, windowMs);
+        }
+        ttlPipeline.pttl(key);
+
+        const ttlResults = await ttlPipeline.exec();
+        const expectedLength = count === 1 ? 2 : 1;
+
+        if (!Array.isArray(ttlResults) || ttlResults.length < expectedLength) {
+          throw new Error(
+            `Unexpected Redis pipeline result shape: ${JSON.stringify(ttlResults)}`,
+          );
+        }
+
+        const remainingMs = toFiniteNumber(
+          ttlResults[count === 1 ? 1 : 0],
+          -1,
+        );
 
         const nowMs = Date.now();
         const resetAtMs =
