@@ -8,10 +8,10 @@
     "build": "next build",
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
-    "build:worker": "opennextjs-cloudflare build",
-    "preview:worker": "opennextjs-cloudflare preview",
-    "deploy:worker": "opennextjs-cloudflare deploy",
-    "dev:worker": "wrangler dev"
+    "build:worker": "READER_TARGET_RUNTIME=edge-worker opennextjs-cloudflare build",
+    "preview:worker": "READER_TARGET_RUNTIME=edge-worker opennextjs-cloudflare preview",
+    "deploy:worker": "READER_TARGET_RUNTIME=edge-worker opennextjs-cloudflare deploy",
+    "dev:worker": "READER_TARGET_RUNTIME=edge-worker wrangler dev"
   },
   "dependencies": {
     "@hut/shared": "workspace:*",

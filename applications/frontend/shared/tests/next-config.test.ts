@@ -79,5 +79,25 @@ describe("next.config.shared", () => {
 
       expect(config.images?.remotePatterns).toEqual([]);
     });
+
+    it("targetRuntime を省略すると node を選択し output=standalone を維持する", () => {
+      const config = createBaseNextConfig();
+
+      expect(config.output).toBe("standalone");
+      expect(config.images).not.toHaveProperty("unoptimized");
+    });
+
+    it("targetRuntime: 'edge-worker' を渡すと images.unoptimized が true になり output は省略される", () => {
+      const config = createBaseNextConfig({ targetRuntime: "edge-worker" });
+
+      expect(config.output).toBeUndefined();
+      expect(config.images?.unoptimized).toBe(true);
+    });
+
+    it("targetRuntime: 'node' を明示しても従来通り standalone 出力になる", () => {
+      const config = createBaseNextConfig({ targetRuntime: "node" });
+
+      expect(config.output).toBe("standalone");
+    });
   });
 });

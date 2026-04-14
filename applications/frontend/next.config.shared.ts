@@ -2,10 +2,13 @@ import type { NextConfig } from "next";
 import type { RemotePattern } from "next/dist/shared/lib/image-config";
 import { parseImageRemotePatterns } from "./shared/src/config/image-remote-pattern";
 
+type TargetRuntime = "node" | "edge-worker";
+
 type Options = {
   readonly useFirebaseEmulator?: boolean;
   readonly includeCSP?: boolean;
   readonly contentSecurityPolicy?: string;
+  readonly targetRuntime?: TargetRuntime;
 };
 
 const EMULATOR_PATTERNS: ReadonlyArray<RemotePattern> = [
@@ -46,6 +49,8 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
   const contentSecurityPolicy =
     options?.contentSecurityPolicy ??
     createDefaultContentSecurityPolicy(isProduction, useEmulator);
+  const targetRuntime: TargetRuntime = options?.targetRuntime ?? "node";
+  const isEdgeWorker = targetRuntime === "edge-worker";
 
   const remotePatterns: Array<RemotePattern> = [
     ...parseImageRemotePatterns(process.env.IMAGE_REMOTE_PATTERNS),
@@ -57,7 +62,7 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
     : [];
 
   return {
-    output: "standalone",
+    output: isEdgeWorker ? undefined : "standalone",
     poweredByHeader: false,
     headers: async () => [
       {
@@ -108,6 +113,7 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
     transpilePackages: ["@hut/shared"],
     images: {
       remotePatterns,
+      ...(isEdgeWorker ? { unoptimized: true } : {}),
       ...(useEmulator && { dangerouslyAllowLocalIP: true }),
     },
     experimental: {
