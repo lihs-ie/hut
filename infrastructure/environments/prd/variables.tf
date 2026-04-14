@@ -55,6 +55,11 @@ variable "oauth_client_secret" {
   sensitive   = true
 }
 
+variable "reader_endpoint" {
+  type        = string
+  description = "Reader endpoint URL (Cloudflare Workers deployment URL) for revalidation webhook"
+}
+
 variable "billing_export_service_account" {
   description = "Service account email used by GCP Billing to write export data to BigQuery"
   type        = string
