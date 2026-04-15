@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/lihs-ie/hut/compare/v0.2.3...v0.3.0) (2026-04-15)
+
+
+### Features
+
+* **infra:** GCP 予算アラートを導入する ([#72](https://github.com/lihs-ie/hut/issues/72)) ([#76](https://github.com/lihs-ie/hut/issues/76)) ([0b084f1](https://github.com/lihs-ie/hut/commit/0b084f149a9fc33b85e7ae6165f03874113e90c6))
+
+
+### Performance Improvements
+
+* **reader:** improve lighthouse performance score ([#81](https://github.com/lihs-ie/hut/issues/81)) ([2c00e40](https://github.com/lihs-ie/hut/commit/2c00e404ddd7efd154a5c188e724db6840c4e682))
+
 ## [0.2.3](https://github.com/lihs-ie/hut/compare/v0.2.2...v0.2.3) (2026-04-14)
 
 
