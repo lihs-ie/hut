@@ -81,24 +81,37 @@ const CodeBlock = (props: PreProps) => {
   );
 };
 
-const mdxComponents = {
-  h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h1 {...props} />,
-  h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h2 {...props} />,
-  img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-    <ContentImage
-      src={typeof props.src === "string" ? props.src : ""}
-      alt={props.alt ?? ""}
-    />
-  ),
-  pre: CodeBlock,
-  LinkCard: (props: { url: string }) => <LinkCard url={props.url} />,
+const createMdxComponents = () => {
+  const firstImageRef = { used: false };
+
+  return {
+    h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h1 {...props} />,
+    h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h2 {...props} />,
+    img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {
+      const isFirst = !firstImageRef.used;
+      firstImageRef.used = true;
+      return (
+        <ContentImage
+          src={typeof props.src === "string" ? props.src : ""}
+          alt={props.alt ?? ""}
+          priority={isFirst}
+        />
+      );
+    },
+    pre: CodeBlock,
+    LinkCard: (props: { url: string }) => <LinkCard url={props.url} />,
+  };
 };
 
 export const MDXRenderer: MarkdownRenderer = (
   content: string,
   options: MDXRemoteProps["options"] = mdxOptions,
 ) => (
-  <MDXRemote source={content} options={options} components={mdxComponents} />
+  <MDXRemote
+    source={content}
+    options={options}
+    components={createMdxComponents()}
+  />
 );
 
 export type Heading = {

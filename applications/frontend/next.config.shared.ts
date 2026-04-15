@@ -108,10 +108,20 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
     transpilePackages: ["@hut/shared"],
     images: {
       remotePatterns,
+      formats: ["image/avif", "image/webp"],
+      minimumCacheTTL: 86400,
       ...(useEmulator && { dangerouslyAllowLocalIP: true }),
     },
     experimental: {
       serverActions: { allowedOrigins },
+      optimizePackageImports: [
+        "@hut/shared",
+        "nuqs",
+        "next-themes",
+        "next-mdx-remote",
+        "recharts",
+        "react-syntax-highlighter",
+      ],
     },
   };
 };
