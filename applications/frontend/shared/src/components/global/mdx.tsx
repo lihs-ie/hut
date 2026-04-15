@@ -20,7 +20,11 @@ export const mdxOptions: MDXRemoteProps["options"] = {
       [
         rehypeShiki,
         {
-          theme: "github-dark",
+          themes: {
+            light: "github-light-high-contrast",
+            dark: "github-dark-high-contrast",
+          },
+          defaultColor: false,
           addLanguageClass: true,
         },
       ],
