@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Noto_Sans_JP, Geist_Mono } from "next/font/google";
+import { Noto_Sans_JP, Inter, Geist_Mono } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "@shared/global.css";
 import { Header } from "@shared/components/organisms/header";
@@ -15,15 +15,17 @@ import { ThemeProvider } from "@shared/components/molecules/theme/provider";
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
   subsets: ["latin"],
-  weight: ["400", "500", "700", "800", "900"],
-  display: "swap",
+  weight: ["300", "400", "500", "700", "800", "900"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-  display: "swap",
-  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -67,7 +69,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body className={`${notoSansJP.variable} ${geistMono.variable}`}>
+      <body className={`${notoSansJP.variable} ${inter.variable} ${geistMono.variable}`}>
         <ThemeProvider>
           <NuqsAdapter>
             <ToastProvider>

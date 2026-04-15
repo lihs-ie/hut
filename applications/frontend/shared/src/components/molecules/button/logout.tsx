@@ -9,7 +9,7 @@ export type Props = {
 
 export const LogoutButton = (props: Props) => (
   <form className={styles.container} action={props.logout}>
-    <button type="submit" className={styles.button} aria-label="ログアウト">
+    <button type="submit" className={styles.button}>
       <LogoutIcon className={styles.icon} />
       <span className={styles.label}>ログアウト</span>
     </button>
