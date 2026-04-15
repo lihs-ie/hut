@@ -9,13 +9,16 @@ import { LogoutButton } from "@shared/components/molecules/button/logout";
 describe("components/molecules/button/LogoutButton", () => {
   it("ログアウトボタンが accessible name 'ログアウト' を持つ", () => {
     render(<LogoutButton logout={vi.fn()} />);
-    const button = screen.getByRole("button", { name: "ログアウト" });
-    expect(button).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: "ログアウト" }),
+    ).toBeInTheDocument();
   });
 
   it("button 要素の type は submit である", () => {
     render(<LogoutButton logout={vi.fn()} />);
-    const button = screen.getByRole("button", { name: "ログアウト" });
-    expect(button.getAttribute("type")).toBe("submit");
+    expect(screen.getByRole("button", { name: "ログアウト" })).toHaveAttribute(
+      "type",
+      "submit",
+    );
   });
 });

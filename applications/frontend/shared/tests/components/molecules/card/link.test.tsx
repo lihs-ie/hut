@@ -72,6 +72,6 @@ describe("components/molecules/card/LinkCardClient", () => {
 
     render(<LinkCardClient url="https://example.com" />);
 
-    expect(screen.getByText("別タイトル")).not.toBeNull();
+    expect(screen.getByText("別タイトル")).toBeInTheDocument();
   });
 });
