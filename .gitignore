@@ -37,6 +37,11 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# cloudflare workers
+.open-next
+.wrangler
+applications/frontend/reader/.dev.vars
+
 # vercel
 .vercel
 

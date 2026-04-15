@@ -3,6 +3,8 @@ import { createBaseNextConfig } from "../next.config.shared";
 
 const withMDX = MDX({ extension: /\.mdx?$/ });
 const isProduction = process.env.NODE_ENV === "production";
+const targetRuntime =
+  process.env.READER_TARGET_RUNTIME === "edge-worker" ? "edge-worker" : "node";
 const readerContentSecurityPolicy = [
   "default-src 'self'",
   isProduction
@@ -24,5 +26,6 @@ export default withMDX(
     useFirebaseEmulator:
       process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true",
     contentSecurityPolicy: readerContentSecurityPolicy,
+    targetRuntime,
   }),
 );
