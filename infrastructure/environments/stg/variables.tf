@@ -64,3 +64,14 @@ variable "billing_export_location" {
   description = "Geographic location for the billing export BigQuery dataset"
   type        = string
 }
+
+variable "billing_account_id" {
+  description = "GCP billing account ID that owns the project and the monthly budget"
+  type        = string
+}
+
+variable "notification_email" {
+  description = "Email address that receives GCP budget alert notifications"
+  type        = string
+  sensitive   = true
+}
