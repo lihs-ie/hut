@@ -29,7 +29,7 @@ import {
   MemoTerminatedEvent,
 } from "@shared/domains/memo/event";
 import { Command } from "./common";
-import { ValidateSlug } from "@shared/domains/common";
+import { computePublishedAt, ValidateSlug } from "@shared/domains/common";
 
 type MemoFilter = (
   memo: Memo,
@@ -197,6 +197,15 @@ export const createMemoCreateWorkflow =
       .tapError((errors) => {
         logger.warn("Memo validation failed", { errors });
       })
+      .map((memo): Memo => ({
+        ...memo,
+        publishedAt: computePublishedAt({
+          currentStatus: null,
+          nextStatus: memo.status,
+          currentPublishedAt: null,
+          now: command.now,
+        }),
+      }))
       .andThen((memo) =>
         persist(memo)
           .tap(() => {
@@ -248,6 +257,15 @@ export const createMemoEditWorkflow =
       .tapError((errors) => {
         logger.warn("Memo validation failed", { errors });
       })
+      .map((memo): Memo => ({
+        ...memo,
+        publishedAt: computePublishedAt({
+          currentStatus: command.payload.before.status,
+          nextStatus: memo.status,
+          currentPublishedAt: command.payload.before.publishedAt,
+          now: command.now,
+        }),
+      }))
       .andThen((memo) =>
         persist(memo)
           .tap(() => {

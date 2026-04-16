@@ -37,6 +37,7 @@ export const MemoCreateForm = (props: Props) => {
         entries: [],
         images: [],
         status,
+        publishedAt: null,
         timeline: {
           createdAt: new Date(),
           updatedAt: new Date(),

@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { Timestamp } from "firebase/firestore";
 import { FirebaseChapterRepository } from "@shared/infrastructures/chapter";
 import {
   createTestFirestoreWithSeed,
   clearFirestore,
+  seedFirestore,
   type Firestore,
 } from "../support/mock/firebase/firestore";
 import { Forger } from "@lihs-ie/forger-ts";
@@ -334,6 +336,74 @@ describe("infrastructures/chapter", () => {
 
         expect(result).not.toBeNull();
         expect(isAggregateNotFoundError(result)).toBe(true);
+      });
+    });
+
+    describe("publishedAt の永続化", () => {
+      it("publishedAt が Date として保存・復元される", async () => {
+        const repository = FirebaseChapterRepository(
+          firestore,
+          getOperations(),
+        );
+        const publishedAt = new Date("2025-01-01T00:00:00Z");
+        const chapter = Forger(ChapterMold).forgeWithSeed(950, {
+          publishedAt,
+        });
+
+        await repository.persist(chapter).unwrap();
+
+        const found = await repository.find(chapter.identifier).unwrap();
+
+        expect(found.publishedAt).toBeInstanceOf(Date);
+        expect(found.publishedAt?.getTime()).toBe(publishedAt.getTime());
+      });
+
+      it("publishedAt が null として保存・復元される", async () => {
+        const repository = FirebaseChapterRepository(
+          firestore,
+          getOperations(),
+        );
+        const chapter = Forger(ChapterMold).forgeWithSeed(951, {
+          publishedAt: null,
+        });
+
+        await repository.persist(chapter).unwrap();
+
+        const found = await repository.find(chapter.identifier).unwrap();
+
+        expect(found.publishedAt).toBeNull();
+      });
+
+      it("Firestore に publishedAt フィールドが存在しない場合は null として復元される", async () => {
+        const identifier = Forger(ChapterIdentifierMold).forgeWithSeed(952);
+        const createdAt = Timestamp.fromDate(new Date("2024-01-01T00:00:00Z"));
+        const updatedAt = Timestamp.fromDate(new Date("2024-01-02T00:00:00Z"));
+
+        await seedFirestore(firestore, {
+          chapters: {
+            [identifier]: {
+              identifier,
+              title: "Legacy Chapter",
+              slug: "legacy-chapter",
+              content: "Legacy content",
+              images: [],
+              status: "published",
+              timeline: {
+                createdAt,
+                updatedAt,
+              },
+              version: 1,
+            },
+          },
+        });
+
+        const repository = FirebaseChapterRepository(
+          firestore,
+          getOperations(),
+        );
+        const found = await repository.find(identifier).unwrap();
+
+        expect(found.publishedAt).toBeNull();
       });
     });
   });

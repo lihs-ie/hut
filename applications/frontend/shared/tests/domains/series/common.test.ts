@@ -185,6 +185,7 @@ describe("domains/series/common", () => {
           cover: "https://example.com/cover.png",
           chapters: [],
           status: PublishStatus.PUBLISHED,
+          publishedAt: null,
           timeline: Forger(TimelineMold).forge(),
         });
         expect(result.success).toBe(true);
@@ -201,6 +202,38 @@ describe("domains/series/common", () => {
           cover: null,
           chapters: [],
           status: PublishStatus.DRAFT,
+          publishedAt: null,
+          timeline: Forger(TimelineMold).forge(),
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it("publishedAtがnullでも有効", () => {
+        const result = seriesSchema.safeParse(
+          Forger(SeriesMold).forge({ publishedAt: null }),
+        );
+        expect(result.success).toBe(true);
+      });
+
+      it("publishedAtがDateでも有効", () => {
+        const publishedAt = new Date("2025-01-01T00:00:00Z");
+        const result = seriesSchema.safeParse(
+          Forger(SeriesMold).forge({ publishedAt }),
+        );
+        expect(result.success).toBe(true);
+      });
+
+      it("publishedAtを省略しても有効", () => {
+        const result = seriesSchema.safeParse({
+          identifier: Forger(SeriesIdentifierMold).forge(),
+          title: "Series Title",
+          slug: Forger(SlugMold).forge(),
+          tags: [],
+          subTitle: null,
+          description: "Description",
+          cover: null,
+          chapters: [],
+          status: PublishStatus.PUBLISHED,
           timeline: Forger(TimelineMold).forge(),
         });
         expect(result.success).toBe(true);
@@ -218,6 +251,7 @@ describe("domains/series/common", () => {
         cover: null,
         chapters: [],
         status: PublishStatus.PUBLISHED,
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
         ...overrides,
       });
@@ -240,6 +274,13 @@ describe("domains/series/common", () => {
       it("chaptersにULIDでない文字列が含まれる場合は無効", () => {
         const result = seriesSchema.safeParse(
           createSeriesWithOverrides({ chapters: ["not-a-ulid"] })
+        );
+        expect(result.success).toBe(false);
+      });
+
+      it("publishedAtが文字列の場合は無効", () => {
+        const result = seriesSchema.safeParse(
+          createSeriesWithOverrides({ publishedAt: "2025-01-01" }),
         );
         expect(result.success).toBe(false);
       });
@@ -292,6 +333,39 @@ describe("domains/series/common", () => {
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
+    });
+
+    it("publishedAt=null のUnvalidatedSeriesでokを返す", () => {
+      const result = validateSeries({
+        identifier: Forger(SeriesIdentifierMold).forge(),
+        title: "下書きシリーズ",
+        slug: "draft-series",
+        tags: [],
+        subTitle: null,
+        description: "説明",
+        cover: null,
+        chapters: [],
+        status: "draft",
+        publishedAt: null,
+        timeline: Forger(TimelineMold).forge(),
+      });
+      expect(result.isOk).toBe(true);
+    });
+
+    it("publishedAt を省略したUnvalidatedSeriesでokを返す", () => {
+      const result = validateSeries({
+        identifier: Forger(SeriesIdentifierMold).forge(),
+        title: "下書きシリーズ",
+        slug: "draft-series",
+        tags: [],
+        subTitle: null,
+        description: "説明",
+        cover: null,
+        chapters: [],
+        status: "draft",
+        timeline: Forger(TimelineMold).forge(),
+      });
+      expect(result.isOk).toBe(true);
     });
   });
 

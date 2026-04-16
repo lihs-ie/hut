@@ -36,6 +36,7 @@ export const MemoIndex = async (props: Props) => (
         find={props.findBySlug}
         slug={props.slug}
         titleOf={(memo) => memo.title}
+        publishedAtOf={(memo) => memo.publishedAt}
         timelineOf={(memo) => memo.timeline}
       />
     </Suspense>

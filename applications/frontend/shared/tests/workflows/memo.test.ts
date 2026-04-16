@@ -269,6 +269,7 @@ describe("workflows/memo", () => {
           tags: string[];
           images: string[];
           status: string;
+          publishedAt: Date | null;
           timeline: { createdAt: Date; updatedAt: Date };
         };
       }> = {
@@ -282,6 +283,7 @@ describe("workflows/memo", () => {
             tags: memo.tags,
             images: memo.images,
             status: memo.status,
+            publishedAt: memo.publishedAt,
             timeline: memo.timeline,
           },
         },
@@ -310,6 +312,7 @@ describe("workflows/memo", () => {
           tags: string[];
           images: string[];
           status: string;
+          publishedAt: Date | null;
           timeline: { createdAt: Date; updatedAt: Date };
         };
       }> = {
@@ -317,12 +320,13 @@ describe("workflows/memo", () => {
         payload: {
           unvalidated: {
             identifier: "invalid",
-            title: "", // 空のタイトルは無効
+            title: "",
             slug: "test-slug",
             entries: [],
             tags: [],
             images: [],
             status: "published",
+            publishedAt: null,
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           },
         },
@@ -354,6 +358,7 @@ describe("workflows/memo", () => {
           tags: string[];
           images: string[];
           status: string;
+          publishedAt: Date | null;
           timeline: { createdAt: Date; updatedAt: Date };
         };
       }> = {
@@ -367,6 +372,7 @@ describe("workflows/memo", () => {
             tags: memo.tags,
             images: memo.images,
             status: memo.status,
+            publishedAt: memo.publishedAt,
             timeline: memo.timeline,
           },
         },
@@ -375,6 +381,98 @@ describe("workflows/memo", () => {
       const result = await workflow(command).unwrapError();
 
       expect(result).toEqual(error);
+    });
+
+    it("status=PUBLISHEDで作成すると永続化されるメモのpublishedAtがcommand.nowになる", async () => {
+      const memo = Forger(MemoMold).forgeWithSeed(1, {
+        status: PublishStatus.PUBLISHED,
+      });
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createMemoCreateWorkflow(validateMemo)(persistMock)(
+        mockLogger,
+      );
+
+      const now = new Date("2026-04-15T10:00:00.000Z");
+      const command: Command<{
+        unvalidated: {
+          identifier: string;
+          title: string;
+          slug: string;
+          entries: Array<{ text: string; createdAt: Date }>;
+          tags: string[];
+          images: string[];
+          status: string;
+          publishedAt: Date | null;
+          timeline: { createdAt: Date; updatedAt: Date };
+        };
+      }> = {
+        now,
+        payload: {
+          unvalidated: {
+            identifier: memo.identifier,
+            title: memo.title,
+            slug: memo.slug,
+            entries: memo.entries,
+            tags: memo.tags,
+            images: memo.images,
+            status: memo.status,
+            publishedAt: null,
+            timeline: memo.timeline,
+          },
+        },
+      };
+
+      await workflow(command).unwrap();
+
+      const persisted = persistMock.mock.calls[0][0];
+      expect(persisted.publishedAt).toEqual(now);
+    });
+
+    it("status=DRAFTで作成すると永続化されるメモのpublishedAtがnullになる", async () => {
+      const memo = Forger(MemoMold).forgeWithSeed(1, {
+        status: PublishStatus.DRAFT,
+      });
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createMemoCreateWorkflow(validateMemo)(persistMock)(
+        mockLogger,
+      );
+
+      const now = new Date("2026-04-15T10:00:00.000Z");
+      const command: Command<{
+        unvalidated: {
+          identifier: string;
+          title: string;
+          slug: string;
+          entries: Array<{ text: string; createdAt: Date }>;
+          tags: string[];
+          images: string[];
+          status: string;
+          publishedAt: Date | null;
+          timeline: { createdAt: Date; updatedAt: Date };
+        };
+      }> = {
+        now,
+        payload: {
+          unvalidated: {
+            identifier: memo.identifier,
+            title: memo.title,
+            slug: memo.slug,
+            entries: memo.entries,
+            tags: memo.tags,
+            images: memo.images,
+            status: memo.status,
+            publishedAt: null,
+            timeline: memo.timeline,
+          },
+        },
+      };
+
+      await workflow(command).unwrap();
+
+      const persisted = persistMock.mock.calls[0][0];
+      expect(persisted.publishedAt).toBeNull();
     });
   });
 
@@ -398,6 +496,7 @@ describe("workflows/memo", () => {
           tags: string[];
           images: string[];
           status: string;
+          publishedAt: Date | null;
           timeline: { createdAt: Date; updatedAt: Date };
         };
         before: typeof before;
@@ -412,6 +511,7 @@ describe("workflows/memo", () => {
             tags: memo.tags,
             images: memo.images,
             status: memo.status,
+            publishedAt: memo.publishedAt,
             timeline: memo.timeline,
           },
           before,
@@ -443,6 +543,7 @@ describe("workflows/memo", () => {
           tags: string[];
           images: string[];
           status: string;
+          publishedAt: Date | null;
           timeline: { createdAt: Date; updatedAt: Date };
         };
         before: typeof before;
@@ -457,6 +558,7 @@ describe("workflows/memo", () => {
             tags: [],
             images: [],
             status: "published",
+            publishedAt: null,
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           },
           before,
@@ -469,6 +571,113 @@ describe("workflows/memo", () => {
         true
       );
       expect(persistMock).not.toHaveBeenCalled();
+    });
+
+    it("before.status=DRAFT, before.publishedAt=null, next.status=PUBLISHED ならnext.publishedAtがcommand.nowになる", async () => {
+      const memo = Forger(MemoMold).forgeWithSeed(1, {
+        status: PublishStatus.PUBLISHED,
+      });
+      const beforeMemo = Forger(MemoMold).forgeWithSeed(2, {
+        status: PublishStatus.DRAFT,
+        publishedAt: null,
+      });
+      const before = toSnapshot(beforeMemo);
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createMemoEditWorkflow(validateMemo)(persistMock)(
+        mockLogger,
+      );
+
+      const now = new Date("2026-04-15T10:00:00.000Z");
+      const command: Command<{
+        unvalidated: {
+          identifier: string;
+          title: string;
+          slug: string;
+          entries: Array<{ text: string; createdAt: Date }>;
+          tags: string[];
+          images: string[];
+          status: string;
+          publishedAt: Date | null;
+          timeline: { createdAt: Date; updatedAt: Date };
+        };
+        before: typeof before;
+      }> = {
+        now,
+        payload: {
+          unvalidated: {
+            identifier: memo.identifier,
+            title: memo.title,
+            slug: memo.slug,
+            entries: memo.entries,
+            tags: memo.tags,
+            images: memo.images,
+            status: PublishStatus.PUBLISHED,
+            publishedAt: null,
+            timeline: memo.timeline,
+          },
+          before,
+        },
+      };
+
+      await workflow(command).unwrap();
+
+      const persisted = persistMock.mock.calls[0][0];
+      expect(persisted.publishedAt).toEqual(now);
+    });
+
+    it("before.status=PUBLISHED, before.publishedAt=既存日時 なら既存日時がcommand.nowで上書きされない", async () => {
+      const existingPublishedAt = new Date("2025-12-01T08:00:00.000Z");
+      const memo = Forger(MemoMold).forgeWithSeed(1, {
+        status: PublishStatus.PUBLISHED,
+      });
+      const beforeMemo = Forger(MemoMold).forgeWithSeed(2, {
+        status: PublishStatus.PUBLISHED,
+        publishedAt: existingPublishedAt,
+      });
+      const before = toSnapshot(beforeMemo);
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createMemoEditWorkflow(validateMemo)(persistMock)(
+        mockLogger,
+      );
+
+      const now = new Date("2026-04-15T10:00:00.000Z");
+      const command: Command<{
+        unvalidated: {
+          identifier: string;
+          title: string;
+          slug: string;
+          entries: Array<{ text: string; createdAt: Date }>;
+          tags: string[];
+          images: string[];
+          status: string;
+          publishedAt: Date | null;
+          timeline: { createdAt: Date; updatedAt: Date };
+        };
+        before: typeof before;
+      }> = {
+        now,
+        payload: {
+          unvalidated: {
+            identifier: memo.identifier,
+            title: memo.title,
+            slug: memo.slug,
+            entries: memo.entries,
+            tags: memo.tags,
+            images: memo.images,
+            status: PublishStatus.PUBLISHED,
+            publishedAt: existingPublishedAt,
+            timeline: memo.timeline,
+          },
+          before,
+        },
+      };
+
+      await workflow(command).unwrap();
+
+      const persisted = persistMock.mock.calls[0][0];
+      expect(persisted.publishedAt).toEqual(existingPublishedAt);
     });
   });
 

@@ -132,6 +132,7 @@ export const ChapterEditOrganism = (props: Props) => {
         content: stripFrontmatter(content).trim() || title,
         images,
         status: status ?? PublishStatus.DRAFT,
+        publishedAt: props.initial?.publishedAt ?? null,
         timeline: {
           createdAt: props.initial?.timeline.createdAt ?? new Date(),
           updatedAt: new Date(),

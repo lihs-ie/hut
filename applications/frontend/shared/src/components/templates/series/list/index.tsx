@@ -20,7 +20,7 @@ export const SeriesListIndex = (props: Props) => (
       findAllTags={props.findAllTags}
       slugOf={(series) => series.slug}
       titleOf={(series) => series.title}
-      dateOf={(series) => series.timeline.createdAt}
+      dateOf={(series) => series.publishedAt ?? series.timeline?.createdAt ?? new Date()}
       type={ContentType.SERIES}
       maxItems={Infinity}
       linkMode={props.linkMode}

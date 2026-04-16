@@ -36,7 +36,7 @@ export const ArticleColumnCard = (props: Props) => (
 
       <div className={styles.footer}>
         <span className={styles.createdAt}>
-          投稿日時: {formatDate(props.article.timeline.createdAt)}
+          投稿日時: {formatDate(props.article.publishedAt ?? props.article.timeline.createdAt)}
         </span>
         <span className={styles.updatedAt}>
           最終更新日時: {formatDate(props.article.timeline.updatedAt)}

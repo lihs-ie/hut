@@ -305,6 +305,7 @@ describe("workflows/article", () => {
         status: string;
         tags: string[];
         images: string[];
+        publishedAt: Date | null;
         timeline: { createdAt: Date; updatedAt: Date };
       }> = {
         now: new Date(),
@@ -317,6 +318,7 @@ describe("workflows/article", () => {
           status: article.status,
           tags: article.tags,
           images: article.images,
+          publishedAt: article.publishedAt,
           timeline: article.timeline,
         },
       };
@@ -344,18 +346,20 @@ describe("workflows/article", () => {
         status: string;
         tags: string[];
         images: string[];
+        publishedAt: Date | null;
         timeline: { createdAt: Date; updatedAt: Date };
       }> = {
         now: new Date(),
         payload: {
           identifier: "invalid",
-          title: "", // 空のタイトルは無効
+          title: "",
           content: "",
           excerpt: "",
           slug: "test-slug",
           status: "published",
           tags: [],
           images: [],
+          publishedAt: null,
           timeline: { createdAt: new Date(), updatedAt: new Date() },
         },
       };
@@ -386,6 +390,7 @@ describe("workflows/article", () => {
         status: string;
         tags: string[];
         images: string[];
+        publishedAt: Date | null;
         timeline: { createdAt: Date; updatedAt: Date };
       }> = {
         now: new Date(),
@@ -398,6 +403,7 @@ describe("workflows/article", () => {
           status: article.status,
           tags: article.tags,
           images: article.images,
+          publishedAt: article.publishedAt,
           timeline: article.timeline,
         },
       };
@@ -405,6 +411,94 @@ describe("workflows/article", () => {
       const result = await workflow(command).unwrapError();
 
       expect(result).toEqual(error);
+    });
+
+    it("status=PUBLISHEDで作成すると永続化される記事のpublishedAtがcommand.nowになる", async () => {
+      const article = Forger(ArticleMold).forgeWithSeed(1, {
+        status: PublishStatus.PUBLISHED,
+      });
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createArticleCreateWorkflow(validateArticle)(
+        persistMock,
+      )(mockLogger);
+
+      const now = new Date("2026-04-15T10:00:00.000Z");
+      const command: Command<{
+        identifier: string;
+        title: string;
+        content: string;
+        excerpt: string;
+        slug: string;
+        status: string;
+        tags: string[];
+        images: string[];
+        publishedAt: Date | null;
+        timeline: { createdAt: Date; updatedAt: Date };
+      }> = {
+        now,
+        payload: {
+          identifier: article.identifier,
+          title: article.title,
+          content: article.content,
+          excerpt: article.excerpt,
+          slug: article.slug,
+          status: article.status,
+          tags: article.tags,
+          images: article.images,
+          publishedAt: null,
+          timeline: article.timeline,
+        },
+      };
+
+      await workflow(command).unwrap();
+
+      const persisted = persistMock.mock.calls[0][0];
+      expect(persisted.publishedAt).toEqual(now);
+    });
+
+    it("status=DRAFTで作成すると永続化される記事のpublishedAtがnullになる", async () => {
+      const article = Forger(ArticleMold).forgeWithSeed(1, {
+        status: PublishStatus.DRAFT,
+      });
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createArticleCreateWorkflow(validateArticle)(
+        persistMock,
+      )(mockLogger);
+
+      const now = new Date("2026-04-15T10:00:00.000Z");
+      const command: Command<{
+        identifier: string;
+        title: string;
+        content: string;
+        excerpt: string;
+        slug: string;
+        status: string;
+        tags: string[];
+        images: string[];
+        publishedAt: Date | null;
+        timeline: { createdAt: Date; updatedAt: Date };
+      }> = {
+        now,
+        payload: {
+          identifier: article.identifier,
+          title: article.title,
+          content: article.content,
+          excerpt: article.excerpt,
+          slug: article.slug,
+          status: article.status,
+          tags: article.tags,
+          images: article.images,
+          publishedAt: null,
+          timeline: article.timeline,
+        },
+      };
+
+      await workflow(command).unwrap();
+
+      const persisted = persistMock.mock.calls[0][0];
+      expect(persisted.publishedAt).toBeNull();
     });
   });
 
@@ -485,6 +579,7 @@ describe("workflows/article", () => {
         status: string;
         tags: string[];
         images: string[];
+        publishedAt: Date | null;
         timeline: { createdAt: Date; updatedAt: Date };
       };
       before: ArticleSnapshot;
@@ -511,6 +606,7 @@ describe("workflows/article", () => {
             status: article.status,
             tags: article.tags,
             images: article.images,
+            publishedAt: article.publishedAt,
             timeline: article.timeline,
           },
           before,
@@ -544,6 +640,7 @@ describe("workflows/article", () => {
             status: "published",
             tags: [],
             images: [],
+            publishedAt: null,
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           },
           before,
@@ -580,6 +677,7 @@ describe("workflows/article", () => {
             status: article.status,
             tags: article.tags,
             images: article.images,
+            publishedAt: article.publishedAt,
             timeline: article.timeline,
           },
           before,
@@ -613,6 +711,7 @@ describe("workflows/article", () => {
             status: article.status,
             tags: article.tags,
             images: article.images,
+            publishedAt: article.publishedAt,
             timeline: article.timeline,
           },
           before,
@@ -624,6 +723,130 @@ describe("workflows/article", () => {
       expect(result.payload.next.identifier).toBe(article.identifier);
       expect(result.payload.before).toEqual(before);
       expect(result.payload.before.identifier).toBe(beforeArticle.identifier);
+    });
+
+    it("before.status=DRAFT, before.publishedAt=null, next.status=PUBLISHED ならnext.publishedAtがcommand.nowになる", async () => {
+      const article = Forger(ArticleMold).forgeWithSeed(1, {
+        status: PublishStatus.PUBLISHED,
+      });
+      const beforeArticle = Forger(ArticleMold).forgeWithSeed(2, {
+        status: PublishStatus.DRAFT,
+        publishedAt: null,
+      });
+      const before = toSnapshot(beforeArticle);
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createArticleEditWorkflow(validateArticle)(persistMock)(
+        mockLogger,
+      );
+
+      const now = new Date("2026-04-15T10:00:00.000Z");
+      const command: EditCommand = {
+        now,
+        payload: {
+          unvalidated: {
+            identifier: article.identifier,
+            title: article.title,
+            content: article.content,
+            excerpt: article.excerpt,
+            slug: article.slug,
+            status: PublishStatus.PUBLISHED,
+            tags: article.tags,
+            images: article.images,
+            publishedAt: null,
+            timeline: article.timeline,
+          },
+          before,
+        },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result.payload.next.publishedAt).toEqual(now);
+      const persisted = persistMock.mock.calls[0][0];
+      expect(persisted.publishedAt).toEqual(now);
+    });
+
+    it("before.status=PUBLISHED, before.publishedAt=既存日時, next.status=DRAFT なら既存日時を保持する", async () => {
+      const existingPublishedAt = new Date("2025-12-01T08:00:00.000Z");
+      const article = Forger(ArticleMold).forgeWithSeed(1, {
+        status: PublishStatus.DRAFT,
+      });
+      const beforeArticle = Forger(ArticleMold).forgeWithSeed(2, {
+        status: PublishStatus.PUBLISHED,
+        publishedAt: existingPublishedAt,
+      });
+      const before = toSnapshot(beforeArticle);
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createArticleEditWorkflow(validateArticle)(persistMock)(
+        mockLogger,
+      );
+
+      const now = new Date("2026-04-15T10:00:00.000Z");
+      const command: EditCommand = {
+        now,
+        payload: {
+          unvalidated: {
+            identifier: article.identifier,
+            title: article.title,
+            content: article.content,
+            excerpt: article.excerpt,
+            slug: article.slug,
+            status: PublishStatus.DRAFT,
+            tags: article.tags,
+            images: article.images,
+            publishedAt: existingPublishedAt,
+            timeline: article.timeline,
+          },
+          before,
+        },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result.payload.next.publishedAt).toEqual(existingPublishedAt);
+    });
+
+    it("before.status=PUBLISHED, before.publishedAt=既存日時, next.status=PUBLISHED なら既存日時がcommand.nowで上書きされない", async () => {
+      const existingPublishedAt = new Date("2025-12-01T08:00:00.000Z");
+      const article = Forger(ArticleMold).forgeWithSeed(1, {
+        status: PublishStatus.PUBLISHED,
+      });
+      const beforeArticle = Forger(ArticleMold).forgeWithSeed(2, {
+        status: PublishStatus.PUBLISHED,
+        publishedAt: existingPublishedAt,
+      });
+      const before = toSnapshot(beforeArticle);
+      const persistMock = vi.fn().mockReturnValue(ok(undefined).toAsync());
+
+      const workflow = createArticleEditWorkflow(validateArticle)(persistMock)(
+        mockLogger,
+      );
+
+      const now = new Date("2026-04-15T10:00:00.000Z");
+      const command: EditCommand = {
+        now,
+        payload: {
+          unvalidated: {
+            identifier: article.identifier,
+            title: article.title,
+            content: article.content,
+            excerpt: article.excerpt,
+            slug: article.slug,
+            status: PublishStatus.PUBLISHED,
+            tags: article.tags,
+            images: article.images,
+            publishedAt: existingPublishedAt,
+            timeline: article.timeline,
+          },
+          before,
+        },
+      };
+
+      const result = await workflow(command).unwrap();
+
+      expect(result.payload.next.publishedAt).toEqual(existingPublishedAt);
     });
   });
 });

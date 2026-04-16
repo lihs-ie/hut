@@ -24,7 +24,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       type: "article",
       title: article.title,
       description: article.excerpt,
-      publishedTime: article.timeline.createdAt.toISOString(),
+      publishedTime: (article.publishedAt ?? article.timeline.createdAt).toISOString(),
       modifiedTime: article.timeline.updatedAt.toISOString(),
       tags: tags.map((tag) => tag.name),
     },

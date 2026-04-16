@@ -89,6 +89,7 @@ export const SeriesEditOrganism = (props: Props) => {
         tags,
         chapters: props.initial?.chapters ?? [],
         status,
+        publishedAt: props.initial?.publishedAt ?? null,
         timeline: {
           createdAt: props.initial?.timeline.createdAt ?? new Date(),
           updatedAt: new Date(),

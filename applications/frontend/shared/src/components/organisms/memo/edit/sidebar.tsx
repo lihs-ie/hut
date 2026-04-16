@@ -25,6 +25,7 @@ const changeStatus = (snapshot: MemoSnapshot, edit: Props["edit"]) => {
       tags: snapshot.tags,
       images: snapshot.images,
       status: next,
+      publishedAt: snapshot.publishedAt,
       timeline: {
         createdAt: snapshot.timeline.createdAt,
         updatedAt: new Date(),

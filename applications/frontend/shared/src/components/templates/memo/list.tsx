@@ -20,7 +20,7 @@ export const MemoListIndex = (props: Props) => (
       findAllTags={props.findAllTags}
       slugOf={(memo) => memo.slug}
       titleOf={(memo) => memo.title}
-      dateOf={(memo) => memo.timeline.createdAt}
+      dateOf={(memo) => memo.publishedAt ?? memo.timeline.createdAt}
       type={ContentType.MEMO}
       maxItems={Infinity}
       linkMode={props.linkMode}

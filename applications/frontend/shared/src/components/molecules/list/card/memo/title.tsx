@@ -8,6 +8,7 @@ import { formatDateTime } from "@shared/aspects/date";
 
 export type Props = {
   title: MemoTitle;
+  publishedAt: Date | null;
   timeline: Timeline;
   slug: MemoSlug;
 };
@@ -20,7 +21,7 @@ export const MemoTitleCard = (props: Props) => (
         <div className={styles.icon}>
           <ClockIcon />
         </div>
-        &nbsp;{formatDateTime(props.timeline.createdAt)}
+        &nbsp;{formatDateTime(props.publishedAt ?? props.timeline.createdAt)}
       </ModestText>
     </div>
   </Link>

@@ -162,6 +162,7 @@ export const ArticleEdit = (props: Props) => {
           tags,
           slug,
           images,
+          publishedAt: props.initial?.publishedAt ?? null,
           timeline: {
             createdAt: props.initial?.timeline.createdAt ?? new Date(),
             updatedAt: new Date(),
