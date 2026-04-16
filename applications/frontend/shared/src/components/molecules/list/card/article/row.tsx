@@ -35,9 +35,11 @@ export const ArticleRowCard = (props: Props) => (
       </div>
 
       <div className={styles.footer}>
-        <span className={styles.createdAt}>
-          投稿日時: {formatDate(props.article.publishedAt!)}
-        </span>
+        {props.article.publishedAt !== null && (
+          <span className={styles.createdAt}>
+            投稿日時: {formatDate(props.article.publishedAt)}
+          </span>
+        )}
         <span className={styles.updatedAt}>
           最終更新日時: {formatDate(props.article.timeline.updatedAt)}
         </span>
