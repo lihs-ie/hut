@@ -28,7 +28,7 @@ export const TopIndex = async (props: Props) => {
           search={props.searchArticles}
           type={ContentType.ARTICLE}
           titleOf={(article) => article.title}
-          dateOf={(article) => article.publishedAt!}
+          dateOf={(article) => article.publishedAt ?? article.timeline.createdAt}
           slugOf={(article) => article.slug}
           findAllTags={props.findAllTags}
           hasAllLink
@@ -39,7 +39,7 @@ export const TopIndex = async (props: Props) => {
           search={props.searchMemos}
           type={ContentType.MEMO}
           titleOf={(memo) => memo.title}
-          dateOf={(memo) => memo.publishedAt!}
+          dateOf={(memo) => memo.publishedAt ?? memo.timeline.createdAt}
           slugOf={(memo) => memo.slug}
           findAllTags={props.findAllTags}
           hasAllLink
@@ -50,7 +50,7 @@ export const TopIndex = async (props: Props) => {
           search={props.searchSeries}
           type={ContentType.SERIES}
           titleOf={(series) => series.title}
-          dateOf={(series) => series.publishedAt!}
+          dateOf={(series) => series.publishedAt ?? series.timeline.createdAt}
           slugOf={(series) => series.slug}
           findAllTags={props.findAllTags}
           hasAllLink

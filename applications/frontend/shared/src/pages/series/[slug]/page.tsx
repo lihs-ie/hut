@@ -23,7 +23,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       type: "article",
       title: series.title,
       description: series.description ?? undefined,
-      publishedTime: series.publishedAt!.toISOString(),
+      publishedTime: (series.publishedAt ?? series.timeline.createdAt).toISOString(),
       modifiedTime: series.timeline.updatedAt.toISOString(),
       tags: tags.map((tag) => tag.name),
       ...(series.cover ? { images: [{ url: series.cover }] } : {}),
