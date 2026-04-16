@@ -29,6 +29,7 @@ export const MemoCreateForm = (props: Props) => {
 
   const { execute, reset, error, isLoading } = useServerAction(
     async () => {
+      const now = new Date();
       const unvalidated: UnvalidatedMemo = {
         identifier: ulid(),
         title,
@@ -37,10 +38,10 @@ export const MemoCreateForm = (props: Props) => {
         entries: [],
         images: [],
         status,
-        publishedAt: null,
+        publishedAt: status === PublishStatus.PUBLISHED ? now : null,
         timeline: {
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: now,
+          updatedAt: now,
         },
       };
 

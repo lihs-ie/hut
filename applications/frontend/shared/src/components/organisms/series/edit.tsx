@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import styles from "./edit.module.css";
 import { useCallback, useMemo, useState } from "react";
 import { ulid } from "ulid";
-import { computePublishedAt, PublishStatus } from "@shared/domains/common";
+import { PublishStatus } from "@shared/domains/common";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { useImageUpload } from "@shared/components/global/hooks/use-image-upload";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
@@ -80,6 +80,10 @@ export const SeriesEditOrganism = (props: Props) => {
   const { execute, error, isLoading, reset } = useServerAction(
     async () => {
       const now = new Date();
+      const publishedAt = props.initial?.publishedAt != null
+        ? props.initial.publishedAt
+        : status === PublishStatus.PUBLISHED ? now : null;
+
       await props.persist({
         identifier,
         title,
@@ -90,12 +94,7 @@ export const SeriesEditOrganism = (props: Props) => {
         tags,
         chapters: props.initial?.chapters ?? [],
         status,
-        publishedAt: computePublishedAt({
-          currentStatus: props.initial?.status ?? null,
-          nextStatus: status,
-          currentPublishedAt: props.initial?.publishedAt ?? null,
-          now,
-        }),
+        publishedAt,
         timeline: {
           createdAt: props.initial?.timeline.createdAt ?? now,
           updatedAt: now,

@@ -17,6 +17,11 @@ const changeStatus = (snapshot: MemoSnapshot, edit: Props["edit"]) => {
   return async (next: PublishStatus) => {
     "use server";
 
+    const now = new Date();
+    const publishedAt = snapshot.publishedAt != null
+      ? snapshot.publishedAt
+      : next === PublishStatus.PUBLISHED ? now : null;
+
     const unvalidated: UnvalidatedMemo = {
       identifier: snapshot.identifier,
       title: snapshot.title,
@@ -25,10 +30,10 @@ const changeStatus = (snapshot: MemoSnapshot, edit: Props["edit"]) => {
       tags: snapshot.tags,
       images: snapshot.images,
       status: next,
-      publishedAt: snapshot.publishedAt,
+      publishedAt,
       timeline: {
         createdAt: snapshot.timeline.createdAt,
-        updatedAt: new Date(),
+        updatedAt: now,
       },
     };
 

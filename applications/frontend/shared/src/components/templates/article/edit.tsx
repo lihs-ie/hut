@@ -153,19 +153,25 @@ export const ArticleEdit = (props: Props) => {
       .andThen(async (matter) => {
         const slug = props.initial?.slug ?? matter.data.slug;
 
+        const now = new Date();
+        const nextStatus = status ?? PublishStatus.DRAFT;
+        const publishedAt = props.initial?.publishedAt != null
+          ? props.initial.publishedAt
+          : nextStatus === PublishStatus.PUBLISHED ? now : null;
+
         await props.persist({
           identifier,
           title,
           excerpt: matter.data.excerpt,
           content,
-          status: status ?? PublishStatus.DRAFT,
+          status: nextStatus,
           tags,
           slug,
           images,
-          publishedAt: props.initial?.publishedAt ?? null,
+          publishedAt,
           timeline: {
-            createdAt: props.initial?.timeline.createdAt ?? new Date(),
-            updatedAt: new Date(),
+            createdAt: props.initial?.timeline.createdAt ?? now,
+            updatedAt: now,
           },
         });
 

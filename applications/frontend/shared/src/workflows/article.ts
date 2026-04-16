@@ -22,7 +22,7 @@ import {
   createArticleEditedEvent,
   createArticleTerminatedEvent,
 } from "@shared/domains/articles/event";
-import { computePublishedAt, Slug, ValidateSlug } from "@shared/domains/common";
+import { Slug, ValidateSlug } from "@shared/domains/common";
 import { Logger } from "@shared/aspects/logger";
 import { Command } from "./common";
 
@@ -188,15 +188,6 @@ export const createArticleCreateWorkflow =
       .tapError((errors) => {
         logger.warn("Article validation failed", { errors });
       })
-      .map((article): Article => ({
-        ...article,
-        publishedAt: computePublishedAt({
-          currentStatus: null,
-          nextStatus: article.status,
-          currentPublishedAt: null,
-          now: command.now,
-        }),
-      }))
       .andThen((article) =>
         persist(article)
           .tap(() => {
@@ -247,15 +238,6 @@ export const createArticleEditWorkflow =
       .tapError((errors) => {
         logger.warn("Article validation failed", { errors });
       })
-      .map((article): Article => ({
-        ...article,
-        publishedAt: computePublishedAt({
-          currentStatus: command.payload.before.status,
-          nextStatus: article.status,
-          currentPublishedAt: command.payload.before.publishedAt,
-          now: command.now,
-        }),
-      }))
       .andThen((article) =>
         persist(article)
           .tap(() => {
