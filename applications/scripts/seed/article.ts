@@ -373,6 +373,7 @@ gitGraph
       status: article.status,
       tags: article.tags,
       images: [],
+      publishedAt: article.status === "published" ? article.createdAt.toISOString() : null,
       timeline: {
         createdAt: article.createdAt,
         updatedAt: article.createdAt,
