@@ -305,6 +305,7 @@ describe("workflows/article", () => {
         status: string;
         tags: string[];
         images: string[];
+        publishedAt: Date | null;
         timeline: { createdAt: Date; updatedAt: Date };
       }> = {
         now: new Date(),
@@ -317,6 +318,7 @@ describe("workflows/article", () => {
           status: article.status,
           tags: article.tags,
           images: article.images,
+          publishedAt: article.publishedAt,
           timeline: article.timeline,
         },
       };
@@ -344,18 +346,20 @@ describe("workflows/article", () => {
         status: string;
         tags: string[];
         images: string[];
+        publishedAt: Date | null;
         timeline: { createdAt: Date; updatedAt: Date };
       }> = {
         now: new Date(),
         payload: {
           identifier: "invalid",
-          title: "", // 空のタイトルは無効
+          title: "",
           content: "",
           excerpt: "",
           slug: "test-slug",
           status: "published",
           tags: [],
           images: [],
+          publishedAt: null,
           timeline: { createdAt: new Date(), updatedAt: new Date() },
         },
       };
@@ -386,6 +390,7 @@ describe("workflows/article", () => {
         status: string;
         tags: string[];
         images: string[];
+        publishedAt: Date | null;
         timeline: { createdAt: Date; updatedAt: Date };
       }> = {
         now: new Date(),
@@ -398,6 +403,7 @@ describe("workflows/article", () => {
           status: article.status,
           tags: article.tags,
           images: article.images,
+          publishedAt: article.publishedAt,
           timeline: article.timeline,
         },
       };
@@ -406,6 +412,7 @@ describe("workflows/article", () => {
 
       expect(result).toEqual(error);
     });
+
   });
 
   describe("createArticleTerminateWorkflow", () => {
@@ -485,6 +492,7 @@ describe("workflows/article", () => {
         status: string;
         tags: string[];
         images: string[];
+        publishedAt: Date | null;
         timeline: { createdAt: Date; updatedAt: Date };
       };
       before: ArticleSnapshot;
@@ -511,6 +519,7 @@ describe("workflows/article", () => {
             status: article.status,
             tags: article.tags,
             images: article.images,
+            publishedAt: article.publishedAt,
             timeline: article.timeline,
           },
           before,
@@ -544,6 +553,7 @@ describe("workflows/article", () => {
             status: "published",
             tags: [],
             images: [],
+            publishedAt: null,
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           },
           before,
@@ -580,6 +590,7 @@ describe("workflows/article", () => {
             status: article.status,
             tags: article.tags,
             images: article.images,
+            publishedAt: article.publishedAt,
             timeline: article.timeline,
           },
           before,
@@ -613,6 +624,7 @@ describe("workflows/article", () => {
             status: article.status,
             tags: article.tags,
             images: article.images,
+            publishedAt: article.publishedAt,
             timeline: article.timeline,
           },
           before,

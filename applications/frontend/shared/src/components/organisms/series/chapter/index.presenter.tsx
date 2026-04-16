@@ -58,12 +58,14 @@ export const ChapterPresenter = (props: Props) => (
           </p>
           <h1 className={styles["chapter-title"]}>{props.currentChapter.title}</h1>
           <div className={styles["chapter-meta"]}>
-            <ModestText>
-              <span className={styles["meta-icon"]}>
-                <ClockIcon />
-              </span>
-              投稿日時：{formatDate(props.currentChapter.timeline.createdAt)}
-            </ModestText>
+            {props.currentChapter.publishedAt !== null && (
+              <ModestText>
+                <span className={styles["meta-icon"]}>
+                  <ClockIcon />
+                </span>
+                投稿日時：{formatDate(props.currentChapter.publishedAt)}
+              </ModestText>
+            )}
             <ModestText>
               <span className={styles["meta-icon"]}>
                 <ClockIcon />

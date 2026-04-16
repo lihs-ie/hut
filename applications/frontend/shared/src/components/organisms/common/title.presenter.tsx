@@ -7,6 +7,7 @@ import { formatDate } from "@shared/aspects/date";
 
 export type Props = {
   title: string;
+  publishedAt: Date | null;
   timeline: Timeline;
 };
 
@@ -16,12 +17,14 @@ export const TitlePresenter = (props: Props) => (
       <h1 className={styles.title}>{props.title}</h1>
       <div className={styles.meta}>
         <div className={styles.publishedDate}>
-          <ModestText>
-            <div className={styles.icon}>
-              <ClockIcon />
-            </div>
-            投稿日時：{formatDate(props.timeline.createdAt)}
-          </ModestText>
+          {props.publishedAt !== null && (
+            <ModestText>
+              <div className={styles.icon}>
+                <ClockIcon />
+              </div>
+              投稿日時：{formatDate(props.publishedAt)}
+            </ModestText>
+          )}
           <ModestText>
             <div className={styles.icon}>
               <ClockIcon />

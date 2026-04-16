@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { Timestamp } from "firebase/firestore";
 import { FirebaseSeriesRepository } from "@shared/infrastructures/series";
 import {
   createTestFirestoreWithSeed,
   clearFirestore,
+  seedFirestore,
   type Firestore,
 } from "../support/mock/firebase/firestore";
 import { Forger } from "@lihs-ie/forger-ts";
@@ -511,6 +513,77 @@ describe("infrastructures/series", () => {
 
         expect(result).not.toBeNull();
         expect(isAggregateNotFoundError(result)).toBe(true);
+      });
+    });
+
+    describe("publishedAt の永続化", () => {
+      it("publishedAt が Date として保存・復元される", async () => {
+        const repository = FirebaseSeriesRepository(
+          firestore,
+          getOperations(),
+        );
+        const publishedAt = new Date("2025-01-01T00:00:00Z");
+        const series = Forger(SeriesMold).forgeWithSeed(900, {
+          publishedAt,
+        });
+
+        await repository.persist(series).unwrap();
+
+        const found = await repository.find(series.identifier).unwrap();
+
+        expect(found.publishedAt).toBeInstanceOf(Date);
+        expect(found.publishedAt?.getTime()).toBe(publishedAt.getTime());
+      });
+
+      it("publishedAt が null として保存・復元される", async () => {
+        const repository = FirebaseSeriesRepository(
+          firestore,
+          getOperations(),
+        );
+        const series = Forger(SeriesMold).forgeWithSeed(901, {
+          publishedAt: null,
+        });
+
+        await repository.persist(series).unwrap();
+
+        const found = await repository.find(series.identifier).unwrap();
+
+        expect(found.publishedAt).toBeNull();
+      });
+
+      it("Firestore に publishedAt フィールドが存在しない場合は null として復元される", async () => {
+        const identifier = Forger(SeriesIdentifierMold).forgeWithSeed(902);
+        const createdAt = Timestamp.fromDate(new Date("2024-01-01T00:00:00Z"));
+        const updatedAt = Timestamp.fromDate(new Date("2024-01-02T00:00:00Z"));
+
+        await seedFirestore(firestore, {
+          series: {
+            [identifier]: {
+              identifier,
+              title: "Legacy Series",
+              slug: "legacy-series",
+              tags: [],
+              subTitle: null,
+              description: "Legacy description",
+              cover: null,
+              chapters: [],
+              status: "published",
+              timeline: {
+                createdAt,
+                updatedAt,
+              },
+              version: 1,
+            },
+          },
+        });
+
+        const repository = FirebaseSeriesRepository(
+          firestore,
+          getOperations(),
+        );
+        const found = await repository.find(identifier).unwrap();
+
+        expect(found.publishedAt).toBeNull();
       });
     });
   });

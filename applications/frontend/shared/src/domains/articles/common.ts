@@ -74,6 +74,7 @@ export const articleSchema = z
     status: publishStatusSchema,
     tags: z.array(tagIdentifierSchema),
     images: z.array(imageIdentifierSchema),
+    publishedAt: z.date().nullable(),
     timeline: timelineSchema,
   })
   .brand("Article");
@@ -99,6 +100,7 @@ export type UnvalidatedArticle = {
   status: string;
   tags: string[];
   images: string[];
+  publishedAt: Date | null;
   timeline: {
     createdAt: Date;
     updatedAt: Date;
@@ -151,6 +153,7 @@ export const articleSnapshotSchema = z
     status: publishStatusSchema,
     tags: z.array(tagIdentifierSchema),
     images: z.array(imageIdentifierSchema),
+    publishedAt: z.date().nullable(),
     timeline: timelineSchema,
   })
   .brand("ArticleSnapshot");
@@ -158,7 +161,7 @@ export const articleSnapshotSchema = z
 export type ArticleSnapshot = z.infer<typeof articleSnapshotSchema>;
 
 export const toSnapshot = (article: Article): ArticleSnapshot =>
-  ({
+  articleSnapshotSchema.parse({
     identifier: article.identifier,
     title: article.title,
     content: article.content,
@@ -167,8 +170,9 @@ export const toSnapshot = (article: Article): ArticleSnapshot =>
     status: article.status,
     tags: article.tags,
     images: article.images,
+    publishedAt: article.publishedAt,
     timeline: article.timeline,
-  }) as ArticleSnapshot;
+  });
 
 export interface ArticleRepository {
   persist: (

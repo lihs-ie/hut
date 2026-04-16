@@ -35,6 +35,7 @@ export type ChapterProperties = {
   content: string;
   images: ImageIdentifier[];
   status: PublishStatus;
+  publishedAt: Date | null;
   timeline: Timeline;
 };
 
@@ -47,6 +48,7 @@ export const ChapterMold = Mold<Chapter, ChapterProperties>({
       content: properties.content,
       images: properties.images,
       status: properties.status,
+      publishedAt: properties.publishedAt,
       timeline: properties.timeline,
     }),
   prepare: (overrides, seed) => ({
@@ -59,6 +61,10 @@ export const ChapterMold = Mold<Chapter, ChapterProperties>({
     images: overrides.images ?? [],
     status:
       overrides.status ?? Forger(PublishStatusMold).forgeWithSeed(seed),
+    publishedAt:
+      overrides.publishedAt === undefined
+        ? Forger(DateMold).forgeWithSeed(seed)
+        : overrides.publishedAt,
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
 });

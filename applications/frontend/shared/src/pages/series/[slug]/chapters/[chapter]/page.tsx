@@ -3,6 +3,7 @@ import { ChapterIndex } from "@shared/components/templates/series/chapter";
 import { findChapterBySlug, findChaptersByIdentifiers } from "@shared/actions/chapter";
 import { slugSchema } from "@shared/domains/common/slug";
 import { findBySlug } from "@shared/actions/series";
+import { isPublished } from "@shared/domains/common";
 import type { Metadata } from "next";
 
 type Props = {
@@ -26,7 +27,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       type: "article",
       title: chapterTitle,
       description: `${series.title} - ${chapter.title}`,
-      publishedTime: chapter.timeline.createdAt.toISOString(),
+      ...(isPublished(chapter) ? { publishedTime: chapter.publishedAt.toISOString() } : {}),
       modifiedTime: chapter.timeline.updatedAt.toISOString(),
     },
     twitter: {

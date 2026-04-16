@@ -36,6 +36,7 @@ type PersistedArticle = {
   status: string;
   images: string[];
   tags: string[];
+  publishedAt: string | null;
   timeline: {
     createdAt: string;
     updatedAt: string;
@@ -65,6 +66,9 @@ export const FirebaseArticleRepository = (
           status: article.status,
           tags: article.tags,
           images: article.images,
+          publishedAt: article.publishedAt
+            ? article.publishedAt.toISOString()
+            : null,
           timeline: {
             createdAt: article.timeline.createdAt.toISOString(),
             updatedAt: article.timeline.updatedAt.toISOString(),
@@ -87,6 +91,7 @@ export const FirebaseArticleRepository = (
           status: data.status,
           tags: data.tags,
           images: data.images,
+          publishedAt: data.publishedAt ? new Date(data.publishedAt) : null,
           timeline: {
             createdAt: new Date(data.timeline.createdAt),
             updatedAt: new Date(data.timeline.updatedAt),
