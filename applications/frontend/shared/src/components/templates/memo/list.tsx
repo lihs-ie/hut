@@ -3,6 +3,7 @@ import {
   type Props as ContentSectionProps,
 } from "@shared/components/organisms/common/top/search";
 import { Tag } from "@shared/domains/attributes/tag";
+import { isPublished } from "@shared/domains/common";
 import { ContentType } from "@shared/domains/search-token";
 import styles from "./list.module.css";
 import { Memo } from "@shared/domains/memo";
@@ -16,11 +17,11 @@ export type Props = {
 export const MemoListIndex = (props: Props) => (
   <div className={styles.container}>
     <ContentSection
-      search={props.search}
+      search={async () => (await props.search()).filter(isPublished)}
       findAllTags={props.findAllTags}
       slugOf={(memo) => memo.slug}
       titleOf={(memo) => memo.title}
-      dateOf={(memo) => memo.publishedAt ?? memo.timeline.createdAt}
+      dateOf={(memo) => memo.publishedAt}
       type={ContentType.MEMO}
       maxItems={Infinity}
       linkMode={props.linkMode}

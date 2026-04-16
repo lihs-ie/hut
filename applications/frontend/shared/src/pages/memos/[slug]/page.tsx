@@ -3,6 +3,7 @@ import { findAllTags } from "@shared/actions/tag";
 import { MDXRenderer } from "@shared/components/global/mdx";
 import { MemoIndex } from "@shared/components/templates/memo";
 import { incrementViewCount } from "@shared/actions/view";
+import { isPublished } from "@shared/domains/common";
 import { ContentType } from "@shared/domains/search-token/reference";
 import type { Metadata } from "next";
 
@@ -32,7 +33,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       type: "article",
       title: memo.title,
       description,
-      publishedTime: (memo.publishedAt ?? memo.timeline.createdAt).toISOString(),
+      ...(isPublished(memo) ? { publishedTime: memo.publishedAt.toISOString() } : {}),
       modifiedTime: memo.timeline.updatedAt.toISOString(),
     },
     twitter: {

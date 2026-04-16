@@ -46,16 +46,18 @@ export const SearchResultPresenter = (props: Props) => {
         <SearchEmpty variant={variant} />
       ) : (
         <div className={styles.contents}>
-          {props.contents.map((content) => (
-            <HomeContentCard
-              key={content.slug}
-              slug={content.slug}
-              type={determineType(content)}
-              title={content.title}
-              date={content.publishedAt ?? content.timeline.createdAt}
-              tagNames={content.tagNames}
-            />
-          ))}
+          {props.contents
+            .filter((content): content is ContentWithTagNames & { publishedAt: Date } => content.publishedAt != null)
+            .map((content) => (
+              <HomeContentCard
+                key={content.slug}
+                slug={content.slug}
+                type={determineType(content)}
+                title={content.title}
+                date={content.publishedAt}
+                tagNames={content.tagNames}
+              />
+            ))}
         </div>
       )}
     </div>

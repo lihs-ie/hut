@@ -1,6 +1,6 @@
 import { Article } from "@shared/domains/articles";
 import { Memo } from "@shared/domains/memo";
-import { Series } from "@shared/domains/series";
+import { isPublishedSeries, Series } from "@shared/domains/series";
 import styles from "./index.module.css";
 import { Profile } from "@shared/domains/user";
 import { ContentSection } from "@shared/components/organisms/common/top/search";
@@ -9,6 +9,7 @@ import { ProfileCard } from "@shared/components/molecules/list/card/profile";
 import { ContentType } from "@shared/domains/search-token";
 import { Tag } from "@shared/domains/attributes/tag";
 import { Suspense } from "react";
+import { isPublished } from "@shared/domains/common";
 
 export type Props = {
   searchArticles: () => Promise<Article[]>;
@@ -25,10 +26,10 @@ export const TopIndex = async (props: Props) => {
     <div className={styles.container}>
       <Suspense fallback={<ContentSectionSkeleton count={6} />}>
         <ContentSection
-          search={props.searchArticles}
+          search={async () => (await props.searchArticles()).filter(isPublished)}
           type={ContentType.ARTICLE}
           titleOf={(article) => article.title}
-          dateOf={(article) => article.publishedAt ?? article.timeline.createdAt}
+          dateOf={(article) => article.publishedAt}
           slugOf={(article) => article.slug}
           findAllTags={props.findAllTags}
           hasAllLink
@@ -36,10 +37,10 @@ export const TopIndex = async (props: Props) => {
       </Suspense>
       <Suspense fallback={<ContentSectionSkeleton count={6} />}>
         <ContentSection
-          search={props.searchMemos}
+          search={async () => (await props.searchMemos()).filter(isPublished)}
           type={ContentType.MEMO}
           titleOf={(memo) => memo.title}
-          dateOf={(memo) => memo.publishedAt ?? memo.timeline.createdAt}
+          dateOf={(memo) => memo.publishedAt}
           slugOf={(memo) => memo.slug}
           findAllTags={props.findAllTags}
           hasAllLink
@@ -47,10 +48,10 @@ export const TopIndex = async (props: Props) => {
       </Suspense>
       <Suspense fallback={<ContentSectionSkeleton count={6} />}>
         <ContentSection
-          search={props.searchSeries}
+          search={async () => (await props.searchSeries()).filter(isPublishedSeries)}
           type={ContentType.SERIES}
           titleOf={(series) => series.title}
-          dateOf={(series) => series.publishedAt ?? series.timeline.createdAt}
+          dateOf={(series) => series.publishedAt}
           slugOf={(series) => series.slug}
           findAllTags={props.findAllTags}
           hasAllLink

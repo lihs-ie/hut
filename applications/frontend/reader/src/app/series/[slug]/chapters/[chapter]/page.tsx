@@ -3,6 +3,7 @@ import { ChapterIndex } from "@shared/components/templates/series/chapter";
 import { findChapterBySlug, findPublishedChaptersByIdentifiers } from "@/actions/chapter";
 import { slugSchema } from "@shared/domains/common/slug";
 import { findBySlug, searchAllChapterParams } from "@/actions/series";
+import { isPublished } from "@shared/domains/common";
 import type { Metadata } from "next";
 
 export const revalidate = 3600;
@@ -32,7 +33,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       type: "article",
       title: chapterTitle,
       description: `${series.title} - ${chapter.title}`,
-      publishedTime: (chapter.publishedAt ?? chapter.timeline.createdAt).toISOString(),
+      ...(isPublished(chapter) ? { publishedTime: chapter.publishedAt.toISOString() } : {}),
       modifiedTime: chapter.timeline.updatedAt.toISOString(),
     },
     twitter: {

@@ -140,6 +140,14 @@ export const validateCriteria = (
   candidate: UnvalidatedCriteria
 ): Result<Criteria, ValidationError[]> => validate(criteriaSchema, candidate);
 
+export type PublishedSeries = Series & { publishedAt: Date };
+
+export const isPublishedSeries = (
+  series: Series,
+): series is PublishedSeries => {
+  return series.publishedAt != null;
+};
+
 export type SeriesError =
   | ValidationError
   | AggregateNotFoundError<"Series">
