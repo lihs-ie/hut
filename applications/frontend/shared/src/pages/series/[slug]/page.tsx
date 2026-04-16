@@ -3,7 +3,7 @@ import { findChaptersByIdentifiers } from "@shared/actions/chapter";
 import { SeriesIndex } from "@shared/components/templates/series";
 import { slugSchema } from "@shared/domains/common/slug";
 import { findBySlug } from "@shared/actions/series";
-import { isPublishedSeries } from "@shared/domains/series";
+import { isPublished } from "@shared/domains/common";
 import type { Metadata } from "next";
 
 type Props = {
@@ -24,7 +24,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       type: "article",
       title: series.title,
       description: series.description ?? undefined,
-      ...(isPublishedSeries(series) ? { publishedTime: series.publishedAt.toISOString() } : {}),
+      ...(isPublished(series) ? { publishedTime: series.publishedAt.toISOString() } : {}),
       modifiedTime: series.timeline.updatedAt.toISOString(),
       tags: tags.map((tag) => tag.name),
       ...(series.cover ? { images: [{ url: series.cover }] } : {}),

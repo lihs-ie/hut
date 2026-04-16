@@ -223,7 +223,7 @@ describe("domains/series/common", () => {
         expect(result.success).toBe(true);
       });
 
-      it("publishedAtを省略しても有効", () => {
+      it("publishedAtを省略すると無効", () => {
         const result = seriesSchema.safeParse({
           identifier: Forger(SeriesIdentifierMold).forge(),
           title: "Series Title",
@@ -236,7 +236,7 @@ describe("domains/series/common", () => {
           status: PublishStatus.PUBLISHED,
           timeline: Forger(TimelineMold).forge(),
         });
-        expect(result.success).toBe(true);
+        expect(result.success).toBe(false);
       });
     });
 
@@ -299,6 +299,7 @@ describe("domains/series/common", () => {
         cover: "https://example.com/cover.png",
         chapters: [],
         status: "published",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);
@@ -315,6 +316,7 @@ describe("domains/series/common", () => {
         cover: "https://example.com/cover.png",
         chapters: [ulid(), ulid()],
         status: "published",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);
@@ -330,6 +332,7 @@ describe("domains/series/common", () => {
         description: "a".repeat(501),
         chapters: [],
         status: "published",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -352,7 +355,7 @@ describe("domains/series/common", () => {
       expect(result.isOk).toBe(true);
     });
 
-    it("publishedAt を省略したUnvalidatedSeriesでokを返す", () => {
+    it("publishedAt=null の下書きSeriesでokを返す", () => {
       const result = validateSeries({
         identifier: Forger(SeriesIdentifierMold).forge(),
         title: "下書きシリーズ",
@@ -363,6 +366,7 @@ describe("domains/series/common", () => {
         cover: null,
         chapters: [],
         status: "draft",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);

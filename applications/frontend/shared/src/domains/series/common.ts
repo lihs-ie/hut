@@ -66,7 +66,7 @@ export const seriesSchema = z
     cover: cover.nullable(),
     chapters: z.array(chapterIdentifierSchema),
     status: publishStatusSchema,
-    publishedAt: z.date().nullish(),
+    publishedAt: z.date().nullable(),
     timeline: timelineSchema,
   })
   .brand("Series");
@@ -83,7 +83,7 @@ export type UnvalidatedSeries = {
   status: string;
   description?: string;
   cover?: string | null;
-  publishedAt?: Date | null;
+  publishedAt: Date | null;
   timeline?: {
     createdAt: Date;
     updatedAt: Date;
@@ -139,14 +139,6 @@ export type UnvalidatedCriteria = {
 export const validateCriteria = (
   candidate: UnvalidatedCriteria
 ): Result<Criteria, ValidationError[]> => validate(criteriaSchema, candidate);
-
-export type PublishedSeries = Series & { publishedAt: Date };
-
-export const isPublishedSeries = (
-  series: Series,
-): series is PublishedSeries => {
-  return series.publishedAt != null;
-};
 
 export type SeriesError =
   | ValidationError

@@ -298,6 +298,7 @@ describe("workflows/series", () => {
         description: series.description,
         cover: series.cover,
         status: series.status,
+        publishedAt: series.publishedAt ?? null,
         timeline: series.timeline,
       }).unwrap();
 
@@ -320,6 +321,7 @@ describe("workflows/series", () => {
         subTitle: null,
         chapters: [],
         status: "published",
+        publishedAt: null,
         timeline: { createdAt: new Date(), updatedAt: new Date() },
       });
 
@@ -348,6 +350,7 @@ describe("workflows/series", () => {
         description: series.description,
         cover: series.cover,
         status: series.status,
+        publishedAt: series.publishedAt ?? null,
         timeline: series.timeline,
       }).unwrapError();
 

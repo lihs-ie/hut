@@ -1,6 +1,6 @@
 import { Article } from "@shared/domains/articles";
 import { Memo } from "@shared/domains/memo";
-import { isPublishedSeries, Series } from "@shared/domains/series";
+import { Series } from "@shared/domains/series";
 import styles from "./index.module.css";
 import { Profile } from "@shared/domains/user";
 import { ContentSection } from "@shared/components/organisms/common/top/search";
@@ -48,7 +48,7 @@ export const TopIndex = async (props: Props) => {
       </Suspense>
       <Suspense fallback={<ContentSectionSkeleton count={6} />}>
         <ContentSection
-          search={async () => (await props.searchSeries()).filter(isPublishedSeries)}
+          search={async () => (await props.searchSeries()).filter(isPublished)}
           type={ContentType.SERIES}
           titleOf={(series) => series.title}
           dateOf={(series) => series.publishedAt}
