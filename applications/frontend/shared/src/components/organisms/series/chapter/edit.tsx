@@ -4,7 +4,7 @@ import styles from "./edit.module.css";
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { ulid } from "ulid";
-import { PublishStatus } from "@shared/domains/common";
+import { computePublishedAt, PublishStatus } from "@shared/domains/common";
 import { useServerAction } from "@shared/components/global/hooks/use-server-action";
 import { ErrorModal } from "@shared/components/molecules/modal/error";
 import { EditorHeader } from "@shared/components/organisms/common/editor/header";
@@ -125,6 +125,7 @@ export const ChapterEditOrganism = (props: Props) => {
 
   const { execute, error, isLoading, reset } = useServerAction(
     async () => {
+      const now = new Date();
       await props.persist({
         identifier,
         title,
@@ -132,10 +133,15 @@ export const ChapterEditOrganism = (props: Props) => {
         content: stripFrontmatter(content).trim() || title,
         images,
         status: status ?? PublishStatus.DRAFT,
-        publishedAt: props.initial?.publishedAt ?? null,
+        publishedAt: computePublishedAt({
+          currentStatus: props.initial?.status ?? null,
+          nextStatus: status ?? PublishStatus.DRAFT,
+          currentPublishedAt: props.initial?.publishedAt ?? null,
+          now,
+        }),
         timeline: {
-          createdAt: props.initial?.timeline.createdAt ?? new Date(),
-          updatedAt: new Date(),
+          createdAt: props.initial?.timeline.createdAt ?? now,
+          updatedAt: now,
         },
       });
     },

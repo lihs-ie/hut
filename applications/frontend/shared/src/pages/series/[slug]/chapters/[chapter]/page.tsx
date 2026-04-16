@@ -26,7 +26,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       type: "article",
       title: chapterTitle,
       description: `${series.title} - ${chapter.title}`,
-      publishedTime: (chapter.publishedAt ?? chapter.timeline.createdAt).toISOString(),
+      publishedTime: chapter.publishedAt!.toISOString(),
       modifiedTime: chapter.timeline.updatedAt.toISOString(),
     },
     twitter: {

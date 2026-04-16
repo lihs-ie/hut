@@ -62,7 +62,7 @@ export const ChapterPresenter = (props: Props) => (
               <span className={styles["meta-icon"]}>
                 <ClockIcon />
               </span>
-              投稿日時：{formatDate(props.currentChapter.publishedAt ?? props.currentChapter.timeline.createdAt)}
+              投稿日時：{formatDate(props.currentChapter.publishedAt!)}
             </ModestText>
             <ModestText>
               <span className={styles["meta-icon"]}>

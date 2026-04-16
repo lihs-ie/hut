@@ -52,7 +52,7 @@ export const SearchResultPresenter = (props: Props) => {
               slug={content.slug}
               type={determineType(content)}
               title={content.title}
-              date={content.publishedAt ?? content.timeline.createdAt}
+              date={content.publishedAt!}
               tagNames={content.tagNames}
             />
           ))}

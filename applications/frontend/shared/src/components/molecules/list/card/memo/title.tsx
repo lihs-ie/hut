@@ -21,7 +21,7 @@ export const MemoTitleCard = (props: Props) => (
         <div className={styles.icon}>
           <ClockIcon />
         </div>
-        &nbsp;{formatDateTime(props.publishedAt ?? props.timeline.createdAt)}
+        &nbsp;{formatDateTime(props.publishedAt!)}
       </ModestText>
     </div>
   </Link>

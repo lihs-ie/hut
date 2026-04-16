@@ -32,7 +32,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       type: "article",
       title: memo.title,
       description,
-      publishedTime: (memo.publishedAt ?? memo.timeline.createdAt).toISOString(),
+      publishedTime: memo.publishedAt!.toISOString(),
       modifiedTime: memo.timeline.updatedAt.toISOString(),
     },
     twitter: {

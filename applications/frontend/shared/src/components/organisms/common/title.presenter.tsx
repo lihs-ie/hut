@@ -21,7 +21,7 @@ export const TitlePresenter = (props: Props) => (
             <div className={styles.icon}>
               <ClockIcon />
             </div>
-            投稿日時：{formatDate(props.publishedAt ?? props.timeline.createdAt)}
+            投稿日時：{formatDate(props.publishedAt!)}
           </ModestText>
           <ModestText>
             <div className={styles.icon}>
