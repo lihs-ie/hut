@@ -18,6 +18,11 @@ describe("domains/common/publish", () => {
       expect(isPublished(entity)).toBe(false);
     });
 
+    it("publishedAt が Invalid Date の場合は false を返す", () => {
+      const entity = { publishedAt: new Date("invalid") };
+      expect(isPublished(entity)).toBe(false);
+    });
+
     it("型ガードによりフィルタ後の配列要素で publishedAt が Date として推論される", () => {
       const entities = [
         { publishedAt: new Date("2025-01-01"), title: "published" },

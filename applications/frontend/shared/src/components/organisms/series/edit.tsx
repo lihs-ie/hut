@@ -80,9 +80,9 @@ export const SeriesEditOrganism = (props: Props) => {
   const { execute, error, isLoading, reset } = useServerAction(
     async () => {
       const now = new Date();
-      const publishedAt = props.initial?.publishedAt != null
-        ? props.initial.publishedAt
-        : status === PublishStatus.PUBLISHED ? now : null;
+      const publishedAt = status === PublishStatus.PUBLISHED
+        ? (props.initial?.publishedAt ?? now)
+        : null;
 
       await props.persist({
         identifier,

@@ -127,9 +127,9 @@ export const ChapterEditOrganism = (props: Props) => {
     async () => {
       const now = new Date();
       const nextStatus = status ?? PublishStatus.DRAFT;
-      const publishedAt = props.initial?.publishedAt != null
-        ? props.initial.publishedAt
-        : nextStatus === PublishStatus.PUBLISHED ? now : null;
+      const publishedAt = nextStatus === PublishStatus.PUBLISHED
+        ? (props.initial?.publishedAt ?? now)
+        : null;
 
       await props.persist({
         identifier,

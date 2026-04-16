@@ -6,6 +6,7 @@ import { HomeContentCard } from "@shared/components/molecules/list/card/home-con
 import { ContentType, UnvalidatedCriteria } from "@shared/domains/search-token";
 import { TagName } from "@shared/domains/attributes/tag";
 import { SearchEmpty } from "@shared/components/molecules/empty/search";
+import { isPublished } from "@shared/domains/common";
 
 type ContentWithTagNames = (Article | Series | Memo) & { tagNames: TagName[] };
 
@@ -36,28 +37,27 @@ const determineType = (
 
 export const SearchResultPresenter = (props: Props) => {
   const variant = hasSearchCriteria(props.criteria) ? "empty" : "initial";
+  const publishedContents = props.contents.filter(isPublished);
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <span>検索結果：{props.contents.length}件</span>
+        <span>検索結果：{publishedContents.length}件</span>
       </div>
-      {props.contents.length === 0 ? (
+      {publishedContents.length === 0 ? (
         <SearchEmpty variant={variant} />
       ) : (
         <div className={styles.contents}>
-          {props.contents
-            .filter((content): content is ContentWithTagNames & { publishedAt: Date } => content.publishedAt != null)
-            .map((content) => (
-              <HomeContentCard
-                key={content.slug}
-                slug={content.slug}
-                type={determineType(content)}
-                title={content.title}
-                date={content.publishedAt}
-                tagNames={content.tagNames}
-              />
-            ))}
+          {publishedContents.map((content) => (
+            <HomeContentCard
+              key={content.slug}
+              slug={content.slug}
+              type={determineType(content)}
+              title={content.title}
+              date={content.publishedAt}
+              tagNames={content.tagNames}
+            />
+          ))}
         </div>
       )}
     </div>

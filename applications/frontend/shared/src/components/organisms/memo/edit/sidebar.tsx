@@ -18,9 +18,9 @@ const changeStatus = (snapshot: MemoSnapshot, edit: Props["edit"]) => {
     "use server";
 
     const now = new Date();
-    const publishedAt = snapshot.publishedAt != null
-      ? snapshot.publishedAt
-      : next === PublishStatus.PUBLISHED ? now : null;
+    const publishedAt = next === PublishStatus.PUBLISHED
+      ? (snapshot.publishedAt ?? now)
+      : null;
 
     const unvalidated: UnvalidatedMemo = {
       identifier: snapshot.identifier,

@@ -5,5 +5,7 @@ export type Published<T extends { publishedAt: Date | null | undefined }> = T & 
 export const isPublished = <T extends { publishedAt: Date | null | undefined }>(
   entity: T,
 ): entity is Published<T> => {
-  return entity.publishedAt != null;
+  const { publishedAt } = entity;
+
+  return publishedAt instanceof Date && !Number.isNaN(publishedAt.getTime());
 };
