@@ -9,7 +9,6 @@ import { ProfileCard } from "@shared/components/molecules/list/card/profile";
 import { ContentType } from "@shared/domains/search-token";
 import { Tag } from "@shared/domains/attributes/tag";
 import { Suspense } from "react";
-import { isPublished } from "@shared/domains/common";
 
 export type Props = {
   searchArticles: () => Promise<Article[]>;
@@ -26,7 +25,7 @@ export const TopIndex = async (props: Props) => {
     <div className={styles.container}>
       <Suspense fallback={<ContentSectionSkeleton count={6} />}>
         <ContentSection
-          search={async () => (await props.searchArticles()).filter(isPublished)}
+          search={props.searchArticles}
           type={ContentType.ARTICLE}
           titleOf={(article) => article.title}
           dateOf={(article) => article.publishedAt}
@@ -37,7 +36,7 @@ export const TopIndex = async (props: Props) => {
       </Suspense>
       <Suspense fallback={<ContentSectionSkeleton count={6} />}>
         <ContentSection
-          search={async () => (await props.searchMemos()).filter(isPublished)}
+          search={props.searchMemos}
           type={ContentType.MEMO}
           titleOf={(memo) => memo.title}
           dateOf={(memo) => memo.publishedAt}
@@ -48,7 +47,7 @@ export const TopIndex = async (props: Props) => {
       </Suspense>
       <Suspense fallback={<ContentSectionSkeleton count={6} />}>
         <ContentSection
-          search={async () => (await props.searchSeries()).filter(isPublished)}
+          search={props.searchSeries}
           type={ContentType.SERIES}
           titleOf={(series) => series.title}
           dateOf={(series) => series.publishedAt}

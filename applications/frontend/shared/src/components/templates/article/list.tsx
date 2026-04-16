@@ -4,7 +4,6 @@ import {
 } from "@shared/components/organisms/common/top/search";
 import { Article } from "@shared/domains/articles";
 import { Tag } from "@shared/domains/attributes/tag";
-import { isPublished } from "@shared/domains/common";
 import { ContentType } from "@shared/domains/search-token";
 import styles from "./list.module.css";
 
@@ -17,7 +16,7 @@ export type Props = {
 export const ArticleListIndex = (props: Props) => (
   <div className={styles.container}>
     <ContentSection
-      search={async () => (await props.search()).filter(isPublished)}
+      search={props.search}
       findAllTags={props.findAllTags}
       slugOf={(article) => article.slug}
       titleOf={(article) => article.title}

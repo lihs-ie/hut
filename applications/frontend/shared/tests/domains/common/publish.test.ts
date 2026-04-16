@@ -9,12 +9,7 @@ describe("domains/common/publish", () => {
     });
 
     it("publishedAt が null の場合は false を返す", () => {
-      const entity = { publishedAt: null };
-      expect(isPublished(entity)).toBe(false);
-    });
-
-    it("publishedAt が undefined の場合は false を返す", () => {
-      const entity = { publishedAt: undefined };
+      const entity: { publishedAt: Date | null } = { publishedAt: null };
       expect(isPublished(entity)).toBe(false);
     });
 
@@ -24,10 +19,9 @@ describe("domains/common/publish", () => {
     });
 
     it("型ガードによりフィルタ後の配列要素で publishedAt が Date として推論される", () => {
-      const entities = [
+      const entities: { publishedAt: Date | null; title: string }[] = [
         { publishedAt: new Date("2025-01-01"), title: "published" },
         { publishedAt: null, title: "draft" },
-        { publishedAt: undefined, title: "no-field" },
       ];
 
       const published = entities.filter(isPublished);

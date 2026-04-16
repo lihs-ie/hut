@@ -1,8 +1,8 @@
-export type Published<T extends { publishedAt: Date | null | undefined }> = T & {
+export type Published<T extends { publishedAt: Date | null }> = T & {
   publishedAt: Date;
 };
 
-export const isPublished = <T extends { publishedAt: Date | null | undefined }>(
+export const isPublished = <T extends { publishedAt: Date | null }>(
   entity: T,
 ): entity is Published<T> => {
   const { publishedAt } = entity;
