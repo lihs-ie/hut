@@ -1,5 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
-import type { Root, Code } from "mdast";
+import type { Root, RootContent } from "mdast";
+import { unified, type Plugin } from "unified";
+
+const assertHtmlNode = (
+  node: RootContent,
+): { type: "html"; value: string } => {
+  if (node.type !== "html") {
+    throw new Error(`expected html node but got ${node.type}`);
+  }
+  return node;
+};
 
 const mockRender = vi.fn(async (diagrams: string[]) =>
   diagrams.map((diagram, index) => {
@@ -22,8 +32,10 @@ const mockRender = vi.fn(async (diagrams: string[]) =>
   }),
 );
 
+const mockCreateRenderer = vi.fn(() => mockRender);
+
 vi.mock("mermaid-isomorphic", () => ({
-  createMermaidRenderer: vi.fn(() => mockRender),
+  createMermaidRenderer: mockCreateRenderer,
 }));
 
 const mockSanitize = vi.fn((svg: string) => svg);
@@ -32,23 +44,11 @@ vi.mock("@shared/components/molecules/mermaid/sanitize", () => ({
   sanitizeMermaidSvg: mockSanitize,
 }));
 
-vi.mock("../components/molecules/mermaid/sanitize", () => ({
-  sanitizeMermaidSvg: mockSanitize,
-}));
-
-type Transformer = (tree: Root) => Promise<void> | void;
-type PluginFactory = () => Transformer | undefined;
-
 const applyPlugin = async (tree: Root): Promise<void> => {
   const module = await import("@shared/plugins/remark-mermaid");
-  const factory = module.remarkMermaid as unknown as PluginFactory;
-  const transform = factory();
-  if (typeof transform === "function") {
-    const result = transform(tree);
-    if (result instanceof Promise) {
-      await result;
-    }
-  }
+  const plugin: Plugin<[], Root> = module.remarkMermaid;
+  const processor = unified().use(plugin);
+  await processor.run(tree);
 };
 
 describe("remarkMermaid", () => {
@@ -62,14 +62,13 @@ describe("remarkMermaid", () => {
             lang: "mermaid",
             meta: null,
             value: "flowchart TD\n  A --> B",
-          } as Code,
+          },
         ],
       };
 
       await applyPlugin(tree);
 
-      expect(tree.children[0].type).toBe("html");
-      const htmlNode = tree.children[0] as { type: string; value: string };
+      const htmlNode = assertHtmlNode(tree.children[0]);
       expect(htmlNode.value).toContain("<svg");
     });
 
@@ -82,7 +81,7 @@ describe("remarkMermaid", () => {
             lang: "typescript",
             meta: null,
             value: "console.log('hello')",
-          } as Code,
+          },
         ],
       };
 
@@ -100,14 +99,13 @@ describe("remarkMermaid", () => {
             lang: "mermaid",
             meta: null,
             value: "invalid syntax @@@@",
-          } as Code,
+          },
         ],
       };
 
       await applyPlugin(tree);
 
-      expect(tree.children[0].type).toBe("html");
-      const htmlNode = tree.children[0] as { type: string; value: string };
+      const htmlNode = assertHtmlNode(tree.children[0]);
       expect(htmlNode.value).toContain("invalid syntax @@@@");
     });
 
@@ -120,22 +118,20 @@ describe("remarkMermaid", () => {
             lang: "mermaid",
             meta: null,
             value: "flowchart TD\n  A --> B",
-          } as Code,
+          },
           {
             type: "code",
             lang: "mermaid",
             meta: null,
             value: "sequenceDiagram\n  A->>B: hello",
-          } as Code,
+          },
         ],
       };
 
       await applyPlugin(tree);
 
-      expect(tree.children[0].type).toBe("html");
-      expect(tree.children[1].type).toBe("html");
-      const first = tree.children[0] as { type: string; value: string };
-      const second = tree.children[1] as { type: string; value: string };
+      const first = assertHtmlNode(tree.children[0]);
+      const second = assertHtmlNode(tree.children[1]);
       expect(first.value).toContain("<svg");
       expect(second.value).toContain("<svg");
     });
@@ -149,13 +145,13 @@ describe("remarkMermaid", () => {
             lang: "mermaid",
             meta: null,
             value: "flowchart TD\n  A --> B",
-          } as Code,
+          },
         ],
       };
 
       await applyPlugin(tree);
 
-      const htmlNode = tree.children[0] as { type: string; value: string };
+      const htmlNode = assertHtmlNode(tree.children[0]);
       expect(htmlNode.value).toContain("mermaid-svg");
     });
 
@@ -170,13 +166,70 @@ describe("remarkMermaid", () => {
             lang: "mermaid",
             meta: null,
             value: "flowchart TD\n  A --> B",
-          } as Code,
+          },
         ],
       };
 
       await applyPlugin(tree);
 
       expect(mockSanitize).toHaveBeenCalled();
+    });
+
+    it("フォールバック時に特殊文字をHTMLエスケープする", async () => {
+      const tree: Root = {
+        type: "root",
+        children: [
+          {
+            type: "code",
+            lang: "mermaid",
+            meta: null,
+            value: "invalid syntax @@@@ <script>alert('xss')</script>",
+          },
+        ],
+      };
+
+      await applyPlugin(tree);
+
+      const htmlNode = assertHtmlNode(tree.children[0]);
+      expect(htmlNode.value).not.toContain("<script>");
+      expect(htmlNode.value).toContain("&lt;script&gt;");
+      expect(htmlNode.value).toContain("&#039;xss&#039;");
+    });
+
+    it("空のコードブロックツリーでもエラーを起こさない", async () => {
+      const tree: Root = {
+        type: "root",
+        children: [],
+      };
+
+      await expect(applyPlugin(tree)).resolves.toBeUndefined();
+      expect(tree.children).toHaveLength(0);
+    });
+  });
+
+  describe("レンダラーのシングルトン化", () => {
+    it("複数回の実行でcreateMermaidRendererは一度しか呼ばれない", async () => {
+      const initialCallCount = mockCreateRenderer.mock.calls.length;
+
+      const createTree = (): Root => ({
+        type: "root",
+        children: [
+          {
+            type: "code",
+            lang: "mermaid",
+            meta: null,
+            value: "flowchart TD\n  A --> B",
+          },
+        ],
+      });
+
+      await applyPlugin(createTree());
+      await applyPlugin(createTree());
+      await applyPlugin(createTree());
+
+      expect(
+        mockCreateRenderer.mock.calls.length - initialCallCount,
+      ).toBeLessThanOrEqual(1);
     });
   });
 });

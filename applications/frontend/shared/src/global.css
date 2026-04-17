@@ -597,6 +597,7 @@ header {
 }
 
 .mermaid-svg.fallback {
+  display: block;
   padding: 1rem;
   background-color: var(--muted);
   overflow-x: auto;
