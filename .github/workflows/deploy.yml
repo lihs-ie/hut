@@ -250,7 +250,7 @@ jobs:
 
           if [ "${APP_TYPE}" = "frontend" ]; then
             DEPLOY_ARGS+=(
-              --update-env-vars "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},NEXT_PUBLIC_USE_FIREBASE_EMULATOR=false,NEXT_PUBLIC_GIT_SHA=${GIT_SHA}"
+              --update-env-vars "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},NEXT_PUBLIC_USE_FIREBASE_EMULATOR=false,NEXT_PUBLIC_GIT_SHA=${GIT_SHA},NEXT_PUBLIC_SENTRY_ENVIRONMENT=${INPUT_ENVIRONMENT}"
             )
           fi
 
