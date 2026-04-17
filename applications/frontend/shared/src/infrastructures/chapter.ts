@@ -8,6 +8,7 @@ import {
   createSlugIndexInTransaction,
   createVersion,
   deleteSlugIndexInTransaction,
+  FIRESTORE_IN_BATCH_LIMIT,
   FirestoreOperations,
   mapFirestoreError,
   updateSlugIndexInTransaction,
@@ -25,7 +26,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
-import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
+import { chunk } from "@shared/aspects/array";
 
 type PersistedChapter = {
   identifier: string;
@@ -238,7 +239,7 @@ export const FirebaseChapterRepository = (
         }
 
         const uniqueIdentifiers = Array.from(new Set(identifiers));
-        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT);
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT).unwrap();
 
         const batchResults = await Promise.all(
           chunks.map(async (identifiersChunk) => {
@@ -251,14 +252,14 @@ export const FirebaseChapterRepository = (
           }),
         );
 
-        const chapterByIdentifier = new Map<ChapterIdentifier, Chapter>();
+        const chapters = new Map<ChapterIdentifier, Chapter>();
         for (const chapter of batchResults.flat()) {
-          chapterByIdentifier.set(chapter.identifier, chapter);
+          chapters.set(chapter.identifier, chapter);
         }
 
         if (throwOnMissing) {
           const missingIdentifier = uniqueIdentifiers.find(
-            (identifier) => !chapterByIdentifier.has(identifier),
+            (identifier) => !chapters.has(identifier),
           );
           if (missingIdentifier !== undefined) {
             throw aggregateNotFoundError(
@@ -268,14 +269,10 @@ export const FirebaseChapterRepository = (
           }
         }
 
-        const chapterList: Chapter[] = [];
-        for (const identifier of identifiers) {
-          const chapter = chapterByIdentifier.get(identifier);
-          if (chapter !== undefined) {
-            chapterList.push(chapter);
-          }
-        }
-        return chapterList;
+        return identifiers.flatMap((identifier) => {
+          const chapter = chapters.get(identifier);
+          return chapter !== undefined ? [chapter] : [];
+        });
       })(),
       mapError,
     );

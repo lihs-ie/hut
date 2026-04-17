@@ -7,6 +7,7 @@ import {
   createSlugIndexInTransaction,
   createVersion,
   deleteSlugIndexInTransaction,
+  FIRESTORE_IN_BATCH_LIMIT,
   FirestoreOperations,
   mapFirestoreError,
   updateSlugIndexInTransaction,
@@ -26,7 +27,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
-import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
+import { chunk } from "@shared/aspects/array";
 
 type PersistedArticle = {
   identifier: string;
@@ -218,7 +219,7 @@ export const FirebaseArticleRepository = (
         }
 
         const uniqueIdentifiers = Array.from(new Set(identifiers));
-        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT);
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT).unwrap();
 
         const batchResults = await Promise.all(
           chunks.map(async (identifiersChunk) => {
@@ -231,14 +232,14 @@ export const FirebaseArticleRepository = (
           }),
         );
 
-        const articleByIdentifier = new Map<ArticleIdentifier, Article>();
+        const articles = new Map<ArticleIdentifier, Article>();
         for (const article of batchResults.flat()) {
-          articleByIdentifier.set(article.identifier, article);
+          articles.set(article.identifier, article);
         }
 
         if (throwOnMissing) {
           const missingIdentifier = uniqueIdentifiers.find(
-            (identifier) => !articleByIdentifier.has(identifier),
+            (identifier) => !articles.has(identifier),
           );
           if (missingIdentifier !== undefined) {
             throw aggregateNotFoundError(
@@ -248,14 +249,10 @@ export const FirebaseArticleRepository = (
           }
         }
 
-        const articles: Article[] = [];
-        for (const identifier of identifiers) {
-          const article = articleByIdentifier.get(identifier);
-          if (article !== undefined) {
-            articles.push(article);
-          }
-        }
-        return articles;
+        return identifiers.flatMap((identifier) => {
+          const article = articles.get(identifier);
+          return article !== undefined ? [article] : [];
+        });
       })(),
       mapError,
     );

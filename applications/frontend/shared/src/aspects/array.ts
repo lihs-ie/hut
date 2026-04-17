@@ -1,12 +1,15 @@
-export const FIRESTORE_IN_BATCH_LIMIT = 30;
+import { err, ok, Result } from "@shared/aspects/result";
 
-export const chunk = <T>(items: T[], size: number): T[][] => {
+export const chunk = <T>(
+  items: T[],
+  size: number,
+): Result<T[][], Error> => {
   if (size <= 0) {
-    throw new Error(`chunk size must be greater than 0, got ${size}`);
+    return err(new Error(`chunk size must be greater than 0, got ${size}`));
   }
 
   if (items.length === 0) {
-    return [];
+    return ok([]);
   }
 
   const result: T[][] = [];
@@ -15,5 +18,5 @@ export const chunk = <T>(items: T[], size: number): T[][] => {
     result.push(items.slice(index, index + size));
   }
 
-  return result;
+  return ok(result);
 };

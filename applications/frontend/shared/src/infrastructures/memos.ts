@@ -8,6 +8,7 @@ import {
   createSlugIndexInTransaction,
   createVersion,
   deleteSlugIndexInTransaction,
+  FIRESTORE_IN_BATCH_LIMIT,
   FirestoreOperations,
   mapFirestoreError,
   updateSlugIndexInTransaction,
@@ -27,7 +28,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
-import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
+import { chunk } from "@shared/aspects/array";
 
 type PersistedMemo = {
   identifier: string;
@@ -296,7 +297,7 @@ export const FirebaseMemoRepository = (
         }
 
         const uniqueIdentifiers = Array.from(new Set(identifiers));
-        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT);
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT).unwrap();
 
         const batchResults = await Promise.all(
           chunks.map(async (identifiersChunk) => {
@@ -309,14 +310,14 @@ export const FirebaseMemoRepository = (
           }),
         );
 
-        const memoByIdentifier = new Map<MemoIdentifier, Memo>();
+        const memos = new Map<MemoIdentifier, Memo>();
         for (const memo of batchResults.flat()) {
-          memoByIdentifier.set(memo.identifier, memo);
+          memos.set(memo.identifier, memo);
         }
 
         if (throwOnMissing) {
           const missingIdentifier = uniqueIdentifiers.find(
-            (identifier) => !memoByIdentifier.has(identifier),
+            (identifier) => !memos.has(identifier),
           );
           if (missingIdentifier !== undefined) {
             throw aggregateNotFoundError(
@@ -326,14 +327,10 @@ export const FirebaseMemoRepository = (
           }
         }
 
-        const memos: Memo[] = [];
-        for (const identifier of identifiers) {
-          const memo = memoByIdentifier.get(identifier);
-          if (memo !== undefined) {
-            memos.push(memo);
-          }
-        }
-        return memos;
+        return identifiers.flatMap((identifier) => {
+          const memo = memos.get(identifier);
+          return memo !== undefined ? [memo] : [];
+        });
       })(),
       mapError,
     );

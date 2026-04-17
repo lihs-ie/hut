@@ -8,6 +8,7 @@ import {
   createSlugIndexInTransaction,
   createVersion,
   deleteSlugIndexInTransaction,
+  FIRESTORE_IN_BATCH_LIMIT,
   FirestoreOperations,
   mapFirestoreError,
   updateSlugIndexInTransaction,
@@ -27,7 +28,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
-import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
+import { chunk } from "@shared/aspects/array";
 
 type PersistedSeries = {
   identifier: string;
@@ -296,7 +297,7 @@ export const FirebaseSeriesRepository = (
         }
 
         const uniqueIdentifiers = Array.from(new Set(identifiers));
-        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT);
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT).unwrap();
 
         const batchResults = await Promise.all(
           chunks.map(async (identifiersChunk) => {
@@ -309,14 +310,14 @@ export const FirebaseSeriesRepository = (
           }),
         );
 
-        const seriesByIdentifier = new Map<SeriesIdentifier, Series>();
-        for (const series of batchResults.flat()) {
-          seriesByIdentifier.set(series.identifier, series);
+        const series = new Map<SeriesIdentifier, Series>();
+        for (const entry of batchResults.flat()) {
+          series.set(entry.identifier, entry);
         }
 
         if (throwOnMissing) {
           const missingIdentifier = uniqueIdentifiers.find(
-            (identifier) => !seriesByIdentifier.has(identifier),
+            (identifier) => !series.has(identifier),
           );
           if (missingIdentifier !== undefined) {
             throw aggregateNotFoundError(
@@ -326,14 +327,10 @@ export const FirebaseSeriesRepository = (
           }
         }
 
-        const seriesList: Series[] = [];
-        for (const identifier of identifiers) {
-          const series = seriesByIdentifier.get(identifier);
-          if (series !== undefined) {
-            seriesList.push(series);
-          }
-        }
-        return seriesList;
+        return identifiers.flatMap((identifier) => {
+          const entry = series.get(identifier);
+          return entry !== undefined ? [entry] : [];
+        });
       })(),
       mapError,
     );

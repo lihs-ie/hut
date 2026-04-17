@@ -7,6 +7,7 @@ import {
   createVersion,
   createTagNameIndexInTransaction,
   deleteTagNameIndexInTransaction,
+  FIRESTORE_IN_BATCH_LIMIT,
   FirestoreOperations,
   getTagNameIndexPath,
   mapFirestoreError,
@@ -29,7 +30,7 @@ import {
   UnexpectedError,
   DuplicationError,
 } from "@shared/aspects/error";
-import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
+import { chunk } from "@shared/aspects/array";
 
 type PersistedTag = {
   identifier: string;
@@ -155,7 +156,7 @@ export const FirebaseTagRepository = (
           }
 
           const uniqueIdentifiers = Array.from(new Set(identifiers));
-          const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT);
+          const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT).unwrap();
 
           const batchResults = await Promise.all(
             chunks.map(async (identifiersChunk) => {
@@ -168,19 +169,15 @@ export const FirebaseTagRepository = (
             }),
           );
 
-          const tagByIdentifier = new Map<TagIdentifier, Tag>();
+          const tags = new Map<TagIdentifier, Tag>();
           for (const tag of batchResults.flat()) {
-            tagByIdentifier.set(tag.identifier, tag);
+            tags.set(tag.identifier, tag);
           }
 
-          const tags: Tag[] = [];
-          for (const identifier of identifiers) {
-            const tag = tagByIdentifier.get(identifier);
-            if (tag !== undefined) {
-              tags.push(tag);
-            }
-          }
-          return tags;
+          return identifiers.flatMap((identifier) => {
+            const tag = tags.get(identifier);
+            return tag !== undefined ? [tag] : [];
+          });
         })(),
         (error) => mapError(error),
       );

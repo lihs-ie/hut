@@ -1,18 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
+import { chunk } from "@shared/aspects/array";
 
 describe("aspects/array", () => {
-  describe("FIRESTORE_IN_BATCH_LIMIT", () => {
-    it("30 である", () => {
-      expect(FIRESTORE_IN_BATCH_LIMIT).toBe(30);
-    });
-  });
-
   describe("chunk", () => {
     it("空配列を渡すと空配列を返す", () => {
       const result = chunk([], 10);
 
-      expect(result).toEqual([]);
+      expect(result.isOk).toBe(true);
+      expect(result.unwrap()).toEqual([]);
     });
 
     it("items.length <= size の場合は単一チャンクを返す", () => {
@@ -20,7 +15,7 @@ describe("aspects/array", () => {
 
       const result = chunk(items, 10);
 
-      expect(result).toEqual([[1, 2, 3, 4, 5]]);
+      expect(result.unwrap()).toEqual([[1, 2, 3, 4, 5]]);
     });
 
     it("items.length === size の場合は単一チャンクを返す", () => {
@@ -28,7 +23,7 @@ describe("aspects/array", () => {
 
       const result = chunk(items, 3);
 
-      expect(result).toEqual([[1, 2, 3]]);
+      expect(result.unwrap()).toEqual([[1, 2, 3]]);
     });
 
     it("items.length > size の場合は size 毎に分割する", () => {
@@ -36,11 +31,12 @@ describe("aspects/array", () => {
 
       const result = chunk(items, 30);
 
-      expect(result.length).toBe(4);
-      expect(result[0]?.length).toBe(30);
-      expect(result[1]?.length).toBe(30);
-      expect(result[2]?.length).toBe(30);
-      expect(result[3]?.length).toBe(10);
+      const chunks = result.unwrap();
+      expect(chunks.length).toBe(4);
+      expect(chunks[0]?.length).toBe(30);
+      expect(chunks[1]?.length).toBe(30);
+      expect(chunks[2]?.length).toBe(30);
+      expect(chunks[3]?.length).toBe(10);
     });
 
     it("size = 1 の場合は各要素が個別チャンクになる", () => {
@@ -48,12 +44,17 @@ describe("aspects/array", () => {
 
       const result = chunk(items, 1);
 
-      expect(result).toEqual([[1], [2], [3]]);
+      expect(result.unwrap()).toEqual([[1], [2], [3]]);
     });
 
-    it("size が 0 以下の場合は Error をスローする", () => {
-      expect(() => chunk([1, 2, 3], 0)).toThrow();
-      expect(() => chunk([1, 2, 3], -1)).toThrow();
+    it("size が 0 以下の場合は Err を返す", () => {
+      const zeroResult = chunk([1, 2, 3], 0);
+      expect(zeroResult.isErr).toBe(true);
+      expect(zeroResult.unwrapError()).toBeInstanceOf(Error);
+
+      const negativeResult = chunk([1, 2, 3], -1);
+      expect(negativeResult.isErr).toBe(true);
+      expect(negativeResult.unwrapError()).toBeInstanceOf(Error);
     });
 
     it("string 型配列を分割できる", () => {
@@ -61,7 +62,7 @@ describe("aspects/array", () => {
 
       const result = chunk(items, 3);
 
-      expect(result).toEqual([["a", "b", "c"], ["d", "e"]]);
+      expect(result.unwrap()).toEqual([["a", "b", "c"], ["d", "e"]]);
     });
   });
 });
