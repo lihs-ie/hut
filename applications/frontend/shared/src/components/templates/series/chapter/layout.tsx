@@ -8,7 +8,9 @@ export type Props = {
 
 export const ChapterLayoutTemplate = (props: Props) => (
   <div className={styles.container}>
-    {props.toc}
-    {props.children}
+    <div className={styles.wrapper}>
+      {props.toc}
+      {props.children}
+    </div>
   </div>
 );
