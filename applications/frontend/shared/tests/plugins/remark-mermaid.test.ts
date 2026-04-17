@@ -32,11 +32,28 @@ vi.mock("@shared/components/molecules/mermaid/sanitize", () => ({
   sanitizeMermaidSvg: mockSanitize,
 }));
 
+vi.mock("../components/molecules/mermaid/sanitize", () => ({
+  sanitizeMermaidSvg: mockSanitize,
+}));
+
+type Transformer = (tree: Root) => Promise<void> | void;
+type PluginFactory = () => Transformer | undefined;
+
+const applyPlugin = async (tree: Root): Promise<void> => {
+  const module = await import("@shared/plugins/remark-mermaid");
+  const factory = module.remarkMermaid as unknown as PluginFactory;
+  const transform = factory();
+  if (typeof transform === "function") {
+    const result = transform(tree);
+    if (result instanceof Promise) {
+      await result;
+    }
+  }
+};
+
 describe("remarkMermaid", () => {
   describe("mermaidコードブロックの変換", () => {
     it("mermaidコードブロックをHTMLノードに変換する", async () => {
-      const { remarkMermaid } = await import("@shared/plugins/remark-mermaid");
-
       const tree: Root = {
         type: "root",
         children: [
@@ -49,8 +66,7 @@ describe("remarkMermaid", () => {
         ],
       };
 
-      const plugin = remarkMermaid();
-      await plugin(tree);
+      await applyPlugin(tree);
 
       expect(tree.children[0].type).toBe("html");
       const htmlNode = tree.children[0] as { type: string; value: string };
@@ -58,8 +74,6 @@ describe("remarkMermaid", () => {
     });
 
     it("mermaid以外のコードブロックは変換しない", async () => {
-      const { remarkMermaid } = await import("@shared/plugins/remark-mermaid");
-
       const tree: Root = {
         type: "root",
         children: [
@@ -72,15 +86,12 @@ describe("remarkMermaid", () => {
         ],
       };
 
-      const plugin = remarkMermaid();
-      await plugin(tree);
+      await applyPlugin(tree);
 
       expect(tree.children[0].type).toBe("code");
     });
 
     it("不正なmermaid構文でフォールバック表示になる", async () => {
-      const { remarkMermaid } = await import("@shared/plugins/remark-mermaid");
-
       const tree: Root = {
         type: "root",
         children: [
@@ -93,8 +104,7 @@ describe("remarkMermaid", () => {
         ],
       };
 
-      const plugin = remarkMermaid();
-      await plugin(tree);
+      await applyPlugin(tree);
 
       expect(tree.children[0].type).toBe("html");
       const htmlNode = tree.children[0] as { type: string; value: string };
@@ -102,8 +112,6 @@ describe("remarkMermaid", () => {
     });
 
     it("複数のmermaidブロックをそれぞれ変換する", async () => {
-      const { remarkMermaid } = await import("@shared/plugins/remark-mermaid");
-
       const tree: Root = {
         type: "root",
         children: [
@@ -122,8 +130,7 @@ describe("remarkMermaid", () => {
         ],
       };
 
-      const plugin = remarkMermaid();
-      await plugin(tree);
+      await applyPlugin(tree);
 
       expect(tree.children[0].type).toBe("html");
       expect(tree.children[1].type).toBe("html");
@@ -134,8 +141,6 @@ describe("remarkMermaid", () => {
     });
 
     it("生成されたHTMLにmermaid-svgクラスのラッパーdivが含まれる", async () => {
-      const { remarkMermaid } = await import("@shared/plugins/remark-mermaid");
-
       const tree: Root = {
         type: "root",
         children: [
@@ -148,8 +153,7 @@ describe("remarkMermaid", () => {
         ],
       };
 
-      const plugin = remarkMermaid();
-      await plugin(tree);
+      await applyPlugin(tree);
 
       const htmlNode = tree.children[0] as { type: string; value: string };
       expect(htmlNode.value).toContain("mermaid-svg");
@@ -157,7 +161,6 @@ describe("remarkMermaid", () => {
 
     it("sanitizeMermaidSvgを呼び出してSVGをサニタイズする", async () => {
       mockSanitize.mockClear();
-      const { remarkMermaid } = await import("@shared/plugins/remark-mermaid");
 
       const tree: Root = {
         type: "root",
@@ -171,8 +174,7 @@ describe("remarkMermaid", () => {
         ],
       };
 
-      const plugin = remarkMermaid();
-      await plugin(tree);
+      await applyPlugin(tree);
 
       expect(mockSanitize).toHaveBeenCalled();
     });

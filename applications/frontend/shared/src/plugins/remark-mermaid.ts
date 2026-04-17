@@ -2,7 +2,7 @@ import { visit } from "unist-util-visit";
 import type { Root, Code } from "mdast";
 import type { Plugin } from "unified";
 import { createMermaidRenderer } from "mermaid-isomorphic";
-import { sanitizeMermaidSvg } from "@shared/components/molecules/mermaid/sanitize";
+import { sanitizeMermaidSvg } from "../components/molecules/mermaid/sanitize";
 
 let renderer: ReturnType<typeof createMermaidRenderer> | null = null;
 
