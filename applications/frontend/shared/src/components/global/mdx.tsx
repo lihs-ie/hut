@@ -6,16 +6,16 @@ import rehypeSlug from "rehype-slug";
 import React from "react";
 import styles from "./mdx.module.css";
 import { remarkLinkCard } from "@shared/plugins/remark-link-card";
+import { remarkMermaid } from "@shared/plugins/remark-mermaid";
 import { LinkCard } from "@shared/components/molecules/card/link";
 import { ContentImage } from "@shared/components/atoms/image/content";
-import { MermaidRenderer } from "@shared/components/molecules/mermaid";
 import { CopyButton } from "@shared/components/molecules/button/copy";
 
 export type MarkdownRenderer = (content: string) => React.ReactNode;
 
 export const mdxOptions: MDXRemoteProps["options"] = {
   mdxOptions: {
-    remarkPlugins: [remarkGfm, remarkBreaks, remarkLinkCard],
+    remarkPlugins: [remarkGfm, remarkBreaks, remarkLinkCard, remarkMermaid],
     rehypePlugins: [
       [
         rehypeShiki,
@@ -38,15 +38,6 @@ type PreProps = React.HTMLAttributes<HTMLPreElement> & {
   children?: React.ReactNode;
 };
 
-const extractLanguage = (children: React.ReactNode): string | null => {
-  if (!React.isValidElement<{ className?: string }>(children)) return null;
-
-  const className = children.props.className ?? "";
-  const match = className.match(/language-(\w+)/);
-
-  return match ? match[1] : null;
-};
-
 const extractTextContent = (node: React.ReactNode): string => {
   if (typeof node === "string") return node;
   if (typeof node === "number") return String(node);
@@ -59,13 +50,6 @@ const extractTextContent = (node: React.ReactNode): string => {
 };
 
 const CodeBlock = (props: PreProps) => {
-  const language = extractLanguage(props.children);
-
-  if (language === "mermaid") {
-    const code = extractTextContent(props.children);
-    return <MermaidRenderer code={code} />;
-  }
-
   const textContent = extractTextContent(props.children);
   const mergedClassName = `${styles.pre} ${props.className ?? ""}`.trim();
 

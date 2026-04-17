@@ -1,42 +1,38 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import type { Root, Code } from "mdast";
 
+const mockRender = vi.fn(async (diagrams: string[]) =>
+  diagrams.map((diagram, index) => {
+    if (diagram.includes("invalid syntax @@@@")) {
+      return {
+        status: "rejected" as const,
+        reason: new Error("Parse error"),
+      };
+    }
+    return {
+      status: "fulfilled" as const,
+      value: {
+        id: `mermaid-${index}`,
+        diagram,
+        svg: `<svg xmlns="http://www.w3.org/2000/svg" id="mermaid-${index}"><g>rendered</g></svg>`,
+        width: 200,
+        height: 100,
+      },
+    };
+  }),
+);
+
 vi.mock("mermaid-isomorphic", () => ({
-  createMermaidRenderer: vi.fn(() =>
-    vi.fn(async (diagrams: string[]) =>
-      diagrams.map((diagram, index) => {
-        if (diagram.includes("invalid syntax @@@@")) {
-          return {
-            id: `mermaid-${index}`,
-            diagram,
-            svg: null,
-            width: null,
-            height: null,
-            error: new Error("Parse error"),
-          };
-        }
-        return {
-          id: `mermaid-${index}`,
-          diagram,
-          svg: `<svg xmlns="http://www.w3.org/2000/svg" id="mermaid-${index}"><g>rendered</g></svg>`,
-          width: 200,
-          height: 100,
-          error: undefined,
-        };
-      }),
-    ),
-  ),
+  createMermaidRenderer: vi.fn(() => mockRender),
 }));
 
+const mockSanitize = vi.fn((svg: string) => svg);
+
 vi.mock("@shared/components/molecules/mermaid/sanitize", () => ({
-  sanitizeMermaidSvg: vi.fn((svg: string) => svg),
+  sanitizeMermaidSvg: mockSanitize,
 }));
 
 describe("remarkMermaid", () => {
-  beforeEach(() => {
-    vi.resetModules();
-  });
-
   describe("mermaidコードブロックの変換", () => {
     it("mermaidコードブロックをHTMLノードに変換する", async () => {
       const { remarkMermaid } = await import("@shared/plugins/remark-mermaid");
@@ -160,9 +156,7 @@ describe("remarkMermaid", () => {
     });
 
     it("sanitizeMermaidSvgを呼び出してSVGをサニタイズする", async () => {
-      const { sanitizeMermaidSvg } = await import(
-        "@shared/components/molecules/mermaid/sanitize"
-      );
+      mockSanitize.mockClear();
       const { remarkMermaid } = await import("@shared/plugins/remark-mermaid");
 
       const tree: Root = {
@@ -180,7 +174,7 @@ describe("remarkMermaid", () => {
       const plugin = remarkMermaid();
       await plugin(tree);
 
-      expect(sanitizeMermaidSvg).toHaveBeenCalled();
+      expect(mockSanitize).toHaveBeenCalled();
     });
   });
 });

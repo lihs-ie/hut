@@ -44,8 +44,8 @@ vi.mock("@shared/plugins/remark-link-card", () => ({
 vi.mock("@shared/components/molecules/card/link", () => ({
   LinkCard: vi.fn(),
 }));
-vi.mock("@shared/components/molecules/mermaid", () => ({
-  MermaidRenderer: vi.fn(),
+vi.mock("@shared/plugins/remark-mermaid", () => ({
+  remarkMermaid: vi.fn(),
 }));
 vi.mock("@shared/components/molecules/button/copy", () => ({
   CopyButton: vi.fn(),
