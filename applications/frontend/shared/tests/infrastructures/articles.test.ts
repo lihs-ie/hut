@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { FirebaseArticleRepository } from "@shared/infrastructures/articles";
 import {
   createTestFirestoreWithSeed,
@@ -259,7 +259,7 @@ describe("infrastructures/articles", () => {
         expect(found.length).toBe(0);
       });
 
-      it("存在しない記事が含まれるとエラーになる", async () => {
+      it("存在しない記事が含まれ throwOnMissing が true の場合はエラーになる", async () => {
         const repository = FirebaseArticleRepository(
           firestore,
           getOperations(),
@@ -271,13 +271,36 @@ describe("infrastructures/articles", () => {
         const nonExistentId = Forger(ArticleIdentifierMold).forgeWithSeed(26);
         const identifiers = [article.identifier, nonExistentId];
 
-        const result = await repository.ofIdentifiers(identifiers).match({
+        const result = await repository.ofIdentifiers(identifiers, true).match({
           ok: () => null,
           err: (error) => error,
         });
 
         expect(result).not.toBeNull();
         expect(isAggregateNotFoundError(result)).toBe(true);
+      });
+
+      it("100件取得時、getDocs が ceil(100/30)=4 回呼ばれる", async () => {
+        const articles = Forger(ArticleMold).forgeMultiWithSeed(100, 500);
+
+        const ops = getOperations();
+        const getDocsSpy = vi.spyOn(ops, "getDocs");
+
+        const repository = FirebaseArticleRepository(firestore, ops);
+
+        for (const article of articles) {
+          await repository.persist(article).unwrap();
+        }
+
+        getDocsSpy.mockClear();
+
+        const identifiers = articles.map((article) => article.identifier);
+        const found = await repository.ofIdentifiers(identifiers).unwrap();
+
+        expect(found.length).toBe(100);
+        expect(getDocsSpy).toHaveBeenCalledTimes(4);
+
+        getDocsSpy.mockRestore();
       });
     });
 

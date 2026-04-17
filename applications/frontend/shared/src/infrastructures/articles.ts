@@ -26,6 +26,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
+import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
 
 type PersistedArticle = {
   identifier: string;
@@ -207,23 +208,35 @@ export const FirebaseArticleRepository = (
   ) => {
     return fromPromise(
       (async () => {
-        const articles: Article[] = [];
+        if (identifiers.length === 0) {
+          return [];
+        }
 
-        for (const identifier of identifiers) {
-          const document = operations.doc(collection, identifier);
-          const snapshot = await operations.getDoc(document);
+        const chunks = chunk(identifiers, FIRESTORE_IN_BATCH_LIMIT);
 
-          if (!snapshot.exists()) {
-            if (throwOnMissing) {
-              throw aggregateNotFoundError(
-                "Article",
-                `Article ${identifier} not found.`,
-              );
-            }
-            continue;
-          }
+        const batchResults = await Promise.all(
+          chunks.map(async (idsChunk) => {
+            const q = operations.query(
+              collection,
+              operations.where("identifier", "in", idsChunk),
+            );
+            const snapshot = await operations.getDocs(q);
+            return snapshot.docs.map((document) => document.data());
+          }),
+        );
 
-          articles.push(snapshot.data());
+        const articles = batchResults.flat();
+
+        if (throwOnMissing && articles.length !== identifiers.length) {
+          const foundIds = new Set(articles.map((article) => article.identifier));
+          const missingIdentifiers = identifiers.filter(
+            (identifier) => !foundIds.has(identifier),
+          );
+          const firstMissing = missingIdentifiers[0];
+          throw aggregateNotFoundError(
+            "Article",
+            `Article ${firstMissing} not found.`,
+          );
         }
 
         return articles;
