@@ -106,6 +106,12 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
     reactCompiler: true,
     pageExtensions: ["tsx", "ts", "jsx", "js", "md", "mdx"],
     transpilePackages: ["@hut/shared"],
+    serverExternalPackages: [
+      "mermaid-isomorphic",
+      "mermaid",
+      "playwright",
+      "playwright-core",
+    ],
     images: {
       remotePatterns,
       formats: ["image/avif", "image/webp"],
