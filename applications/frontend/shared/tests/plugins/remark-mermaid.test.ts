@@ -1,14 +1,29 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Root, RootContent } from "mdast";
+import type { MdxJsxFlowElement } from "mdast-util-mdx-jsx";
 import { unified, type Plugin } from "unified";
 
-const assertHtmlNode = (
-  node: RootContent,
-): { type: "html"; value: string } => {
-  if (node.type !== "html") {
-    throw new Error(`expected html node but got ${node.type}`);
+const assertMermaidJsxNode = (node: RootContent): MdxJsxFlowElement => {
+  if (node.type !== "mdxJsxFlowElement") {
+    throw new Error(`expected mdxJsxFlowElement node but got ${node.type}`);
+  }
+  if (node.name !== "MermaidSvg") {
+    throw new Error(`expected MermaidSvg element but got ${node.name}`);
   }
   return node;
+};
+
+const getAttribute = (node: MdxJsxFlowElement, name: string): string => {
+  const attribute = node.attributes.find(
+    (item) => item.type === "mdxJsxAttribute" && item.name === name,
+  );
+  if (!attribute || attribute.type !== "mdxJsxAttribute") {
+    throw new Error(`attribute ${name} not found`);
+  }
+  if (typeof attribute.value !== "string") {
+    throw new Error(`attribute ${name} must be string`);
+  }
+  return attribute.value;
 };
 
 const mockRender = vi.fn(async (diagrams: string[]) =>
@@ -53,7 +68,7 @@ const applyPlugin = async (tree: Root): Promise<void> => {
 
 describe("remarkMermaid", () => {
   describe("mermaidコードブロックの変換", () => {
-    it("mermaidコードブロックをHTMLノードに変換する", async () => {
+    it("mermaidコードブロックをMermaidSvg JSXノードに変換する", async () => {
       const tree: Root = {
         type: "root",
         children: [
@@ -68,8 +83,9 @@ describe("remarkMermaid", () => {
 
       await applyPlugin(tree);
 
-      const htmlNode = assertHtmlNode(tree.children[0]);
-      expect(htmlNode.value).toContain("<svg");
+      const node = assertMermaidJsxNode(tree.children[0]);
+      expect(getAttribute(node, "html")).toContain("<svg");
+      expect(getAttribute(node, "fallback")).toBe("false");
     });
 
     it("mermaid以外のコードブロックは変換しない", async () => {
@@ -90,7 +106,7 @@ describe("remarkMermaid", () => {
       expect(tree.children[0].type).toBe("code");
     });
 
-    it("不正なmermaid構文でフォールバック表示になる", async () => {
+    it("不正なmermaid構文でfallback属性がtrueになる", async () => {
       const tree: Root = {
         type: "root",
         children: [
@@ -105,8 +121,9 @@ describe("remarkMermaid", () => {
 
       await applyPlugin(tree);
 
-      const htmlNode = assertHtmlNode(tree.children[0]);
-      expect(htmlNode.value).toContain("invalid syntax @@@@");
+      const node = assertMermaidJsxNode(tree.children[0]);
+      expect(getAttribute(node, "fallback")).toBe("true");
+      expect(getAttribute(node, "html")).toContain("invalid syntax @@@@");
     });
 
     it("複数のmermaidブロックをそれぞれ変換する", async () => {
@@ -130,29 +147,10 @@ describe("remarkMermaid", () => {
 
       await applyPlugin(tree);
 
-      const first = assertHtmlNode(tree.children[0]);
-      const second = assertHtmlNode(tree.children[1]);
-      expect(first.value).toContain("<svg");
-      expect(second.value).toContain("<svg");
-    });
-
-    it("生成されたHTMLにmermaid-svgクラスのラッパーdivが含まれる", async () => {
-      const tree: Root = {
-        type: "root",
-        children: [
-          {
-            type: "code",
-            lang: "mermaid",
-            meta: null,
-            value: "flowchart TD\n  A --> B",
-          },
-        ],
-      };
-
-      await applyPlugin(tree);
-
-      const htmlNode = assertHtmlNode(tree.children[0]);
-      expect(htmlNode.value).toContain("mermaid-svg");
+      const first = assertMermaidJsxNode(tree.children[0]);
+      const second = assertMermaidJsxNode(tree.children[1]);
+      expect(getAttribute(first, "html")).toContain("<svg");
+      expect(getAttribute(second, "html")).toContain("<svg");
     });
 
     it("sanitizeMermaidSvgを呼び出してSVGをサニタイズする", async () => {
@@ -175,7 +173,7 @@ describe("remarkMermaid", () => {
       expect(mockSanitize).toHaveBeenCalled();
     });
 
-    it("フォールバック時に特殊文字をHTMLエスケープする", async () => {
+    it("フォールバック時は元のコードをhtml属性に保持する", async () => {
       const tree: Root = {
         type: "root",
         children: [
@@ -190,10 +188,9 @@ describe("remarkMermaid", () => {
 
       await applyPlugin(tree);
 
-      const htmlNode = assertHtmlNode(tree.children[0]);
-      expect(htmlNode.value).not.toContain("<script>");
-      expect(htmlNode.value).toContain("&lt;script&gt;");
-      expect(htmlNode.value).toContain("&#039;xss&#039;");
+      const node = assertMermaidJsxNode(tree.children[0]);
+      expect(getAttribute(node, "fallback")).toBe("true");
+      expect(getAttribute(node, "html")).toContain("<script>");
     });
 
     it("空のコードブロックツリーでもエラーを起こさない", async () => {

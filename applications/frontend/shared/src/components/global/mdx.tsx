@@ -2,7 +2,6 @@ import { MDXRemote, MDXRemoteProps } from "next-mdx-remote/rsc";
 import rehypeShiki from "@shikijs/rehype";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
-import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import React from "react";
 import styles from "./mdx.module.css";
@@ -11,6 +10,7 @@ import { remarkMermaid } from "@shared/plugins/remark-mermaid";
 import { LinkCard } from "@shared/components/molecules/card/link";
 import { ContentImage } from "@shared/components/atoms/image/content";
 import { CopyButton } from "@shared/components/molecules/button/copy";
+import { MermaidSvg } from "@shared/components/molecules/mermaid/svg";
 
 export type MarkdownRenderer = (content: string) => React.ReactNode;
 
@@ -18,7 +18,6 @@ export const mdxOptions: MDXRemoteProps["options"] = {
   mdxOptions: {
     remarkPlugins: [remarkGfm, remarkBreaks, remarkLinkCard, remarkMermaid],
     rehypePlugins: [
-      [rehypeRaw, { passThrough: ["mdxJsxFlowElement"] }],
       [
         rehypeShiki,
         {
@@ -86,6 +85,9 @@ const createMdxComponents = () => {
     },
     pre: CodeBlock,
     LinkCard: (props: { url: string }) => <LinkCard url={props.url} />,
+    MermaidSvg: (props: { html: string; fallback: string }) => (
+      <MermaidSvg html={props.html} fallback={props.fallback} />
+    ),
   };
 };
 

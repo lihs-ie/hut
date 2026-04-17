@@ -1,5 +1,6 @@
 import { visit } from "unist-util-visit";
-import type { Root, Code, Html } from "mdast";
+import type { Root, Code } from "mdast";
+import type { MdxJsxFlowElement } from "mdast-util-mdx-jsx";
 import type { Plugin } from "unified";
 import { createMermaidRenderer, type MermaidRenderer } from "mermaid-isomorphic";
 import { sanitizeMermaidSvg } from "../components/molecules/mermaid/sanitize";
@@ -13,13 +14,26 @@ const getRenderer = (): MermaidRenderer => {
   return renderer;
 };
 
-const escapeHtml = (text: string): string =>
-  text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+const createMermaidJsxNode = (
+  html: string,
+  fallback: boolean,
+): MdxJsxFlowElement => ({
+  type: "mdxJsxFlowElement",
+  name: "MermaidSvg",
+  attributes: [
+    {
+      type: "mdxJsxAttribute",
+      name: "html",
+      value: html,
+    },
+    {
+      type: "mdxJsxAttribute",
+      name: "fallback",
+      value: fallback ? "true" : "false",
+    },
+  ],
+  children: [],
+});
 
 export const remarkMermaid: Plugin<[], Root> = () => {
   return async (tree: Root) => {
@@ -46,20 +60,12 @@ export const remarkMermaid: Plugin<[], Root> = () => {
       const { index, node } = mermaidNodes[i];
       const result = results[i];
 
-      let htmlValue: string;
       if (result.status === "fulfilled" && result.value.svg) {
         const sanitized = sanitizeMermaidSvg(result.value.svg);
-        htmlValue = `<div class="mermaid-svg">${sanitized}</div>`;
+        tree.children[index] = createMermaidJsxNode(sanitized, false);
       } else {
-        const rawCode = escapeHtml(node.value);
-        htmlValue = `<pre class="mermaid-svg fallback"><code>${rawCode}</code></pre>`;
+        tree.children[index] = createMermaidJsxNode(node.value, true);
       }
-
-      const htmlNode: Html = {
-        type: "html",
-        value: htmlValue,
-      };
-      tree.children[index] = htmlNode;
     }
   };
 };
