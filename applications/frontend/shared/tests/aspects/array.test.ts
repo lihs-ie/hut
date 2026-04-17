@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { chunk } from "@shared/aspects/array";
+import { isValidationError } from "@shared/aspects/error";
 
 describe("aspects/array", () => {
   describe("chunk", () => {
@@ -47,14 +48,14 @@ describe("aspects/array", () => {
       expect(result.unwrap()).toEqual([[1], [2], [3]]);
     });
 
-    it("size が 0 以下の場合は Err を返す", () => {
+    it("size が 0 以下の場合は ValidationError を返す", () => {
       const zeroResult = chunk([1, 2, 3], 0);
       expect(zeroResult.isErr).toBe(true);
-      expect(zeroResult.unwrapError()).toBeInstanceOf(Error);
+      expect(isValidationError(zeroResult.unwrapError())).toBe(true);
 
       const negativeResult = chunk([1, 2, 3], -1);
       expect(negativeResult.isErr).toBe(true);
-      expect(negativeResult.unwrapError()).toBeInstanceOf(Error);
+      expect(isValidationError(negativeResult.unwrapError())).toBe(true);
     });
 
     it("string 型配列を分割できる", () => {
