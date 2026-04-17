@@ -91,6 +91,7 @@ export type ArticleProperties = {
   excerpt: ArticleExcerpt;
   tags: TagIdentifier[];
   images: ImageIdentifier[];
+  publishedAt: Date | null;
   timeline: Timeline;
 };
 
@@ -105,6 +106,7 @@ export const ArticleMold = Mold<Article, ArticleProperties>({
       status: properties.status,
       tags: properties.tags,
       images: properties.images,
+      publishedAt: properties.publishedAt,
       timeline: properties.timeline,
     }),
   prepare: (overrides, seed) => ({
@@ -120,6 +122,10 @@ export const ArticleMold = Mold<Article, ArticleProperties>({
     images:
       overrides.images ??
       Forger(ImageIdentifierMold).forgeMultiWithSeed(5, seed),
+    publishedAt:
+      overrides.publishedAt === undefined
+        ? Forger(DateMold).forgeWithSeed(seed)
+        : overrides.publishedAt,
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
 });

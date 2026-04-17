@@ -80,6 +80,7 @@ export const memoSchema = z
     tags: z.array(tagIdentifierSchema),
     status: publishStatusSchema,
     images: z.array(imageIdentifierSchema),
+    publishedAt: z.date().nullable(),
     timeline: timelineSchema,
   })
   .brand("Memo");
@@ -113,6 +114,7 @@ export type UnvalidatedMemo = {
   tags: string[];
   images: string[];
   status: string;
+  publishedAt: Date | null;
   timeline: {
     createdAt: Date;
     updatedAt: Date;
@@ -161,6 +163,7 @@ export const memoSnapshotSchema = z
     tags: z.array(tagIdentifierSchema),
     images: z.array(imageIdentifierSchema),
     status: publishStatusSchema,
+    publishedAt: z.date().nullable(),
     timeline: timelineSchema,
   })
   .brand("MemoSnapshot");
@@ -168,7 +171,7 @@ export const memoSnapshotSchema = z
 export type MemoSnapshot = z.infer<typeof memoSnapshotSchema>;
 
 export const toSnapshot = (memo: Memo): MemoSnapshot =>
-  ({
+  memoSnapshotSchema.parse({
     identifier: memo.identifier,
     title: memo.title,
     slug: memo.slug,
@@ -176,8 +179,9 @@ export const toSnapshot = (memo: Memo): MemoSnapshot =>
     tags: memo.tags,
     images: memo.images,
     status: memo.status,
+    publishedAt: memo.publishedAt,
     timeline: memo.timeline,
-  }) as MemoSnapshot;
+  });
 
 export interface MemoRepository {
   persist: (

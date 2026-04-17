@@ -39,6 +39,7 @@ type PersistedSeries = {
   cover: string | null;
   status: string;
   chapters: string[];
+  publishedAt: Timestamp | null;
   timeline: {
     createdAt: Timestamp;
     updatedAt: Timestamp;
@@ -69,6 +70,9 @@ export const FirebaseSeriesRepository = (
           subTitle: series.subTitle,
           status: series.status,
           chapters: series.chapters,
+          publishedAt: series.publishedAt
+            ? Timestamp.fromDate(series.publishedAt)
+            : null,
           timeline: {
             createdAt: Timestamp.fromDate(series.timeline.createdAt),
             updatedAt: Timestamp.fromDate(series.timeline.updatedAt),
@@ -92,6 +96,7 @@ export const FirebaseSeriesRepository = (
           subTitle: data.subTitle || null,
           status: data.status ?? "published",
           chapters: data.chapters ?? [],
+          publishedAt: data.publishedAt ? data.publishedAt.toDate() : null,
           timeline: {
             createdAt: data.timeline.createdAt.toDate(),
             updatedAt: data.timeline.updatedAt.toDate(),

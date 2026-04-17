@@ -16,7 +16,7 @@ type ContentItem = {
   slug: Slug;
   type: ContentType;
   title: string;
-  date: Date;
+  date: Date | null;
   tagNames: TagName[];
   excerpt?: string;
   href?: string;

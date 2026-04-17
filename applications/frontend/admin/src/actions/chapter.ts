@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { revalidateTag } from "next/cache";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import {
@@ -60,7 +61,7 @@ export async function terminate(
   revalidateTag("series", {});
 }
 
-export async function findBySlug(slug: string): Promise<Chapter> {
+export const findBySlug = cache(async (slug: string): Promise<Chapter> => {
   await requireAdmin();
   return await unwrapForNextJs(
     AdminChapterWorkflowProvider.findBySlug({
@@ -68,15 +69,15 @@ export async function findBySlug(slug: string): Promise<Chapter> {
       now: new Date(),
     }),
   );
-}
+});
 
 export const findChapterBySlug = findBySlug;
 
-export async function findChaptersByIdentifiers(
-  identifiers: ChapterIdentifier[],
-): Promise<Chapter[]> {
-  await requireAdmin();
-  return await unwrapForNextJs(
-    ChapterRepositoryProvider.firebase.ofIdentifiers(identifiers),
-  );
-}
+export const findChaptersByIdentifiers = cache(
+  async (identifiers: ChapterIdentifier[]): Promise<Chapter[]> => {
+    await requireAdmin();
+    return await unwrapForNextJs(
+      ChapterRepositoryProvider.firebase.ofIdentifiers(identifiers),
+    );
+  },
+);

@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - initial-data
+          - patch-published-at
       environment:
         description: "Target environment"
         required: true

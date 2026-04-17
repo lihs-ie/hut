@@ -34,6 +34,7 @@ type PersistedChapter = {
   content: string;
   images: string[];
   status: string;
+  publishedAt: Timestamp | null;
   timeline: {
     createdAt: Timestamp;
     updatedAt: Timestamp;
@@ -61,6 +62,9 @@ export const FirebaseChapterRepository = (
           content: chapter.content,
           images: chapter.images,
           status: chapter.status,
+          publishedAt: chapter.publishedAt
+            ? Timestamp.fromDate(chapter.publishedAt)
+            : null,
           timeline: {
             createdAt: Timestamp.fromDate(chapter.timeline.createdAt),
             updatedAt: Timestamp.fromDate(chapter.timeline.updatedAt),
@@ -81,6 +85,7 @@ export const FirebaseChapterRepository = (
           content: data.content,
           images: data.images ?? [],
           status: data.status ?? "published",
+          publishedAt: data.publishedAt ? data.publishedAt.toDate() : null,
           timeline: {
             createdAt: data.timeline.createdAt.toDate(),
             updatedAt: data.timeline.updatedAt.toDate(),

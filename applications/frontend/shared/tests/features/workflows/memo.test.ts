@@ -46,6 +46,7 @@ function toMemoPayload(memo: Memo) {
       tags: memo.tags,
       images: memo.images,
       status: memo.status,
+      publishedAt: memo.publishedAt,
       timeline: memo.timeline,
     },
   };

@@ -3,6 +3,7 @@ import { FirebaseArticleRepository } from "@shared/infrastructures/articles";
 import {
   createTestFirestoreWithSeed,
   clearFirestore,
+  seedFirestore,
   type Firestore,
 } from "../support/mock/firebase/firestore";
 import { Forger } from "@lihs-ie/forger-ts";
@@ -828,6 +829,76 @@ describe("infrastructures/articles", () => {
 
         expect(result).not.toBeNull();
         expect(isAggregateNotFoundError(result)).toBe(true);
+      });
+    });
+
+    describe("publishedAt の永続化", () => {
+      it("publishedAt が Date として保存・復元される", async () => {
+        const repository = FirebaseArticleRepository(
+          firestore,
+          getOperations(),
+        );
+        const publishedAt = new Date("2025-01-01T00:00:00Z");
+        const article = Forger(ArticleMold).forgeWithSeed(700, {
+          publishedAt,
+        });
+
+        await repository.persist(article).unwrap();
+
+        const found = await repository.find(article.identifier).unwrap();
+
+        expect(found.publishedAt).toBeInstanceOf(Date);
+        expect(found.publishedAt?.getTime()).toBe(publishedAt.getTime());
+      });
+
+      it("publishedAt が null として保存・復元される", async () => {
+        const repository = FirebaseArticleRepository(
+          firestore,
+          getOperations(),
+        );
+        const article = Forger(ArticleMold).forgeWithSeed(701, {
+          publishedAt: null,
+        });
+
+        await repository.persist(article).unwrap();
+
+        const found = await repository.find(article.identifier).unwrap();
+
+        expect(found.publishedAt).toBeNull();
+      });
+
+      it("Firestore に publishedAt フィールドが存在しない場合は null として復元される", async () => {
+        const identifier = Forger(ArticleIdentifierMold).forgeWithSeed(702);
+        const createdAt = new Date("2024-01-01T00:00:00Z").toISOString();
+        const updatedAt = new Date("2024-01-02T00:00:00Z").toISOString();
+
+        await seedFirestore(firestore, {
+          articles: {
+            [identifier]: {
+              identifier,
+              title: "Legacy Article",
+              content: "Legacy content",
+              excerpt: "Legacy excerpt",
+              slug: "legacy-article",
+              status: "published",
+              tags: [],
+              images: [],
+              timeline: {
+                createdAt,
+                updatedAt,
+              },
+              version: 1,
+            },
+          },
+        });
+
+        const repository = FirebaseArticleRepository(
+          firestore,
+          getOperations(),
+        );
+        const found = await repository.find(identifier).unwrap();
+
+        expect(found.publishedAt).toBeNull();
       });
     });
   });

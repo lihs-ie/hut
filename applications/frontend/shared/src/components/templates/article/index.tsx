@@ -43,6 +43,7 @@ export const ArticleIndex = async (props: Props) => (
         find={props.article.findBySlug}
         slug={props.slug}
         titleOf={(content) => content.title}
+        publishedAtOf={(content) => content.publishedAt}
         timelineOf={(content) => content.timeline}
       />
     </Suspense>
