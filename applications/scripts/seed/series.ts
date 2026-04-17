@@ -207,6 +207,7 @@ export async function seedSeries(): Promise<void> {
         content: chapter.content,
         images: chapter.images,
         status: chapter.status,
+        publishedAt: chapter.status === "published" ? now : null,
         timeline: {
           createdAt: now,
           updatedAt: now,
@@ -241,6 +242,7 @@ export async function seedSeries(): Promise<void> {
         tags: series.tags,
         chapters: series.chapters,
         status: series.status,
+        publishedAt: series.status === "published" ? seriesCreatedAt : null,
         timeline: {
           createdAt: seriesCreatedAt,
           updatedAt: seriesCreatedAt,

@@ -41,6 +41,7 @@ type ChapterWithIdentifierProperties = {
   content: string;
   images: ImageIdentifier[];
   status: PublishStatus;
+  publishedAt: Date | null;
   timeline: Timeline;
 };
 
@@ -53,6 +54,7 @@ const ChapterWithIdentifierMold = Mold<Chapter, ChapterWithIdentifierProperties>
       content: properties.content,
       images: properties.images,
       status: properties.status,
+      publishedAt: properties.publishedAt,
       timeline: properties.timeline,
     }),
   prepare: (overrides, seed) => ({
@@ -63,6 +65,10 @@ const ChapterWithIdentifierMold = Mold<Chapter, ChapterWithIdentifierProperties>
     content: overrides.content ?? Forger(StringMold(1, 1000)).forgeWithSeed(seed),
     images: overrides.images ?? [],
     status: overrides.status ?? Forger(PublishStatusMold).forgeWithSeed(seed),
+    publishedAt:
+      overrides.publishedAt === undefined
+        ? Forger(DateMold).forgeWithSeed(seed)
+        : overrides.publishedAt,
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
 });
@@ -158,6 +164,21 @@ describe("domains/series/chapter", () => {
         );
         expect(result.success).toBe(true);
       });
+
+      it("publishedAtがnullでも有効", () => {
+        const result = chapterSchema.safeParse(
+          Forger(ChapterWithIdentifierMold).forge({ publishedAt: null }),
+        );
+        expect(result.success).toBe(true);
+      });
+
+      it("publishedAtがDateでも有効", () => {
+        const publishedAt = new Date("2025-01-01T00:00:00Z");
+        const result = chapterSchema.safeParse(
+          Forger(ChapterWithIdentifierMold).forge({ publishedAt }),
+        );
+        expect(result.success).toBe(true);
+      });
     });
 
     describe("無効なChapterの検証", () => {
@@ -170,6 +191,7 @@ describe("domains/series/chapter", () => {
         content: "Content",
         images: [],
         status: PublishStatus.PUBLISHED,
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
         ...overrides,
       });
@@ -208,6 +230,13 @@ describe("domains/series/chapter", () => {
         );
         expect(result.success).toBe(false);
       });
+
+      it("publishedAtが文字列の場合は無効", () => {
+        const result = chapterSchema.safeParse(
+          createChapterWithOverrides({ publishedAt: "2025-01-01" }),
+        );
+        expect(result.success).toBe(false);
+      });
     });
   });
 
@@ -220,6 +249,7 @@ describe("domains/series/chapter", () => {
         content: "これはチャプターの内容です。",
         images: [],
         status: "published",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);
@@ -233,6 +263,21 @@ describe("domains/series/chapter", () => {
         content: "これはチャプターの内容です。",
         images: [Forger(ImageIdentifierMold).forge()],
         status: "published",
+        publishedAt: null,
+        timeline: Forger(TimelineMold).forge(),
+      });
+      expect(result.isOk).toBe(true);
+    });
+
+    it("publishedAtがnullのUnvalidatedChapterでokを返す", () => {
+      const result = validateChapter({
+        identifier: Forger(ChapterIdentifierMold).forge(),
+        title: "下書きチャプター",
+        slug: "draft-chapter",
+        content: "まだ公開前",
+        images: [],
+        status: "draft",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);
@@ -246,6 +291,7 @@ describe("domains/series/chapter", () => {
         content: "",
         images: [],
         status: "invalid-status",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -259,6 +305,7 @@ describe("domains/series/chapter", () => {
         content: "Valid content",
         images: [],
         status: "published",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -272,6 +319,7 @@ describe("domains/series/chapter", () => {
         content: "Valid content",
         images: [],
         status: "published",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -285,6 +333,7 @@ describe("domains/series/chapter", () => {
         content: "Valid content",
         images: [],
         status: "invalid",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);

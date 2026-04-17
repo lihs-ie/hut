@@ -39,6 +39,7 @@ type PersistedMemo = {
   tags: string[];
   images: string[];
   status: string;
+  publishedAt: Timestamp | null;
   timeline: {
     createdAt: Timestamp;
     updatedAt: Timestamp;
@@ -70,6 +71,9 @@ export const FirebaseMemoRepository = (
           tags: memo.tags,
           images: memo.images,
           status: memo.status,
+          publishedAt: memo.publishedAt
+            ? Timestamp.fromDate(memo.publishedAt)
+            : null,
           timeline: {
             createdAt: Timestamp.fromDate(memo.timeline.createdAt),
             updatedAt: Timestamp.fromDate(memo.timeline.updatedAt),
@@ -94,6 +98,7 @@ export const FirebaseMemoRepository = (
           tags: data.tags,
           images: data.images,
           status: data.status,
+          publishedAt: data.publishedAt ? data.publishedAt.toDate() : null,
           timeline: {
             createdAt: data.timeline.createdAt.toDate(),
             updatedAt: data.timeline.updatedAt.toDate(),
