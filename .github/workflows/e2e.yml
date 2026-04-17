@@ -48,6 +48,7 @@ jobs:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "true"
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
           E2E_AUTH_ENABLED: "true"
+          READER_RATE_LIMIT_ALLOWLIST: "unknown"
 
       - name: Stop Firebase Emulator
         if: always()
@@ -146,6 +147,10 @@ jobs:
         env:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "true"
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
+          READER_RATE_LIMIT_ALLOWLIST: "unknown"
+          READER_RATE_LIMIT_DEFAULT_LIMIT: "100000"
+          READER_RATE_LIMIT_SEARCH_LIMIT: "100000"
+          READER_RATE_LIMIT_FEED_LIMIT: "100000"
 
       - name: Run E2E tests (Shard ${{ matrix.shard }}/${{ env.SHARD_TOTAL }})
         run: pnpm e2e --shard=${{ matrix.shard }}/${{ env.SHARD_TOTAL }}
