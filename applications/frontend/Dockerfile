@@ -60,15 +60,20 @@ RUN find ${APP_NAME}/public -type l -delete 2>/dev/null; \
     cp -rn shared/public/. ${APP_NAME}/public/
 
 # SENTRY_AUTH_TOKEN is mounted as a BuildKit secret so it is only available
-# during the build RUN step and never written into any image layer. If the
-# secret is not provided (e.g. local development), the file simply does not
-# exist and the Sentry webpack plugin skips the source map upload.
+# during the build RUN step and never written into any image layer. When the
+# secret file is missing or empty (e.g. local development), SENTRY_AUTH_TOKEN
+# is left unset so withSentryConfig skips source map upload without attempting
+# the upload and silently swallowing a failure.
 RUN --mount=type=secret,id=gcp_credentials,target=/tmp/gcp-credentials.json \
     --mount=type=secret,id=gcp_oidc_token,target=/tmp/gcp-oidc-token \
     --mount=type=secret,id=sentry_auth_token,target=/tmp/sentry-auth-token \
     GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json \
-    SENTRY_AUTH_TOKEN="$([ -f /tmp/sentry-auth-token ] && cat /tmp/sentry-auth-token || true)" \
-    pnpm --filter @hut/${APP_NAME} build
+    sh -c 'if [ -s /tmp/sentry-auth-token ]; then \
+        export SENTRY_AUTH_TOKEN="$(cat /tmp/sentry-auth-token)"; \
+    else \
+        unset SENTRY_AUTH_TOKEN; \
+    fi; \
+    pnpm --filter @hut/${APP_NAME} build'
 
 FROM node:22-slim AS runner
 
