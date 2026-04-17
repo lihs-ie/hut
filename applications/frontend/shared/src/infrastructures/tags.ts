@@ -29,6 +29,7 @@ import {
   UnexpectedError,
   DuplicationError,
 } from "@shared/aspects/error";
+import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
 
 type PersistedTag = {
   identifier: string;
@@ -149,20 +150,24 @@ export const FirebaseTagRepository = (
     ): AsyncResult<Tag[], AggregateNotFoundError<"Tag"> | UnexpectedError> {
       return fromPromise(
         (async () => {
-          const tags: Tag[] = [];
-
-          for (const identifier of identifiers) {
-            const docRef = operations.doc(collection, identifier);
-            const snapshot = await operations.getDoc(docRef);
-
-            if (!snapshot.exists()) {
-              continue;
-            }
-
-            tags.push(snapshot.data() as Tag);
+          if (identifiers.length === 0) {
+            return [];
           }
 
-          return tags;
+          const chunks = chunk(identifiers, FIRESTORE_IN_BATCH_LIMIT);
+
+          const batchResults = await Promise.all(
+            chunks.map(async (idsChunk) => {
+              const q = operations.query(
+                collection,
+                operations.where("identifier", "in", idsChunk),
+              );
+              const snapshot = await operations.getDocs(q);
+              return snapshot.docs.map((document) => document.data() as Tag);
+            }),
+          );
+
+          return batchResults.flat();
         })(),
         (error) => mapError(error),
       );
