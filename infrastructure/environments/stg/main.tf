@@ -175,6 +175,19 @@ module "secrets" {
         "serviceAccount:${module.iam.service_account_emails["hut-stg-admin"]}",
       ]
     }
+    "stg-sentry-dsn-reader" = {
+      accessor_members = [
+        "serviceAccount:${module.iam.service_account_emails["hut-stg-reader"]}",
+      ]
+    }
+    "stg-sentry-dsn-admin" = {
+      accessor_members = [
+        "serviceAccount:${module.iam.service_account_emails["hut-stg-admin"]}",
+      ]
+    }
+    "stg-sentry-auth-token" = {
+      accessor_members = []
+    }
   }
 
   labels = local.common_labels
@@ -230,6 +243,11 @@ module "cloudrun_reader" {
     {
       name      = "NEXT_PUBLIC_FIREBASE_APP_ID"
       secret_id = module.secrets.secret_ids["stg-firebase-app-id"]
+      version   = "latest"
+    },
+    {
+      name      = "NEXT_PUBLIC_SENTRY_DSN_READER"
+      secret_id = module.secrets.secret_ids["stg-sentry-dsn-reader"]
       version   = "latest"
     },
   ]
@@ -288,6 +306,11 @@ module "cloudrun_admin" {
     {
       name      = "EVENT_PUBSUB_TOPIC_NAME"
       secret_id = module.secrets.secret_ids["stg-event-pubsub-topic-name"]
+      version   = "latest"
+    },
+    {
+      name      = "NEXT_PUBLIC_SENTRY_DSN_ADMIN"
+      secret_id = module.secrets.secret_ids["stg-sentry-dsn-admin"]
       version   = "latest"
     },
   ]

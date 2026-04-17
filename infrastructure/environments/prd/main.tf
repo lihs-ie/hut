@@ -186,6 +186,14 @@ module "secrets" {
         "serviceAccount:${module.iam.service_account_emails["hut-prd-admin"]}",
       ]
     }
+    "prd-sentry-dsn-admin" = {
+      accessor_members = [
+        "serviceAccount:${module.iam.service_account_emails["hut-prd-admin"]}",
+      ]
+    }
+    "prd-sentry-auth-token" = {
+      accessor_members = []
+    }
   }
 
   labels = local.common_labels
@@ -261,6 +269,11 @@ module "cloudrun_admin" {
     {
       name      = "EVENT_PUBSUB_TOPIC_NAME"
       secret_id = module.secrets.secret_ids["prd-event-pubsub-topic-name"]
+      version   = "latest"
+    },
+    {
+      name      = "NEXT_PUBLIC_SENTRY_DSN_ADMIN"
+      secret_id = module.secrets.secret_ids["prd-sentry-dsn-admin"]
       version   = "latest"
     },
   ]

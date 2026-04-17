@@ -25,6 +25,11 @@ ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=""
 ARG NEXT_PUBLIC_FIREBASE_APP_ID=""
 ARG SERVER_ACTIONS_ALLOWED_ORIGINS=""
 ARG IMAGE_REMOTE_PATTERNS=""
+ARG NEXT_PUBLIC_SENTRY_DSN_READER=""
+ARG NEXT_PUBLIC_SENTRY_DSN_ADMIN=""
+ARG NEXT_PUBLIC_GIT_SHA=""
+ARG SENTRY_ORG=""
+ARG SENTRY_PROJECT=""
 
 ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
 ENV NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY}
@@ -34,6 +39,14 @@ ENV NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${NEXT_PUBLIC_FIREBASE_MESSAGING_SE
 ENV NEXT_PUBLIC_FIREBASE_APP_ID=${NEXT_PUBLIC_FIREBASE_APP_ID}
 ENV SERVER_ACTIONS_ALLOWED_ORIGINS=${SERVER_ACTIONS_ALLOWED_ORIGINS}
 ENV IMAGE_REMOTE_PATTERNS=${IMAGE_REMOTE_PATTERNS}
+ENV NEXT_PUBLIC_SENTRY_DSN_READER=${NEXT_PUBLIC_SENTRY_DSN_READER}
+ENV NEXT_PUBLIC_SENTRY_DSN_ADMIN=${NEXT_PUBLIC_SENTRY_DSN_ADMIN}
+ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA}
+# SENTRY_ORG / SENTRY_PROJECT identify the Sentry tenant and project at build
+# time for source map upload via withSentryConfig. They are scoped to this
+# stage and intentionally not propagated to the runtime image.
+ENV SENTRY_ORG=${SENTRY_ORG}
+ENV SENTRY_PROJECT=${SENTRY_PROJECT}
 
 COPY . .
 
@@ -43,9 +56,15 @@ RUN printf 'packages:\n  - "shared"\n  - "reader"\n  - "admin"\n' > pnpm-workspa
 RUN find ${APP_NAME}/public -type l -delete 2>/dev/null; \
     cp -rn shared/public/. ${APP_NAME}/public/
 
+# SENTRY_AUTH_TOKEN is mounted as a BuildKit secret so it is only available
+# during the build RUN step and never written into any image layer. If the
+# secret is not provided (e.g. local development), the file simply does not
+# exist and the Sentry webpack plugin skips the source map upload.
 RUN --mount=type=secret,id=gcp_credentials,target=/tmp/gcp-credentials.json \
     --mount=type=secret,id=gcp_oidc_token,target=/tmp/gcp-oidc-token \
+    --mount=type=secret,id=sentry_auth_token,target=/tmp/sentry-auth-token \
     GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json \
+    SENTRY_AUTH_TOKEN="$([ -f /tmp/sentry-auth-token ] && cat /tmp/sentry-auth-token || true)" \
     pnpm --filter @hut/${APP_NAME} build
 
 FROM node:22-slim AS runner
@@ -59,9 +78,20 @@ ENV NODE_ENV=production
 
 ARG APP_NAME
 ARG APP_PORT=3000
+ARG NEXT_PUBLIC_SENTRY_DSN_READER=""
+ARG NEXT_PUBLIC_SENTRY_DSN_ADMIN=""
+ARG NEXT_PUBLIC_GIT_SHA=""
 ENV APP_NAME=${APP_NAME}
 ENV PORT=${APP_PORT}
 ENV HOSTNAME="0.0.0.0"
+
+# Runtime Sentry configuration. The server-side Sentry SDK reads the DSN and
+# release tag at process start; these values are non-sensitive (public DSNs and
+# the git SHA). SENTRY_AUTH_TOKEN is deliberately excluded from the runtime
+# image — source map upload happens only at build time.
+ENV NEXT_PUBLIC_SENTRY_DSN_READER=${NEXT_PUBLIC_SENTRY_DSN_READER}
+ENV NEXT_PUBLIC_SENTRY_DSN_ADMIN=${NEXT_PUBLIC_SENTRY_DSN_ADMIN}
+ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA}
 
 # standalone output nests files under app/ due to turbopack.root ("../..")
 COPY --from=builder --chown=nextjs:nodejs /app/${APP_NAME}/.next/standalone/app ./
