@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { captureException } from "@sentry/nextjs";
 import { AsyncResult } from "@shared/aspects/result";
 import {
   isAggregateNotFoundError,
@@ -205,6 +206,10 @@ export async function unwrapForNextJs<T, E>(
           JSON.stringify(errorDetail, null, 2)
         );
       }
+
+      captureException(error, {
+        tags: { source: "unwrapForNextJs" },
+      });
 
       if (isAggregateNotFoundError(error)) {
         notFound();
