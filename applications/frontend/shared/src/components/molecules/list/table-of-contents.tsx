@@ -9,12 +9,12 @@ export type Props = {
   root: Node[];
 };
 
-type TocNodeProps = {
+type TOCNodeProps = {
   node: Node;
   onMobileClick?: () => void;
 };
 
-const TocNodeDesktop = ({ node }: TocNodeProps) => (
+const TOCNodeDesktop = ({ node }: TOCNodeProps) => (
   <>
     <a
       key={node.identifier}
@@ -26,14 +26,14 @@ const TocNodeDesktop = ({ node }: TocNodeProps) => (
     {node.children.length > 0 && (
       <div className={styles.nested}>
         {node.children.map((child) => (
-          <TocNodeDesktop key={child.identifier} node={child} />
+          <TOCNodeDesktop key={child.identifier} node={child} />
         ))}
       </div>
     )}
   </>
 );
 
-const TocNodeMobile = ({ node, onMobileClick }: TocNodeProps) => (
+const TOCNodeMobile = ({ node, onMobileClick }: TOCNodeProps) => (
   <>
     <a
       key={node.identifier}
@@ -46,7 +46,7 @@ const TocNodeMobile = ({ node, onMobileClick }: TocNodeProps) => (
     {node.children.length > 0 && (
       <div className={styles.nested}>
         {node.children.map((child) => (
-          <TocNodeMobile
+          <TOCNodeMobile
             key={child.identifier}
             node={child}
             onMobileClick={onMobileClick}
@@ -67,7 +67,7 @@ export const TableOfContents = (props: Props) => {
         <h3 className={styles.title}>目次</h3>
         <nav className={styles.nav}>
           {props.root.map((node) => (
-            <TocNodeDesktop key={node.identifier} node={node} />
+            <TOCNodeDesktop key={node.identifier} node={node} />
           ))}
         </nav>
       </div>
@@ -89,7 +89,7 @@ export const TableOfContents = (props: Props) => {
         {isOpen && (
           <nav className={styles.mobileNav}>
             {props.root.map((node) => (
-              <TocNodeMobile
+              <TOCNodeMobile
                 key={node.identifier}
                 node={node}
                 onMobileClick={handleMobileClick}
