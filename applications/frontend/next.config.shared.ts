@@ -18,7 +18,8 @@ const EMULATOR_PATTERNS: ReadonlyArray<RemotePattern> = [
  */
 const EMULATOR_ORIGIN = "http://localhost:9099";
 
-const SENTRY_CONNECT_SOURCES = "https://*.sentry.io https://*.ingest.sentry.io";
+export const SENTRY_CONNECT_SOURCES =
+  "https://*.sentry.io https://*.ingest.sentry.io";
 
 const createDefaultContentSecurityPolicy = (
   isProduction: boolean,

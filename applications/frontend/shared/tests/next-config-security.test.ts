@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { vi } from "vitest";
-import { createBaseNextConfig } from "../../next.config.shared";
+import {
+  createBaseNextConfig,
+  SENTRY_CONNECT_SOURCES,
+} from "../../next.config.shared";
 
 describe("next.config.shared - セキュリティヘッダー", () => {
   const originalEnv = process.env;
@@ -285,6 +288,11 @@ describe("next.config.shared - セキュリティヘッダー", () => {
     it("connect-src に https://*.ingest.sentry.io が含まれる", async () => {
       const connectSrc = await getCSPDirective("connect-src");
       expect(connectSrc).toContain("https://*.ingest.sentry.io");
+    });
+
+    it("SENTRY_CONNECT_SOURCES が export されており両方の Sentry ホストを含む", () => {
+      expect(SENTRY_CONNECT_SOURCES).toContain("https://*.sentry.io");
+      expect(SENTRY_CONNECT_SOURCES).toContain("https://*.ingest.sentry.io");
     });
   });
 

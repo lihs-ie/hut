@@ -2,11 +2,11 @@ import MDX from "@next/mdx";
 import {
   createBaseNextConfig,
   wrapWithSentryConfig,
+  SENTRY_CONNECT_SOURCES,
 } from "../next.config.shared";
 
 const withMDX = MDX({ extension: /\.mdx?$/ });
 const isProduction = process.env.NODE_ENV === "production";
-const SENTRY_CONNECT_SOURCES = "https://*.sentry.io https://*.ingest.sentry.io";
 
 const readerContentSecurityPolicy = [
   "default-src 'self'",
