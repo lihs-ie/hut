@@ -4,12 +4,17 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./global.css": "./src/global.css",
     "./domains/*": "./src/domains/*",
     "./aspects/*": "./src/aspects/*",
     "./infrastructures/*": "./src/infrastructures/*",
     "./workflows/*": "./src/workflows/*",
     "./components/*": "./src/components/*",
-    "./actions/*": "./src/actions/*"
+    "./actions/*": "./src/actions/*",
+    "./pages/*": "./src/pages/*",
+    "./providers/*": "./src/providers/*",
+    "./plugins/*": "./src/plugins/*",
+    "./config/*": "./src/config/*"
   },
   "scripts": {
     "storybook": "storybook dev -p 6006",
@@ -66,7 +71,6 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-markdown": "^10.1.0",
-    "rehype-pretty-code": "^0.14.1",
     "remark-gfm": "^4.0.1",
     "storybook": "^10.1.11",
     "tsx": "^4.19.0",
@@ -79,8 +83,6 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-markdown": "^10.1.0",
-    "rehype-highlight": "^7.0.2",
-    "rehype-pretty-code": "^0.14.1",
     "remark-gfm": "^4.0.1",
     "swr": "^2.3.8"
   }
