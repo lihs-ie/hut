@@ -3,6 +3,7 @@ import { slugSchema } from "@shared/domains/common/slug";
 import { findBySlug } from "@/actions/series";
 import { findPublishedChaptersByIdentifiers } from "@/actions/chapter";
 import { ChapterToc } from "@shared/components/organisms/series/chapter/toc";
+import { TocDrawer } from "@shared/components/organisms/series/chapter/toc-drawer";
 import { ChapterLayoutTemplate } from "@shared/components/templates/series/chapter/layout";
 import { ArticleSidebarSkeleton } from "@shared/components/molecules/skeleton";
 
@@ -36,9 +37,11 @@ export default function ChapterLayout(props: Props) {
   return (
     <ChapterLayoutTemplate
       toc={
-        <Suspense fallback={<ArticleSidebarSkeleton />}>
-          <ChapterTocSection params={props.params} />
-        </Suspense>
+        <TocDrawer>
+          <Suspense fallback={<ArticleSidebarSkeleton />}>
+            <ChapterTocSection params={props.params} />
+          </Suspense>
+        </TocDrawer>
       }
     >
       {props.children}
