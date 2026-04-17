@@ -1,3 +1,5 @@
+import "./svg.css";
+
 type Props = {
   html: string;
   fallback?: boolean;
