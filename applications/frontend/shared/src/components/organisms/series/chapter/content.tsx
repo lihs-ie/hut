@@ -1,34 +1,34 @@
 import { MarkdownRenderer } from "@shared/components/global/mdx";
-import { ChapterSlug, Series, SeriesSlug } from "@shared/domains/series";
-import type { Chapter, ChapterIdentifier } from "@shared/domains/series/chapter";
-import { ChapterPresenter } from "./index.presenter";
-import styles from "./index.presenter.module.css";
+import { SeriesSlug, ChapterSlug, ChapterIdentifier } from "@shared/domains/series";
+import { Chapter } from "@shared/domains/series/chapter";
+import { ChapterContentPresenter } from "./content.presenter";
+import styles from "./content.module.css";
 
 export type Props = {
   slug: SeriesSlug;
   chapterSlug: ChapterSlug;
-  series: Series;
+  seriesChapterIdentifiers: ChapterIdentifier[];
   renderer: MarkdownRenderer;
   findChapterBySlug: (slug: string) => Promise<Chapter>;
   findChaptersByIdentifiers: (identifiers: ChapterIdentifier[]) => Promise<Chapter[]>;
 };
 
-export const ChapterContainer = async (props: Props) => {
-  const [currentChapter, allChapters] = await Promise.all([
-    props.findChapterBySlug(props.chapterSlug),
-    props.findChaptersByIdentifiers(props.series.chapters),
+export const ChapterContent = async (props: Props) => {
+  const currentChapter = await props.findChapterBySlug(props.chapterSlug);
+
+  const [allChapters, renderedContent] = await Promise.all([
+    props.findChaptersByIdentifiers(props.seriesChapterIdentifiers),
+    props.renderer(currentChapter.content),
   ]);
 
   const currentIndex = allChapters.findIndex(
-    (chapter) => chapter.slug === props.chapterSlug
+    (chapter) => chapter.slug === props.chapterSlug,
   );
 
   if (currentIndex === -1) {
     return (
       <div className={styles.container}>
-        <div className={styles.wrapper}>
-          <p>チャプターが見つかりませんでした</p>
-        </div>
+        <p className={styles.notFound}>チャプターが見つかりませんでした</p>
       </div>
     );
   }
@@ -39,15 +39,11 @@ export const ChapterContainer = async (props: Props) => {
       ? allChapters[currentIndex + 1]
       : null;
 
-  const renderedContent = await props.renderer(currentChapter.content);
-
   return (
-    <ChapterPresenter
+    <ChapterContentPresenter
       slug={props.slug}
       chapterSlug={props.chapterSlug}
-      seriesTitle={props.series.title}
       currentChapter={currentChapter}
-      allChapters={allChapters}
       currentIndex={currentIndex}
       prevChapter={prevChapter}
       nextChapter={nextChapter}
@@ -55,5 +51,3 @@ export const ChapterContainer = async (props: Props) => {
     />
   );
 };
-
-export { ChapterPresenter };

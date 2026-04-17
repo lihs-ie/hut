@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { MDXRenderer } from "@shared/components/global/mdx";
-import { ChapterIndex } from "@shared/components/templates/series/chapter";
+import { ArticleContentSkeleton } from "@shared/components/molecules/skeleton";
+import { ChapterContent } from "@shared/components/organisms/series/chapter/content";
 import { findChapterBySlug, findPublishedChaptersByIdentifiers } from "@/actions/chapter";
 import { slugSchema } from "@shared/domains/common/slug";
 import { findBySlug, searchAllChapterParams } from "@/actions/series";
@@ -9,6 +11,10 @@ import type { Metadata } from "next";
 export const revalidate = 3600;
 
 type Props = {
+  params: Promise<{ slug: string; chapter: string }>;
+};
+
+type ContentProps = {
   params: Promise<{ slug: string; chapter: string }>;
 };
 
@@ -44,18 +50,26 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
   };
 };
 
-export default async function ChapterPage(props: Props) {
+async function ChapterContentSection(props: ContentProps) {
   const params = await props.params;
   const series = await findBySlug(params.slug);
 
   return (
-    <ChapterIndex
+    <ChapterContent
       slug={slugSchema.parse(params.slug)}
       chapterSlug={slugSchema.parse(params.chapter)}
-      series={series}
+      seriesChapterIdentifiers={series.chapters}
       renderer={MDXRenderer}
       findChapterBySlug={findChapterBySlug}
       findChaptersByIdentifiers={findPublishedChaptersByIdentifiers}
     />
+  );
+}
+
+export default function ChapterPage(props: Props) {
+  return (
+    <Suspense fallback={<ArticleContentSkeleton />}>
+      <ChapterContentSection params={props.params} />
+    </Suspense>
   );
 }

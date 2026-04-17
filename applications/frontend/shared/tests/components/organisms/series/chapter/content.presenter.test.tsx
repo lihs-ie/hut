@@ -10,16 +10,16 @@ import {
   ChapterSlugMold,
 } from "../../../../support/molds/domains/series";
 
-vi.mock("next/link", () => ({
-  default: (linkProps: {
+vi.mock("@shared/components/molecules/link/navigable", () => ({
+  NavigableLink: (linkProps: {
     href: string;
     children: React.ReactNode;
     className?: string;
-  }) => <a href={linkProps.href} className={linkProps.className}>{linkProps.children}</a>,
-}));
-
-vi.mock("@shared/components/atoms/icon/facing-book", () => ({
-  BookOpenIcon: () => null,
+  }) => (
+    <a href={linkProps.href} className={linkProps.className}>
+      {linkProps.children}
+    </a>
+  ),
 }));
 
 vi.mock("@shared/components/atoms/icon/chevron-left", () => ({
@@ -30,12 +30,18 @@ vi.mock("@shared/components/atoms/icon/chevron-right", () => ({
   ChevronRightIcon: () => null,
 }));
 
-vi.mock("@shared/components/atoms/text/modest", () => ({
-  ModestText: (textProps: { children: React.ReactNode }) => <span>{textProps.children}</span>,
+vi.mock("@shared/components/atoms/icon/clock", () => ({
+  ClockIcon: () => null,
 }));
 
-describe("components/organisms/series/chapter/ChapterPresenter", () => {
-  it("チャプタータイトルが表示される", async () => {
+vi.mock("@shared/components/atoms/text/modest", () => ({
+  ModestText: (textProps: { children: React.ReactNode }) => (
+    <span>{textProps.children}</span>
+  ),
+}));
+
+describe("components/organisms/series/chapter/ChapterContentPresenter", () => {
+  it("チャプタータイトルが h1 として表示される", async () => {
     const chapterSlug = Forger(ChapterSlugMold).forge();
     const currentChapter = Forger(ChapterMold).forge({
       slug: chapterSlug,
@@ -43,21 +49,19 @@ describe("components/organisms/series/chapter/ChapterPresenter", () => {
     });
     const allChapters = [
       currentChapter,
-      Forger(ChapterMold).forgeWithSeed(2, { title: "基礎" }),
+      Forger(ChapterMold).forgeWithSeed(2),
     ];
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { ChapterPresenter } = await import(
-      "@shared/components/organisms/series/chapter/index.presenter"
+    const { ChapterContentPresenter } = await import(
+      "@shared/components/organisms/series/chapter/content.presenter"
     );
 
     const { unmount } = render(
-      ChapterPresenter({
+      ChapterContentPresenter({
         slug,
         chapterSlug,
-        seriesTitle: "テストシリーズ",
         currentChapter,
-        allChapters,
         currentIndex: 0,
         prevChapter: null,
         nextChapter: allChapters[1],
@@ -65,31 +69,27 @@ describe("components/organisms/series/chapter/ChapterPresenter", () => {
       })
     );
 
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("はじめに");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "はじめに"
+    );
 
     unmount();
   });
 
   it("チャプターラベルが「Chapter 01」のように2桁番号で表示される", async () => {
     const chapterSlug = Forger(ChapterSlugMold).forge();
-    const currentChapter = Forger(ChapterMold).forge({
-      slug: chapterSlug,
-      title: "はじめに",
-    });
-    const allChapters = [currentChapter];
+    const currentChapter = Forger(ChapterMold).forge({ slug: chapterSlug });
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { ChapterPresenter } = await import(
-      "@shared/components/organisms/series/chapter/index.presenter"
+    const { ChapterContentPresenter } = await import(
+      "@shared/components/organisms/series/chapter/content.presenter"
     );
 
     const { unmount } = render(
-      ChapterPresenter({
+      ChapterContentPresenter({
         slug,
         chapterSlug,
-        seriesTitle: "テストシリーズ",
         currentChapter,
-        allChapters,
         currentIndex: 0,
         prevChapter: null,
         nextChapter: null,
@@ -105,26 +105,21 @@ describe("components/organisms/series/chapter/ChapterPresenter", () => {
   it("先頭チャプターでは前の章ボタンが表示されない", async () => {
     const chapterSlug = Forger(ChapterSlugMold).forge();
     const currentChapter = Forger(ChapterMold).forge({ slug: chapterSlug });
-    const allChapters = [
-      currentChapter,
-      Forger(ChapterMold).forgeWithSeed(2),
-    ];
+    const nextChapter = Forger(ChapterMold).forgeWithSeed(2);
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { ChapterPresenter } = await import(
-      "@shared/components/organisms/series/chapter/index.presenter"
+    const { ChapterContentPresenter } = await import(
+      "@shared/components/organisms/series/chapter/content.presenter"
     );
 
     const { unmount } = render(
-      ChapterPresenter({
+      ChapterContentPresenter({
         slug,
         chapterSlug,
-        seriesTitle: "テストシリーズ",
         currentChapter,
-        allChapters,
         currentIndex: 0,
         prevChapter: null,
-        nextChapter: allChapters[1],
+        nextChapter,
         renderedContent: null,
       })
     );
@@ -136,26 +131,23 @@ describe("components/organisms/series/chapter/ChapterPresenter", () => {
 
   it("最後のチャプターでは次の章ボタンが表示されない", async () => {
     const chapterSlug = Forger(ChapterSlugMold).forgeWithSeed(2);
-    const currentChapter = Forger(ChapterMold).forgeWithSeed(2, { slug: chapterSlug });
-    const allChapters = [
-      Forger(ChapterMold).forge(),
-      currentChapter,
-    ];
+    const currentChapter = Forger(ChapterMold).forgeWithSeed(2, {
+      slug: chapterSlug,
+    });
+    const prevChapter = Forger(ChapterMold).forge();
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { ChapterPresenter } = await import(
-      "@shared/components/organisms/series/chapter/index.presenter"
+    const { ChapterContentPresenter } = await import(
+      "@shared/components/organisms/series/chapter/content.presenter"
     );
 
     const { unmount } = render(
-      ChapterPresenter({
+      ChapterContentPresenter({
         slug,
         chapterSlug,
-        seriesTitle: "テストシリーズ",
         currentChapter,
-        allChapters,
         currentIndex: 1,
-        prevChapter: allChapters[0],
+        prevChapter,
         nextChapter: null,
         renderedContent: null,
       })
@@ -166,30 +158,27 @@ describe("components/organisms/series/chapter/ChapterPresenter", () => {
     unmount();
   });
 
-  it("中間チャプターでは前の章と次の章の両方が表示される", async () => {
+  it("中間チャプターでは前の章と次の章の両方のボタンが表示される", async () => {
     const chapterSlug = Forger(ChapterSlugMold).forgeWithSeed(2);
-    const currentChapter = Forger(ChapterMold).forgeWithSeed(2, { slug: chapterSlug });
-    const allChapters = [
-      Forger(ChapterMold).forge(),
-      currentChapter,
-      Forger(ChapterMold).forgeWithSeed(3),
-    ];
+    const currentChapter = Forger(ChapterMold).forgeWithSeed(2, {
+      slug: chapterSlug,
+    });
+    const prevChapter = Forger(ChapterMold).forge();
+    const nextChapter = Forger(ChapterMold).forgeWithSeed(3);
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { ChapterPresenter } = await import(
-      "@shared/components/organisms/series/chapter/index.presenter"
+    const { ChapterContentPresenter } = await import(
+      "@shared/components/organisms/series/chapter/content.presenter"
     );
 
     const { unmount } = render(
-      ChapterPresenter({
+      ChapterContentPresenter({
         slug,
         chapterSlug,
-        seriesTitle: "テストシリーズ",
         currentChapter,
-        allChapters,
         currentIndex: 1,
-        prevChapter: allChapters[0],
-        nextChapter: allChapters[2],
+        prevChapter,
+        nextChapter,
         renderedContent: null,
       })
     );
@@ -200,35 +189,30 @@ describe("components/organisms/series/chapter/ChapterPresenter", () => {
     unmount();
   });
 
-  it("サイドバーのチャプター番号が2桁でゼロ埋めされる", async () => {
+  it("前後のチャプターナビゲーションに aria-label が付与される", async () => {
     const chapterSlug = Forger(ChapterSlugMold).forge();
     const currentChapter = Forger(ChapterMold).forge({ slug: chapterSlug });
-    const allChapters = [
-      currentChapter,
-      Forger(ChapterMold).forgeWithSeed(2),
-    ];
     const slug = Forger(SeriesSlugMold).forge();
 
-    const { ChapterPresenter } = await import(
-      "@shared/components/organisms/series/chapter/index.presenter"
+    const { ChapterContentPresenter } = await import(
+      "@shared/components/organisms/series/chapter/content.presenter"
     );
 
     const { unmount } = render(
-      ChapterPresenter({
+      ChapterContentPresenter({
         slug,
         chapterSlug,
-        seriesTitle: "テストシリーズ",
         currentChapter,
-        allChapters,
         currentIndex: 0,
         prevChapter: null,
-        nextChapter: allChapters[1],
+        nextChapter: null,
         renderedContent: null,
       })
     );
 
-    expect(screen.getByText("01")).toBeInTheDocument();
-    expect(screen.getByText("02")).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: "前後のチャプター" })
+    ).toBeInTheDocument();
 
     unmount();
   });

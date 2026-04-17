@@ -1,0 +1,13 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+}
+
+@media (min-width: 1024px) {
+  .container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    align-items: start;
+  }
+}
