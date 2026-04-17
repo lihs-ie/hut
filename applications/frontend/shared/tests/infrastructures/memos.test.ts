@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Timestamp } from "firebase/firestore";
 import { FirebaseMemoRepository } from "@shared/infrastructures/memos";
 import {
@@ -235,6 +235,49 @@ describe("infrastructures/memos", () => {
 
         expect(result).not.toBeNull();
         expect(isAggregateNotFoundError(result)).toBe(true);
+      });
+
+      it("100件取得時、getDocs が ceil(100/30)=4 回呼ばれる", async () => {
+        const memos = Forger(MemoMold).forgeMultiWithSeed(100, 200);
+
+        const ops = getOperations();
+        const getDocsSpy = vi.spyOn(ops, "getDocs");
+
+        const repository = FirebaseMemoRepository(firestore, ops);
+
+        for (const memo of memos) {
+          await repository.persist(memo).unwrap();
+        }
+
+        getDocsSpy.mockClear();
+
+        const identifiers = memos.map((memo) => memo.identifier);
+        const found = await repository.ofIdentifiers(identifiers).unwrap();
+
+        expect(found.length).toBe(100);
+        expect(getDocsSpy).toHaveBeenCalledTimes(4);
+
+        getDocsSpy.mockRestore();
+      });
+
+      it("入力識別子の順序を保って返す", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const memos = Forger(MemoMold).forgeMultiWithSeed(5, 300);
+
+        for (const memo of memos) {
+          await repository.persist(memo).unwrap();
+        }
+
+        const reversedIdentifiers = memos
+          .map((memo) => memo.identifier)
+          .reverse();
+        const found = await repository
+          .ofIdentifiers(reversedIdentifiers)
+          .unwrap();
+
+        expect(found.map((memo) => memo.identifier)).toEqual(
+          reversedIdentifiers,
+        );
       });
     });
 

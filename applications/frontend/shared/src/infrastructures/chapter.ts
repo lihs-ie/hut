@@ -8,6 +8,7 @@ import {
   createSlugIndexInTransaction,
   createVersion,
   deleteSlugIndexInTransaction,
+  FIRESTORE_IN_BATCH_LIMIT,
   FirestoreOperations,
   mapFirestoreError,
   updateSlugIndexInTransaction,
@@ -25,6 +26,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
+import { chunk } from "@shared/aspects/array";
 
 type PersistedChapter = {
   identifier: string;
@@ -232,26 +234,45 @@ export const FirebaseChapterRepository = (
   ) => {
     return fromPromise(
       (async () => {
-        const chapterList: Chapter[] = [];
-
-        for (const identifier of identifiers) {
-          const document = operations.doc(collection, identifier);
-          const snapshot = await operations.getDoc(document);
-
-          if (!snapshot.exists()) {
-            if (throwOnMissing) {
-              throw aggregateNotFoundError(
-                "Chapter",
-                `Chapter ${identifier} not found.`,
-              );
-            }
-            continue;
-          }
-
-          chapterList.push(snapshot.data());
+        if (identifiers.length === 0) {
+          return [];
         }
 
-        return chapterList;
+        const uniqueIdentifiers = Array.from(new Set(identifiers));
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT).unwrap();
+
+        const batchResults = await Promise.all(
+          chunks.map(async (identifiersChunk) => {
+            const query = operations.query(
+              collection,
+              operations.where("identifier", "in", identifiersChunk),
+            );
+            const snapshot = await operations.getDocs(query);
+            return snapshot.docs.map((document) => document.data());
+          }),
+        );
+
+        const chapters = new Map<ChapterIdentifier, Chapter>();
+        for (const chapter of batchResults.flat()) {
+          chapters.set(chapter.identifier, chapter);
+        }
+
+        if (throwOnMissing) {
+          const missingIdentifier = uniqueIdentifiers.find(
+            (identifier) => !chapters.has(identifier),
+          );
+          if (missingIdentifier !== undefined) {
+            throw aggregateNotFoundError(
+              "Chapter",
+              `Chapter ${missingIdentifier} not found.`,
+            );
+          }
+        }
+
+        return identifiers.flatMap((identifier) => {
+          const chapter = chapters.get(identifier);
+          return chapter !== undefined ? [chapter] : [];
+        });
       })(),
       mapError,
     );
