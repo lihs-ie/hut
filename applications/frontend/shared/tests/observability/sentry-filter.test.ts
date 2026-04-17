@@ -56,6 +56,42 @@ describe("observability/sentry-filter", () => {
       expect(filteredEvent?.request?.headers?.Authorization).toBe("[REDACTED]");
     });
 
+    it("request.headers.cookie / set-cookie も [REDACTED] に置換する", () => {
+      const event: ErrorEvent = {
+        type: undefined,
+        request: {
+          headers: {
+            cookie: "sessionId=abc123",
+            "Set-Cookie": "sessionId=abc123",
+            "user-agent": "Mozilla/5.0",
+          },
+        },
+      };
+
+      const filteredEvent = filterSensitiveEvent(event, {});
+
+      expect(filteredEvent?.request?.headers?.cookie).toBe("[REDACTED]");
+      expect(filteredEvent?.request?.headers?.["Set-Cookie"]).toBe("[REDACTED]");
+      expect(filteredEvent?.request?.headers?.["user-agent"]).toBe("Mozilla/5.0");
+    });
+
+    it("request.cookies の全値を [REDACTED] に置換する", () => {
+      const event: ErrorEvent = {
+        type: undefined,
+        request: {
+          cookies: {
+            sessionId: "abc123",
+            theme: "dark",
+          },
+        },
+      };
+
+      const filteredEvent = filterSensitiveEvent(event, {});
+
+      expect(filteredEvent?.request?.cookies?.sessionId).toBe("[REDACTED]");
+      expect(filteredEvent?.request?.cookies?.theme).toBe("[REDACTED]");
+    });
+
     it("request.data 内の email / password を [REDACTED] に置換する", () => {
       const event: ErrorEvent = {
         type: undefined,
@@ -75,6 +111,27 @@ describe("observability/sentry-filter", () => {
         password: "[REDACTED]",
         username: "user",
       });
+    });
+
+    it("request.data 内の token / access_token / refresh_token も [REDACTED] に置換する", () => {
+      const event: ErrorEvent = {
+        type: undefined,
+        request: {
+          data: {
+            token: "t-1",
+            access_token: "at-1",
+            refresh_token: "rt-1",
+            apiKey: "ak-1",
+          },
+        },
+      };
+
+      const filteredEvent = filterSensitiveEvent(event, {});
+      const data = expectRecord(filteredEvent?.request?.data);
+      expect(data.token).toBe("[REDACTED]");
+      expect(data.access_token).toBe("[REDACTED]");
+      expect(data.refresh_token).toBe("[REDACTED]");
+      expect(data.apiKey).toBe("[REDACTED]");
     });
 
     it("user.email / user.ip_address を削除する", () => {
@@ -144,6 +201,80 @@ describe("observability/sentry-filter", () => {
       expect(items[1]).toMatchObject({ email: "[REDACTED]", value: 2 });
     });
 
+    it("extra 内の email / password も再帰的にマスクする", () => {
+      const event: ErrorEvent = {
+        type: undefined,
+        extra: {
+          formValues: {
+            email: "user@example.com",
+            password: "s3cret",
+            note: "remember me",
+          },
+        },
+      };
+
+      const filteredEvent = filterSensitiveEvent(event, {});
+      const formValues = expectRecord(filteredEvent?.extra?.formValues);
+      expect(formValues.email).toBe("[REDACTED]");
+      expect(formValues.password).toBe("[REDACTED]");
+      expect(formValues.note).toBe("remember me");
+    });
+
+    it("contexts 内の token / apiKey も再帰的にマスクする", () => {
+      const event: ErrorEvent = {
+        type: undefined,
+        contexts: {
+          session: {
+            token: "t-1",
+            state: "active",
+          },
+        },
+      };
+
+      const filteredEvent = filterSensitiveEvent(event, {});
+      const sessionContext = expectRecord(filteredEvent?.contexts?.session);
+      expect(sessionContext.token).toBe("[REDACTED]");
+      expect(sessionContext.state).toBe("active");
+    });
+
+    it("breadcrumbs[].data 内の email / password も再帰的にマスクする", () => {
+      const event: ErrorEvent = {
+        type: undefined,
+        breadcrumbs: [
+          {
+            category: "ui.click",
+            message: "sign in",
+            data: {
+              email: "user@example.com",
+              source: "header",
+            },
+          },
+        ],
+      };
+
+      const filteredEvent = filterSensitiveEvent(event, {});
+      expect(filteredEvent?.breadcrumbs?.length).toBe(1);
+      const breadcrumbData = expectRecord(filteredEvent?.breadcrumbs?.[0]?.data);
+      expect(breadcrumbData.email).toBe("[REDACTED]");
+      expect(breadcrumbData.source).toBe("header");
+    });
+
+    it("breadcrumb.data が undefined の場合も落ちない", () => {
+      const event: ErrorEvent = {
+        type: undefined,
+        breadcrumbs: [
+          {
+            category: "ui.click",
+            message: "sign in",
+          },
+        ],
+      };
+
+      const filteredEvent = filterSensitiveEvent(event, {});
+      expect(filteredEvent?.breadcrumbs?.length).toBe(1);
+      expect(filteredEvent?.breadcrumbs?.[0]?.category).toBe("ui.click");
+    });
+
     it("マスク対象外のフィールドは変更されない", () => {
       const event: ErrorEvent = {
         type: undefined,
@@ -171,6 +302,25 @@ describe("observability/sentry-filter", () => {
         quantity: 2,
       });
       expect(filteredEvent?.tags?.feature).toBe("cart");
+    });
+
+    it("null 値 / 空配列 / 空オブジェクトはそのまま保持する", () => {
+      const event: ErrorEvent = {
+        type: undefined,
+        request: {
+          data: {
+            optionalField: null,
+            items: [],
+            meta: {},
+          },
+        },
+      };
+
+      const filteredEvent = filterSensitiveEvent(event, {});
+      const data = expectRecord(filteredEvent?.request?.data);
+      expect(data.optionalField).toBeNull();
+      expect(data.items).toEqual([]);
+      expect(data.meta).toEqual({});
     });
 
     it("空のイベントもそのまま返す", () => {
