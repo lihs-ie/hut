@@ -5,13 +5,13 @@ import { MouseEvent, ReactNode, useEffect, useState } from "react";
 import { MenuIcon } from "@shared/components/atoms/icon/hamburger";
 import { XIcon } from "@shared/components/atoms/icon/cross";
 
-import styles from "./toc-drawer.module.css";
+import styles from "./drawer.module.css";
 
 export type Props = {
   children: ReactNode;
 };
 
-export const TocDrawer = (props: Props) => {
+export const TOCDrawer = (props: Props) => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {

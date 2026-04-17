@@ -58,7 +58,7 @@ async function ChapterContentSection(props: ContentProps) {
     <ChapterContent
       slug={slugSchema.parse(params.slug)}
       chapterSlug={slugSchema.parse(params.chapter)}
-      seriesChapterIdentifiers={series.chapters}
+      chapters={series.chapters}
       renderer={MDXRenderer}
       findChapterBySlug={findChapterBySlug}
       findChaptersByIdentifiers={findPublishedChaptersByIdentifiers}

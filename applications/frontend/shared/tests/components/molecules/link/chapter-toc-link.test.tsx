@@ -29,7 +29,7 @@ vi.mock("@shared/components/molecules/link/navigable", () => ({
   ),
 }));
 
-describe("components/molecules/link/ChapterTocLink", () => {
+describe("components/molecules/link/ChapterTOCLink", () => {
   beforeEach(() => {
     mockUsePathname.mockReset();
   });
@@ -37,18 +37,18 @@ describe("components/molecules/link/ChapterTocLink", () => {
   it("現在のパスと一致する場合は aria-current=page が付与される", async () => {
     mockUsePathname.mockReturnValue("/series/foo/chapters/bar");
 
-    const { ChapterTocLink } = await import(
+    const { ChapterTOCLink } = await import(
       "@shared/components/molecules/link/chapter-toc-link"
     );
 
     const { unmount } = render(
-      <ChapterTocLink
+      <ChapterTOCLink
         href="/series/foo/chapters/bar"
         className="inactive"
         activeClassName="active"
       >
         チャプタータイトル
-      </ChapterTocLink>,
+      </ChapterTOCLink>,
     );
 
     const link = screen.getByText("チャプタータイトル");
@@ -60,18 +60,18 @@ describe("components/molecules/link/ChapterTocLink", () => {
   it("現在のパスと異なる場合は aria-current が付与されない", async () => {
     mockUsePathname.mockReturnValue("/series/foo/chapters/other");
 
-    const { ChapterTocLink } = await import(
+    const { ChapterTOCLink } = await import(
       "@shared/components/molecules/link/chapter-toc-link"
     );
 
     const { unmount } = render(
-      <ChapterTocLink
+      <ChapterTOCLink
         href="/series/foo/chapters/bar"
         className="inactive"
         activeClassName="active"
       >
         チャプタータイトル
-      </ChapterTocLink>,
+      </ChapterTOCLink>,
     );
 
     const link = screen.getByText("チャプタータイトル");
@@ -83,18 +83,18 @@ describe("components/molecules/link/ChapterTocLink", () => {
   it("現在のパスと一致する場合は activeClassName が適用される", async () => {
     mockUsePathname.mockReturnValue("/series/foo/chapters/bar");
 
-    const { ChapterTocLink } = await import(
+    const { ChapterTOCLink } = await import(
       "@shared/components/molecules/link/chapter-toc-link"
     );
 
     const { unmount } = render(
-      <ChapterTocLink
+      <ChapterTOCLink
         href="/series/foo/chapters/bar"
         className="inactiveClass"
         activeClassName="activeClass"
       >
         チャプタータイトル
-      </ChapterTocLink>,
+      </ChapterTOCLink>,
     );
 
     const link = screen.getByText("チャプタータイトル");
@@ -107,18 +107,18 @@ describe("components/molecules/link/ChapterTocLink", () => {
   it("現在のパスと異なる場合は className が適用される", async () => {
     mockUsePathname.mockReturnValue("/series/foo/chapters/other");
 
-    const { ChapterTocLink } = await import(
+    const { ChapterTOCLink } = await import(
       "@shared/components/molecules/link/chapter-toc-link"
     );
 
     const { unmount } = render(
-      <ChapterTocLink
+      <ChapterTOCLink
         href="/series/foo/chapters/bar"
         className="inactiveClass"
         activeClassName="activeClass"
       >
         チャプタータイトル
-      </ChapterTocLink>,
+      </ChapterTOCLink>,
     );
 
     const link = screen.getByText("チャプタータイトル");

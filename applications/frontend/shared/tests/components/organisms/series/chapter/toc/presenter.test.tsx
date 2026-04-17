@@ -8,7 +8,7 @@ import {
   SeriesSlugMold,
   ChapterMold,
   ChapterSlugMold,
-} from "../../../../support/molds/domains/series";
+} from "../../../../../support/molds/domains/series";
 
 vi.mock("@shared/components/molecules/link/navigable", () => ({
   NavigableLink: (linkProps: {
@@ -27,7 +27,7 @@ vi.mock("@shared/components/atoms/icon/facing-book", () => ({
 }));
 
 vi.mock("@shared/components/molecules/link/chapter-toc-link", () => ({
-  ChapterTocLink: (linkProps: {
+  ChapterTOCLink: (linkProps: {
     href: string;
     children: React.ReactNode;
     className?: string;
@@ -35,22 +35,20 @@ vi.mock("@shared/components/molecules/link/chapter-toc-link", () => ({
   }) => <a href={linkProps.href}>{linkProps.children}</a>,
 }));
 
-describe("components/organisms/series/chapter/ChapterTocPresenter", () => {
+describe("components/organisms/series/chapter/ChapterTOCPresenter", () => {
   it("シリーズタイトルへのリンクが表示される", async () => {
     const slug = Forger(SeriesSlugMold).forge();
-    const allChapters = [
-      Forger(ChapterMold).forge({ title: "はじめに" }),
-    ];
+    const chapters = [Forger(ChapterMold).forge({ title: "はじめに" })];
 
-    const { ChapterTocPresenter } = await import(
-      "@shared/components/organisms/series/chapter/toc.presenter"
+    const { ChapterTOCPresenter } = await import(
+      "@shared/components/organisms/series/chapter/toc/presenter"
     );
 
     const { unmount } = render(
-      ChapterTocPresenter({
+      ChapterTOCPresenter({
         slug,
         seriesTitle: "テストシリーズ",
-        allChapters,
+        chapters,
       })
     );
 
@@ -62,20 +60,20 @@ describe("components/organisms/series/chapter/ChapterTocPresenter", () => {
   it("チャプター一覧が表示される", async () => {
     const slug = Forger(SeriesSlugMold).forge();
     const chapterSlug = Forger(ChapterSlugMold).forge();
-    const allChapters = [
+    const chapters = [
       Forger(ChapterMold).forge({ slug: chapterSlug, title: "はじめに" }),
       Forger(ChapterMold).forgeWithSeed(2, { title: "基礎" }),
     ];
 
-    const { ChapterTocPresenter } = await import(
-      "@shared/components/organisms/series/chapter/toc.presenter"
+    const { ChapterTOCPresenter } = await import(
+      "@shared/components/organisms/series/chapter/toc/presenter"
     );
 
     const { unmount } = render(
-      ChapterTocPresenter({
+      ChapterTOCPresenter({
         slug,
         seriesTitle: "テストシリーズ",
-        allChapters,
+        chapters,
       })
     );
 
@@ -87,20 +85,20 @@ describe("components/organisms/series/chapter/ChapterTocPresenter", () => {
 
   it("チャプター番号が2桁ゼロ埋めで表示される", async () => {
     const slug = Forger(SeriesSlugMold).forge();
-    const allChapters = [
+    const chapters = [
       Forger(ChapterMold).forge({ title: "はじめに" }),
       Forger(ChapterMold).forgeWithSeed(2, { title: "基礎" }),
     ];
 
-    const { ChapterTocPresenter } = await import(
-      "@shared/components/organisms/series/chapter/toc.presenter"
+    const { ChapterTOCPresenter } = await import(
+      "@shared/components/organisms/series/chapter/toc/presenter"
     );
 
     const { unmount } = render(
-      ChapterTocPresenter({
+      ChapterTOCPresenter({
         slug,
         seriesTitle: "テストシリーズ",
-        allChapters,
+        chapters,
       })
     );
 
@@ -112,19 +110,17 @@ describe("components/organisms/series/chapter/ChapterTocPresenter", () => {
 
   it("チャプター一覧のナビゲーションに aria-label が付与される", async () => {
     const slug = Forger(SeriesSlugMold).forge();
-    const allChapters = [
-      Forger(ChapterMold).forge({ title: "はじめに" }),
-    ];
+    const chapters = [Forger(ChapterMold).forge({ title: "はじめに" })];
 
-    const { ChapterTocPresenter } = await import(
-      "@shared/components/organisms/series/chapter/toc.presenter"
+    const { ChapterTOCPresenter } = await import(
+      "@shared/components/organisms/series/chapter/toc/presenter"
     );
 
     const { unmount } = render(
-      ChapterTocPresenter({
+      ChapterTOCPresenter({
         slug,
         seriesTitle: "テストシリーズ",
-        allChapters,
+        chapters,
       })
     );
 

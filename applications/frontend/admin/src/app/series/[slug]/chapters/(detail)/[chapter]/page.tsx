@@ -22,7 +22,7 @@ async function AdminChapterContentSection(props: ContentProps) {
     <ChapterContent
       slug={slugSchema.parse(params.slug)}
       chapterSlug={slugSchema.parse(params.chapter)}
-      seriesChapterIdentifiers={series.chapters}
+      chapters={series.chapters}
       renderer={MDXRenderer}
       findChapterBySlug={findChapterBySlug}
       findChaptersByIdentifiers={findChaptersByIdentifiers}

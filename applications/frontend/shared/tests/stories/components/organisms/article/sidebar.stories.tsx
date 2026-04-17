@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { SidebarPresenter } from "@shared/components/organisms/article/sidebar.presenter";
-import { generateToc } from "@shared/components/global/mdx";
+import { generateTOC } from "@shared/components/global/mdx";
 
 const meta = {
   component: SidebarPresenter,
@@ -30,6 +30,6 @@ Some content under heading 2.1.
 
 export const Default: StoryObj<typeof SidebarPresenter> = {
   args: {
-    root: generateToc(content),
+    root: generateTOC(content),
   },
 };

@@ -35,7 +35,7 @@ app/
 
 const chapterSlug = Forger(ChapterSlugMold).forge({ value: "chapter-01" });
 
-const allChapters = [
+const chapters = [
   Forger(ChapterMold).forge({
     title: "基本ルールとディレクトリ構成",
     slug: chapterSlug,
@@ -51,10 +51,10 @@ export const Default: StoryObj<typeof ChapterContentPresenter> = {
   args: {
     slug,
     chapterSlug,
-    currentChapter: allChapters[0],
+    currentChapter: chapters[0],
     currentIndex: 0,
     prevChapter: null,
-    nextChapter: allChapters[1],
+    nextChapter: chapters[1],
     renderedContent: chapterContent,
   },
 };
@@ -62,11 +62,11 @@ export const Default: StoryObj<typeof ChapterContentPresenter> = {
 export const MiddleChapter: StoryObj<typeof ChapterContentPresenter> = {
   args: {
     slug,
-    chapterSlug: allChapters[1].slug,
-    currentChapter: allChapters[1],
+    chapterSlug: chapters[1].slug,
+    currentChapter: chapters[1],
     currentIndex: 1,
-    prevChapter: allChapters[0],
-    nextChapter: allChapters[2],
+    prevChapter: chapters[0],
+    nextChapter: chapters[2],
     renderedContent: chapterContent,
   },
 };
@@ -74,10 +74,10 @@ export const MiddleChapter: StoryObj<typeof ChapterContentPresenter> = {
 export const LastChapter: StoryObj<typeof ChapterContentPresenter> = {
   args: {
     slug,
-    chapterSlug: allChapters[2].slug,
-    currentChapter: allChapters[2],
+    chapterSlug: chapters[2].slug,
+    currentChapter: chapters[2],
     currentIndex: 2,
-    prevChapter: allChapters[1],
+    prevChapter: chapters[1],
     nextChapter: null,
     renderedContent: chapterContent,
   },

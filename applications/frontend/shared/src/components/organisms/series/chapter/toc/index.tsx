@@ -1,24 +1,22 @@
 import { SeriesSlug } from "@shared/domains/series";
 import { Chapter, ChapterIdentifier } from "@shared/domains/series/chapter";
-import { ChapterTocPresenter } from "./toc.presenter";
+import { ChapterTOCPresenter } from "./presenter";
 
 export type Props = {
   slug: SeriesSlug;
   seriesTitle: string;
-  seriesChapterIdentifiers: ChapterIdentifier[];
+  chapters: ChapterIdentifier[];
   findChaptersByIdentifiers: (identifiers: ChapterIdentifier[]) => Promise<Chapter[]>;
 };
 
-export const ChapterToc = async (props: Props) => {
-  const allChapters = await props.findChaptersByIdentifiers(
-    props.seriesChapterIdentifiers,
-  );
+export const ChapterTOC = async (props: Props) => {
+  const chapters = await props.findChaptersByIdentifiers(props.chapters);
 
   return (
-    <ChapterTocPresenter
+    <ChapterTOCPresenter
       slug={props.slug}
       seriesTitle={props.seriesTitle}
-      allChapters={allChapters}
+      chapters={chapters}
     />
   );
 };

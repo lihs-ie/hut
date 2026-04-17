@@ -1,14 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 
-import { TocDrawer } from "@shared/components/organisms/series/chapter/toc-drawer";
+import { TOCDrawer } from "@shared/components/organisms/series/chapter/toc/drawer";
 
-describe("TocDrawer", () => {
+describe("TOCDrawer", () => {
   test("初期状態では drawer は閉じている", () => {
     render(
-      <TocDrawer>
+      <TOCDrawer>
         <div>目次コンテンツ</div>
-      </TocDrawer>,
+      </TOCDrawer>,
     );
 
     const drawer = screen.getByRole("button", { name: "目次を開く" });
@@ -17,9 +17,9 @@ describe("TocDrawer", () => {
 
   test("trigger ボタンをクリックすると drawer が開く", () => {
     render(
-      <TocDrawer>
+      <TOCDrawer>
         <div>目次コンテンツ</div>
-      </TocDrawer>,
+      </TOCDrawer>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "目次を開く" }));
@@ -35,9 +35,9 @@ describe("TocDrawer", () => {
 
   test("overlay クリックで drawer が閉じる", () => {
     const { container } = render(
-      <TocDrawer>
+      <TOCDrawer>
         <div>目次コンテンツ</div>
-      </TocDrawer>,
+      </TOCDrawer>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "目次を開く" }));
@@ -54,9 +54,9 @@ describe("TocDrawer", () => {
 
   test("close ボタンクリックで drawer が閉じる", () => {
     render(
-      <TocDrawer>
+      <TOCDrawer>
         <div>目次コンテンツ</div>
-      </TocDrawer>,
+      </TOCDrawer>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "目次を開く" }));
@@ -70,9 +70,9 @@ describe("TocDrawer", () => {
 
   test("Escape キーで drawer が閉じる", () => {
     render(
-      <TocDrawer>
+      <TOCDrawer>
         <div>目次コンテンツ</div>
-      </TocDrawer>,
+      </TOCDrawer>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "目次を開く" }));
@@ -86,9 +86,9 @@ describe("TocDrawer", () => {
 
   test("drawer 内の link クリックで drawer が閉じる", () => {
     render(
-      <TocDrawer>
+      <TOCDrawer>
         <a href="/series/foo/chapters/next">次のチャプター</a>
-      </TocDrawer>,
+      </TOCDrawer>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "目次を開く" }));
@@ -102,9 +102,9 @@ describe("TocDrawer", () => {
 
   test("children が drawer 内に描画される", () => {
     render(
-      <TocDrawer>
+      <TOCDrawer>
         <div data-testid="toc-content">目次コンテンツ</div>
-      </TocDrawer>,
+      </TOCDrawer>,
     );
 
     expect(screen.getByTestId("toc-content")).toBeInTheDocument();

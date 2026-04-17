@@ -7,7 +7,7 @@ import styles from "./content.module.css";
 export type Props = {
   slug: SeriesSlug;
   chapterSlug: ChapterSlug;
-  seriesChapterIdentifiers: ChapterIdentifier[];
+  chapters: ChapterIdentifier[];
   renderer: MarkdownRenderer;
   findChapterBySlug: (slug: string) => Promise<Chapter>;
   findChaptersByIdentifiers: (identifiers: ChapterIdentifier[]) => Promise<Chapter[]>;
@@ -16,12 +16,12 @@ export type Props = {
 export const ChapterContent = async (props: Props) => {
   const currentChapter = await props.findChapterBySlug(props.chapterSlug);
 
-  const [allChapters, renderedContent] = await Promise.all([
-    props.findChaptersByIdentifiers(props.seriesChapterIdentifiers),
+  const [chapters, renderedContent] = await Promise.all([
+    props.findChaptersByIdentifiers(props.chapters),
     props.renderer(currentChapter.content),
   ]);
 
-  const currentIndex = allChapters.findIndex(
+  const currentIndex = chapters.findIndex(
     (chapter) => chapter.slug === props.chapterSlug,
   );
 
@@ -33,11 +33,9 @@ export const ChapterContent = async (props: Props) => {
     );
   }
 
-  const prevChapter = currentIndex > 0 ? allChapters[currentIndex - 1] : null;
+  const prevChapter = currentIndex > 0 ? chapters[currentIndex - 1] : null;
   const nextChapter =
-    currentIndex < allChapters.length - 1
-      ? allChapters[currentIndex + 1]
-      : null;
+    currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
 
   return (
     <ChapterContentPresenter

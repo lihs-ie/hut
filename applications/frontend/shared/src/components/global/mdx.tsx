@@ -162,7 +162,7 @@ export type Node = {
   children: Node[];
 };
 
-const buildTocTree = (headings: Heading[]): Node[] => {
+const buildTOCTree = (headings: Heading[]): Node[] => {
   const root: Node[] = [];
   const stack: { level: number; node: Node }[] = [];
 
@@ -189,8 +189,8 @@ const buildTocTree = (headings: Heading[]): Node[] => {
   return root;
 };
 
-export const generateToc = (mdx: string): Node[] => {
+export const generateTOC = (mdx: string): Node[] => {
   const headings = extractHeadings(mdx);
 
-  return buildTocTree(headings);
+  return buildTOCTree(headings);
 };

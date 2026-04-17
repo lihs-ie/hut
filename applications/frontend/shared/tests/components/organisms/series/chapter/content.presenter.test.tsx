@@ -47,10 +47,7 @@ describe("components/organisms/series/chapter/ChapterContentPresenter", () => {
       slug: chapterSlug,
       title: "はじめに",
     });
-    const allChapters = [
-      currentChapter,
-      Forger(ChapterMold).forgeWithSeed(2),
-    ];
+    const chapters = [currentChapter, Forger(ChapterMold).forgeWithSeed(2)];
     const slug = Forger(SeriesSlugMold).forge();
 
     const { ChapterContentPresenter } = await import(
@@ -64,7 +61,7 @@ describe("components/organisms/series/chapter/ChapterContentPresenter", () => {
         currentChapter,
         currentIndex: 0,
         prevChapter: null,
-        nextChapter: allChapters[1],
+        nextChapter: chapters[1],
         renderedContent: null,
       })
     );

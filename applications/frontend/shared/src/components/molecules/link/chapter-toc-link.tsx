@@ -11,7 +11,7 @@ export type Props = {
   children: React.ReactNode;
 };
 
-export const ChapterTocLink = (props: Props) => {
+export const ChapterTOCLink = (props: Props) => {
   const pathname = usePathname();
   const isActive = pathname === props.href;
   const composedClassName = `${styles.container} ${isActive ? props.activeClassName : props.className}`;

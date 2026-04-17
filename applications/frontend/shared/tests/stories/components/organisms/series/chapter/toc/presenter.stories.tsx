@@ -1,20 +1,20 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
-import { ChapterTocPresenter } from "@shared/components/organisms/series/chapter/toc.presenter";
+import { ChapterTOCPresenter } from "@shared/components/organisms/series/chapter/toc/presenter";
 import { Forger } from "@lihs-ie/forger-ts";
 import {
   ChapterMold,
   ChapterSlugMold,
   SeriesSlugMold,
-} from "../../../../../support/molds/domains/series";
+} from "../../../../../../support/molds/domains/series";
 
 const meta = {
-  component: ChapterTocPresenter,
-} satisfies Meta<typeof ChapterTocPresenter>;
+  component: ChapterTOCPresenter,
+} satisfies Meta<typeof ChapterTOCPresenter>;
 
 export default meta;
 
-const allChapters = [
+const chapters = [
   Forger(ChapterMold).forge({
     title: "基本ルールとディレクトリ構成",
     slug: Forger(ChapterSlugMold).forge({ value: "chapter-01" }),
@@ -30,19 +30,19 @@ const allChapters = [
 const seriesTitle = "Next.js 15 / React 19 実践設計ガイド";
 const slug = Forger(SeriesSlugMold).forge({ value: "nextjs-guide" });
 
-export const Default: StoryObj<typeof ChapterTocPresenter> = {
+export const Default: StoryObj<typeof ChapterTOCPresenter> = {
   args: {
     seriesTitle,
     slug,
-    allChapters,
+    chapters,
   },
 };
 
-export const FewChapters: StoryObj<typeof ChapterTocPresenter> = {
+export const FewChapters: StoryObj<typeof ChapterTOCPresenter> = {
   args: {
     seriesTitle: "短いシリーズ",
     slug: Forger(SeriesSlugMold).forge({ value: "short-series" }),
-    allChapters: [
+    chapters: [
       Forger(ChapterMold).forge({ title: "イントロダクション" }),
       Forger(ChapterMold).forgeWithSeed(2, { title: "まとめ" }),
     ],

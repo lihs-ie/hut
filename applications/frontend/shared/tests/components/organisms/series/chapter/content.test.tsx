@@ -29,7 +29,7 @@ describe("components/organisms/series/chapter/ChapterContent", () => {
     const result = await ChapterContent({
       slug,
       chapterSlug,
-      seriesChapterIdentifiers: [identifier],
+      chapters: [identifier],
       renderer: async () => null,
       findChapterBySlug: async () => currentChapter,
       findChaptersByIdentifiers: async () => [currentChapter],
@@ -51,7 +51,7 @@ describe("components/organisms/series/chapter/ChapterContent", () => {
     const result = await ChapterContent({
       slug,
       chapterSlug,
-      seriesChapterIdentifiers: [identifier],
+      chapters: [identifier],
       renderer: async () => null,
       findChapterBySlug: async () => currentChapter,
       findChaptersByIdentifiers: async () => [],
@@ -79,7 +79,7 @@ describe("components/organisms/series/chapter/ChapterContent", () => {
     await ChapterContent({
       slug,
       chapterSlug,
-      seriesChapterIdentifiers: [identifier],
+      chapters: [identifier],
       renderer: async () => {
         startTimes.renderer = Date.now();
         await delay(30);
