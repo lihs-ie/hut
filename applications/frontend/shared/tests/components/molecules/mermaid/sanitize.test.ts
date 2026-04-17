@@ -81,3 +81,119 @@ describe("sanitizeMermaidSvg", () => {
     expect(result).not.toContain("alert");
   });
 });
+
+describe("sanitizeMermaidSvg - XSSリグレッション", () => {
+  it("onerror属性を除去する", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+      <image href="x" onerror="alert('xss')" />
+    </svg>`;
+
+    const result = sanitizeMermaidSvg(svg);
+
+    expect(result).not.toContain("onerror");
+    expect(result).not.toContain("alert");
+  });
+
+  it("onload属性を除去する", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)">
+      <rect width="10" height="10" />
+    </svg>`;
+
+    const result = sanitizeMermaidSvg(svg);
+
+    expect(result).not.toContain("onload");
+  });
+
+  it("onclick属性を除去する", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+      <rect onclick="alert(1)" width="10" height="10" />
+    </svg>`;
+
+    const result = sanitizeMermaidSvg(svg);
+
+    expect(result).not.toContain("onclick");
+  });
+
+  it("javascript: URIのhref属性を無害化する", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+      <a href="javascript:alert('xss')"><rect width="10" height="10" /></a>
+    </svg>`;
+
+    const result = sanitizeMermaidSvg(svg);
+
+    expect(result).not.toMatch(/href=["']javascript:/i);
+  });
+
+  it("javascript: URIのxlink:href属性を無害化する", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <use xlink:href="javascript:alert('xss')" />
+    </svg>`;
+
+    const result = sanitizeMermaidSvg(svg);
+
+    expect(result).not.toMatch(/xlink:href=["']javascript:/i);
+  });
+
+  it("iframeタグを除去する", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+      <foreignObject x="0" y="0" width="100" height="50">
+        <iframe src="https://evil.example.com"></iframe>
+      </foreignObject>
+    </svg>`;
+
+    const result = sanitizeMermaidSvg(svg);
+
+    expect(result).not.toContain("iframe");
+    expect(result).not.toContain("evil.example.com");
+  });
+
+  it("objectタグとembedタグを除去する", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+      <foreignObject x="0" y="0" width="100" height="50">
+        <object data="https://evil.example.com/x.swf"></object>
+        <embed src="https://evil.example.com/y.swf" />
+      </foreignObject>
+    </svg>`;
+
+    const result = sanitizeMermaidSvg(svg);
+
+    expect(result).not.toContain("<object");
+    expect(result).not.toContain("<embed");
+  });
+
+  it("foreignObject内のformとinputを除去する", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+      <foreignObject x="0" y="0" width="200" height="100">
+        <form action="https://evil.example.com">
+          <input type="password" name="stolen" />
+        </form>
+      </foreignObject>
+    </svg>`;
+
+    const result = sanitizeMermaidSvg(svg);
+
+    expect(result).not.toContain("<form");
+    expect(result).not.toContain("<input");
+  });
+
+  it("styleタグを除去する", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+      <style>svg { background: url('javascript:alert(1)'); }</style>
+      <rect width="10" height="10" />
+    </svg>`;
+
+    const result = sanitizeMermaidSvg(svg);
+
+    expect(result).not.toContain("<style");
+  });
+
+  it("data: URIのscript実行を無害化する", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+      <a href="data:text/html,<script>alert(1)</script>"><rect width="10" height="10" /></a>
+    </svg>`;
+
+    const result = sanitizeMermaidSvg(svg);
+
+    expect(result).not.toContain("<script");
+  });
+});
