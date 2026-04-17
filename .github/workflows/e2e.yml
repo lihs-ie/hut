@@ -41,6 +41,23 @@ jobs:
         run: pnpm exec tsx ../scripts/seed/index.ts
         working-directory: ${{ env.FRONTEND_DIR }}
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('applications/frontend/pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Install Playwright dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+        working-directory: ${{ env.FRONTEND_DIR }}
+
       - name: Build
         run: pnpm build
         working-directory: ${{ env.FRONTEND_DIR }}
