@@ -1,7 +1,7 @@
 "use client";
 
 import { useReportWebVitals } from "next/web-vitals";
-import { captureMessage } from "@sentry/nextjs";
+import { captureMessage, setMeasurement } from "@sentry/nextjs";
 
 type Props = Record<string, never>;
 
@@ -16,27 +16,24 @@ type WebVitalMetric = {
   navigationType?: string;
 };
 
-const toSeverityLevel = (
-  rating: WebVitalRating | undefined,
-): "info" | "warning" | "error" => {
-  if (rating === "poor") {
-    return "error";
-  }
-  if (rating === "needs-improvement") {
-    return "warning";
-  }
-  return "info";
-};
+const getMeasurementUnit = (metricName: string): "" | "millisecond" =>
+  metricName === "CLS" ? "" : "millisecond";
 
 export const WebVitalsReporter = (_props: Props) => {
   void _props;
 
   useReportWebVitals((metric: WebVitalMetric) => {
+    setMeasurement(metric.name, metric.value, getMeasurementUnit(metric.name));
+
+    if (metric.rating !== "poor") {
+      return;
+    }
+
     captureMessage(`Web Vital: ${metric.name}`, {
-      level: toSeverityLevel(metric.rating),
+      level: "error",
       tags: {
         web_vital: metric.name,
-        rating: metric.rating ?? "unknown",
+        rating: metric.rating,
       },
       extra: {
         value: metric.value,

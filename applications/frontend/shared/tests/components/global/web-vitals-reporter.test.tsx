@@ -32,20 +32,24 @@ vi.mock("next/web-vitals", () => ({
 }));
 
 const captureMessageMock = vi.fn();
+const setMeasurementMock = vi.fn();
 
 vi.mock("@sentry/nextjs", () => ({
   captureMessage: (message: string, context?: unknown) =>
     captureMessageMock(message, context),
+  setMeasurement: (name: string, value: number, unit: string) =>
+    setMeasurementMock(name, value, unit),
 }));
 
 const buildMetric = (
   name: WebVitalMetric["name"],
   value: number,
+  rating: WebVitalMetric["rating"] = "good",
 ): WebVitalMetric => ({
   id: `metric-${name}`,
   name,
   value,
-  rating: "good",
+  rating,
   delta: value,
   entries: [],
   navigationType: "navigate",
@@ -55,6 +59,7 @@ describe("components/global/web-vitals-reporter", () => {
   beforeEach(() => {
     capturedCallbacks.length = 0;
     captureMessageMock.mockReset();
+    setMeasurementMock.mockReset();
   });
 
   afterEach(() => {
@@ -73,7 +78,7 @@ describe("components/global/web-vitals-reporter", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("CLS / LCP / FCP / INP / TTFB / FID のメトリクスを Sentry に送信する", async () => {
+  it("全メトリクスは setMeasurement で既存トランザクションへ集約される（イベント追加なし）", async () => {
     const module = await import(
       "@shared/components/global/web-vitals-reporter"
     );
@@ -82,7 +87,6 @@ describe("components/global/web-vitals-reporter", () => {
 
     render(<Component />);
 
-    expect(capturedCallbacks.length).toBeGreaterThan(0);
     const reportCallback = capturedCallbacks[0]!;
 
     const metricNames: WebVitalMetric["name"][] = [
@@ -95,19 +99,19 @@ describe("components/global/web-vitals-reporter", () => {
     ];
 
     metricNames.forEach((name, index) => {
-      reportCallback(buildMetric(name, (index + 1) * 100));
+      reportCallback(buildMetric(name, (index + 1) * 100, "good"));
     });
 
-    expect(captureMessageMock).toHaveBeenCalledTimes(metricNames.length);
+    expect(setMeasurementMock).toHaveBeenCalledTimes(metricNames.length);
     metricNames.forEach((name) => {
-      const matched = captureMessageMock.mock.calls.some(([message]) => {
-        return typeof message === "string" && message.includes(name);
-      });
+      const matched = setMeasurementMock.mock.calls.some(
+        ([metricName]) => metricName === name,
+      );
       expect(matched).toBe(true);
     });
   });
 
-  it("メトリクスの数値とレーティングは context の tags または extra に含まれる", async () => {
+  it("CLS は単位なし（unitless）、他は millisecond で送信される", async () => {
     const module = await import(
       "@shared/components/global/web-vitals-reporter"
     );
@@ -117,18 +121,71 @@ describe("components/global/web-vitals-reporter", () => {
     render(<Component />);
 
     const reportCallback = capturedCallbacks[0]!;
-    reportCallback(buildMetric("LCP", 2400));
+
+    reportCallback(buildMetric("CLS", 0.08, "good"));
+    reportCallback(buildMetric("LCP", 2400, "good"));
+
+    expect(setMeasurementMock).toHaveBeenCalledWith("CLS", 0.08, "");
+    expect(setMeasurementMock).toHaveBeenCalledWith(
+      "LCP",
+      2400,
+      "millisecond",
+    );
+  });
+
+  it("rating が good の場合は captureMessage を呼ばない（event quota 節約）", async () => {
+    const module = await import(
+      "@shared/components/global/web-vitals-reporter"
+    );
+    const { WebVitalsReporter } = module;
+    const Component = WebVitalsReporter as () => ReactNode;
+
+    render(<Component />);
+
+    const reportCallback = capturedCallbacks[0]!;
+    reportCallback(buildMetric("LCP", 2000, "good"));
+
+    expect(captureMessageMock).not.toHaveBeenCalled();
+  });
+
+  it("rating が needs-improvement の場合も captureMessage を呼ばない", async () => {
+    const module = await import(
+      "@shared/components/global/web-vitals-reporter"
+    );
+    const { WebVitalsReporter } = module;
+    const Component = WebVitalsReporter as () => ReactNode;
+
+    render(<Component />);
+
+    const reportCallback = capturedCallbacks[0]!;
+    reportCallback(buildMetric("LCP", 3500, "needs-improvement"));
+
+    expect(captureMessageMock).not.toHaveBeenCalled();
+  });
+
+  it("rating が poor の場合のみ captureMessage でイベント送信する", async () => {
+    const module = await import(
+      "@shared/components/global/web-vitals-reporter"
+    );
+    const { WebVitalsReporter } = module;
+    const Component = WebVitalsReporter as () => ReactNode;
+
+    render(<Component />);
+
+    const reportCallback = capturedCallbacks[0]!;
+    reportCallback(buildMetric("LCP", 5000, "poor"));
 
     expect(captureMessageMock).toHaveBeenCalledTimes(1);
-    const context = captureMessageMock.mock.calls[0]?.[1];
-    expect(context).toBeDefined();
+    const [message, context] = captureMessageMock.mock.calls[0]!;
+    expect(message).toContain("LCP");
     const payload = context as {
       level?: string;
-      tags?: Record<string, string | number | undefined>;
+      tags?: Record<string, string | undefined>;
       extra?: Record<string, unknown>;
     };
+    expect(payload.level).toBe("error");
     expect(payload.tags?.["web_vital"]).toBe("LCP");
-    expect(payload.tags?.["rating"]).toBe("good");
-    expect(payload.extra?.value).toBe(2400);
+    expect(payload.tags?.["rating"]).toBe("poor");
+    expect(payload.extra?.value).toBe(5000);
   });
 });
