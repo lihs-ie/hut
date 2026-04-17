@@ -25,6 +25,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
+import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
 
 type PersistedChapter = {
   identifier: string;
@@ -227,23 +228,37 @@ export const FirebaseChapterRepository = (
   ) => {
     return fromPromise(
       (async () => {
-        const chapterList: Chapter[] = [];
+        if (identifiers.length === 0) {
+          return [];
+        }
 
-        for (const identifier of identifiers) {
-          const document = operations.doc(collection, identifier);
-          const snapshot = await operations.getDoc(document);
+        const chunks = chunk(identifiers, FIRESTORE_IN_BATCH_LIMIT);
 
-          if (!snapshot.exists()) {
-            if (throwOnMissing) {
-              throw aggregateNotFoundError(
-                "Chapter",
-                `Chapter ${identifier} not found.`,
-              );
-            }
-            continue;
-          }
+        const batchResults = await Promise.all(
+          chunks.map(async (idsChunk) => {
+            const q = operations.query(
+              collection,
+              operations.where("identifier", "in", idsChunk),
+            );
+            const snapshot = await operations.getDocs(q);
+            return snapshot.docs.map((document) => document.data());
+          }),
+        );
 
-          chapterList.push(snapshot.data());
+        const chapterList = batchResults.flat();
+
+        if (throwOnMissing && chapterList.length !== identifiers.length) {
+          const foundIds = new Set(
+            chapterList.map((chapter) => chapter.identifier),
+          );
+          const missingIdentifiers = identifiers.filter(
+            (identifier) => !foundIds.has(identifier),
+          );
+          const firstMissing = missingIdentifiers[0];
+          throw aggregateNotFoundError(
+            "Chapter",
+            `Chapter ${firstMissing} not found.`,
+          );
         }
 
         return chapterList;

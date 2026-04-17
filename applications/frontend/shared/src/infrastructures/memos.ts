@@ -27,6 +27,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
+import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
 
 type PersistedMemo = {
   identifier: string;
@@ -285,23 +286,37 @@ export const FirebaseMemoRepository = (
   ) => {
     return fromPromise(
       (async () => {
-        const memos: Memo[] = [];
-        for (const identifier of identifiers) {
-          const document = operations.doc(collection, identifier);
-          const snapshot = await operations.getDoc(document);
-
-          if (!snapshot.exists()) {
-            if (throwOnMissing) {
-              throw aggregateNotFoundError(
-                "Memo",
-                `Memo ${identifier} not found.`,
-              );
-            }
-            continue;
-          }
-
-          memos.push(snapshot.data());
+        if (identifiers.length === 0) {
+          return [];
         }
+
+        const chunks = chunk(identifiers, FIRESTORE_IN_BATCH_LIMIT);
+
+        const batchResults = await Promise.all(
+          chunks.map(async (idsChunk) => {
+            const q = operations.query(
+              collection,
+              operations.where("identifier", "in", idsChunk),
+            );
+            const snapshot = await operations.getDocs(q);
+            return snapshot.docs.map((document) => document.data());
+          }),
+        );
+
+        const memos = batchResults.flat();
+
+        if (throwOnMissing && memos.length !== identifiers.length) {
+          const foundIds = new Set(memos.map((memo) => memo.identifier));
+          const missingIdentifiers = identifiers.filter(
+            (identifier) => !foundIds.has(identifier),
+          );
+          const firstMissing = missingIdentifiers[0];
+          throw aggregateNotFoundError(
+            "Memo",
+            `Memo ${firstMissing} not found.`,
+          );
+        }
+
         return memos;
       })(),
       mapError,

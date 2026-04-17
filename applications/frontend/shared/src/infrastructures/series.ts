@@ -27,6 +27,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
+import { chunk, FIRESTORE_IN_BATCH_LIMIT } from "@shared/aspects/array";
 
 type PersistedSeries = {
   identifier: string;
@@ -285,23 +286,35 @@ export const FirebaseSeriesRepository = (
   ) => {
     return fromPromise(
       (async () => {
-        const seriesList: Series[] = [];
+        if (identifiers.length === 0) {
+          return [];
+        }
 
-        for (const identifier of identifiers) {
-          const document = operations.doc(collection, identifier);
-          const snapshot = await operations.getDoc(document);
+        const chunks = chunk(identifiers, FIRESTORE_IN_BATCH_LIMIT);
 
-          if (!snapshot.exists()) {
-            if (throwOnMissing) {
-              throw aggregateNotFoundError(
-                "Series",
-                `Series ${identifier} not found.`,
-              );
-            }
-            continue;
-          }
+        const batchResults = await Promise.all(
+          chunks.map(async (idsChunk) => {
+            const q = operations.query(
+              collection,
+              operations.where("identifier", "in", idsChunk),
+            );
+            const snapshot = await operations.getDocs(q);
+            return snapshot.docs.map((document) => document.data());
+          }),
+        );
 
-          seriesList.push(snapshot.data());
+        const seriesList = batchResults.flat();
+
+        if (throwOnMissing && seriesList.length !== identifiers.length) {
+          const foundIds = new Set(seriesList.map((series) => series.identifier));
+          const missingIdentifiers = identifiers.filter(
+            (identifier) => !foundIds.has(identifier),
+          );
+          const firstMissing = missingIdentifiers[0];
+          throw aggregateNotFoundError(
+            "Series",
+            `Series ${firstMissing} not found.`,
+          );
         }
 
         return seriesList;

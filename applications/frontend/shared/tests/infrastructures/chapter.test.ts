@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { FirebaseChapterRepository } from "@shared/infrastructures/chapter";
 import {
   createTestFirestoreWithSeed,
@@ -177,6 +177,29 @@ describe("infrastructures/chapter", () => {
 
         expect(found.length).toBe(1);
         expect(found[0]?.identifier).toBe(chapter.identifier);
+      });
+
+      it("100件取得時、getDocs が ceil(100/30)=4 回呼ばれる", async () => {
+        const chapterList = Forger(ChapterMold).forgeMultiWithSeed(100, 400);
+
+        const ops = getOperations();
+        const getDocsSpy = vi.spyOn(ops, "getDocs");
+
+        const repository = FirebaseChapterRepository(firestore, ops);
+
+        for (const chapter of chapterList) {
+          await repository.persist(chapter).unwrap();
+        }
+
+        getDocsSpy.mockClear();
+
+        const identifiers = chapterList.map((chapter) => chapter.identifier);
+        const found = await repository.ofIdentifiers(identifiers).unwrap();
+
+        expect(found.length).toBe(100);
+        expect(getDocsSpy).toHaveBeenCalledTimes(4);
+
+        getDocsSpy.mockRestore();
       });
     });
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { FirebaseSeriesRepository } from "@shared/infrastructures/series";
 import {
   createTestFirestoreWithSeed,
@@ -233,6 +233,29 @@ describe("infrastructures/series", () => {
 
         expect(result).not.toBeNull();
         expect(isAggregateNotFoundError(result)).toBe(true);
+      });
+
+      it("100件取得時、getDocs が ceil(100/30)=4 回呼ばれる", async () => {
+        const seriesList = Forger(SeriesMold).forgeMultiWithSeed(100, 300);
+
+        const ops = getOperations();
+        const getDocsSpy = vi.spyOn(ops, "getDocs");
+
+        const repository = FirebaseSeriesRepository(firestore, ops);
+
+        for (const series of seriesList) {
+          await repository.persist(series).unwrap();
+        }
+
+        getDocsSpy.mockClear();
+
+        const identifiers = seriesList.map((series) => series.identifier);
+        const found = await repository.ofIdentifiers(identifiers).unwrap();
+
+        expect(found.length).toBe(100);
+        expect(getDocsSpy).toHaveBeenCalledTimes(4);
+
+        getDocsSpy.mockRestore();
       });
     });
 
