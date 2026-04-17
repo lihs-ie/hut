@@ -191,6 +191,12 @@ module "secrets" {
         "serviceAccount:${module.iam.service_account_emails["hut-prd-admin"]}",
       ]
     }
+    # The Sentry auth token is consumed only at build time by the Sentry
+    # webpack plugin running on GitHub Actions. It is supplied there via the
+    # `SENTRY_AUTH_TOKEN` repository secret and is intentionally not accessible
+    # from any runtime Cloud Run service account. The Secret Manager entry is
+    # declared here so the token can be rotated and versioned alongside other
+    # project secrets without granting runtime access.
     "prd-sentry-auth-token" = {
       accessor_members = []
     }

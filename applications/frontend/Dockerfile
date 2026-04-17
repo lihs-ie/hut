@@ -25,6 +25,9 @@ ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=""
 ARG NEXT_PUBLIC_FIREBASE_APP_ID=""
 ARG SERVER_ACTIONS_ALLOWED_ORIGINS=""
 ARG IMAGE_REMOTE_PATTERNS=""
+# Only the DSN for the current APP_NAME is injected. reader builds receive the
+# reader DSN and admin builds receive the admin DSN — never both — so neither
+# image leaks the other application's ingest endpoint.
 ARG NEXT_PUBLIC_SENTRY_DSN_READER=""
 ARG NEXT_PUBLIC_SENTRY_DSN_ADMIN=""
 ARG NEXT_PUBLIC_GIT_SHA=""
@@ -78,20 +81,17 @@ ENV NODE_ENV=production
 
 ARG APP_NAME
 ARG APP_PORT=3000
-ARG NEXT_PUBLIC_SENTRY_DSN_READER=""
-ARG NEXT_PUBLIC_SENTRY_DSN_ADMIN=""
-ARG NEXT_PUBLIC_GIT_SHA=""
 ENV APP_NAME=${APP_NAME}
 ENV PORT=${APP_PORT}
 ENV HOSTNAME="0.0.0.0"
 
-# Runtime Sentry configuration. The server-side Sentry SDK reads the DSN and
-# release tag at process start; these values are non-sensitive (public DSNs and
-# the git SHA). SENTRY_AUTH_TOKEN is deliberately excluded from the runtime
-# image — source map upload happens only at build time.
-ENV NEXT_PUBLIC_SENTRY_DSN_READER=${NEXT_PUBLIC_SENTRY_DSN_READER}
-ENV NEXT_PUBLIC_SENTRY_DSN_ADMIN=${NEXT_PUBLIC_SENTRY_DSN_ADMIN}
-ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA}
+# Runtime Sentry configuration is provided exclusively by the deploy target
+# (Cloud Run secret_environment_variables). Build-time NEXT_PUBLIC_* values are
+# already inlined into the client bundle during `pnpm build`, and the server
+# SDK reads its DSN from Cloud Run's injected environment at process start —
+# so the runtime image intentionally omits Sentry ARG/ENV entries.
+# SENTRY_AUTH_TOKEN is deliberately never copied here; source map upload
+# happens only during the builder stage via BuildKit secret mount.
 
 # standalone output nests files under app/ due to turbopack.root ("../..")
 COPY --from=builder --chown=nextjs:nodejs /app/${APP_NAME}/.next/standalone/app ./

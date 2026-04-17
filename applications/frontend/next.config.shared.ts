@@ -52,6 +52,13 @@ const createSentryBuildOptions = (): SentryBuildOptions => ({
   release: {
     name: process.env.NEXT_PUBLIC_GIT_SHA,
   },
+  // Source map upload failures should not fail the build. Sentry's default is
+  // to throw and abort compilation, which would block the deploy for an
+  // observability-only artifact. We log the error instead so the pipeline can
+  // continue publishing the image to Cloud Run.
+  errorHandler: (err) => {
+    console.warn("[sentry] source map upload failed:", err.message);
+  },
 });
 
 /**
