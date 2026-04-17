@@ -242,6 +242,24 @@ describe("infrastructures/tags", () => {
 
         getDocsSpy.mockRestore();
       });
+
+      it("入力識別子の順序を保って返す", async () => {
+        const repository = createRepository();
+        const tags = Forger(TagMold).forgeMultiWithSeed(5, 500);
+
+        for (const tag of tags) {
+          await repository.persist(tag).unwrap();
+        }
+
+        const reversedIdentifiers = tags
+          .map((tag) => tag.identifier)
+          .reverse();
+        const found = await repository
+          .ofIdentifiers(reversedIdentifiers)
+          .unwrap();
+
+        expect(found.map((tag) => tag.identifier)).toEqual(reversedIdentifiers);
+      });
     });
 
     describe("ofNames", () => {

@@ -290,33 +290,44 @@ export const FirebaseMemoRepository = (
           return [];
         }
 
-        const chunks = chunk(identifiers, FIRESTORE_IN_BATCH_LIMIT);
+        const uniqueIdentifiers = Array.from(new Set(identifiers));
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT);
 
         const batchResults = await Promise.all(
-          chunks.map(async (idsChunk) => {
-            const q = operations.query(
+          chunks.map(async (identifiersChunk) => {
+            const query = operations.query(
               collection,
-              operations.where("identifier", "in", idsChunk),
+              operations.where("identifier", "in", identifiersChunk),
             );
-            const snapshot = await operations.getDocs(q);
+            const snapshot = await operations.getDocs(query);
             return snapshot.docs.map((document) => document.data());
           }),
         );
 
-        const memos = batchResults.flat();
-
-        if (throwOnMissing && memos.length !== identifiers.length) {
-          const foundIds = new Set(memos.map((memo) => memo.identifier));
-          const missingIdentifiers = identifiers.filter(
-            (identifier) => !foundIds.has(identifier),
-          );
-          const firstMissing = missingIdentifiers[0];
-          throw aggregateNotFoundError(
-            "Memo",
-            `Memo ${firstMissing} not found.`,
-          );
+        const memoByIdentifier = new Map<MemoIdentifier, Memo>();
+        for (const memo of batchResults.flat()) {
+          memoByIdentifier.set(memo.identifier, memo);
         }
 
+        if (throwOnMissing) {
+          const missingIdentifier = uniqueIdentifiers.find(
+            (identifier) => !memoByIdentifier.has(identifier),
+          );
+          if (missingIdentifier !== undefined) {
+            throw aggregateNotFoundError(
+              "Memo",
+              `Memo ${missingIdentifier} not found.`,
+            );
+          }
+        }
+
+        const memos: Memo[] = [];
+        for (const identifier of identifiers) {
+          const memo = memoByIdentifier.get(identifier);
+          if (memo !== undefined) {
+            memos.push(memo);
+          }
+        }
         return memos;
       })(),
       mapError,

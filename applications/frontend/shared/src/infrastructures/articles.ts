@@ -212,33 +212,44 @@ export const FirebaseArticleRepository = (
           return [];
         }
 
-        const chunks = chunk(identifiers, FIRESTORE_IN_BATCH_LIMIT);
+        const uniqueIdentifiers = Array.from(new Set(identifiers));
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT);
 
         const batchResults = await Promise.all(
-          chunks.map(async (idsChunk) => {
-            const q = operations.query(
+          chunks.map(async (identifiersChunk) => {
+            const query = operations.query(
               collection,
-              operations.where("identifier", "in", idsChunk),
+              operations.where("identifier", "in", identifiersChunk),
             );
-            const snapshot = await operations.getDocs(q);
+            const snapshot = await operations.getDocs(query);
             return snapshot.docs.map((document) => document.data());
           }),
         );
 
-        const articles = batchResults.flat();
-
-        if (throwOnMissing && articles.length !== identifiers.length) {
-          const foundIds = new Set(articles.map((article) => article.identifier));
-          const missingIdentifiers = identifiers.filter(
-            (identifier) => !foundIds.has(identifier),
-          );
-          const firstMissing = missingIdentifiers[0];
-          throw aggregateNotFoundError(
-            "Article",
-            `Article ${firstMissing} not found.`,
-          );
+        const articleByIdentifier = new Map<ArticleIdentifier, Article>();
+        for (const article of batchResults.flat()) {
+          articleByIdentifier.set(article.identifier, article);
         }
 
+        if (throwOnMissing) {
+          const missingIdentifier = uniqueIdentifiers.find(
+            (identifier) => !articleByIdentifier.has(identifier),
+          );
+          if (missingIdentifier !== undefined) {
+            throw aggregateNotFoundError(
+              "Article",
+              `Article ${missingIdentifier} not found.`,
+            );
+          }
+        }
+
+        const articles: Article[] = [];
+        for (const identifier of identifiers) {
+          const article = articleByIdentifier.get(identifier);
+          if (article !== undefined) {
+            articles.push(article);
+          }
+        }
         return articles;
       })(),
       mapError,

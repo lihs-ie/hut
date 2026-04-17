@@ -154,20 +154,33 @@ export const FirebaseTagRepository = (
             return [];
           }
 
-          const chunks = chunk(identifiers, FIRESTORE_IN_BATCH_LIMIT);
+          const uniqueIdentifiers = Array.from(new Set(identifiers));
+          const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT);
 
           const batchResults = await Promise.all(
-            chunks.map(async (idsChunk) => {
-              const q = operations.query(
+            chunks.map(async (identifiersChunk) => {
+              const query = operations.query(
                 collection,
-                operations.where("identifier", "in", idsChunk),
+                operations.where("identifier", "in", identifiersChunk),
               );
-              const snapshot = await operations.getDocs(q);
+              const snapshot = await operations.getDocs(query);
               return snapshot.docs.map((document) => document.data() as Tag);
             }),
           );
 
-          return batchResults.flat();
+          const tagByIdentifier = new Map<TagIdentifier, Tag>();
+          for (const tag of batchResults.flat()) {
+            tagByIdentifier.set(tag.identifier, tag);
+          }
+
+          const tags: Tag[] = [];
+          for (const identifier of identifiers) {
+            const tag = tagByIdentifier.get(identifier);
+            if (tag !== undefined) {
+              tags.push(tag);
+            }
+          }
+          return tags;
         })(),
         (error) => mapError(error),
       );

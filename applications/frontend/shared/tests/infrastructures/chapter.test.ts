@@ -201,6 +201,29 @@ describe("infrastructures/chapter", () => {
 
         getDocsSpy.mockRestore();
       });
+
+      it("入力識別子の順序を保って返す", async () => {
+        const repository = FirebaseChapterRepository(
+          firestore,
+          getOperations(),
+        );
+        const chapterList = Forger(ChapterMold).forgeMultiWithSeed(5, 500);
+
+        for (const chapter of chapterList) {
+          await repository.persist(chapter).unwrap();
+        }
+
+        const reversedIdentifiers = chapterList
+          .map((chapter) => chapter.identifier)
+          .reverse();
+        const found = await repository
+          .ofIdentifiers(reversedIdentifiers)
+          .unwrap();
+
+        expect(found.map((chapter) => chapter.identifier)).toEqual(
+          reversedIdentifiers,
+        );
+      });
     });
 
     describe("persist", () => {

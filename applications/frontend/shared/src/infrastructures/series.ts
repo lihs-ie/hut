@@ -290,33 +290,44 @@ export const FirebaseSeriesRepository = (
           return [];
         }
 
-        const chunks = chunk(identifiers, FIRESTORE_IN_BATCH_LIMIT);
+        const uniqueIdentifiers = Array.from(new Set(identifiers));
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT);
 
         const batchResults = await Promise.all(
-          chunks.map(async (idsChunk) => {
-            const q = operations.query(
+          chunks.map(async (identifiersChunk) => {
+            const query = operations.query(
               collection,
-              operations.where("identifier", "in", idsChunk),
+              operations.where("identifier", "in", identifiersChunk),
             );
-            const snapshot = await operations.getDocs(q);
+            const snapshot = await operations.getDocs(query);
             return snapshot.docs.map((document) => document.data());
           }),
         );
 
-        const seriesList = batchResults.flat();
-
-        if (throwOnMissing && seriesList.length !== identifiers.length) {
-          const foundIds = new Set(seriesList.map((series) => series.identifier));
-          const missingIdentifiers = identifiers.filter(
-            (identifier) => !foundIds.has(identifier),
-          );
-          const firstMissing = missingIdentifiers[0];
-          throw aggregateNotFoundError(
-            "Series",
-            `Series ${firstMissing} not found.`,
-          );
+        const seriesByIdentifier = new Map<SeriesIdentifier, Series>();
+        for (const series of batchResults.flat()) {
+          seriesByIdentifier.set(series.identifier, series);
         }
 
+        if (throwOnMissing) {
+          const missingIdentifier = uniqueIdentifiers.find(
+            (identifier) => !seriesByIdentifier.has(identifier),
+          );
+          if (missingIdentifier !== undefined) {
+            throw aggregateNotFoundError(
+              "Series",
+              `Series ${missingIdentifier} not found.`,
+            );
+          }
+        }
+
+        const seriesList: Series[] = [];
+        for (const identifier of identifiers) {
+          const series = seriesByIdentifier.get(identifier);
+          if (series !== undefined) {
+            seriesList.push(series);
+          }
+        }
         return seriesList;
       })(),
       mapError,

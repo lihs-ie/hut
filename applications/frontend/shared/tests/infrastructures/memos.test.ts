@@ -257,6 +257,26 @@ describe("infrastructures/memos", () => {
 
         getDocsSpy.mockRestore();
       });
+
+      it("入力識別子の順序を保って返す", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const memos = Forger(MemoMold).forgeMultiWithSeed(5, 300);
+
+        for (const memo of memos) {
+          await repository.persist(memo).unwrap();
+        }
+
+        const reversedIdentifiers = memos
+          .map((memo) => memo.identifier)
+          .reverse();
+        const found = await repository
+          .ofIdentifiers(reversedIdentifiers)
+          .unwrap();
+
+        expect(found.map((memo) => memo.identifier)).toEqual(
+          reversedIdentifiers,
+        );
+      });
     });
 
     describe("search", () => {

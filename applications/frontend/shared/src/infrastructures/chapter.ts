@@ -232,35 +232,44 @@ export const FirebaseChapterRepository = (
           return [];
         }
 
-        const chunks = chunk(identifiers, FIRESTORE_IN_BATCH_LIMIT);
+        const uniqueIdentifiers = Array.from(new Set(identifiers));
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT);
 
         const batchResults = await Promise.all(
-          chunks.map(async (idsChunk) => {
-            const q = operations.query(
+          chunks.map(async (identifiersChunk) => {
+            const query = operations.query(
               collection,
-              operations.where("identifier", "in", idsChunk),
+              operations.where("identifier", "in", identifiersChunk),
             );
-            const snapshot = await operations.getDocs(q);
+            const snapshot = await operations.getDocs(query);
             return snapshot.docs.map((document) => document.data());
           }),
         );
 
-        const chapterList = batchResults.flat();
-
-        if (throwOnMissing && chapterList.length !== identifiers.length) {
-          const foundIds = new Set(
-            chapterList.map((chapter) => chapter.identifier),
-          );
-          const missingIdentifiers = identifiers.filter(
-            (identifier) => !foundIds.has(identifier),
-          );
-          const firstMissing = missingIdentifiers[0];
-          throw aggregateNotFoundError(
-            "Chapter",
-            `Chapter ${firstMissing} not found.`,
-          );
+        const chapterByIdentifier = new Map<ChapterIdentifier, Chapter>();
+        for (const chapter of batchResults.flat()) {
+          chapterByIdentifier.set(chapter.identifier, chapter);
         }
 
+        if (throwOnMissing) {
+          const missingIdentifier = uniqueIdentifiers.find(
+            (identifier) => !chapterByIdentifier.has(identifier),
+          );
+          if (missingIdentifier !== undefined) {
+            throw aggregateNotFoundError(
+              "Chapter",
+              `Chapter ${missingIdentifier} not found.`,
+            );
+          }
+        }
+
+        const chapterList: Chapter[] = [];
+        for (const identifier of identifiers) {
+          const chapter = chapterByIdentifier.get(identifier);
+          if (chapter !== undefined) {
+            chapterList.push(chapter);
+          }
+        }
         return chapterList;
       })(),
       mapError,
