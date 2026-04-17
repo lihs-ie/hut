@@ -31,7 +31,7 @@
     "@google-cloud/storage": "^7.19.0",
     "@shikijs/rehype": "^4.0.1",
     "@types/mdast": "^4.0.4",
-    "dompurify": "^3.3.3",
+    "dompurify": "^3.4.0",
     "firebase": "^12.7.0",
     "firebase-admin": "^13.7.0",
     "hash-it": "^7.0.2",
