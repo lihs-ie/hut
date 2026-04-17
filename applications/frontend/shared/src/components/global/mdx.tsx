@@ -85,7 +85,7 @@ const createMdxComponents = () => {
     },
     pre: CodeBlock,
     LinkCard: (props: { url: string }) => <LinkCard url={props.url} />,
-    MermaidSvg: (props: { html: string; fallback: string }) => (
+    MermaidSvg: (props: { html: string; fallback?: boolean }) => (
       <MermaidSvg html={props.html} fallback={props.fallback} />
     ),
   };

@@ -26,11 +26,15 @@ const createMermaidJsxNode = (
       name: "html",
       value: html,
     },
-    {
-      type: "mdxJsxAttribute",
-      name: "fallback",
-      value: fallback ? "true" : "false",
-    },
+    ...(fallback
+      ? [
+          {
+            type: "mdxJsxAttribute" as const,
+            name: "fallback",
+            value: null,
+          },
+        ]
+      : []),
   ],
   children: [],
 });

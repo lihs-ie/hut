@@ -1,27 +1,13 @@
 type Props = {
   html: string;
-  fallback: string;
+  fallback?: boolean;
 };
 
-const escapeHtml = (text: string): string =>
-  text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
 export const MermaidSvg = (props: Props) => {
-  const isFallback = props.fallback === "true";
-
-  if (isFallback) {
+  if (props.fallback) {
     return (
       <pre className="mermaid-svg fallback">
-        <code
-          dangerouslySetInnerHTML={{
-            __html: escapeHtml(props.html),
-          }}
-        />
+        <code>{props.html}</code>
       </pre>
     );
   }
