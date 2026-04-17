@@ -191,6 +191,46 @@ export const getErrorDetail = (error: unknown): ErrorDetail | null => {
   return createErrorDetail("UnknownError", String(error), 500, error);
 };
 
+const isClientSideError = (error: unknown): boolean => {
+  if (isAggregateNotFoundError(error)) {
+    return true;
+  }
+
+  if (Array.isArray(error) && error.every(isAggregateNotFoundError)) {
+    return true;
+  }
+
+  if (isValidationError(error)) {
+    return true;
+  }
+
+  if (Array.isArray(error) && error.some(isValidationError)) {
+    return true;
+  }
+
+  if (isUnauthenticatedError(error)) {
+    return true;
+  }
+
+  if (isPermissionDeniedError(error)) {
+    return true;
+  }
+
+  if (isDuplicationError(error)) {
+    return true;
+  }
+
+  if (isResourceExhaustedError(error)) {
+    return true;
+  }
+
+  if (isServiceUnavailableError(error)) {
+    return true;
+  }
+
+  return false;
+};
+
 export async function unwrapForNextJs<T, E>(
   asyncResult: AsyncResult<T, E>
 ): Promise<T> {
@@ -207,9 +247,11 @@ export async function unwrapForNextJs<T, E>(
         );
       }
 
-      captureException(error, {
-        tags: { source: "unwrapForNextJs" },
-      });
+      if (!isClientSideError(error)) {
+        captureException(error, {
+          tags: { source: "unwrapForNextJs" },
+        });
+      }
 
       if (isAggregateNotFoundError(error)) {
         notFound();
