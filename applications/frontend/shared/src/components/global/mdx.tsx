@@ -2,6 +2,7 @@ import { MDXRemote, MDXRemoteProps } from "next-mdx-remote/rsc";
 import rehypeShiki from "@shikijs/rehype";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import React from "react";
 import styles from "./mdx.module.css";
@@ -17,6 +18,7 @@ export const mdxOptions: MDXRemoteProps["options"] = {
   mdxOptions: {
     remarkPlugins: [remarkGfm, remarkBreaks, remarkLinkCard, remarkMermaid],
     rehypePlugins: [
+      [rehypeRaw, { passThrough: ["mdxJsxFlowElement"] }],
       [
         rehypeShiki,
         {
