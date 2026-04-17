@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import type { RemotePattern } from "next/dist/shared/lib/image-config";
+import { withSentryConfig, type SentryBuildOptions } from "@sentry/nextjs";
 import { parseImageRemotePatterns } from "./shared/src/config/image-remote-pattern";
 
 type Options = {
@@ -17,6 +18,8 @@ const EMULATOR_PATTERNS: ReadonlyArray<RemotePattern> = [
  */
 const EMULATOR_ORIGIN = "http://localhost:9099";
 
+const SENTRY_CONNECT_SOURCES = "https://*.sentry.io https://*.ingest.sentry.io";
+
 const createDefaultContentSecurityPolicy = (
   isProduction: boolean,
   useEmulator: boolean,
@@ -29,12 +32,32 @@ const createDefaultContentSecurityPolicy = (
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
-    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com${useEmulator ? ` ${EMULATOR_ORIGIN}` : ""}`,
+    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com ${SENTRY_CONNECT_SOURCES}${useEmulator ? ` ${EMULATOR_ORIGIN}` : ""}`,
     `frame-src 'self' https://accounts.google.com https://*.firebaseapp.com${useEmulator ? ` ${EMULATOR_ORIGIN}` : ""}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
   ].join("; ");
+
+const createSentryBuildOptions = (): SentryBuildOptions => ({
+  silent: !process.env.CI,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  widenClientFileUpload: true,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+  release: {
+    name: process.env.NEXT_PUBLIC_GIT_SHA,
+  },
+});
+
+/**
+ * Sentry 設定で Next.js 設定をラップする。
+ */
+export const wrapWithSentryConfig = <C extends NextConfig>(nextConfig: C): C =>
+  withSentryConfig(nextConfig, createSentryBuildOptions());
 
 /**
  * frontend アプリ共通の Next.js 設定を生成する。

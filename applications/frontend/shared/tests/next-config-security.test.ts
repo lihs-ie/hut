@@ -258,6 +258,36 @@ describe("next.config.shared - セキュリティヘッダー", () => {
     });
   });
 
+  describe("Sentry エンドポイントが connect-src に含まれる", () => {
+    const getCSPDirective = async (
+      directiveName: string,
+      options?: Parameters<typeof createBaseNextConfig>[0],
+    ): Promise<string | undefined> => {
+      const config = createBaseNextConfig(options);
+      const headersResult = await config.headers?.();
+      const allRoutesHeader = headersResult!.find(
+        (h) => h.source === "/(.*)",
+      );
+      const header = allRoutesHeader!.headers.find(
+        (h) => h.key === "Content-Security-Policy",
+      );
+      return header?.value
+        ?.split(";")
+        .map((d) => d.trim())
+        .find((d) => d.startsWith(directiveName));
+    };
+
+    it("connect-src に https://*.sentry.io が含まれる", async () => {
+      const connectSrc = await getCSPDirective("connect-src");
+      expect(connectSrc).toContain("https://*.sentry.io");
+    });
+
+    it("connect-src に https://*.ingest.sentry.io が含まれる", async () => {
+      const connectSrc = await getCSPDirective("connect-src");
+      expect(connectSrc).toContain("https://*.ingest.sentry.io");
+    });
+  });
+
   describe("allowedOrigins", () => {
     it("SERVER_ACTIONS_ALLOWED_ORIGINS が未設定でも serverActions が設定される", () => {
       delete process.env.SERVER_ACTIONS_ALLOWED_ORIGINS;

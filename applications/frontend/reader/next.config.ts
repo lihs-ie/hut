@@ -1,8 +1,13 @@
 import MDX from "@next/mdx";
-import { createBaseNextConfig } from "../next.config.shared";
+import {
+  createBaseNextConfig,
+  wrapWithSentryConfig,
+} from "../next.config.shared";
 
 const withMDX = MDX({ extension: /\.mdx?$/ });
 const isProduction = process.env.NODE_ENV === "production";
+const SENTRY_CONNECT_SOURCES = "https://*.sentry.io https://*.ingest.sentry.io";
+
 const readerContentSecurityPolicy = [
   "default-src 'self'",
   isProduction
@@ -11,7 +16,7 @@ const readerContentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com",
+  `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com ${SENTRY_CONNECT_SOURCES}`,
   "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com",
   "frame-ancestors 'none'",
   "object-src 'none'",
@@ -19,10 +24,12 @@ const readerContentSecurityPolicy = [
   "form-action 'self'",
 ].join("; ");
 
-export default withMDX(
-  createBaseNextConfig({
-    useFirebaseEmulator:
-      process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true",
-    contentSecurityPolicy: readerContentSecurityPolicy,
-  }),
+export default wrapWithSentryConfig(
+  withMDX(
+    createBaseNextConfig({
+      useFirebaseEmulator:
+        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true",
+      contentSecurityPolicy: readerContentSecurityPolicy,
+    }),
+  ),
 );
