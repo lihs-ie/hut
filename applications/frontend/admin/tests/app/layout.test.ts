@@ -34,13 +34,20 @@ describe("admin font configuration", () => {
     vi.resetModules();
   });
 
-  it("Noto_Sans_JP は weight ['400','500','700','800','900'] で呼び出される", async () => {
+  it("Noto_Sans_JP は CSS で使用される weight 全て (400-900) で呼び出される", async () => {
     await import("../../src/app/layout");
     expect(notoSansJPMock).toHaveBeenCalledTimes(1);
     const callArgs = notoSansJPMock.mock.calls[0][0] as {
       weight: string[];
     };
-    expect(callArgs.weight).toEqual(["400", "500", "700", "800", "900"]);
+    expect(callArgs.weight).toEqual([
+      "400",
+      "500",
+      "600",
+      "700",
+      "800",
+      "900",
+    ]);
   });
 
   it("Noto_Sans_JP には display: 'swap' が指定される", async () => {
