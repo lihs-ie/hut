@@ -70,37 +70,44 @@ describe("components/organisms/series/chapter/ChapterContent", () => {
       "@shared/components/organisms/series/chapter/content"
     );
 
-    const startTimes: Record<string, number> = {};
-    const endTimes: Record<string, number> = {};
+    let rendererStarted = false;
+    let findChaptersStarted = false;
+    let resolveRenderer!: (value: null) => void;
+    let resolveFindChapters!: (value: typeof currentChapter[]) => void;
 
-    const delay = (ms: number) =>
-      new Promise((resolve) => setTimeout(resolve, ms));
+    const rendererPromise = new Promise<null>((resolve) => {
+      resolveRenderer = resolve;
+    });
+    const findChaptersPromise = new Promise<typeof currentChapter[]>(
+      (resolve) => {
+        resolveFindChapters = resolve;
+      },
+    );
 
-    await ChapterContent({
+    const pending = ChapterContent({
       slug,
       chapterSlug,
       chapters: [identifier],
-      renderer: async () => {
-        startTimes.renderer = Date.now();
-        await delay(30);
-        endTimes.renderer = Date.now();
-        return null;
+      renderer: () => {
+        rendererStarted = true;
+        return rendererPromise;
       },
       findChapterBySlug: async () => currentChapter,
-      findChaptersByIdentifiers: async () => {
-        startTimes.findChaptersByIdentifiers = Date.now();
-        await delay(30);
-        endTimes.findChaptersByIdentifiers = Date.now();
-        return [currentChapter];
+      findChaptersByIdentifiers: () => {
+        findChaptersStarted = true;
+        return findChaptersPromise;
       },
     });
 
-    const rendererStart = startTimes.renderer;
-    const findChaptersStart = startTimes.findChaptersByIdentifiers;
-    const rendererEnd = endTimes.renderer;
-    const findChaptersEnd = endTimes.findChaptersByIdentifiers;
+    while (!rendererStarted || !findChaptersStarted) {
+      await Promise.resolve();
+    }
 
-    expect(rendererStart).toBeLessThan(findChaptersEnd);
-    expect(findChaptersStart).toBeLessThan(rendererEnd);
+    expect(rendererStarted).toBe(true);
+    expect(findChaptersStarted).toBe(true);
+
+    resolveRenderer(null);
+    resolveFindChapters([currentChapter]);
+    await pending;
   });
 });

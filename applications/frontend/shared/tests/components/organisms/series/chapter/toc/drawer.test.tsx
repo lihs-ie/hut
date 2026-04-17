@@ -1,9 +1,34 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { TOCDrawer } from "@shared/components/organisms/series/chapter/toc/drawer";
 
+const mockMatchMedia = (matches: boolean) => {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+};
+
 describe("TOCDrawer", () => {
+  beforeEach(() => {
+    mockMatchMedia(false);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   test("初期状態では drawer は閉じている", () => {
     render(
       <TOCDrawer>
@@ -108,5 +133,49 @@ describe("TOCDrawer", () => {
     );
 
     expect(screen.getByTestId("toc-content")).toBeInTheDocument();
+  });
+
+  test("mobile で drawer が閉じているとき inert と aria-hidden が付く", () => {
+    mockMatchMedia(true);
+
+    const { container } = render(
+      <TOCDrawer>
+        <div>目次コンテンツ</div>
+      </TOCDrawer>,
+    );
+
+    const drawer = container.querySelector("#chapter-toc-drawer");
+    expect(drawer).toHaveAttribute("aria-hidden", "true");
+    expect(drawer).toHaveAttribute("inert");
+  });
+
+  test("mobile で drawer が開いているとき inert と aria-hidden が外れる", () => {
+    mockMatchMedia(true);
+
+    const { container } = render(
+      <TOCDrawer>
+        <div>目次コンテンツ</div>
+      </TOCDrawer>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "目次を開く" }));
+
+    const drawer = container.querySelector("#chapter-toc-drawer");
+    expect(drawer).toHaveAttribute("aria-hidden", "false");
+    expect(drawer).not.toHaveAttribute("inert");
+  });
+
+  test("desktop では drawer が閉じていても inert/aria-hidden が付かない", () => {
+    mockMatchMedia(false);
+
+    const { container } = render(
+      <TOCDrawer>
+        <div>目次コンテンツ</div>
+      </TOCDrawer>,
+    );
+
+    const drawer = container.querySelector("#chapter-toc-drawer");
+    expect(drawer).toHaveAttribute("aria-hidden", "false");
+    expect(drawer).not.toHaveAttribute("inert");
   });
 });

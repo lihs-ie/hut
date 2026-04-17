@@ -1,6 +1,12 @@
 "use client";
 
-import { MouseEvent, ReactNode, useEffect, useState } from "react";
+import {
+  MouseEvent,
+  ReactNode,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { MenuIcon } from "@shared/components/atoms/icon/hamburger";
 import { XIcon } from "@shared/components/atoms/icon/cross";
@@ -11,8 +17,26 @@ export type Props = {
   children: ReactNode;
 };
 
+const MOBILE_MEDIA_QUERY = "(max-width: 1023px)";
+
+const subscribeToMobileMediaQuery = (callback: () => void) => {
+  const mediaQueryList = window.matchMedia(MOBILE_MEDIA_QUERY);
+  mediaQueryList.addEventListener("change", callback);
+  return () => mediaQueryList.removeEventListener("change", callback);
+};
+
+const getMobileMediaQuerySnapshot = () =>
+  window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+
+const getMobileMediaQueryServerSnapshot = () => false;
+
 export const TOCDrawer = (props: Props) => {
   const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useSyncExternalStore(
+    subscribeToMobileMediaQuery,
+    getMobileMediaQuerySnapshot,
+    getMobileMediaQueryServerSnapshot,
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -30,7 +54,7 @@ export const TOCDrawer = (props: Props) => {
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "";
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
@@ -39,6 +63,8 @@ export const TOCDrawer = (props: Props) => {
       setIsOpen(false);
     }
   };
+
+  const isInactive = isMobile && !isOpen;
 
   return (
     <div className={styles.container}>
@@ -63,6 +89,8 @@ export const TOCDrawer = (props: Props) => {
         id="chapter-toc-drawer"
         className={styles.drawer}
         data-open={isOpen}
+        inert={isInactive}
+        aria-hidden={isInactive}
         onClick={handleDrawerClick}
       >
         <button
