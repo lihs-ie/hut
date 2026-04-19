@@ -7,7 +7,7 @@ import { Header } from "@shared/components/organisms/header";
 import { Footer } from "@shared/components/organisms/footer";
 import { FooterPresenter } from "@shared/components/organisms/footer/index.presenter";
 import { FooterErrorBoundary } from "@shared/components/molecules/boundary/footer-error";
-import { getProfile } from "@shared/actions/admin";
+import { getProfile } from "@/actions/admin";
 import { NavigationProvider } from "@shared/components/molecules/navigation/provider";
 import { ToastProvider } from "@shared/components/molecules/toast";
 import { ThemeProvider } from "@shared/components/molecules/theme/provider";

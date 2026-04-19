@@ -6,11 +6,18 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
+    "build:cloudflare": "bash scripts/patch-opennext.sh .. && BUILD_TARGET=cloudflare next build && ln -sfn applications/frontend/reader/.next .next/standalone/.next && opennextjs-cloudflare build --skipNextBuild",
+    "preview:cloudflare": "pnpm build:cloudflare && opennextjs-cloudflare preview",
+    "deploy:cloudflare": "pnpm build:cloudflare && opennextjs-cloudflare deploy",
+    "upload:cloudflare": "pnpm build:cloudflare && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hut/shared": "workspace:*",
+    "@opennextjs/cloudflare": "^1.18.1",
+    "firebase": "^12.11.0",
     "next": "16.2.3",
     "next-mdx-remote": "^6.0.0",
     "nuqs": "^2.8.6",
@@ -24,6 +31,9 @@
     "@lihs-ie/forger-ts": "^0.0.2",
     "@mdx-js/loader": "^3.1.1",
     "@next/mdx": "^16.2.3",
-    "@types/mdx": "^2.0.13"
+    "@types/mdx": "^2.0.13",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "remark-breaks": "^4.0.0",
+    "wrangler": "^4.83.0"
   }
 }

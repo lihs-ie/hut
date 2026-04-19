@@ -75,3 +75,14 @@ variable "notification_email" {
   type        = string
   sensitive   = true
 }
+
+variable "cloudflare_account_id" {
+  description = "Cloudflare account ID hosting the reader Cloudflare Worker"
+  type        = string
+}
+
+variable "cloudflare_api_token" {
+  description = "Cloudflare API token with Workers / R2 edit scope"
+  type        = string
+  sensitive   = true
+}

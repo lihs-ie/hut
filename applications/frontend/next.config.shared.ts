@@ -1,11 +1,20 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 import type { RemotePattern } from "next/dist/shared/lib/image-config";
 import { parseImageRemotePatterns } from "./shared/src/config/image-remote-pattern";
+
+const workspaceRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+);
 
 type Options = {
   readonly useFirebaseEmulator?: boolean;
   readonly includeCSP?: boolean;
   readonly contentSecurityPolicy?: string;
+  readonly buildTarget?: string;
 };
 
 const EMULATOR_PATTERNS: ReadonlyArray<RemotePattern> = [
@@ -46,6 +55,7 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
   const contentSecurityPolicy =
     options?.contentSecurityPolicy ??
     createDefaultContentSecurityPolicy(isProduction, useEmulator);
+  const isCloudflareBuild = options?.buildTarget === "cloudflare";
 
   const remotePatterns: Array<RemotePattern> = [
     ...parseImageRemotePatterns(process.env.IMAGE_REMOTE_PATTERNS),
@@ -58,6 +68,7 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
 
   return {
     output: "standalone",
+    outputFileTracingRoot: workspaceRoot,
     poweredByHeader: false,
     headers: async () => [
       {
@@ -101,7 +112,7 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
       },
     ],
     turbopack: {
-      root: "../..",
+      root: workspaceRoot,
     },
     reactCompiler: true,
     pageExtensions: ["tsx", "ts", "jsx", "js", "md", "mdx"],

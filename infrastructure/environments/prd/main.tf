@@ -383,3 +383,10 @@ module "billing_budget" {
 
   labels = local.common_labels
 }
+
+module "cloudflare_reader" {
+  source = "../../modules/cloudflare_reader"
+
+  cloudflare_account_id         = var.cloudflare_account_id
+  incremental_cache_bucket_name = "hut-prd-reader-cache"
+}

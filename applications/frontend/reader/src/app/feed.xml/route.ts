@@ -1,5 +1,7 @@
-import { search as searchArticles } from "@shared/actions/article";
-import { search as searchMemos } from "@shared/actions/memo";
+import {
+  searchArticles,
+  searchMemos,
+} from "@/actions/feed/article-search";
 
 const SITE_TITLE = "hut";
 const SITE_DESCRIPTION = "個人的な技術学習記事やメモを公開するためのプラットフォームです。";

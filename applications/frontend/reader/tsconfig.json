@@ -12,6 +12,8 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "next.config.ts",
+    "open-next.config.ts",
+    "cloudflare-env.d.ts",
     "../shared/src/actions",
     "../shared/types"
   ]
