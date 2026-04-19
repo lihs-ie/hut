@@ -22,5 +22,9 @@ export const reactAlias: UserConfig["resolve"] = {
       currentDirectory,
       "shared/node_modules/@testing-library/jest-dom",
     ),
+    "server-only": path.resolve(
+      currentDirectory,
+      "shared/tests/support/server-only-mock.ts",
+    ),
   },
 };

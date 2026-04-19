@@ -1,3 +1,4 @@
+import "server-only";
 import {
   getApp,
   getApps,
@@ -27,10 +28,12 @@ const resolveProjectId = (): string => {
   if (useEmulator) {
     return "demo-hut";
   }
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID ??
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   if (!projectId) {
     throw new Error(
-      "NEXT_PUBLIC_FIREBASE_PROJECT_ID is required for Firebase REST client",
+      "FIREBASE_PROJECT_ID is required for Firebase REST client",
     );
   }
   return projectId;
@@ -40,16 +43,16 @@ const resolveApiKey = (): string => {
   if (useEmulator) {
     return "fake-api-key";
   }
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const apiKey =
+    process.env.FIREBASE_API_KEY ?? process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   if (!apiKey) {
-    throw new Error(
-      "NEXT_PUBLIC_FIREBASE_API_KEY is required for Firebase REST client",
-    );
+    throw new Error("FIREBASE_API_KEY is required for Firebase REST client");
   }
   return apiKey;
 };
 
 const resolveDatabaseId = (): string | undefined =>
+  process.env.FIREBASE_DATABASE_ID ??
   process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID;
 
 const getRestApp = (): FirebaseApp => {
