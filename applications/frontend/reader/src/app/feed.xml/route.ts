@@ -1,5 +1,9 @@
-import { search as searchArticles } from "@shared/actions/article";
-import { search as searchMemos } from "@shared/actions/memo";
+import {
+  searchArticles,
+  searchMemos,
+  searchSeries,
+} from "@/actions/feed/article-search";
+import { findPublishedChaptersByIdentifiers } from "@/actions/chapter";
 
 const SITE_TITLE = "hut";
 const SITE_DESCRIPTION = "個人的な技術学習記事やメモを公開するためのプラットフォームです。";
@@ -57,10 +61,31 @@ function buildRssXml(siteUrl: string, items: FeedItem[]): string {
 export async function GET(): Promise<Response> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hut.lihs.dev";
 
-  const [articles, memos] = await Promise.all([
+  const [articles, memos, seriesList] = await Promise.all([
     searchArticles({}),
     searchMemos({ tags: null, freeWord: null, status: null }),
+    searchSeries(),
   ]);
+
+  const allChapterIdentifiers = [
+    ...new Set(seriesList.flatMap((series) => series.chapters)),
+  ];
+  const allChapters =
+    allChapterIdentifiers.length > 0
+      ? await findPublishedChaptersByIdentifiers(allChapterIdentifiers)
+      : [];
+  const chapterByIdentifier = new Map(
+    allChapters.map((chapter) => [chapter.identifier, chapter] as const),
+  );
+  const chaptersBySeries = seriesList.map((series) => ({
+    series,
+    chapters: series.chapters
+      .map((identifier) => chapterByIdentifier.get(identifier))
+      .filter(
+        (chapter): chapter is (typeof allChapters)[number] =>
+          chapter !== undefined,
+      ),
+  }));
 
   const toUrl = (path: string) => new URL(path, siteUrl).toString();
 
@@ -80,7 +105,31 @@ export async function GET(): Promise<Response> {
     guid: toUrl(`/memos/${memo.slug}`),
   }));
 
-  const allItems = [...articleItems, ...memoItems].sort(
+  const seriesItems: FeedItem[] = seriesList.map((series) => ({
+    title: series.title,
+    link: toUrl(`/series/${series.slug}`),
+    description: series.description ?? `${series.title}の連載ページです`,
+    pubDate: series.timeline.updatedAt.toUTCString(),
+    guid: toUrl(`/series/${series.slug}`),
+  }));
+
+  const chapterItems: FeedItem[] = chaptersBySeries.flatMap(
+    ({ series, chapters }) =>
+      chapters.map((chapter) => ({
+        title: `${chapter.title} | ${series.title}`,
+        link: toUrl(`/series/${series.slug}/chapters/${chapter.slug}`),
+        description: `${series.title} - ${chapter.title}`,
+        pubDate: chapter.timeline.updatedAt.toUTCString(),
+        guid: toUrl(`/series/${series.slug}/chapters/${chapter.slug}`),
+      })),
+  );
+
+  const allItems = [
+    ...articleItems,
+    ...memoItems,
+    ...seriesItems,
+    ...chapterItems,
+  ].sort(
     (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime(),
   );
 

@@ -1,8 +1,10 @@
 import MDX from "@next/mdx";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import { createBaseNextConfig } from "../next.config.shared";
 
 const withMDX = MDX({ extension: /\.mdx?$/ });
 const isProduction = process.env.NODE_ENV === "production";
+const isCloudflareBuild = process.env.BUILD_TARGET === "cloudflare";
 const readerContentSecurityPolicy = [
   "default-src 'self'",
   isProduction
@@ -26,3 +28,7 @@ export default withMDX(
     contentSecurityPolicy: readerContentSecurityPolicy,
   }),
 );
+
+if (isCloudflareBuild) {
+  initOpenNextCloudflareForDev();
+}

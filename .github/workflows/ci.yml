@@ -73,6 +73,10 @@ jobs:
       - name: Test
         run: pnpm test:coverage
         working-directory: applications/frontend
+        env:
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "true"
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
+          FIREBASE_PROJECT_ID: demo-hut
 
       - name: Upload Coverage Report
         if: always()

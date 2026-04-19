@@ -10,7 +10,7 @@ import { remarkMermaid } from "@shared/plugins/remark-mermaid";
 import { LinkCard } from "@shared/components/molecules/card/link";
 import { ContentImage } from "@shared/components/atoms/image/content";
 import { CopyButton } from "@shared/components/molecules/button/copy";
-import { MermaidSvg } from "@shared/components/molecules/mermaid/svg";
+import { MermaidClient } from "@shared/components/molecules/mermaid/client";
 
 export type MarkdownRenderer = (content: string) => React.ReactNode;
 
@@ -85,8 +85,8 @@ const createMdxComponents = () => {
     },
     pre: CodeBlock,
     LinkCard: (props: { url: string }) => <LinkCard url={props.url} />,
-    MermaidSvg: (props: { html: string; fallback?: boolean }) => (
-      <MermaidSvg html={props.html} fallback={props.fallback} />
+    MermaidClient: (props: { code: string }) => (
+      <MermaidClient code={props.code} />
     ),
   };
 };

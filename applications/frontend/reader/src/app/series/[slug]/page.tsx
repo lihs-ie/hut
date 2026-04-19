@@ -1,4 +1,4 @@
-import { findAllTags } from "@shared/actions/tag";
+import { findAllTags } from "@/actions/tag";
 import { findPublishedChaptersByIdentifiers } from "@/actions/chapter";
 import { SeriesIndex } from "@shared/components/templates/series";
 import { slugSchema } from "@shared/domains/common/slug";
