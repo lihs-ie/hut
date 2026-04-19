@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "build:cloudflare": "bash scripts/patch-opennext.sh .. && BUILD_TARGET=cloudflare next build && ln -sfn applications/frontend/reader/.next .next/standalone/.next && opennextjs-cloudflare build --skipNextBuild",
+    "build:cloudflare": "bash scripts/build-cloudflare.sh",
     "preview:cloudflare": "pnpm build:cloudflare && opennextjs-cloudflare preview",
     "deploy:cloudflare": "pnpm build:cloudflare && opennextjs-cloudflare deploy",
     "upload:cloudflare": "pnpm build:cloudflare && opennextjs-cloudflare upload",
