@@ -1,7 +1,9 @@
 import {
   searchArticles,
   searchMemos,
+  searchSeries,
 } from "@/actions/feed/article-search";
+import { findPublishedChaptersByIdentifiers } from "@/actions/chapter";
 
 const SITE_TITLE = "hut";
 const SITE_DESCRIPTION = "個人的な技術学習記事やメモを公開するためのプラットフォームです。";
@@ -59,10 +61,18 @@ function buildRssXml(siteUrl: string, items: FeedItem[]): string {
 export async function GET(): Promise<Response> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hut.lihs.dev";
 
-  const [articles, memos] = await Promise.all([
+  const [articles, memos, seriesList] = await Promise.all([
     searchArticles({}),
     searchMemos({ tags: null, freeWord: null, status: null }),
+    searchSeries(),
   ]);
+
+  const chaptersBySeries = await Promise.all(
+    seriesList.map(async (series) => ({
+      series,
+      chapters: await findPublishedChaptersByIdentifiers(series.chapters),
+    })),
+  );
 
   const toUrl = (path: string) => new URL(path, siteUrl).toString();
 
@@ -82,7 +92,31 @@ export async function GET(): Promise<Response> {
     guid: toUrl(`/memos/${memo.slug}`),
   }));
 
-  const allItems = [...articleItems, ...memoItems].sort(
+  const seriesItems: FeedItem[] = seriesList.map((series) => ({
+    title: series.title,
+    link: toUrl(`/series/${series.slug}`),
+    description: series.description ?? `${series.title}の連載ページです`,
+    pubDate: series.timeline.updatedAt.toUTCString(),
+    guid: toUrl(`/series/${series.slug}`),
+  }));
+
+  const chapterItems: FeedItem[] = chaptersBySeries.flatMap(
+    ({ series, chapters }) =>
+      chapters.map((chapter) => ({
+        title: `${chapter.title} | ${series.title}`,
+        link: toUrl(`/series/${series.slug}/chapters/${chapter.slug}`),
+        description: `${series.title} - ${chapter.title}`,
+        pubDate: chapter.timeline.updatedAt.toUTCString(),
+        guid: toUrl(`/series/${series.slug}/chapters/${chapter.slug}`),
+      })),
+  );
+
+  const allItems = [
+    ...articleItems,
+    ...memoItems,
+    ...seriesItems,
+    ...chapterItems,
+  ].sort(
     (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime(),
   );
 

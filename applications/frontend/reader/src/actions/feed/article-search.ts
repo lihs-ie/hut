@@ -6,8 +6,10 @@ import { Article, UnvalidatedCriteria } from "@shared/domains/articles";
 import { UnvalidatedCriteria as UnvalidatedMemoCriteria } from "@shared/domains/memo";
 import { PublishStatus } from "@shared/domains/common";
 import { Memo } from "@shared/domains/memo";
+import { Series } from "@shared/domains/series";
 import { ArticleWorkflowProvider } from "@/providers/workflows/article";
 import { MemoWorkflowProvider } from "@/providers/workflows/memo";
+import { ReaderSeriesWorkflowProvider } from "@/providers/workflows/series";
 
 export const searchArticles = cache(
   async (unvalidated: UnvalidatedCriteria): Promise<Article[]> => {
@@ -36,3 +38,14 @@ export const searchMemos = cache(
     );
   },
 );
+
+export const searchSeries = cache(async (): Promise<Series[]> => {
+  return await unwrapForNextJs(
+    ReaderSeriesWorkflowProvider.search({
+      slug: null,
+      tags: null,
+      status: "published",
+      freeWord: null,
+    }),
+  );
+});
