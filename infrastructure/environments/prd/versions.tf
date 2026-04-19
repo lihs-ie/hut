@@ -25,5 +25,8 @@ provider "google" {
 }
 
 provider "cloudflare" {
-  api_token = var.cloudflare_api_token
+  # cloudflare provider は api_token が null を許容しないため、未設定時は
+  # ダミー値で provider init を通す。実際のリソース作成は
+  # module "cloudflare_reader" (count = 0 when account_id is null) で抑止される。
+  api_token = var.cloudflare_api_token == null ? "placeholder-token" : var.cloudflare_api_token
 }
