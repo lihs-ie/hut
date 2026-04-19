@@ -68,7 +68,7 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <body className={`${notoSansJP.variable} ${geistMono.variable}`}>
-        <ThemeProvider>
+        <ThemeProvider defaultTheme="dark">
           <NuqsAdapter>
             <ToastProvider>
               <NavigationProvider>
