@@ -1,4 +1,5 @@
 const MALICIOUS_USER_AGENT_PATTERNS: ReadonlyArray<RegExp> = [
+  // 脆弱性スキャナー
   /sqlmap/i,
   /nikto/i,
   /nmap/i,
@@ -12,20 +13,36 @@ const MALICIOUS_USER_AGENT_PATTERNS: ReadonlyArray<RegExp> = [
   /zgrab/i,
   /masscan/i,
   /censys/i,
+  // SEO / スクレイピング系 (サイト利益なし)
   /semrushbot/i,
   /ahrefsbot/i,
   /mj12bot/i,
   /petalbot/i,
   /dotbot/i,
+  // AI 学習クローラー (サイト利益なし、Firestore 読み取りコストを食う)
+  /gptbot/i,
+  /chatgpt-user/i,
+  /oai-searchbot/i,
+  /claudebot/i,
+  /claude-web/i,
+  /anthropic-ai/i,
+  /ccbot/i,
+  /perplexitybot/i,
+  /bytespider/i,
+  /amazonbot/i,
+  /cohere-ai/i,
+  /diffbot/i,
+  /google-extended/i,
 ];
 
+// allowlist は「rate limit の対象外にする」UA。SEO / シェアプレビュー用途のみに限定し、
+// それ以外の bot (DuckDuck / Yandex / Baidu / Apple など) は通常の rate limit を通して
+// Firestore 読み取りコストの暴走を防ぐ。
 const ALLOWED_SEARCH_BOT_PATTERNS: ReadonlyArray<RegExp> = [
+  // SEO クリティカル
   /googlebot/i,
   /bingbot/i,
-  /duckduckbot/i,
-  /yandexbot/i,
-  /baiduspider/i,
-  /applebot/i,
+  // シェアプレビュー (人間のシェア起点なので急激なバーストは起きにくい)
   /facebookexternalhit/i,
   /twitterbot/i,
   /linkedinbot/i,
