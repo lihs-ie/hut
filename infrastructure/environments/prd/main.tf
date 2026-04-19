@@ -384,9 +384,12 @@ module "billing_budget" {
   labels = local.common_labels
 }
 
-module "cloudflare_reader" {
-  source = "../../modules/cloudflare_reader"
-
-  cloudflare_account_id         = var.cloudflare_account_id
-  incremental_cache_bucket_name = "hut-prd-reader-cache"
-}
+# TODO: Cloudflare API token を GitHub Secrets / terraform tfvars に登録した後、
+# 下記の module 呼び出しと versions.tf の cloudflare provider、
+# variables.tf の cloudflare_* 変数を有効化する。
+# module "cloudflare_reader" {
+#   source = "../../modules/cloudflare_reader"
+#
+#   cloudflare_account_id         = var.cloudflare_account_id
+#   incremental_cache_bucket_name = "hut-prd-reader-cache"
+# }

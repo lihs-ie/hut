@@ -76,13 +76,15 @@ variable "notification_email" {
   sensitive   = true
 }
 
-variable "cloudflare_account_id" {
-  description = "Cloudflare account ID hosting the reader Cloudflare Worker"
-  type        = string
-}
-
-variable "cloudflare_api_token" {
-  description = "Cloudflare API token with Workers / R2 edit scope"
-  type        = string
-  sensitive   = true
-}
+# TODO: Cloudflare API token / account ID を GitHub Secrets / tfvars に登録した後、
+# 以下を有効化して versions.tf の cloudflare provider と main.tf の module 呼び出しも有効化する。
+# variable "cloudflare_account_id" {
+#   description = "Cloudflare account ID hosting the reader Cloudflare Worker"
+#   type        = string
+# }
+#
+# variable "cloudflare_api_token" {
+#   description = "Cloudflare API token with Workers / R2 edit scope"
+#   type        = string
+#   sensitive   = true
+# }
