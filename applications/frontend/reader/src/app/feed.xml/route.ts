@@ -67,12 +67,25 @@ export async function GET(): Promise<Response> {
     searchSeries(),
   ]);
 
-  const chaptersBySeries = await Promise.all(
-    seriesList.map(async (series) => ({
-      series,
-      chapters: await findPublishedChaptersByIdentifiers(series.chapters),
-    })),
+  const allChapterIdentifiers = [
+    ...new Set(seriesList.flatMap((series) => series.chapters)),
+  ];
+  const allChapters =
+    allChapterIdentifiers.length > 0
+      ? await findPublishedChaptersByIdentifiers(allChapterIdentifiers)
+      : [];
+  const chapterByIdentifier = new Map(
+    allChapters.map((chapter) => [chapter.identifier, chapter] as const),
   );
+  const chaptersBySeries = seriesList.map((series) => ({
+    series,
+    chapters: series.chapters
+      .map((identifier) => chapterByIdentifier.get(identifier))
+      .filter(
+        (chapter): chapter is (typeof allChapters)[number] =>
+          chapter !== undefined,
+      ),
+  }));
 
   const toUrl = (path: string) => new URL(path, siteUrl).toString();
 

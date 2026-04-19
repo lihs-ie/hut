@@ -122,7 +122,17 @@ describe("GET /feed.xml", () => {
     await setEmptyDefaults();
     const seriesList = Forger(SeriesMold).forgeMultiWithSeed(1, 10);
     const series = seriesList[0];
-    const chapters = Forger(ChapterMold).forgeMultiWithSeed(2, 20);
+    // findPublishedChaptersByIdentifiers の戻り値を series.chapters の
+    // identifier と一致させて、route 側の chapterByIdentifier.get(...) で
+    // 各 chapter にヒットさせる
+    const baseChapters = Forger(ChapterMold).forgeMultiWithSeed(
+      series.chapters.length,
+      20,
+    );
+    const chapters = baseChapters.map((chapter, index) => ({
+      ...chapter,
+      identifier: series.chapters[index],
+    }));
 
     const { searchSeries } = await import("@/actions/feed/article-search");
     const { findPublishedChaptersByIdentifiers } = await import(

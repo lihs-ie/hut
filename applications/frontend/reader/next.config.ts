@@ -4,8 +4,7 @@ import { createBaseNextConfig } from "../next.config.shared";
 
 const withMDX = MDX({ extension: /\.mdx?$/ });
 const isProduction = process.env.NODE_ENV === "production";
-const buildTarget = process.env.BUILD_TARGET;
-const isCloudflareBuild = buildTarget === "cloudflare";
+const isCloudflareBuild = process.env.BUILD_TARGET === "cloudflare";
 const readerContentSecurityPolicy = [
   "default-src 'self'",
   isProduction
@@ -27,7 +26,6 @@ export default withMDX(
     useFirebaseEmulator:
       process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true",
     contentSecurityPolicy: readerContentSecurityPolicy,
-    buildTarget,
   }),
 );
 

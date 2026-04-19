@@ -14,7 +14,6 @@ type Options = {
   readonly useFirebaseEmulator?: boolean;
   readonly includeCSP?: boolean;
   readonly contentSecurityPolicy?: string;
-  readonly buildTarget?: string;
 };
 
 const EMULATOR_PATTERNS: ReadonlyArray<RemotePattern> = [
@@ -55,7 +54,6 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
   const contentSecurityPolicy =
     options?.contentSecurityPolicy ??
     createDefaultContentSecurityPolicy(isProduction, useEmulator);
-  const isCloudflareBuild = options?.buildTarget === "cloudflare";
 
   const remotePatterns: Array<RemotePattern> = [
     ...parseImageRemotePatterns(process.env.IMAGE_REMOTE_PATTERNS),

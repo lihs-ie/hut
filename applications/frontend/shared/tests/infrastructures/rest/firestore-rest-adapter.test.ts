@@ -8,7 +8,7 @@ import { getFirestore, Timestamp } from "firebase/firestore";
 import { createRestFirestoreAdapter } from "@shared/infrastructures/rest/firestore-rest-adapter";
 
 describe("infrastructures/rest/firestore-rest-adapter", () => {
-  it("operations に全 FirestoreOperations メソッドが含まれる", () => {
+  it("operations に全 FirestoreOperations メソッドが含まれる", async () => {
     const app = initClientApp(
       { projectId: "demo-hut", apiKey: "fake-api-key" },
       `test-${Date.now()}`,
@@ -45,12 +45,12 @@ describe("infrastructures/rest/firestore-rest-adapter", () => {
     } finally {
       const cleanupApp = getClientApps().find((a) => a.name === app.name);
       if (cleanupApp) {
-        await_ignore(deleteApp(cleanupApp));
+        await deleteApp(cleanupApp);
       }
     }
   });
 
-  it("createTimestamp が Client SDK の Timestamp を返す", () => {
+  it("createTimestamp が Client SDK の Timestamp を返す", async () => {
     const app = initClientApp(
       { projectId: "demo-hut", apiKey: "fake-api-key" },
       `test-${Date.now()}-ts`,
@@ -67,12 +67,8 @@ describe("infrastructures/rest/firestore-rest-adapter", () => {
     } finally {
       const cleanupApp = getClientApps().find((a) => a.name === app.name);
       if (cleanupApp) {
-        await_ignore(deleteApp(cleanupApp));
+        await deleteApp(cleanupApp);
       }
     }
   });
 });
-
-const await_ignore = (promise: Promise<unknown>): void => {
-  promise.catch(() => undefined);
-};
