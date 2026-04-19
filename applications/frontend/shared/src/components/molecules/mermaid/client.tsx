@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTheme } from "next-themes";
 import "./svg.css";
 
@@ -10,6 +10,7 @@ type Props = {
 
 export const MermaidClient = (props: Props) => {
   const { resolvedTheme } = useTheme();
+  const reactId = useId();
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +32,7 @@ export const MermaidClient = (props: Props) => {
           theme: resolvedTheme === "dark" ? "dark" : "default",
           securityLevel: "strict",
         });
-        const id = `mermaid-${Math.random().toString(36).slice(2)}`;
+        const id = `mermaid-${reactId.replace(/:/g, "")}`;
         const { svg: rendered } = await mermaid.render(id, props.code);
         if (cancelled) return;
         setSvg(rendered);
@@ -46,7 +47,7 @@ export const MermaidClient = (props: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [props.code, resolvedTheme]);
+  }, [props.code, resolvedTheme, reactId]);
 
   if (error !== null) {
     return (
