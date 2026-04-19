@@ -5,7 +5,8 @@
       "@/*": ["./src/*"],
       "@shared/*": ["../shared/src/*"]
     },
-    "plugins": [{ "name": "next" }]
+    "plugins": [{ "name": "next" }],
+    "types": ["@cloudflare/workers-types"]
   },
   "include": [
     "src/**/*",
@@ -16,6 +17,5 @@
     "cloudflare-env.d.ts",
     "../shared/src/actions",
     "../shared/types"
-  ],
-  "exclude": ["src/worker.ts"]
+  ]
 }

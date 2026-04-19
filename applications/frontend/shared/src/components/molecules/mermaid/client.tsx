@@ -13,6 +13,9 @@ export const MermaidClient = (props: Props) => {
   const [rendered, setRendered] = useState(false);
 
   useEffect(() => {
+    setError(null);
+    setRendered(false);
+
     const target = container.current;
     if (target === null) return;
 
@@ -21,7 +24,11 @@ export const MermaidClient = (props: Props) => {
     const render = async () => {
       try {
         const mermaid = (await import("mermaid")).default;
-        mermaid.initialize({ startOnLoad: false, theme: "default" });
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "default",
+          securityLevel: "strict",
+        });
         const id = `mermaid-${Math.random().toString(36).slice(2)}`;
         const { svg } = await mermaid.render(id, props.code);
         if (cancelled) return;

@@ -28,6 +28,7 @@
     "zod": "^4.3.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260418.1",
     "@lihs-ie/forger-ts": "^0.0.2",
     "@mdx-js/loader": "^3.1.1",
     "@next/mdx": "^16.2.3",
