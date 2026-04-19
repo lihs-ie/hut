@@ -27,9 +27,6 @@ export const MermaidClient = (props: Props) => {
     const render = async () => {
       try {
         const mermaid = (await import("mermaid")).default;
-        // securityLevel: "strict" は mermaid 内蔵サニタイザ。 on*/foreignObject などの
-        // 危険な要素を除去するので、ここで返る svg は dangerouslySetInnerHTML に
-        // 渡しても XSS にならない (詳細: https://mermaid.js.org/config/usage.html#securitylevel)。
         mermaid.initialize({
           startOnLoad: false,
           theme: resolvedTheme === "dark" ? "dark" : "default",
