@@ -1,4 +1,4 @@
-FROM node:22-slim AS deps
+FROM node:24-slim AS deps
 
 RUN corepack enable pnpm
 WORKDIR /app
@@ -50,7 +50,7 @@ RUN --mount=type=secret,id=gcp_credentials,target=/tmp/gcp-credentials.json \
     GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json \
     pnpm --filter @hut/${APP_NAME} build
 
-FROM node:22-slim AS runner
+FROM node:24-slim AS runner
 
 WORKDIR /app
 
