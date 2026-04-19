@@ -48,6 +48,8 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
 export default async function SeriesDetailPage(props: Props) {
   const params = await props.params;
 
+  await findBySlug(params.slug);
+
   return (
     <SeriesIndex
       slug={slugSchema.parse(params.slug)}

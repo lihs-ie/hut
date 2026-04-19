@@ -19,6 +19,8 @@ export async function generateStaticParams() {
 export default async function MemoDetailPage(props: Props) {
   const params = await props.params;
 
+  await findBySlug(params.slug);
+
   return (
     <MemoIndex
       slug={params.slug}

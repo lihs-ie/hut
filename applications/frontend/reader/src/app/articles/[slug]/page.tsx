@@ -23,6 +23,8 @@ export async function generateStaticParams() {
 export default async function ArticleDetailPage(props: Props) {
   const params = await props.params;
 
+  await findBySlug(params.slug);
+
   return (
     <ArticleIndex
       slug={params.slug}

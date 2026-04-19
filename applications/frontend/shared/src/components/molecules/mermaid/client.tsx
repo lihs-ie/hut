@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 import { useTheme } from "next-themes";
+import { sanitizeMermaidSvg } from "./sanitize";
 import "./svg.css";
 
 type Props = {
@@ -35,7 +36,7 @@ export const MermaidClient = (props: Props) => {
         const id = `mermaid-${reactId.replace(/:/g, "")}`;
         const { svg: rendered } = await mermaid.render(id, props.code);
         if (cancelled) return;
-        setSvg(rendered);
+        setSvg(sanitizeMermaidSvg(rendered));
       } catch (cause) {
         if (cancelled) return;
         setError(cause instanceof Error ? cause.message : String(cause));
