@@ -18,12 +18,9 @@ vi.mock("@/actions/memo", () => ({
   searchAllSlugs: vi.fn(),
 }));
 
-vi.mock("@shared/actions/article", () => ({
-  search: vi.fn(),
-}));
-
-vi.mock("@shared/actions/memo", () => ({
-  search: vi.fn(),
+vi.mock("@/actions/feed/article-search", () => ({
+  searchArticles: vi.fn(),
+  searchMemos: vi.fn(),
 }));
 
 describe("GET /feed.xml", () => {
@@ -39,8 +36,9 @@ describe("GET /feed.xml", () => {
   });
 
   it("Content-Type: application/xml を返す", async () => {
-    const { search: searchArticles } = await import("@shared/actions/article");
-    const { search: searchMemos } = await import("@shared/actions/memo");
+    const { searchArticles, searchMemos } = await import(
+      "@/actions/feed/article-search"
+    );
 
     vi.mocked(searchArticles).mockResolvedValue([]);
     vi.mocked(searchMemos).mockResolvedValue([]);
@@ -55,8 +53,9 @@ describe("GET /feed.xml", () => {
 
   it("記事がfeedに含まれる", async () => {
     const articles = Forger(ArticleMold).forgeMultiWithSeed(2, 1);
-    const { search: searchArticles } = await import("@shared/actions/article");
-    const { search: searchMemos } = await import("@shared/actions/memo");
+    const { searchArticles, searchMemos } = await import(
+      "@/actions/feed/article-search"
+    );
 
     vi.mocked(searchArticles).mockResolvedValue(articles);
     vi.mocked(searchMemos).mockResolvedValue([]);
@@ -74,8 +73,9 @@ describe("GET /feed.xml", () => {
 
   it("メモがfeedに含まれる", async () => {
     const memos = Forger(MemoMold).forgeMultiWithSeed(2, 1);
-    const { search: searchArticles } = await import("@shared/actions/article");
-    const { search: searchMemos } = await import("@shared/actions/memo");
+    const { searchArticles, searchMemos } = await import(
+      "@/actions/feed/article-search"
+    );
 
     vi.mocked(searchArticles).mockResolvedValue([]);
     vi.mocked(searchMemos).mockResolvedValue(memos);
@@ -92,8 +92,9 @@ describe("GET /feed.xml", () => {
   });
 
   it("有効なXML構造を返す", async () => {
-    const { search: searchArticles } = await import("@shared/actions/article");
-    const { search: searchMemos } = await import("@shared/actions/memo");
+    const { searchArticles, searchMemos } = await import(
+      "@/actions/feed/article-search"
+    );
 
     vi.mocked(searchArticles).mockResolvedValue([]);
     vi.mocked(searchMemos).mockResolvedValue([]);
