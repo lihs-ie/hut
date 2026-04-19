@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import "./svg.css";
 
 type Props = {
@@ -8,16 +8,12 @@ type Props = {
 };
 
 export const MermaidClient = (props: Props) => {
-  const container = useRef<HTMLDivElement>(null);
+  const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [rendered, setRendered] = useState(false);
 
   useEffect(() => {
     setError(null);
-    setRendered(false);
-
-    const target = container.current;
-    if (target === null) return;
+    setSvg(null);
 
     let cancelled = false;
 
@@ -30,10 +26,9 @@ export const MermaidClient = (props: Props) => {
           securityLevel: "strict",
         });
         const id = `mermaid-${Math.random().toString(36).slice(2)}`;
-        const { svg } = await mermaid.render(id, props.code);
+        const { svg: rendered } = await mermaid.render(id, props.code);
         if (cancelled) return;
-        target.innerHTML = svg;
-        setRendered(true);
+        setSvg(rendered);
       } catch (cause) {
         if (cancelled) return;
         setError(cause instanceof Error ? cause.message : String(cause));
@@ -55,14 +50,19 @@ export const MermaidClient = (props: Props) => {
     );
   }
 
+  if (svg !== null) {
+    return (
+      <div
+        className="mermaid-svg"
+        dangerouslySetInnerHTML={{ __html: svg }}
+      />
+    );
+  }
+
   return (
-    <div ref={container} className="mermaid-svg">
-      {!rendered && (
-        <pre className="mermaid-svg fallback">
-          <code>{props.code}</code>
-        </pre>
-      )}
-    </div>
+    <pre className="mermaid-svg fallback">
+      <code>{props.code}</code>
+    </pre>
   );
 };
 
