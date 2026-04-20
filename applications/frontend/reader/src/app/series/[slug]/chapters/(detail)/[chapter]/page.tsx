@@ -66,14 +66,7 @@ async function ChapterContentSection(props: ContentProps) {
   );
 }
 
-export default async function ChapterPage(props: Props) {
-  const params = await props.params;
-
-  await Promise.all([
-    findBySlug(params.slug),
-    findChapterBySlug(params.chapter),
-  ]);
-
+export default function ChapterPage(props: Props) {
   return (
     <Suspense fallback={<ArticleContentSkeleton />}>
       <ChapterContentSection params={props.params} />
