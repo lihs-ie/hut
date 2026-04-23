@@ -7,6 +7,7 @@ import {
   createSlugIndexInTransaction,
   createVersion,
   deleteSlugIndexInTransaction,
+  FIRESTORE_IN_BATCH_LIMIT,
   FirestoreOperations,
   mapFirestoreError,
   updateSlugIndexInTransaction,
@@ -26,6 +27,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
+import { chunk } from "@shared/aspects/array";
 
 type PersistedArticle = {
   identifier: string;
@@ -36,6 +38,7 @@ type PersistedArticle = {
   status: string;
   images: string[];
   tags: string[];
+  publishedAt: string | null;
   timeline: {
     createdAt: string;
     updatedAt: string;
@@ -65,6 +68,9 @@ export const FirebaseArticleRepository = (
           status: article.status,
           tags: article.tags,
           images: article.images,
+          publishedAt: article.publishedAt
+            ? article.publishedAt.toISOString()
+            : null,
           timeline: {
             createdAt: article.timeline.createdAt.toISOString(),
             updatedAt: article.timeline.updatedAt.toISOString(),
@@ -87,6 +93,7 @@ export const FirebaseArticleRepository = (
           status: data.status,
           tags: data.tags,
           images: data.images,
+          publishedAt: data.publishedAt ? new Date(data.publishedAt) : null,
           timeline: {
             createdAt: new Date(data.timeline.createdAt),
             updatedAt: new Date(data.timeline.updatedAt),
@@ -207,26 +214,45 @@ export const FirebaseArticleRepository = (
   ) => {
     return fromPromise(
       (async () => {
-        const articles: Article[] = [];
-
-        for (const identifier of identifiers) {
-          const document = operations.doc(collection, identifier);
-          const snapshot = await operations.getDoc(document);
-
-          if (!snapshot.exists()) {
-            if (throwOnMissing) {
-              throw aggregateNotFoundError(
-                "Article",
-                `Article ${identifier} not found.`,
-              );
-            }
-            continue;
-          }
-
-          articles.push(snapshot.data());
+        if (identifiers.length === 0) {
+          return [];
         }
 
-        return articles;
+        const uniqueIdentifiers = Array.from(new Set(identifiers));
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT).unwrap();
+
+        const batchResults = await Promise.all(
+          chunks.map(async (identifiersChunk) => {
+            const query = operations.query(
+              collection,
+              operations.where("identifier", "in", identifiersChunk),
+            );
+            const snapshot = await operations.getDocs(query);
+            return snapshot.docs.map((document) => document.data());
+          }),
+        );
+
+        const articles = new Map<ArticleIdentifier, Article>();
+        for (const article of batchResults.flat()) {
+          articles.set(article.identifier, article);
+        }
+
+        if (throwOnMissing) {
+          const missingIdentifier = uniqueIdentifiers.find(
+            (identifier) => !articles.has(identifier),
+          );
+          if (missingIdentifier !== undefined) {
+            throw aggregateNotFoundError(
+              "Article",
+              `Article ${missingIdentifier} not found.`,
+            );
+          }
+        }
+
+        return identifiers.flatMap((identifier) => {
+          const article = articles.get(identifier);
+          return article !== undefined ? [article] : [];
+        });
       })(),
       mapError,
     );

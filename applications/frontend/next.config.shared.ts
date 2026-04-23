@@ -1,6 +1,14 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 import type { RemotePattern } from "next/dist/shared/lib/image-config";
 import { parseImageRemotePatterns } from "./shared/src/config/image-remote-pattern";
+
+const workspaceRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+);
 
 type Options = {
   readonly useFirebaseEmulator?: boolean;
@@ -58,6 +66,7 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
 
   return {
     output: "standalone",
+    outputFileTracingRoot: workspaceRoot,
     poweredByHeader: false,
     headers: async () => [
       {
@@ -101,17 +110,33 @@ export const createBaseNextConfig = (options?: Options): NextConfig => {
       },
     ],
     turbopack: {
-      root: "../..",
+      root: workspaceRoot,
     },
     reactCompiler: true,
     pageExtensions: ["tsx", "ts", "jsx", "js", "md", "mdx"],
     transpilePackages: ["@hut/shared"],
+    serverExternalPackages: [
+      "mermaid-isomorphic",
+      "mermaid",
+      "playwright",
+      "playwright-core",
+    ],
     images: {
       remotePatterns,
+      formats: ["image/avif", "image/webp"],
+      minimumCacheTTL: 86400,
       ...(useEmulator && { dangerouslyAllowLocalIP: true }),
     },
     experimental: {
       serverActions: { allowedOrigins },
+      optimizePackageImports: [
+        "@hut/shared",
+        "nuqs",
+        "next-themes",
+        "next-mdx-remote",
+        "recharts",
+        "react-syntax-highlighter",
+      ],
     },
   };
 };

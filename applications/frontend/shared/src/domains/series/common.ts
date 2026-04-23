@@ -66,6 +66,7 @@ export const seriesSchema = z
     cover: cover.nullable(),
     chapters: z.array(chapterIdentifierSchema),
     status: publishStatusSchema,
+    publishedAt: z.date().nullable(),
     timeline: timelineSchema,
   })
   .brand("Series");
@@ -82,6 +83,7 @@ export type UnvalidatedSeries = {
   status: string;
   description?: string;
   cover?: string | null;
+  publishedAt: Date | null;
   timeline?: {
     createdAt: Date;
     updatedAt: Date;

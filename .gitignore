@@ -21,6 +21,11 @@ test-results
 .next
 out
 
+# OpenNext / Cloudflare Workers
+.open-next
+.wrangler
+applications/frontend/reader/cloudflare-env.d.ts
+
 # production
 build
 

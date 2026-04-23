@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Noto_Sans_JP, Inter, Geist_Mono } from "next/font/google";
+import { Noto_Sans_JP, Geist_Mono } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "@shared/global.css";
 import { Header } from "@shared/components/organisms/header";
 import { Footer } from "@shared/components/organisms/footer";
 import { FooterPresenter } from "@shared/components/organisms/footer/index.presenter";
 import { FooterErrorBoundary } from "@shared/components/molecules/boundary/footer-error";
-import { getProfile } from "@shared/actions/admin";
+import { getProfile } from "@/actions/admin";
 import { NavigationProvider } from "@shared/components/molecules/navigation/provider";
 import { ToastProvider } from "@shared/components/molecules/toast";
 import { ThemeProvider } from "@shared/components/molecules/theme/provider";
@@ -15,17 +15,15 @@ import { ThemeProvider } from "@shared/components/molecules/theme/provider";
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "700", "800", "900"],
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -69,8 +67,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body className={`${notoSansJP.variable} ${inter.variable} ${geistMono.variable}`}>
-        <ThemeProvider>
+      <body className={`${notoSansJP.variable} ${geistMono.variable}`}>
+        <ThemeProvider defaultTheme="dark">
           <NuqsAdapter>
             <ToastProvider>
               <NavigationProvider>

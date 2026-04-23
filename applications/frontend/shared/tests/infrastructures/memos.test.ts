@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { Timestamp } from "firebase/firestore";
 import { FirebaseMemoRepository } from "@shared/infrastructures/memos";
 import {
   createTestFirestoreWithSeed,
   clearFirestore,
+  seedFirestore,
   type Firestore,
 } from "../support/mock/firebase/firestore";
 import { Forger } from "@lihs-ie/forger-ts";
@@ -233,6 +235,49 @@ describe("infrastructures/memos", () => {
 
         expect(result).not.toBeNull();
         expect(isAggregateNotFoundError(result)).toBe(true);
+      });
+
+      it("100件取得時、getDocs が ceil(100/30)=4 回呼ばれる", async () => {
+        const memos = Forger(MemoMold).forgeMultiWithSeed(100, 200);
+
+        const ops = getOperations();
+        const getDocsSpy = vi.spyOn(ops, "getDocs");
+
+        const repository = FirebaseMemoRepository(firestore, ops);
+
+        for (const memo of memos) {
+          await repository.persist(memo).unwrap();
+        }
+
+        getDocsSpy.mockClear();
+
+        const identifiers = memos.map((memo) => memo.identifier);
+        const found = await repository.ofIdentifiers(identifiers).unwrap();
+
+        expect(found.length).toBe(100);
+        expect(getDocsSpy).toHaveBeenCalledTimes(4);
+
+        getDocsSpy.mockRestore();
+      });
+
+      it("入力識別子の順序を保って返す", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const memos = Forger(MemoMold).forgeMultiWithSeed(5, 300);
+
+        for (const memo of memos) {
+          await repository.persist(memo).unwrap();
+        }
+
+        const reversedIdentifiers = memos
+          .map((memo) => memo.identifier)
+          .reverse();
+        const found = await repository
+          .ofIdentifiers(reversedIdentifiers)
+          .unwrap();
+
+        expect(found.map((memo) => memo.identifier)).toEqual(
+          reversedIdentifiers,
+        );
       });
     });
 
@@ -589,6 +634,66 @@ describe("infrastructures/memos", () => {
 
         expect(result).not.toBeNull();
         expect(isAggregateNotFoundError(result)).toBe(true);
+      });
+    });
+
+    describe("publishedAt の永続化", () => {
+      it("publishedAt が Date として保存・復元される", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const publishedAt = new Date("2025-01-01T00:00:00Z");
+        const memo = Forger(MemoMold).forgeWithSeed(800, {
+          publishedAt,
+        });
+
+        await repository.persist(memo).unwrap();
+
+        const found = await repository.find(memo.identifier).unwrap();
+
+        expect(found.publishedAt).toBeInstanceOf(Date);
+        expect(found.publishedAt?.getTime()).toBe(publishedAt.getTime());
+      });
+
+      it("publishedAt が null として保存・復元される", async () => {
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const memo = Forger(MemoMold).forgeWithSeed(801, {
+          publishedAt: null,
+        });
+
+        await repository.persist(memo).unwrap();
+
+        const found = await repository.find(memo.identifier).unwrap();
+
+        expect(found.publishedAt).toBeNull();
+      });
+
+      it("Firestore に publishedAt フィールドが存在しない場合は null として復元される", async () => {
+        const identifier = Forger(MemoIdentifierMold).forgeWithSeed(802);
+        const createdAt = Timestamp.fromDate(new Date("2024-01-01T00:00:00Z"));
+        const updatedAt = Timestamp.fromDate(new Date("2024-01-02T00:00:00Z"));
+
+        await seedFirestore(firestore, {
+          memos: {
+            [identifier]: {
+              identifier,
+              title: "Legacy Memo",
+              slug: "legacy-memo",
+              entries: [],
+              status: "published",
+              tags: [],
+              images: [],
+              timeline: {
+                createdAt,
+                updatedAt,
+              },
+              version: 1,
+            },
+          },
+        });
+
+        const repository = FirebaseMemoRepository(firestore, getOperations());
+        const found = await repository.find(identifier).unwrap();
+
+        expect(found.publishedAt).toBeNull();
       });
     });
   });

@@ -6,7 +6,15 @@ import { render } from "@testing-library/react";
 
 vi.mock("next/image", () => ({
   __esModule: true,
-  default: (imageProps: Record<string, unknown>) => <img {...imageProps} />,
+  default: (imageProps: Record<string, unknown>) => {
+    const { priority, ...rest } = imageProps;
+    return (
+      <img
+        {...(rest as React.ImgHTMLAttributes<HTMLImageElement>)}
+        {...(priority ? { fetchPriority: "high" as const } : {})}
+      />
+    );
+  },
 }));
 
 import { ContentImage } from "@shared/components/atoms/image/content";
@@ -51,6 +59,23 @@ describe("components/atoms/image/ContentImage", () => {
       const image = renderImage();
 
       expect(image?.className).toContain("container");
+    });
+  });
+
+  describe("priority prop", () => {
+    it("priority: true を渡すと fetchpriority='high' になる", () => {
+      const { container } = render(
+        <ContentImage src="/test-image.png" alt="テスト" priority />
+      );
+      const image = container.querySelector("img");
+
+      expect(image).toHaveAttribute("fetchpriority", "high");
+    });
+
+    it("priority を渡さない場合 fetchpriority='high' にならない", () => {
+      const image = renderImage();
+
+      expect(image).not.toHaveAttribute("fetchpriority", "high");
     });
   });
 });

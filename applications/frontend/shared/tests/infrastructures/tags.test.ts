@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { FirebaseTagRepository } from "@shared/infrastructures/tags";
 import {
   createTestFirestoreWithSeed,
@@ -219,6 +219,46 @@ describe("infrastructures/tags", () => {
 
         expect(found.length).toBe(1);
         expect(found[0]?.identifier).toBe(tag.identifier);
+      });
+
+      it("100件取得時、getDocs が ceil(100/30)=4 回呼ばれる", async () => {
+        const tags = Forger(TagMold).forgeMultiWithSeed(100, 100);
+
+        const getDocsSpy = vi.spyOn(testEnvironment.operations, "getDocs");
+
+        const repository = createRepository();
+
+        for (const tag of tags) {
+          await repository.persist(tag).unwrap();
+        }
+
+        getDocsSpy.mockClear();
+
+        const identifiers = tags.map((tag) => tag.identifier);
+        const found = await repository.ofIdentifiers(identifiers).unwrap();
+
+        expect(found.length).toBe(100);
+        expect(getDocsSpy).toHaveBeenCalledTimes(4);
+
+        getDocsSpy.mockRestore();
+      });
+
+      it("入力識別子の順序を保って返す", async () => {
+        const repository = createRepository();
+        const tags = Forger(TagMold).forgeMultiWithSeed(5, 500);
+
+        for (const tag of tags) {
+          await repository.persist(tag).unwrap();
+        }
+
+        const reversedIdentifiers = tags
+          .map((tag) => tag.identifier)
+          .reverse();
+        const found = await repository
+          .ofIdentifiers(reversedIdentifiers)
+          .unwrap();
+
+        expect(found.map((tag) => tag.identifier)).toEqual(reversedIdentifiers);
       });
     });
 

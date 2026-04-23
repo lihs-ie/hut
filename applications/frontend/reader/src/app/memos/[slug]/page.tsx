@@ -1,8 +1,8 @@
 import { findBySlug, searchAllSlugs } from "@/actions/memo";
-import { findAllTags } from "@shared/actions/tag";
+import { findAllTags } from "@/actions/tag";
 import { MDXRenderer } from "@shared/components/global/mdx";
 import { MemoIndex } from "@shared/components/templates/memo";
-import { incrementViewCount } from "@shared/actions/view";
+import { incrementViewCount } from "@/actions/view";
 
 export const revalidate = 3600;
 
