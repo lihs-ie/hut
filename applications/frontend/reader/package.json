@@ -35,6 +35,6 @@
     "@types/mdx": "^2.0.13",
     "babel-plugin-react-compiler": "^1.0.0",
     "remark-breaks": "^4.0.0",
-    "wrangler": "^4.83.0"
+    "wrangler": "^4.85.0"
   }
 }
