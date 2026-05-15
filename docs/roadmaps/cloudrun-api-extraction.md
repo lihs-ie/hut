@@ -140,10 +140,104 @@ proto/
   articles/v1/article_service.proto
   memos/v1/memo.proto
   ...
+  auth/v1/session.proto
+  auth/v1/auth_service.proto
   common/v1/timeline.proto
   common/v1/pagination.proto
   common/v1/errors.proto
+  common/v1/auth_context.proto
 ```
+
+### 2.8 認証・認可アーキテクチャ
+
+#### 2.8.1 採用方針
+
+| 論点 | 決定 |
+|---|---|
+| IdP | **Firebase Auth (Identity Platform)** を維持（Google OAuth + メールホワイトリスト）|
+| API 側の検証 | **各ドメイン API が直接 Firebase session cookie の JWT を検証する**（多層防御） |
+| 認可の配置 | **4 層分離**: `proxy.ts` / Server Action / IAM / Workflow |
+| セッション管理 | **C. ハイブリッド**: cookie set/get は Next.js、Firebase Admin SDK 機能は `auth-api` (Haskell) に集約。フェーズ 10 で Next.js から `firebase-admin` 依存を削除 |
+
+#### 2.8.2 認証フロー全体図
+
+```text
+[Browser]
+  -- Firebase Auth signInWithPopup --> Firebase Auth (IdP)
+[Browser] -- Firebase ID Token --> [Next.js Server Action: login]
+  - auth-api/IssueSession(idToken) RPC を呼ぶ（フェーズ 6.5 以降）
+  - 戻り値の cookie 文字列を admin_session として set
+       (httpOnly, secure, sameSite=strict, 24h)
+
+[Browser] -- cookie: admin_session --> [Next.js]
+[Next.js proxy.ts (Edge runtime)]
+  - cookie の "存在" だけチェック → 無ければ /admin/login にリダイレクト
+  - Firebase Admin SDK は Edge 非互換のため、ここでは検証しない
+[Next.js Server Action (Node runtime)]
+  - auth-api/VerifySession(cookie) で検証し User { uid, email, role } を取得
+  - requireAdmin() / requireRole() などの一次認可ガード
+
+[Next.js → Cloud Run API (gRPC)]
+  - Authorization:               Bearer <Cloud Run IAM ID Token>   ← S2S 認証
+  - x-firebase-session-cookie:   <admin_session の値>              ← エンドユーザー認証
+  - x-trace-id:                  <traceparent>
+
+[Cloud Run API (Haskell)]
+  - Cloud Run プラットフォームが Authorization を検証 → caller SA を保証
+  - shared-hs/Auth/Firebase.hs が x-firebase-session-cookie を直接 JWT 検証
+      (JWKs 公開鍵キャッシュ、iss/aud/exp、admin custom claim 確認)
+  - AuthContext { uid, email, role, callerSA } を組み立てて Workflow 層へ
+  - Workflow 層が requireOwner / requireRole / 公開可視性などで認可
+```
+
+#### 2.8.3 認可境界の責務分割
+
+| 境界 | 検査内容 | 配置 | 例 |
+|---|---|---|---|
+| 認証境界 (一次) | cookie の存在 | Next.js `proxy.ts` (Edge) | `admin_session` 無ければ `/admin/login` |
+| 認証境界 (本検証) | session cookie の JWT 検証 | Next.js Server Action (Node) → `auth-api/VerifySession` | uid 取得失敗 → 401 |
+| ロール境界 (S2S) | caller SA の種類 | GCP IAM 条件式 | `reader-sa` から admin RPC は呼べない |
+| ロール境界 (ユーザー) | admin custom claim | API ミドルウェア (Haskell, 多層防御) | admin RPC 呼出時に admin claim 必須 |
+| 所有権境界 | リソース.author == AuthContext.uid | API Workflow 層 | `requireOwner(article, ctx)` |
+| データ境界 | 公開可視性 / drafts は本人のみ | API Workflow 層 + Repository | `listPublished(query)` |
+
+#### 2.8.4 gRPC metadata 仕様
+
+| Metadata Key | 内容 | 必須 | 検証主体 |
+|---|---|---|---|
+| `authorization` | `Bearer <Cloud Run IAM ID Token>` | 常に必須 | Cloud Run プラットフォーム |
+| `x-firebase-session-cookie` | `admin_session` の値 | admin/書込系 RPC で必須、匿名 read は空 | `shared-hs/Auth/Firebase` |
+| `x-trace-id` | `traceparent` 形式 | 常に必須 | `shared-hs/Telemetry` |
+| `x-user-role` | `"admin"` / `"reader"` / `"anonymous"` | 補助 (信頼境界外) | API ミドルウェア (cross-check) |
+
+#### 2.8.5 Firebase Admin SDK 依存の最終形（フェーズ 10 時点）
+
+- `applications/frontend/shared/package.json` から `firebase-admin` を削除
+- Server Action は `auth-api` の以下 RPC を呼ぶだけ:
+  - `IssueSession(firebaseIdToken)` → session cookie 文字列
+  - `VerifySession(sessionCookie)` → `User { uid, email, role }`
+  - `RevokeSession(uid)` → `Empty`
+- `auth-api` (Haskell) は Identity Platform REST を直叩きして実装
+- 各ドメイン API はレイテンシ削減のため `auth-api` を呼ばず、`shared-hs/Auth/Firebase.hs` で
+  session cookie を直接 JWT 検証する（公開鍵は JWKs から取得して TTL キャッシュ）
+
+#### 2.8.6 Next.js 16 `proxy.ts` の挙動
+
+- Next.js 16 で `middleware.ts` は `proxy.ts` にリネームされた（Edge runtime はそのまま）
+- **admin proxy.ts**: `admin_session` cookie の存在のみチェック。検証本体は Node runtime の Server Action で実施。Edge では Firebase Admin SDK / `auth-api` の gRPC client を動かさない
+- **reader proxy.ts**: 現状維持（情報漏洩ヘッダ除去のみ）。将来 rate-limit / bot ブロックを足す余地あり
+
+#### 2.8.7 匿名読者の扱い
+
+- reader 側の閲覧系 RPC は **caller SA = `reader-sa` のみ** で許可する IAM 条件
+- `x-firebase-session-cookie` は空でも通る（read 系の場合）
+- 書込系 RPC は **`admin-sa` × session cookie 有効 × admin claim** の三層
+
+#### 2.8.8 認可テストの最低限
+
+- `reader-sa` から admin RPC を呼んで `PERMISSION_DENIED` が返ることを E2E で確認
+- 期限切れ session cookie で write RPC を呼んで `UNAUTHENTICATED` が返ることを確認
+- 別ユーザーの記事を編集しようとして `PERMISSION_DENIED` が返ることを確認（所有権境界）
 
 ---
 
@@ -172,11 +266,15 @@ proto/
 
 ### 3.3 認証経路
 
-| Caller | Auth |
-|---|---|
-| Cloud Run reader/admin (Next.js) → Cloud Run API | メタデータサーバから ID Token 取得 |
-| Cloudflare Workers reader → Cloud Run API | Workload Identity Federation で OIDC を GCP SA にフェデレーション、または BFF（中継 Cloud Run）に統一 |
-| GitHub Actions → Terraform / deploy | 既存の Workload Identity Federation |
+サービス間認証（S2S）とエンドユーザー認証は **直交する 2 軸**。
+詳細フローは「2.8 認証・認可アーキテクチャ」を参照。
+
+| Caller | S2S Auth | エンドユーザー Auth |
+|---|---|---|
+| Cloud Run reader/admin (Next.js) → Cloud Run API | メタデータサーバから ID Token を取得して `Authorization` | `x-firebase-session-cookie` metadata で session cookie を伝搬 |
+| Cloudflare Workers reader → Cloud Run API | Workload Identity Federation で Cloudflare OIDC を GCP SA にフェデレーション、または admin と同居の中継 BFF 経由 | reader 経路は基本的に空（匿名）|
+| GitHub Actions → Terraform / deploy | 既存の Workload Identity Federation | 該当なし |
+| Server Action → auth-api | Cloud Run IAM | 該当なし（auth-api 自身が IdP 役） |
 
 ### 3.4 IAM ロール設計
 
@@ -275,6 +373,9 @@ Cloud Run IAM 認証付きで呼び出せる状態。
    - Firestore client ラッパー（`gogol-firestore`）
    - Result monad / Error 型（`Either DomainError`）
    - OpenTelemetry exporter 設定
+   - **`shared-hs/Auth/Firebase.hs`**: Firebase session cookie の JWT 検証
+     （JWKs 公開鍵キャッシュ + iss/aud/exp + admin claim）
+   - **`shared-hs/Auth/Context.hs`**: gRPC metadata から AuthContext を構築するミドルウェア
 4. `applications/frontend/shared/src/infrastructures/grpc/` TS クライアントファクトリ
    - `@connectrpc/connect-node` 導入
    - フィーチャーフラグ機構（`USE_API_FOR_<DOMAIN>`）
@@ -296,6 +397,7 @@ Cloud Run IAM 認証付きで呼び出せる状態。
 - `buf lint` が CI で通る
 - `applications/api/hello-api/` が Cloud Run STG にデプロイされる
 - Next.js から `hello-api` への gRPC 呼び出しが Cloud Run IAM 認証で成功する
+- `shared-hs/Auth/Firebase.hs` で実際の `admin_session` cookie を検証できる（統合テスト）
 - `firestore.rules` の新形式が `staging` Firestore で動作確認できる（API SA のみ通る）
 - `allow-unauthenticated` を許す PR は CI で reject される
 
@@ -363,10 +465,21 @@ Cloud Run IAM 認証付きで呼び出せる状態。
 
 `proto/tags/v1/`、`applications/api/tags/`。Category/Attribute も含む。
 
-### フェーズ 6: 管理者・ユーザー API（`feat/api-users`）
+### フェーズ 6: 管理者・ユーザー・auth API（`feat/api-users`）
 
-`proto/admin/v1/`、`proto/users/v1/`、`applications/api/users/`。
-**認可境界の正念場**: admin RPC は admin-sa のみ呼べる IAM 設定を厳密に。
+`proto/admin/v1/`、`proto/users/v1/`、`proto/auth/v1/`、`applications/api/users/`、
+`applications/api/auth/` を含む。
+
+**認可境界の正念場**: admin RPC は `admin-sa` のみ呼べる IAM 設定を厳密に。
+
+**auth-api の役割（フェーズ 10 で Next.js から `firebase-admin` を消すための受け皿）**:
+- `IssueSession(firebaseIdToken)` → session cookie 文字列（Identity Platform REST 経由）
+- `VerifySession(sessionCookie)` → `User { uid, email, role }`
+- `RevokeSession(uid)` → `Empty`
+- メールホワイトリスト判定もここに集約
+
+Next.js Server Action は本フェーズ完了時点で「`auth-api` を呼ぶだけ」になり、
+`firebase-admin` の import が残るのは型定義のみ。
 
 ### フェーズ 7: 検索 API（`feat/api-search`）
 
@@ -414,6 +527,7 @@ search-index / search-token を扱う。
 - [ ] `buf lint` / `buf breaking` が CI で動く
 - [ ] `applications/api/hello-api/` が Cloud Run STG にデプロイされる
 - [ ] Next.js → hello-api が IAM 認証で疎通する
+- [ ] `shared-hs/Auth/Firebase.hs` で実 `admin_session` cookie の検証が通る（統合テスト）
 - [ ] Workload Identity Federation（Cloudflare Workers → GCP）が動く
 - [ ] `allow-unauthenticated` を有効化する Terraform 変更が CI で reject される
 
@@ -427,13 +541,22 @@ search-index / search-token を扱う。
 - [ ] パフォーマンス p99 が 1.5x 以内
 - [ ] セキュリティチェックリスト S-1〜S-9 完了
 
-### フェーズ 2〜9 ゲート
+### フェーズ 2〜5、7〜9 ゲート
 
 各ドメインでフェーズ 1 と同じチェックを完遂。
 
+### フェーズ 6 ゲート（管理者・ユーザー・auth API）
+
+- [ ] フェーズ 1 と同じドメイン API チェック（users / admin RPC）
+- [ ] `auth-api/IssueSession` / `VerifySession` / `RevokeSession` が Cloud Run で稼働
+- [ ] Next.js Server Action が `firebase-admin` の直接呼び出しを **すべて** `auth-api` 呼び出しに置換
+- [ ] `reader-sa` → admin RPC で `PERMISSION_DENIED` が返ることを E2E で確認
+- [ ] 期限切れ cookie で write RPC で `UNAUTHENTICATED` が返ることを E2E で確認
+- [ ] 他人の記事編集で `PERMISSION_DENIED` が返ることを E2E で確認
+
 ### フェーズ 10 ゲート
 
-- [ ] Firebase Admin SDK が `applications/frontend/` の package.json から削除
+- [ ] `firebase-admin` が `applications/frontend/` の package.json から削除
 - [ ] `firestore.rules` 最終形が PRD に適用
 - [ ] E2E 全パス
 - [ ] ADR が `docs/internal/done/` に移動

@@ -33,11 +33,33 @@
 - [ ] PII マスキング規約（`shared-hs/src/Logger.hs`）
 - [ ] 統合テスト用 Firestore Emulator フィクスチャ（`shared-hs/test/`）
 
+### Haskell 認証基盤（`shared-hs/Auth/`）
+
+- [ ] `shared-hs/src/Auth/Firebase.hs` を実装
+  - [ ] Firebase session cookie の JWT 検証（RS256）
+  - [ ] JWKs 公開鍵を `https://www.googleapis.com/identitytoolkit/v3/relyingparty/publicKeys` から取得して TTL キャッシュ
+  - [ ] `iss = https://session.firebase.google.com/<PROJECT_ID>` 検証
+  - [ ] `aud = <PROJECT_ID>` 検証
+  - [ ] `exp` 検証 / `iat` 妥当性
+  - [ ] admin custom claim 確認関数
+- [ ] `shared-hs/src/Auth/Context.hs` を実装
+  - [ ] gRPC metadata から `x-firebase-session-cookie` を取り出し検証
+  - [ ] `AuthContext { uid, email, role, callerSA }` を構築
+  - [ ] 匿名 read 経路用の `AnonymousAuthContext`
+- [ ] `shared-hs/src/Auth/Guard.hs` を実装
+  - [ ] `requireAdmin :: AuthContext -> Either DomainError ()`
+  - [ ] `requireRole :: Role -> AuthContext -> Either DomainError ()`
+  - [ ] `requireOwner :: ResourceOwner -> AuthContext -> Either DomainError ()`
+- [ ] 実 `admin_session` cookie を使った統合テスト（Firebase Auth Emulator）
+
 ### TypeScript gRPC client 基盤
 
 - [ ] `applications/frontend/shared/` に `@connectrpc/connect-node` を追加
 - [ ] `shared/src/infrastructures/grpc/` ディレクトリを新設
-- [ ] gRPC client ファクトリ（Cloud Run IAM Identity Token 取得込み）
+- [ ] gRPC client ファクトリ
+  - [ ] Cloud Run IAM Identity Token 取得（metadata server / WIF）
+  - [ ] `x-firebase-session-cookie` metadata を Server Action のリクエストスコープから注入する仕組み
+  - [ ] `x-trace-id` を OpenTelemetry traceparent から注入
 - [ ] フィーチャーフラグ機構（`USE_API_FOR_<DOMAIN>` 環境変数）
 - [ ] Repository factory に `useApi: boolean` スイッチを追加
 - [ ] シャドー比較ロガー（Firestore 直 vs API の差分を Cloud Logging に）
@@ -257,9 +279,11 @@
 
 ---
 
-## フェーズ 6: 管理者・ユーザー API（`feat/api-users`）
+## フェーズ 6: 管理者・ユーザー・auth API（`feat/api-users`）
 
-**認可境界の最重要フェーズ**。admin 限定 RPC を厳密に。
+**認可境界の最重要フェーズ**。admin 限定 RPC を厳密に。`auth-api` でセッション管理を引き受ける。
+
+### users / admin API
 
 - [ ] `proto/admin/v1/`, `proto/users/v1/` 定義
 - [ ] `applications/api/users/` Haskell 実装
@@ -267,9 +291,36 @@
 - [ ] Terraform リソース
 - [ ] IAM 権限
   - [ ] admin RPC は `admin-sa` 限定（reader-sa は呼べない）
-  - [ ] 認可テスト（reader-sa から admin RPC を呼んで PERMISSION_DENIED が返ることを確認）
+  - [ ] 認可テスト（reader-sa から admin RPC を呼んで `PERMISSION_DENIED`）
 - [ ] STG → PRD 切替
 - [ ] 旧コード削除
+- [ ] CI / E2E / セキュリティチェックリスト完了
+
+### auth API（`applications/api/auth/`）
+
+- [ ] `proto/auth/v1/auth_service.proto` 定義
+  - [ ] `rpc IssueSession(IssueSessionRequest) returns (IssueSessionResponse)` (`firebaseIdToken` → `sessionCookie`, `expiresAt`)
+  - [ ] `rpc VerifySession(VerifySessionRequest) returns (User)` (`sessionCookie` → `User { uid, email, role }`)
+  - [ ] `rpc RevokeSession(RevokeSessionRequest) returns (google.protobuf.Empty)`
+- [ ] Haskell 実装
+  - [ ] Identity Platform REST (`createSessionCookie`) を直叩き
+  - [ ] `shared-hs/Auth/Firebase.hs` を共用して session cookie 検証
+  - [ ] メールホワイトリスト判定（`OIDC_ALLOWED_EMAILS` 互換）
+  - [ ] `revokeRefreshTokens` REST 呼び出し
+- [ ] Next.js Server Action 移行
+  - [ ] `applications/frontend/admin/src/actions/auth.ts` の `login()` を `authApiClient.IssueSession` 呼び出しに置換
+  - [ ] cookie の `set` のみ Next.js に残す（cookie 文字列は auth-api 戻り値を使用）
+  - [ ] `getSession()` を `authApiClient.VerifySession` に置換
+  - [ ] `logout()` を `authApiClient.RevokeSession` + cookie delete に置換
+- [ ] Terraform リソース（`stg-api-auth`, `prd-api-auth`）
+- [ ] IAM 権限
+  - [ ] reader-sa からは `VerifySession` のみ
+  - [ ] admin-sa は全 RPC
+  - [ ] auth-api SA は Identity Platform 操作権限
+- [ ] E2E 認可テスト
+  - [ ] reader-sa → admin RPC で `PERMISSION_DENIED`
+  - [ ] 期限切れ cookie で write RPC で `UNAUTHENTICATED`
+  - [ ] 別ユーザーの記事編集で `PERMISSION_DENIED`（所有権境界）
 - [ ] CI / E2E / セキュリティチェックリスト完了
 
 ---
@@ -316,8 +367,11 @@
 
 ## フェーズ 10: クリーンアップ（`feat/api-cleanup`）
 
-- [ ] `applications/frontend/shared/package.json` から `firebase-admin` 等を削除
+- [ ] `applications/frontend/shared/package.json` から `firebase-admin` を削除
+- [ ] `applications/frontend/admin/package.json` から `firebase-admin` を削除
 - [ ] `applications/frontend/shared/src/providers/infrastructure/firebase-admin.ts` を削除
+- [ ] `applications/frontend/admin/src/acl/oidc/server.ts` の Firebase Admin SDK 直接呼び出しを削除（`auth-api` 経由に統一済みであることを再確認）
+- [ ] `applications/frontend/shared/src/aspects/auth/session.ts`（レガシー Firestore 実装）を削除
 - [ ] `applications/frontend/shared/src/infrastructures/*` から Firestore 直実装を削除
 - [ ] ローカル開発で Firestore Emulator 直結を廃止（API 経由のみ）
 - [ ] `firestore.rules` を最終形（全 deny）に固定
