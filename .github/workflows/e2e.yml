@@ -23,7 +23,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -49,6 +49,20 @@ jobs:
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-hut
           E2E_AUTH_ENABLED: "true"
 
+      - name: Save Docker images
+        run: |
+          docker save hut-firebase-emulator-firebase-emulator | gzip > /tmp/firebase-emulator-image.tar.gz
+          docker save hut-firebase-emulator-search-token-worker | gzip > /tmp/search-token-worker-image.tar.gz
+
+      - name: Upload Docker images
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docker-images
+          path: |
+            /tmp/firebase-emulator-image.tar.gz
+            /tmp/search-token-worker-image.tar.gz
+          retention-days: 1
+
       - name: Stop Firebase Emulator
         if: always()
         run: docker compose -f ${{ env.FIREBASE_COMPOSE_FILE }} down
@@ -71,7 +85,7 @@ jobs:
     name: E2E Tests (Shard ${{ matrix.shard }}/${{ strategy.job-total }})
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -84,20 +98,15 @@ jobs:
 
       - name: Cache Playwright browsers
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('applications/frontend/pnpm-lock.yaml') }}
+          key: playwright-${{ runner.os }}-${{ hashFiles('applications/frontend/node_modules/@playwright/test/package.json') }}
 
       - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium
         working-directory: ${{ env.FRONTEND_DIR }}
-
-      - name: Install Playwright dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: pnpm exec playwright install-deps chromium
-        working-directory: ${{ env.FRONTEND_DIR }}
+        env:
+          DEBIAN_FRONTEND: noninteractive
 
       - name: Download build artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -108,6 +117,16 @@ jobs:
         run: |
           tar -xzf admin-build.tar.gz -C applications/frontend/admin
           tar -xzf reader-build.tar.gz -C applications/frontend/reader
+
+      - name: Download Docker images
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: docker-images
+
+      - name: Load Docker images
+        run: |
+          docker load < firebase-emulator-image.tar.gz
+          docker load < search-token-worker-image.tar.gz
 
       - name: Start Firebase Emulator
         run: |
