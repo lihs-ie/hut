@@ -23,7 +23,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -40,20 +40,6 @@ jobs:
       - name: Seed test data
         run: pnpm exec tsx ../scripts/seed/index.ts
         working-directory: ${{ env.FRONTEND_DIR }}
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium
-        working-directory: ${{ env.FRONTEND_DIR }}
-
-      - name: Save Playwright browsers
-        run: tar -czf /tmp/playwright-browsers.tar.gz -C "$HOME" .cache/ms-playwright
-
-      - name: Upload Playwright browsers
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-browsers
-          path: /tmp/playwright-browsers.tar.gz
-          retention-days: 1
 
       - name: Build
         run: pnpm build
@@ -99,7 +85,7 @@ jobs:
     name: E2E Tests (Shard ${{ matrix.shard }}/${{ strategy.job-total }})
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -110,15 +96,21 @@ jobs:
 
       - uses: ./.github/actions/setup-frontend
 
-      - name: Download Playwright browsers
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - name: Cache Playwright browsers
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        id: playwright-cache
         with:
-          name: playwright-browsers
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('applications/frontend/node_modules/@playwright/test/package.json') }}
+          save-always: true
 
-      - name: Restore Playwright browsers
-        run: tar -xzf playwright-browsers.tar.gz -C "$HOME"
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: ${{ env.FRONTEND_DIR }}
 
-      - name: Install Playwright system dependencies
+      - name: Install Playwright dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium
         working-directory: ${{ env.FRONTEND_DIR }}
 
