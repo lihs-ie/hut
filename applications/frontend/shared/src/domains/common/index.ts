@@ -6,3 +6,4 @@ export * from "./collections";
 export * from "./slug";
 export * from "./image-upload";
 export * from "./sort";
+export * from "./publish";

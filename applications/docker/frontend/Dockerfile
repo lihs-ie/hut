@@ -1,4 +1,4 @@
-FROM node:25.6.1-slim
+FROM node:24-slim
 
 RUN apt-get update && apt-get install -y \
     wget \
@@ -13,7 +13,7 @@ RUN mkdir -p /etc/apt/keyrings && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PNPM_HOME="/root/.local/share/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+ENV PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"
 RUN npm install -g pnpm
 RUN pnpm add -g firebase-tools@latest
 

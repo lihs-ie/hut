@@ -1,0 +1,35 @@
+name: Deploy reader to Cloudflare
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-reader-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prd
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup frontend (pnpm + Node.js + install)
+        uses: ./.github/actions/setup-frontend
+
+      - name: Build and deploy reader to Cloudflare Workers
+        working-directory: applications/frontend/reader
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: "false"
+          SERVER_ACTIONS_ALLOWED_ORIGINS: ${{ secrets.SERVER_ACTIONS_ALLOWED_ORIGINS_CLOUDFLARE }}
+          IMAGE_REMOTE_PATTERNS: ${{ vars.IMAGE_REMOTE_PATTERNS }}
+        run: pnpm deploy:cloudflare

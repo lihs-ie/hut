@@ -55,9 +55,9 @@ const LinkCardPresenter = (props: { metadata: OGPMetadata }) => {
       <div className={styles.card}>
         <div className={styles.content}>
           <div className={styles.text}>
-            <h3 className={styles.title}>
+            <p className={styles.title}>
               {props.metadata.title || props.metadata.url}
-            </h3>
+            </p>
             {props.metadata.description && (
               <p className={styles.description}>{props.metadata.description}</p>
             )}

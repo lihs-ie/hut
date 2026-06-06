@@ -1,4 +1,4 @@
-import { findAllTags } from "@shared/actions/tag";
+import { findAllTags } from "@/actions/tag";
 import { MDXRenderer } from "@shared/components/global/mdx";
 import { ArticleIndex } from "@shared/components/templates/article";
 import {
@@ -6,7 +6,7 @@ import {
   findBySlug,
   searchAllSlugs,
 } from "@/actions/article";
-import { incrementViewCount } from "@shared/actions/view";
+import { incrementViewCount } from "@/actions/view";
 
 export const revalidate = 3600;
 

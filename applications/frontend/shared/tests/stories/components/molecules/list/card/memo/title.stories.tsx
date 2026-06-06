@@ -15,6 +15,7 @@ const memo = Forger(MemoMold).forge();
 export const Default: StoryObj<typeof MemoTitleCard> = {
   args: {
     title: memo.title,
+    publishedAt: memo.publishedAt,
     timeline: memo.timeline,
     slug: memo.slug,
   },

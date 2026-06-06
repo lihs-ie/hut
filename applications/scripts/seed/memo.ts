@@ -65,6 +65,7 @@ export async function seedMemos(): Promise<void> {
         tags: memo.tags,
         images: [],
         entries: memo.entries,
+        publishedAt: memo.status === "published" ? memo.createdAt : null,
         timeline: {
           createdAt: memo.createdAt,
           updatedAt: now,

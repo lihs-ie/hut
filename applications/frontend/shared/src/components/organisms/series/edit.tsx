@@ -79,6 +79,11 @@ export const SeriesEditOrganism = (props: Props) => {
 
   const { execute, error, isLoading, reset } = useServerAction(
     async () => {
+      const now = new Date();
+      const publishedAt = status === PublishStatus.PUBLISHED
+        ? (props.initial?.publishedAt ?? now)
+        : null;
+
       await props.persist({
         identifier,
         title,
@@ -89,9 +94,10 @@ export const SeriesEditOrganism = (props: Props) => {
         tags,
         chapters: props.initial?.chapters ?? [],
         status,
+        publishedAt,
         timeline: {
-          createdAt: props.initial?.timeline.createdAt ?? new Date(),
-          updatedAt: new Date(),
+          createdAt: props.initial?.timeline.createdAt ?? now,
+          updatedAt: now,
         },
       });
     },

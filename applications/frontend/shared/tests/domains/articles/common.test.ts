@@ -112,6 +112,19 @@ describe("domains/articles/common", () => {
         const result = articleSchema.safeParse(article);
         expect(result.success).toBe(true);
       });
+
+      it("publishedAtがnullでも有効", () => {
+        const article = Forger(ArticleMold).forge({ publishedAt: null });
+        const result = articleSchema.safeParse(article);
+        expect(result.success).toBe(true);
+      });
+
+      it("publishedAtがDateでも有効", () => {
+        const publishedAt = new Date("2025-01-01T00:00:00Z");
+        const article = Forger(ArticleMold).forge({ publishedAt });
+        const result = articleSchema.safeParse(article);
+        expect(result.success).toBe(true);
+      });
     });
 
     describe("無効なArticleの検証", () => {
@@ -125,6 +138,8 @@ describe("domains/articles/common", () => {
         slug: "test-slug",
         status: "draft",
         tags: [],
+        images: [],
+        publishedAt: null,
         timeline: { createdAt: new Date(), updatedAt: new Date() },
         ...overrides,
       });
@@ -149,6 +164,13 @@ describe("domains/articles/common", () => {
         );
         expect(result.success).toBe(false);
       });
+
+      it("publishedAtが文字列の場合は無効", () => {
+        const result = articleSchema.safeParse(
+          createArticleWithOverrides({ publishedAt: "2025-01-01" }),
+        );
+        expect(result.success).toBe(false);
+      });
     });
   });
 
@@ -163,6 +185,23 @@ describe("domains/articles/common", () => {
         status: "draft",
         tags: [],
         images: [],
+        publishedAt: null,
+        timeline: Forger(TimelineMold).forge(),
+      });
+      expect(result.isOk).toBe(true);
+    });
+
+    it("publishedAtがnullのUnvalidatedArticleでokを返す", () => {
+      const result = validateArticle({
+        identifier: Forger(ArticleIdentifierMold).forge(),
+        title: "下書き記事",
+        content: "まだ公開前",
+        excerpt: "抜粋",
+        slug: "draft-article",
+        status: "draft",
+        tags: [],
+        images: [],
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);
@@ -178,6 +217,7 @@ describe("domains/articles/common", () => {
         status: "invalid",
         tags: [],
         images: [],
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -219,6 +259,21 @@ describe("domains/articles/common", () => {
       expect(snapshot.identifier).toBe(article.identifier);
       expect(snapshot.title).toBe(article.title);
       expect(snapshot.status).toBe(article.status);
+    });
+
+    it("publishedAtが保持される", () => {
+      const publishedAt = new Date("2025-01-01T00:00:00Z");
+      const article = Forger(ArticleMold).forge({ publishedAt });
+      const snapshot = toSnapshot(article);
+
+      expect(snapshot.publishedAt).toEqual(article.publishedAt);
+    });
+
+    it("publishedAtがnullの場合もnullとして保持される", () => {
+      const article = Forger(ArticleMold).forge({ publishedAt: null });
+      const snapshot = toSnapshot(article);
+
+      expect(snapshot.publishedAt).toBeNull();
     });
   });
 

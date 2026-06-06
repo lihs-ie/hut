@@ -4,6 +4,7 @@ import styles from "./content.module.css";
 type Props = {
   src: string;
   alt: string;
+  priority?: boolean;
 };
 
 export const ContentImage = (props: Props) => (
@@ -15,5 +16,6 @@ export const ContentImage = (props: Props) => (
     height={450}
     sizes="(max-width: 768px) 100vw, 800px"
     style={{ maxWidth: "100%", height: "auto" }}
+    priority={props.priority}
   />
 );

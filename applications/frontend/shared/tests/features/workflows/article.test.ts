@@ -49,6 +49,7 @@ function toArticlePayload(article: Article) {
     status: article.status,
     tags: article.tags,
     images: article.images,
+    publishedAt: article.publishedAt,
     timeline: article.timeline,
   };
 }

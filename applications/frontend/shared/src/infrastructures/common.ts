@@ -27,6 +27,9 @@ export type TagNameIndex = {
 
 export const getTagNameIndexPath = (name: string): string =>
   `index/tags/name/${name}`;
+
+export const FIRESTORE_IN_BATCH_LIMIT = 30;
+
 import { AsyncResult, fromPromise } from "@shared/aspects/result";
 import { ImageUploader } from "@shared/domains/common/image";
 import type {

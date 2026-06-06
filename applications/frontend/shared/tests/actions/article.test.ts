@@ -40,6 +40,7 @@ tags: []
         status: PublishStatus.DRAFT,
         tags: [],
         images: [],
+        publishedAt: null,
         timeline: { createdAt: new Date(), updatedAt: new Date() },
       };
 
