@@ -106,13 +106,14 @@ jobs:
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
         working-directory: ${{ env.FRONTEND_DIR }}
 
-      - name: Install Playwright dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+      - name: Install Playwright system dependencies
         run: pnpm exec playwright install-deps chromium
         working-directory: ${{ env.FRONTEND_DIR }}
+        env:
+          DEBIAN_FRONTEND: noninteractive
 
       - name: Download build artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
