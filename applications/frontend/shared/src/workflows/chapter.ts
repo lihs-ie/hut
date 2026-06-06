@@ -187,6 +187,7 @@ const toUnvalidatedSeries = (series: Series): UnvalidatedSeries => ({
   tags: series.tags,
   chapters: series.chapters,
   status: series.status,
+  publishedAt: series.publishedAt ?? null,
   timeline: {
     createdAt: series.timeline.createdAt,
     updatedAt: new Date(),

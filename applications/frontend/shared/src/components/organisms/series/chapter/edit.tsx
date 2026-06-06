@@ -125,16 +125,23 @@ export const ChapterEditOrganism = (props: Props) => {
 
   const { execute, error, isLoading, reset } = useServerAction(
     async () => {
+      const now = new Date();
+      const nextStatus = status ?? PublishStatus.DRAFT;
+      const publishedAt = nextStatus === PublishStatus.PUBLISHED
+        ? (props.initial?.publishedAt ?? now)
+        : null;
+
       await props.persist({
         identifier,
         title,
         slug,
         content: stripFrontmatter(content).trim() || title,
         images,
-        status: status ?? PublishStatus.DRAFT,
+        status: nextStatus,
+        publishedAt,
         timeline: {
-          createdAt: props.initial?.timeline.createdAt ?? new Date(),
-          updatedAt: new Date(),
+          createdAt: props.initial?.timeline.createdAt ?? now,
+          updatedAt: now,
         },
       });
     },

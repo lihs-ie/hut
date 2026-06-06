@@ -42,7 +42,7 @@ export type Props<T extends { tags: TagIdentifier[] }> = {
   search: () => Promise<T[]>;
   slugOf: (item: T) => Slug;
   titleOf: (item: T) => string;
-  dateOf: (item: T) => Date;
+  dateOf: (item: T) => Date | null;
   findAllTags: (identifiers: string[]) => Promise<Tag[]>;
   hasAllLink?: boolean;
   maxItems?: number;

@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { revalidateTag } from "next/cache";
 import { unwrapForNextJs } from "@shared/components/global/next-error";
 import { Series, UnvalidatedCriteria, UnvalidatedSeries } from "@shared/domains/series";
@@ -7,7 +8,7 @@ import { AdminSeriesWorkflowProvider } from "@/providers/workflows/series";
 import { EventBrokerProvider } from "@/providers/domain/event";
 import { requireAdmin } from "@/aspects/auth-guard";
 
-export async function findBySlug(slug: string): Promise<Series> {
+export const findBySlug = cache(async (slug: string): Promise<Series> => {
   await requireAdmin();
   return await unwrapForNextJs(
     AdminSeriesWorkflowProvider.findBySlug({
@@ -15,7 +16,7 @@ export async function findBySlug(slug: string): Promise<Series> {
       now: new Date(),
     }),
   );
-}
+});
 
 export async function persist(unvalidated: UnvalidatedSeries): Promise<void> {
   await requireAdmin();

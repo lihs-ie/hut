@@ -5,17 +5,17 @@ import {
   createArticleSearchWorkflow,
 } from "@shared/workflows/article";
 import { createPublishedOnlyFilter } from "@shared/workflows/common";
-import { ArticleRepositoryProvider } from "@shared/providers/infrastructure/articles";
 import { LoggerProvider } from "@shared/providers/infrastructure/logger";
+import { ReaderArticleRepositoryProvider } from "@/providers/infrastructure/articles";
 
 export const ArticleWorkflowProvider = {
   findBySlug: createArticleFindBySlugWorkflow(validateSlug)(
     LoggerProvider.console,
-  )(ArticleRepositoryProvider.firebase.findBySlug)(
+  )(ReaderArticleRepositoryProvider.firebase.findBySlug)(
     createPublishedOnlyFilter("Article"),
   ),
 
   search: createArticleSearchWorkflow(validateCriteria)(
-    ArticleRepositoryProvider.firebase.search,
+    ReaderArticleRepositoryProvider.firebase.search,
   )(LoggerProvider.console),
 } as const;

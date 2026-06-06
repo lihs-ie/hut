@@ -44,7 +44,6 @@
   letter-spacing: -0.01em;
   color: var(--foreground);
   margin: 0 0 4px 0 !important;
-  font-size: 0.9375rem !important;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;

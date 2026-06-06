@@ -17,7 +17,7 @@ vi.mock("@shared/actions/tag", () => ({
 
 vi.mock("@shared/components/global/mdx", () => ({
   MDXRenderer: vi.fn(),
-  generateToc: vi.fn(),
+  generateTOC: vi.fn(),
 }));
 
 vi.mock("@shared/components/templates/article", () => ({

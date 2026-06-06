@@ -5,15 +5,15 @@ import {
   createMemoSearchWorkflow,
 } from "@shared/workflows/memo";
 import { createPublishedOnlyFilter } from "@shared/workflows/common";
-import { MemoRepositoryProvider } from "@shared/providers/infrastructure/memo";
 import { LoggerProvider } from "@shared/providers/infrastructure/logger";
+import { ReaderMemoRepositoryProvider } from "@/providers/infrastructure/memo";
 
 export const MemoWorkflowProvider = {
   findBySlug: createMemoFindBySlugWorkflow(validateSlug)(
-    MemoRepositoryProvider.firebase.findBySlug,
+    ReaderMemoRepositoryProvider.firebase.findBySlug,
   )(createPublishedOnlyFilter("Memo"))(LoggerProvider.console),
 
   search: createMemoSearchWorkflow(validateCriteria)(
-    MemoRepositoryProvider.firebase.search,
+    ReaderMemoRepositoryProvider.firebase.search,
   )(LoggerProvider.console),
 } as const;

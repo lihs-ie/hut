@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { TableOfContents } from "@shared/components/molecules/list/table-of-contents";
-import { generateToc } from "@shared/components/global/mdx";
+import { generateTOC } from "@shared/components/global/mdx";
 
 const meta = {
   component: TableOfContents,
@@ -29,7 +29,7 @@ Some content under heading 2.
 Some content under heading 2.1.
 `;
 
-const tocTree = generateToc(content);
+const tocTree = generateTOC(content);
 
 export const Default: StoryObj<typeof TableOfContents> = {
   args: {

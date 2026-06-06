@@ -9,6 +9,7 @@ type Props = {
   className?: string;
   target?: string;
   "aria-label"?: string;
+  "aria-current"?: "page" | "step" | "location" | "date" | "time" | "true" | "false";
 };
 
 export const NavigableLink = (props: Props) => {
@@ -31,6 +32,7 @@ export const NavigableLink = (props: Props) => {
       target={props.target}
       onClick={handleClick}
       aria-label={props["aria-label"]}
+      aria-current={props["aria-current"]}
     >
       {props.children}
     </Link>
