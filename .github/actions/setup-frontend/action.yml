@@ -5,11 +5,11 @@ inputs:
   node-version:
     description: Node.js version
     required: false
-    default: "24"
+    default: "lts/*"
   pnpm-version:
     description: pnpm version
     required: false
-    default: "9"
+    default: "11"
 
 runs:
   using: composite

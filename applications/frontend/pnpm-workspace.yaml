@@ -3,3 +3,21 @@ packages:
   - "reader"
   - "admin"
   - "../scripts"
+
+allowBuilds:
+  '@firebase/util': true
+  esbuild: true
+  protobufjs: true
+  sharp: true
+  unrs-resolver: true
+  workerd: true
+
+overrides:
+  '@types/react': ^19.2.14
+  fast-xml-parser: ^5.5.12
+  yaml: ^2.8.3
+  '@tootallnate/once': ^3.0.1
+  node-forge: ^1.4.0
+  lodash-es: ^4.18.0
+  flatted: ^3.4.2
+  picomatch: ^4.0.4
