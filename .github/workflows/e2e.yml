@@ -23,12 +23,26 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - uses: ./.github/actions/setup-frontend
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Archive Playwright browsers
+        run: tar -czf /tmp/playwright-browsers.tar.gz -C $HOME/.cache ms-playwright
+
+      - name: Upload Playwright browsers
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-browsers
+          path: /tmp/playwright-browsers.tar.gz
+          retention-days: 1
 
       - name: Start Firebase Emulator
         run: |
@@ -96,18 +110,15 @@ jobs:
 
       - uses: ./.github/actions/setup-frontend
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        id: playwright-cache
+      - name: Download Playwright browsers
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('applications/frontend/node_modules/@playwright/test/package.json') }}
-          save-always: true
+          name: playwright-browsers
 
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm exec playwright install chromium
-        working-directory: ${{ env.FRONTEND_DIR }}
+      - name: Extract Playwright browsers
+        run: |
+          mkdir -p $HOME/.cache/ms-playwright
+          tar -xzf playwright-browsers.tar.gz -C $HOME/.cache
 
       - name: Install Playwright system dependencies
         run: pnpm exec playwright install-deps chromium
