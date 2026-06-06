@@ -14,7 +14,7 @@ RUN mkdir -p /etc/apt/keyrings && \
 
 ENV PNPM_HOME="/root/.local/share/pnpm"
 ENV PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 RUN pnpm add -g firebase-tools@latest
 
 WORKDIR /app
