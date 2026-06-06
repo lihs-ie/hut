@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { vi } from "vitest";
-import { createBaseNextConfig } from "../../next.config.shared";
+import {
+  createBaseNextConfig,
+  SENTRY_CONNECT_SOURCES,
+} from "../../next.config.shared";
 
 describe("next.config.shared - セキュリティヘッダー", () => {
   const originalEnv = process.env;
@@ -255,6 +258,41 @@ describe("next.config.shared - セキュリティヘッダー", () => {
     it("useFirebaseEmulator 未指定の場合 frame-src に http://localhost:9099 が含まれない", async () => {
       const frameSrc = await getCSPDirective("frame-src");
       expect(frameSrc).not.toContain("http://localhost:9099");
+    });
+  });
+
+  describe("Sentry エンドポイントが connect-src に含まれる", () => {
+    const getCSPDirective = async (
+      directiveName: string,
+      options?: Parameters<typeof createBaseNextConfig>[0],
+    ): Promise<string | undefined> => {
+      const config = createBaseNextConfig(options);
+      const headersResult = await config.headers?.();
+      const allRoutesHeader = headersResult!.find(
+        (h) => h.source === "/(.*)",
+      );
+      const header = allRoutesHeader!.headers.find(
+        (h) => h.key === "Content-Security-Policy",
+      );
+      return header?.value
+        ?.split(";")
+        .map((d) => d.trim())
+        .find((d) => d.startsWith(directiveName));
+    };
+
+    it("connect-src に https://*.sentry.io が含まれる", async () => {
+      const connectSrc = await getCSPDirective("connect-src");
+      expect(connectSrc).toContain("https://*.sentry.io");
+    });
+
+    it("connect-src に https://*.ingest.sentry.io が含まれる", async () => {
+      const connectSrc = await getCSPDirective("connect-src");
+      expect(connectSrc).toContain("https://*.ingest.sentry.io");
+    });
+
+    it("SENTRY_CONNECT_SOURCES が export されており両方の Sentry ホストを含む", () => {
+      expect(SENTRY_CONNECT_SOURCES).toContain("https://*.sentry.io");
+      expect(SENTRY_CONNECT_SOURCES).toContain("https://*.ingest.sentry.io");
     });
   });
 

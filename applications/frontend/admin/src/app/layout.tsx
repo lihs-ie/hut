@@ -12,6 +12,7 @@ import { getProfile } from "@shared/actions/admin";
 import { NavigationProvider } from "@shared/components/molecules/navigation/provider";
 import { ToastProvider } from "@shared/components/molecules/toast";
 import { ThemeProvider } from "@shared/components/molecules/theme/provider";
+import { WebVitalsReporter } from "@shared/components/global/web-vitals-reporter";
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
@@ -47,6 +48,7 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <body className={`${notoSansJP.variable} ${inter.variable} ${geistMono.variable} admin`}>
+        <WebVitalsReporter />
         <ThemeProvider>
           <NuqsAdapter>
             <ToastProvider>

@@ -104,12 +104,15 @@ jobs:
           INPUT_APPLICATION: ${{ inputs.application }}
           INPUT_ENVIRONMENT: ${{ inputs.environment }}
           GIT_SHA: ${{ github.sha }}
+          SENTRY_PROJECT_READER: ${{ secrets.SENTRY_PROJECT_READER }}
+          SENTRY_PROJECT_ADMIN: ${{ secrets.SENTRY_PROJECT_ADMIN }}
         run: |
           TAG="${INPUT_TAG}"
           if [ -z "${TAG}" ]; then
             TAG="${GIT_SHA}"
           fi
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "git_sha=${GIT_SHA}" >> "${GITHUB_OUTPUT}"
 
           ENV="${INPUT_ENVIRONMENT}"
 
@@ -145,6 +148,18 @@ jobs:
               echo "app_type=worker" >> "${GITHUB_OUTPUT}"
               echo "app_name=search-token-worker" >> "${GITHUB_OUTPUT}"
               echo "app_port=8080" >> "${GITHUB_OUTPUT}"
+              ;;
+          esac
+
+          case "${INPUT_APPLICATION}" in
+            reader)
+              echo "sentry_project=${SENTRY_PROJECT_READER}" >> "${GITHUB_OUTPUT}"
+              ;;
+            admin)
+              echo "sentry_project=${SENTRY_PROJECT_ADMIN}" >> "${GITHUB_OUTPUT}"
+              ;;
+            *)
+              echo "sentry_project=" >> "${GITHUB_OUTPUT}"
               ;;
           esac
 
@@ -194,6 +209,8 @@ jobs:
           secret-files: |
             gcp_credentials=${{ steps.docker-creds.outputs.cred_file }}
             ${{ steps.docker-creds.outputs.token_file != '' && format('gcp_oidc_token={0}', steps.docker-creds.outputs.token_file) || '' }}
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           build-args: |
             ${{ steps.vars.outputs.app_type == 'frontend' && format('APP_NAME={0}', steps.vars.outputs.app_name) || '' }}
             ${{ steps.vars.outputs.app_type == 'frontend' && format('APP_PORT={0}', steps.vars.outputs.app_port) || '' }}
@@ -205,6 +222,11 @@ jobs:
             ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_FIREBASE_APP_ID={0}', secrets.FIREBASE_APP_ID) || '' }}
             ${{ steps.vars.outputs.app_type == 'frontend' && format('SERVER_ACTIONS_ALLOWED_ORIGINS={0}', secrets.SERVER_ACTIONS_ALLOWED_ORIGINS) || '' }}
             ${{ steps.vars.outputs.app_type == 'frontend' && format('IMAGE_REMOTE_PATTERNS={0}', vars.IMAGE_REMOTE_PATTERNS) || '' }}
+            ${{ steps.vars.outputs.app_name == 'reader' && format('NEXT_PUBLIC_SENTRY_DSN_READER={0}', secrets.NEXT_PUBLIC_SENTRY_DSN_READER) || '' }}
+            ${{ steps.vars.outputs.app_name == 'admin' && format('NEXT_PUBLIC_SENTRY_DSN_ADMIN={0}', secrets.NEXT_PUBLIC_SENTRY_DSN_ADMIN) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('NEXT_PUBLIC_GIT_SHA={0}', steps.vars.outputs.git_sha) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('SENTRY_ORG={0}', secrets.SENTRY_ORG) || '' }}
+            ${{ steps.vars.outputs.app_type == 'frontend' && format('SENTRY_PROJECT={0}', steps.vars.outputs.sentry_project) || '' }}
 
       - name: Deploy to Cloud Run
         env:
@@ -215,6 +237,7 @@ jobs:
           APP_PORT: ${{ steps.vars.outputs.app_port }}
           SERVICE_NAME: ${{ steps.vars.outputs.service_name }}
           IMAGE_TAG: ${{ steps.vars.outputs.tag }}
+          GIT_SHA: ${{ steps.vars.outputs.git_sha }}
         run: |
           IMAGE="${REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/hut-${INPUT_ENVIRONMENT}/${INPUT_APPLICATION}:${IMAGE_TAG}"
 
@@ -227,7 +250,7 @@ jobs:
 
           if [ "${APP_TYPE}" = "frontend" ]; then
             DEPLOY_ARGS+=(
-              --update-env-vars "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},NEXT_PUBLIC_USE_FIREBASE_EMULATOR=false"
+              --update-env-vars "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${GCP_PROJECT_ID},NEXT_PUBLIC_USE_FIREBASE_EMULATOR=false,NEXT_PUBLIC_GIT_SHA=${GIT_SHA},NEXT_PUBLIC_SENTRY_ENVIRONMENT=${INPUT_ENVIRONMENT}"
             )
           fi
 
