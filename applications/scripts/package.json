@@ -8,6 +8,6 @@
     "ulid": "^3.0.2"
   },
   "devDependencies": {
-    "tsx": "^4.0.0"
+    "tsx": "^4.22.4"
   }
 }
