@@ -77,6 +77,8 @@ resource "cloudflare_r2_bucket_event_notification" "tmp_object_created" {
   rules = [{
     actions     = ["PutObject", "CopyObject", "CompleteMultipartUpload"]
     description = "Send completed temporary uploads to Media inspection"
+    prefix      = ""
+    suffix      = ""
   }]
 }
 

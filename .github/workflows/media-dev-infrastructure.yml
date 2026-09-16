@@ -140,44 +140,6 @@ jobs:
             exit "${exit_code}"
           fi
 
-          terraform show -json convergence.tfplan | jq '
-            [
-              .resource_changes[]
-              | select(.change.actions != ["no-op"])
-              | {
-                  address,
-                  actions: .change.actions,
-                  before_queue_name: .change.before.queue_name,
-                  after_queue_name: .change.after.queue_name,
-                  queue_name_unknown: .change.after_unknown.queue_name,
-                  differing_keys: ([
-                    (.change.before | keys[]) as $key
-                    | select(.change.before[$key] != .change.after[$key])
-                    | $key
-                  ]),
-                  unknown_keys: ([
-                    .change.after_unknown
-                    | to_entries[]
-                    | select(.value != false)
-                    | .key
-                  ]),
-                  differing_rule_keys: ([
-                    (.change.before.rules[0] | keys[]) as $key
-                    | select(
-                        .change.before.rules[0][$key]
-                        != .change.after.rules[0][$key]
-                      )
-                    | $key
-                  ]),
-                  rules_unknown: .change.after_unknown.rules,
-                  equal_without_queue_name: (
-                    (.change.before | del(.queue_name))
-                    == (.change.after | del(.queue_name))
-                  )
-                }
-            ]
-          '
-
           terraform show -json convergence.tfplan | jq -e '
             [
               .resource_changes[]
