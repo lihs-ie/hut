@@ -105,33 +105,54 @@ resource "cloudflare_ruleset" "asset_cache" {
   count = local.zone_cache_enabled ? 1 : 0
 
   zone_id     = var.cloudflare_zone_id
-  name        = "Hut Media immutable asset cache"
-  description = "Cache immutable Media assets at the edge and in browsers"
+  name        = "default"
+  description = ""
   kind        = "zone"
   phase       = "http_request_cache_settings"
 
-  rules = [{
-    ref         = "hut_media_immutable_assets"
-    description = "Cache assets served from ${var.asset_custom_domain}"
-    expression  = "(http.host eq \"${var.asset_custom_domain}\")"
-    action      = "set_cache_settings"
-    enabled     = true
-    action_parameters = {
-      cache = true
-      edge_ttl = {
-        mode    = "override_origin"
-        default = var.asset_cache_ttl_seconds
+  rules = concat(
+    [for rule in var.preserved_zone_cache_rules : {
+      ref         = rule.ref
+      description = rule.description
+      expression  = rule.expression
+      action      = "set_cache_settings"
+      enabled     = true
+      action_parameters = {
+        cache = true
+        edge_ttl = {
+          mode            = "override_origin"
+          default         = rule.edge_ttl_default
+          status_code_ttl = rule.status_code_ttl
+        }
+        browser_ttl = {
+          mode    = "override_origin"
+          default = rule.browser_ttl_default
+        }
       }
-      browser_ttl = {
-        mode    = "override_origin"
-        default = var.asset_cache_ttl_seconds
+    }],
+    [{
+      ref         = "hut_media_immutable_assets"
+      description = "Cache assets served from ${var.asset_custom_domain}"
+      expression  = "(http.host eq \"${var.asset_custom_domain}\")"
+      action      = "set_cache_settings"
+      enabled     = true
+      action_parameters = {
+        cache = true
+        edge_ttl = {
+          mode    = "override_origin"
+          default = var.asset_cache_ttl_seconds
+        }
+        browser_ttl = {
+          mode    = "override_origin"
+          default = var.asset_cache_ttl_seconds
+        }
+        cache_key = {
+          cache_deception_armor      = true
+          ignore_query_strings_order = true
+        }
       }
-      cache_key = {
-        cache_deception_armor      = true
-        ignore_query_strings_order = true
-      }
-    }
-  }]
+    }],
+  )
 }
 
 resource "cloudflare_tiered_cache" "assets" {
