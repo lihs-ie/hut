@@ -150,6 +150,17 @@ jobs:
                   before_queue_name: .change.before.queue_name,
                   after_queue_name: .change.after.queue_name,
                   queue_name_unknown: .change.after_unknown.queue_name,
+                  differing_keys: ([
+                    (.change.before | keys[]) as $key
+                    | select(.change.before[$key] != .change.after[$key])
+                    | $key
+                  ]),
+                  unknown_keys: ([
+                    .change.after_unknown
+                    | to_entries[]
+                    | select(.value != false)
+                    | .key
+                  ]),
                   equal_without_queue_name: (
                     (.change.before | del(.queue_name))
                     == (.change.after | del(.queue_name))
