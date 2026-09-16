@@ -78,10 +78,6 @@ resource "cloudflare_r2_bucket_event_notification" "tmp_object_created" {
     actions     = ["PutObject", "CopyObject", "CompleteMultipartUpload"]
     description = "Send completed temporary uploads to Media inspection"
   }]
-
-  lifecycle {
-    ignore_changes = [queue_name]
-  }
 }
 
 # Temporary uploads are never exposed through a Cloudflare-managed public URL.
