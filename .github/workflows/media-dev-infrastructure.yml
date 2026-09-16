@@ -161,6 +161,15 @@ jobs:
                     | select(.value != false)
                     | .key
                   ]),
+                  differing_rule_keys: ([
+                    (.change.before.rules[0] | keys[]) as $key
+                    | select(
+                        .change.before.rules[0][$key]
+                        != .change.after.rules[0][$key]
+                      )
+                    | $key
+                  ]),
+                  rules_unknown: .change.after_unknown.rules,
                   equal_without_queue_name: (
                     (.change.before | del(.queue_name))
                     == (.change.after | del(.queue_name))
