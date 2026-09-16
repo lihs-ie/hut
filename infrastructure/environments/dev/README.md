@@ -58,9 +58,11 @@ is informational and does not stop or delete resources.
 
 ## Deploy
 
-Run `Media Dev Infrastructure` first when bootstrapping the environment. It
-creates the resources required before the upload-signing credentials can be
-scoped to `hut-media-tmp-uploads-dev`.
+Run `Media Dev Infrastructure` with `apply` disabled first. The workflow imports
+the zone's existing Cache Ruleset and produces a plan without changing remote
+resources. Review that plan, then run it again with `apply` enabled. This creates
+the resources required before the upload-signing credentials can be scoped to
+`hut-media-tmp-uploads-dev`.
 
 Run the `Media Dev Deploy` workflow manually. It tests the code, provisions
 resources, applies forward-only D1 migrations, deploys consumer Workers before

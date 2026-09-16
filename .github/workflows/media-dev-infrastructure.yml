@@ -2,6 +2,12 @@ name: Media Dev Infrastructure
 
 on:
   workflow_dispatch:
+    inputs:
+      apply:
+        description: Apply the reviewed Terraform plan
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -48,6 +54,50 @@ jobs:
         run: terraform validate -no-color
         working-directory: ${{ env.TERRAFORM_DIRECTORY }}
 
+      - name: Import the existing zone cache ruleset
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TERRAFORM_API_TOKEN }}
+          CLOUDFLARE_ZONE_IDENTIFIER: ${{ vars.CLOUDFLARE_ZONE_IDENTIFIER }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_IDENTIFIER }}
+        run: |
+          set -Eeuo pipefail
+
+          resource='module.media_cloudflare.cloudflare_ruleset.asset_cache[0]'
+          if terraform state show "${resource}" >/dev/null 2>&1; then
+            echo "Cache ruleset is already managed by Terraform."
+            exit 0
+          fi
+
+          ruleset_id="$({
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_IDENTIFIER}/rulesets"
+          } | jq -r '
+            [
+              .result[]
+              | select(
+                  .phase == "http_request_cache_settings"
+                  and .kind == "zone"
+                )
+            ]
+            | if length == 1 then .[0].id else empty end
+          ')"
+
+          if [ -z "${ruleset_id}" ]; then
+            echo "Expected exactly one zone cache ruleset to import." >&2
+            exit 1
+          fi
+
+          terraform import \
+            "${resource}" \
+            "zones/${CLOUDFLARE_ZONE_IDENTIFIER}/${ruleset_id}"
+
       - name: Terraform plan
         run: terraform plan -input=false -out=tfplan
         working-directory: ${{ env.TERRAFORM_DIRECTORY }}
@@ -61,6 +111,7 @@ jobs:
           TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_IDENTIFIER }}
 
       - name: Terraform apply
+        if: ${{ inputs.apply }}
         run: terraform apply -input=false -auto-approve tfplan
         working-directory: ${{ env.TERRAFORM_DIRECTORY }}
         env:
@@ -71,6 +122,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TERRAFORM_API_TOKEN }}
 
       - name: Confirm Terraform convergence
+        if: ${{ inputs.apply }}
         run: terraform plan -input=false -detailed-exitcode
         working-directory: ${{ env.TERRAFORM_DIRECTORY }}
         env:
