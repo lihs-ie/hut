@@ -64,6 +64,22 @@ variable "manage_zone_cache" {
   default     = true
 }
 
+variable "preserved_zone_cache_rules" {
+  description = "Pre-existing rules that must remain in the zone cache ruleset"
+  type = list(object({
+    ref                 = string
+    description         = string
+    expression          = string
+    edge_ttl_default    = number
+    browser_ttl_default = number
+    status_code_ttl = list(object({
+      status_code = number
+      value       = number
+    }))
+  }))
+  default = []
+}
+
 variable "manage_tiered_cache" {
   description = "Whether this module owns the zone-wide Smart Tiered Cache setting"
   type        = bool

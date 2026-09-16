@@ -18,4 +18,16 @@ module "media_cloudflare" {
   tmp_upload_cors_allowed_origins = [
     "https://admin.hut.dev.lihs-dev.com",
   ]
+
+  preserved_zone_cache_rules = [{
+    ref                 = "562a3fd35dd0487f83cf6cf367ea5249"
+    description         = "image cache"
+    expression          = "(starts_with(http.request.full_uri, \"https://image.lihs-dev.com/\"))"
+    edge_ttl_default    = 31536000
+    browser_ttl_default = 86400
+    status_code_ttl = [{
+      status_code = 200
+      value       = 86400
+    }]
+  }]
 }
