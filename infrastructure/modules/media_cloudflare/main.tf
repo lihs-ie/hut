@@ -53,6 +53,9 @@ resource "cloudflare_d1_database" "media" {
   account_id            = var.cloudflare_account_id
   name                  = "${local.resource_prefix}-${var.environment}"
   primary_location_hint = var.r2_location
+  read_replication = {
+    mode = "disabled"
+  }
 
   lifecycle {
     prevent_destroy = true
