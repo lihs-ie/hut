@@ -88,6 +88,7 @@ async function seedInspection(environment) {
   ]);
   await environment.MEDIA_TMP_UPLOADS.put(objectKey, png, {
     httpMetadata: { contentType: "image/png" },
+    sha256: digest,
   });
   await environment.MEDIA_INSPECTION_QUEUE.send({ data: { key: objectKey } });
   return json({ imageIdentifier: identifiers.inspectionImage }, 202);

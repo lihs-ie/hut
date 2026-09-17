@@ -42,7 +42,7 @@ resource "cloudflare_r2_bucket_cors" "tmp_uploads" {
     allowed = {
       origins = var.tmp_upload_cors_allowed_origins
       methods = ["PUT", "HEAD"]
-      headers = ["Content-Type"]
+      headers = ["Content-Type", "x-amz-checksum-sha256"]
     }
     expose_headers  = ["ETag"]
     max_age_seconds = 3600

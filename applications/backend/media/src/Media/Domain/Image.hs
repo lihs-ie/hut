@@ -33,6 +33,7 @@ module Media.Domain.Image (
     newDeclaredImageContentType,
     newImageSha256,
     newImageUploadDeclaration,
+    verifyImageUploadIntegrity,
     newImageWidth,
     newImageHeight,
     newImageDimensions,
@@ -170,6 +171,9 @@ newtype MaximumImagePixelCount = MaximumImagePixelCount ImagePixelCount
 data ImageRejection
     = UnsupportedImageFormat
     | MalformedImage
+    | ImageByteSizeMismatch
+    | ImageSha256Mismatch
+    | ImageSha256Missing
     | ImageFileTooLarge ImageByteSize MaximumImageByteSize
     | ImageDimensionsTooLarge ImageDimensions MaximumImageDimensions
     | ImageHasTooManyPixels ImagePixelCount MaximumImagePixelCount
@@ -258,6 +262,20 @@ newImageSha256 value
 newImageUploadDeclaration ::
     DeclaredImageContentType -> ImageByteSize -> ImageSha256 -> ImageUploadDeclaration
 newImageUploadDeclaration = ImageUploadDeclaration
+
+verifyImageUploadIntegrity ::
+    ImageUploadDeclaration -> ImageByteSize -> Maybe ImageSha256 -> Either ImageRejection ()
+verifyImageUploadIntegrity
+    (ImageUploadDeclaration _ declaredByteSize declaredSha256)
+    actualByteSize
+    actualSha256
+        | actualByteSize /= declaredByteSize =
+            Left ImageByteSizeMismatch
+        | Nothing <- actualSha256 = Left ImageSha256Missing
+        | Just digest <- actualSha256
+        , digest /= declaredSha256 =
+            Left ImageSha256Mismatch
+        | otherwise = Right ()
 
 newImageWidth :: Integer -> Either DomainError ImageWidth
 newImageWidth value

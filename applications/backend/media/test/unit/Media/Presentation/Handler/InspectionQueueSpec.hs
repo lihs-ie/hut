@@ -7,8 +7,9 @@ import Control.Exception (SomeException, throwIO, try)
 import Control.Monad (forM)
 import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.Text (Text)
+import Data.Time (addUTCTime)
 import Media.Presentation.Handler.QueueTestSupport (
-    cloudflareR2Body,
+    cloudflareR2BodyAt,
     commandMetadataMatches,
     emptyInspectionDependencies,
     fixedTime,
@@ -60,21 +61,25 @@ inspectionSuccess = do
     capturedCommand <- newIORef Nothing
     capturedKeys <- newIORef Nothing
     disposition <- newDisposition
-    let dependencies =
+    let uploadedAt = addUTCTime (-60) fixedTime
+        dependencies =
             InspectionDependencies
-                ( \actualAttempt actualTime -> do
+                ( \actualAttempt actualUploadedAt startedAt -> do
                     modifyIORef' calls (<> ["claim"])
-                    if actualAttempt == attempt && actualTime == fixedTime
+                    if actualAttempt == attempt
+                        && actualUploadedAt == addUTCTime (-60) fixedTime
+                        && startedAt == fixedTime
                         then pure (Just (InspectionClaim image temporaryKey))
                         else pure Nothing
                 )
-                ( \temporary final -> do
+                ( \_ temporary final -> do
                     modifyIORef' calls (<> ["normalize"])
                     writeIORef
                         capturedKeys
                         (Just (temporaryObjectKeyText temporary, finalObjectKeyText final))
                     pure (ImageNormalized evidence)
                 )
+                (pure fixedTime)
                 ( \command _ _ _ -> do
                     modifyIORef' calls (<> ["commit"])
                     writeIORef capturedCommand (Just command)
@@ -85,7 +90,8 @@ inspectionSuccess = do
         "media-inspection"
         dependencies
         disposition
-        ( cloudflareR2Body
+        ( cloudflareR2BodyAt
+            uploadedAt
             ("tmp/uploads/" <> uploadAttemptIdentifierText attempt)
         )
         "opaque-cloudflare-message"
@@ -107,7 +113,7 @@ inspectionDependencyFailure = do
     disposition <- newDisposition
     let dependencies =
             emptyInspectionDependencies
-                { claimCurrentUpload = \_ _ -> throwIO (userError "D1 unavailable")
+                { claimCurrentUpload = \_ _ _ -> throwIO (userError "D1 unavailable")
                 }
     runInspection
         "media-inspection"

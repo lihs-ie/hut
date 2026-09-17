@@ -2,11 +2,14 @@ module Media.UseCase.ProcessImageInspection (
     TemporaryObjectKey,
     FinalObjectKey,
     InspectionClaim (..),
+    ProcessImageInspection,
     InspectionNormalization (..),
     InspectionFailureRecord (..),
     InspectionDependencies (..),
     InspectionProcessingResult (..),
     newFinalObjectKey,
+    newProcessImageInspection,
+    foldProcessImageInspection,
     newTemporaryObjectKey,
     finalObjectKeyText,
     temporaryObjectKeyText,
@@ -19,6 +22,7 @@ import Data.Time (UTCTime)
 import Media.Domain.Image (
     AwaitingUploadImage,
     ImageRejection,
+    ImageUploadDeclaration,
     SuccessfulImageInspection,
     UploadAttemptIdentifier,
     foldAwaitingUploadImage,
@@ -40,6 +44,12 @@ data InspectionClaim = InspectionClaim
     }
     deriving stock (Show, Eq)
 
+data ProcessImageInspection = ProcessImageInspection
+    { uploadAttempt :: UploadAttemptIdentifier
+    , uploadedAt :: UTCTime
+    }
+    deriving stock (Show, Eq)
+
 data InspectionNormalization
     = ImageNormalized SuccessfulImageInspection
     | ImagePermanentlyRejected ImageRejection
@@ -54,8 +64,14 @@ data InspectionFailureRecord = InspectionFailureRecord
     deriving stock (Show, Eq)
 
 data InspectionDependencies = InspectionDependencies
-    { claimCurrentUpload :: UploadAttemptIdentifier -> UTCTime -> IO (Maybe InspectionClaim)
-    , normalizeImage :: TemporaryObjectKey -> FinalObjectKey -> IO InspectionNormalization
+    { claimCurrentUpload ::
+        UploadAttemptIdentifier -> UTCTime -> UTCTime -> IO (Maybe InspectionClaim)
+    , normalizeImage ::
+        ImageUploadDeclaration ->
+        TemporaryObjectKey ->
+        FinalObjectKey ->
+        IO InspectionNormalization
+    , currentTime :: IO UTCTime
     , commitInspection ::
         Command UploadAttemptIdentifier ->
         InspectionNormalization ->
@@ -72,6 +88,15 @@ data InspectionProcessingResult = StaleUploadIgnored | InspectionCommitted Inspe
 newFinalObjectKey :: Text -> FinalObjectKey
 newFinalObjectKey = FinalObjectKey
 
+newProcessImageInspection ::
+    UploadAttemptIdentifier -> UTCTime -> ProcessImageInspection
+newProcessImageInspection = ProcessImageInspection
+
+foldProcessImageInspection ::
+    (UploadAttemptIdentifier -> UTCTime -> result) -> ProcessImageInspection -> result
+foldProcessImageInspection transform (ProcessImageInspection attempt uploadedAt) =
+    transform attempt uploadedAt
+
 newTemporaryObjectKey :: Text -> TemporaryObjectKey
 newTemporaryObjectKey = TemporaryObjectKey
 
@@ -82,32 +107,59 @@ temporaryObjectKeyText :: TemporaryObjectKey -> Text
 temporaryObjectKeyText (TemporaryObjectKey value) = value
 
 processUploadedImage ::
-    InspectionDependencies -> Command UploadAttemptIdentifier -> IO InspectionProcessingResult
+    InspectionDependencies -> Command ProcessImageInspection -> IO InspectionProcessingResult
 processUploadedImage dependencies command = do
-    claimed <- dependencies.claimCurrentUpload command.payload command.timestamp
+    let ProcessImageInspection attempt uploadedAt = command.payload
+    claimed <-
+        dependencies.claimCurrentUpload
+            attempt
+            uploadedAt
+            command.timestamp
     case claimed of
         Nothing -> pure StaleUploadIgnored
         Just claim -> do
-            let finalKey = keyFor claim.image
-            normalization <- dependencies.normalizeImage claim.temporaryObjectKey finalKey
+            let (finalKey, declaration) = claimValues claim.image
+            normalization <-
+                dependencies.normalizeImage
+                    declaration
+                    claim.temporaryObjectKey
+                    finalKey
+            completedAt <- dependencies.currentTime
+            let inspectionCommand =
+                    Command
+                        attempt
+                        completedAt
+                        command.actor
+                        command.correlation
+                        command.causation
             domainRequest <- case normalization of
                 ImageNormalized evidence ->
                     pure
-                        (newAcceptedInspection command.payload claim.image evidence)
+                        (newAcceptedInspection attempt claim.image evidence)
                 ImagePermanentlyRejected rejection ->
-                    pure (Inspect.newRejectedInspection command.payload claim.image rejection)
+                    pure (Inspect.newRejectedInspection attempt claim.image rejection)
             result <-
                 either
                     (ioError . userError . show)
                     pure
-                    (inspectImage command{payload = domainRequest})
-            dependencies.commitInspection command normalization result finalKey
+                    ( inspectImage
+                        ( Command
+                            domainRequest
+                            completedAt
+                            command.actor
+                            command.correlation
+                            command.causation
+                        )
+                    )
+            dependencies.commitInspection inspectionCommand normalization result finalKey
             dependencies.deleteTemporaryObject claim.temporaryObjectKey
             pure (InspectionCommitted result)
   where
-    keyFor =
+    claimValues =
         foldAwaitingUploadImage
-            (\identifier _ _ _ -> FinalObjectKey ("images/" <> imageIdentifierText identifier))
+            ( \identifier _ declaration _ ->
+                (FinalObjectKey ("images/" <> imageIdentifierText identifier), declaration)
+            )
 
 recordInspectionDLQFailure :: InspectionDependencies -> InspectionFailureRecord -> IO ()
 recordInspectionDLQFailure = (.persistInspectionFailure)

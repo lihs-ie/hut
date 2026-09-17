@@ -50,6 +50,7 @@ inspectionHandlerDependencies environment =
             database
             (newImageNormalizer temporaryBucket assetBucket images)
             (deleteTemporaryR2Object temporaryBucket)
+            getCurrentTime
         )
         generateCorrelationIdentifier
   where

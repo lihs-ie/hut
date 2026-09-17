@@ -5,9 +5,12 @@ import Data.Text qualified as Text (empty, pack, replicate)
 import Media.Domain.Image (
     Image (Available, AwaitingUpload, Inspecting, Rejected),
     ImageRejection (
+        ImageByteSizeMismatch,
         ImageDimensionsTooLarge,
         ImageFileTooLarge,
         ImageHasTooManyPixels,
+        ImageSha256Mismatch,
+        ImageSha256Missing,
         UnsupportedImageFormat
     ),
     SourceImageFormat (SourceJPEG, SourcePNG),
@@ -46,6 +49,7 @@ import Media.Domain.Image (
     sensitiveMetadataRemoved,
     uploadAttemptIdentifierFromText,
     uploadAttemptIdentifierText,
+    verifyImageUploadIntegrity,
  )
 import Media.TestSupport (
     assertEqual,
@@ -78,7 +82,33 @@ run =
             [ testImageValueObjectFolds
             , testIdentifierRoundTrips
             , testInvalidValues
+            , testUploadIntegrity
             ]
+
+testUploadIntegrity :: IO Bool
+testUploadIntegrity = do
+    contentType <- expectRight "content type fixture" (newDeclaredImageContentType "image/png")
+    declaredBytes <- validByteSize
+    otherBytes <- expectRight "other byte size fixture" (newImageByteSize 2049)
+    declaredDigest <- expectRight "declared digest fixture" (newImageSha256 (Text.replicate 64 "a"))
+    otherDigest <- expectRight "other digest fixture" (newImageSha256 (Text.replicate 64 "b"))
+    let declaration = newImageUploadDeclaration contentType declaredBytes declaredDigest
+    assertEqual
+        "matching R2 integrity metadata is accepted"
+        (Right ())
+        (verifyImageUploadIntegrity declaration declaredBytes (Just declaredDigest))
+        <&&> assertEqual
+            "byte-size mismatch is distinct"
+            (Left ImageByteSizeMismatch)
+            (verifyImageUploadIntegrity declaration otherBytes (Just declaredDigest))
+        <&&> assertEqual
+            "missing SHA-256 is distinct"
+            (Left ImageSha256Missing)
+            (verifyImageUploadIntegrity declaration declaredBytes Nothing)
+        <&&> assertEqual
+            "SHA-256 mismatch is distinct"
+            (Left ImageSha256Mismatch)
+            (verifyImageUploadIntegrity declaration declaredBytes (Just otherDigest))
 
 testImageValueObjectFolds :: IO Bool
 testImageValueObjectFolds = do

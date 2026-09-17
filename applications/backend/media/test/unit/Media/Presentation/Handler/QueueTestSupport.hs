@@ -128,8 +128,9 @@ fixedCorrelation =
 emptyInspectionDependencies :: InspectionDependencies
 emptyInspectionDependencies =
     InspectionDependencies
-        (\_ _ -> pure Nothing)
-        (\_ _ -> error "normalization must not run")
+        (\_ _ _ -> pure Nothing)
+        (\_ _ _ -> error "normalization must not run")
+        (pure fixedTime)
         (\_ _ _ _ -> error "commit must not run")
         (\_ -> error "temporary deletion must not run")
         (\_ -> error "DLQ persistence must not run")
@@ -156,7 +157,10 @@ r2Body :: Text -> ByteString
 r2Body key = strictEncode (object ["data" .= object ["key" .= key]])
 
 cloudflareR2Body :: Text -> ByteString
-cloudflareR2Body key =
+cloudflareR2Body = cloudflareR2BodyAt fixedTime
+
+cloudflareR2BodyAt :: UTCTime -> Text -> ByteString
+cloudflareR2BodyAt eventTime key =
     strictEncode
         ( object
             [ "account" .= ("account" :: Text)
@@ -168,7 +172,7 @@ cloudflareR2Body key =
                     , "size" .= (2048 :: Integer)
                     , "eTag" .= ("etag" :: Text)
                     ]
-            , "eventTime" .= fixedTime
+            , "eventTime" .= eventTime
             ]
         )
 

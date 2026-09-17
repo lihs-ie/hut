@@ -16,6 +16,7 @@ export type R2PresignerEnvironment = R2PresignerSecrets & {
 export interface PresignedPutRequest {
   objectKey: string;
   contentType: string;
+  sha256: string;
   expiresInSeconds: number;
 }
 
@@ -44,6 +45,9 @@ function validatePresignedPutRequest(request: PresignedPutRequest): void {
   if (request.contentType.trim().length === 0) {
     throw new TypeError("Content-Type must not be empty");
   }
+  if (!/^[0-9a-f]{64}$/i.test(request.sha256)) {
+    throw new TypeError("SHA-256 must contain exactly 64 hexadecimal characters");
+  }
   if (
     !Number.isInteger(request.expiresInSeconds) ||
     request.expiresInSeconds < 1 ||
@@ -53,6 +57,14 @@ function validatePresignedPutRequest(request: PresignedPutRequest): void {
       "R2 presigned PUT expiry must be an integer from 1 to 604800 seconds",
     );
   }
+}
+
+function sha256HeaderValue(hexDigest: string): string {
+  const bytes = new Uint8Array(32);
+  for (let index = 0; index < bytes.length; index += 1) {
+    bytes[index] = Number.parseInt(hexDigest.slice(index * 2, index * 2 + 2), 16);
+  }
+  return btoa(String.fromCharCode(...bytes));
 }
 
 /** Creates the only TypeScript Cloudflare resource adapter allowed in Media Phase 1. */
@@ -84,7 +96,10 @@ export function createMediaApiAdapters(
       const signed = await client.sign(
         new Request(endpoint, {
           method: "PUT",
-          headers: { "content-type": request.contentType },
+          headers: {
+            "content-type": request.contentType,
+            "x-amz-checksum-sha256": sha256HeaderValue(request.sha256),
+          },
         }),
         { aws: { signQuery: true } },
       );

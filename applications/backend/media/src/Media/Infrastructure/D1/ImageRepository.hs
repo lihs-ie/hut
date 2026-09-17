@@ -58,16 +58,22 @@ import "media" Media.UseCase.RetainImages
 newInspectionDependencies ::
     IO (Either DomainError ULID) ->
     D1 ->
-    (TemporaryObjectKey -> FinalObjectKey -> IO InspectionNormalization) ->
+    ( ImageUploadDeclaration ->
+      TemporaryObjectKey ->
+      FinalObjectKey ->
+      IO InspectionNormalization
+    ) ->
     (TemporaryObjectKey -> IO ()) ->
+    IO UTCTime ->
     InspectionDependencies
-newInspectionDependencies generateIdentifier database normalize deleteTemporary =
+newInspectionDependencies generateIdentifier database normalize deleteTemporary getCurrentTime =
     InspectionDependencies
-        { claimCurrentUpload = \attempt startedAt ->
+        { claimCurrentUpload = \attempt uploadedAt startedAt ->
             databaseOperation
                 "claim current image upload"
-                (claimCurrent database attempt startedAt)
+                (claimCurrent database attempt uploadedAt startedAt)
         , normalizeImage = normalize
+        , currentTime = getCurrentTime
         , commitInspection = \command normalization result key ->
             databaseOperation
                 "commit image inspection"
@@ -235,17 +241,22 @@ findImageState database imageIdentifier =
         )
         (d1Column "state" (d1Refine validState d1Text))
 
-claimCurrent :: D1 -> UploadAttemptIdentifier -> UTCTime -> IO (Maybe InspectionClaim)
-claimCurrent database attempt startedAt = do
+claimCurrent ::
+    D1 -> UploadAttemptIdentifier -> UTCTime -> UTCTime -> IO (Maybe InspectionClaim)
+claimCurrent database attempt uploadedAt startedAt = do
     let attemptText = uploadAttemptIdentifierText attempt
-        now = timeText startedAt
+        uploaded = timeText uploadedAt
+        started = timeText startedAt
     _ <-
-        d1Execute
+        d1ExecuteBatch
             database
-            ( statement
+            [ statement
+                recordUploadedAtSQL
+                [D1Text uploaded, D1Text attemptText]
+            , statement
                 beginInspectionSQL
-                [D1Text now, D1Text now, D1Text attemptText]
-            )
+                [D1Text started, D1Text started, D1Text attemptText]
+            ]
     d1QueryFirst database (statement claimQuery [D1Text attemptText]) claimDecoder
   where
     claimQuery = findInspectionClaimSQL
@@ -641,6 +652,9 @@ rejectionDecoder = d1Refine rejectionFromCode d1Text
 rejectionFromCode :: Text -> Either Text ImageRejection
 rejectionFromCode "unsupported_format" = Right UnsupportedImageFormat
 rejectionFromCode "malformed" = Right MalformedImage
+rejectionFromCode "byte_size_mismatch" = Right ImageByteSizeMismatch
+rejectionFromCode "sha256_mismatch" = Right ImageSha256Mismatch
+rejectionFromCode "sha256_missing" = Right ImageSha256Missing
 rejectionFromCode value =
     Left
         ( "rejection details are unavailable for persisted code: "
@@ -650,6 +664,9 @@ rejectionFromCode value =
 rejectionText :: ImageRejection -> Text
 rejectionText UnsupportedImageFormat = "unsupported_format"
 rejectionText MalformedImage = "malformed"
+rejectionText ImageByteSizeMismatch = "byte_size_mismatch"
+rejectionText ImageSha256Mismatch = "sha256_mismatch"
+rejectionText ImageSha256Missing = "sha256_missing"
 rejectionText ImageFileTooLarge{} = "file_too_large"
 rejectionText ImageDimensionsTooLarge{} = "dimensions_too_large"
 rejectionText ImageHasTooManyPixels{} = "pixel_count_too_large"
@@ -729,6 +746,13 @@ beginInspectionSQL =
         [ "UPDATE images"
         , "SET state='inspecting',inspection_started_at=?,updated_at=?"
         , "WHERE state='awaiting_upload' AND current_upload_attempt_identifier=?"
+        ]
+
+recordUploadedAtSQL :: Text
+recordUploadedAtSQL =
+    sql
+        [ "UPDATE upload_attempts SET uploaded_at=COALESCE(uploaded_at,?)"
+        , "WHERE identifier=? AND superseded_at IS NULL"
         ]
 
 findInspectionClaimSQL :: Text
