@@ -340,7 +340,7 @@ test.describe("chapter page", () => {
       { waitUntil: "load" },
     );
 
-      const activeItem = page.locator('[class*="nav-item-active"]');
+      const activeItem = page.locator('[aria-current="page"]');
       await expect(activeItem).toBeVisible();
 
       const activeText = await activeItem.textContent();

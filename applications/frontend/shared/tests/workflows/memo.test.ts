@@ -269,6 +269,7 @@ describe("workflows/memo", () => {
           tags: string[];
           images: string[];
           status: string;
+          publishedAt: Date | null;
           timeline: { createdAt: Date; updatedAt: Date };
         };
       }> = {
@@ -282,6 +283,7 @@ describe("workflows/memo", () => {
             tags: memo.tags,
             images: memo.images,
             status: memo.status,
+            publishedAt: memo.publishedAt,
             timeline: memo.timeline,
           },
         },
@@ -310,6 +312,7 @@ describe("workflows/memo", () => {
           tags: string[];
           images: string[];
           status: string;
+          publishedAt: Date | null;
           timeline: { createdAt: Date; updatedAt: Date };
         };
       }> = {
@@ -317,12 +320,13 @@ describe("workflows/memo", () => {
         payload: {
           unvalidated: {
             identifier: "invalid",
-            title: "", // 空のタイトルは無効
+            title: "",
             slug: "test-slug",
             entries: [],
             tags: [],
             images: [],
             status: "published",
+            publishedAt: null,
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           },
         },
@@ -354,6 +358,7 @@ describe("workflows/memo", () => {
           tags: string[];
           images: string[];
           status: string;
+          publishedAt: Date | null;
           timeline: { createdAt: Date; updatedAt: Date };
         };
       }> = {
@@ -367,6 +372,7 @@ describe("workflows/memo", () => {
             tags: memo.tags,
             images: memo.images,
             status: memo.status,
+            publishedAt: memo.publishedAt,
             timeline: memo.timeline,
           },
         },
@@ -398,6 +404,7 @@ describe("workflows/memo", () => {
           tags: string[];
           images: string[];
           status: string;
+          publishedAt: Date | null;
           timeline: { createdAt: Date; updatedAt: Date };
         };
         before: typeof before;
@@ -412,6 +419,7 @@ describe("workflows/memo", () => {
             tags: memo.tags,
             images: memo.images,
             status: memo.status,
+            publishedAt: memo.publishedAt,
             timeline: memo.timeline,
           },
           before,
@@ -443,6 +451,7 @@ describe("workflows/memo", () => {
           tags: string[];
           images: string[];
           status: string;
+          publishedAt: Date | null;
           timeline: { createdAt: Date; updatedAt: Date };
         };
         before: typeof before;
@@ -457,6 +466,7 @@ describe("workflows/memo", () => {
             tags: [],
             images: [],
             status: "published",
+            publishedAt: null,
             timeline: { createdAt: new Date(), updatedAt: new Date() },
           },
           before,
@@ -470,6 +480,7 @@ describe("workflows/memo", () => {
       );
       expect(persistMock).not.toHaveBeenCalled();
     });
+
   });
 
   describe("createMemoTerminateWorkflow", () => {

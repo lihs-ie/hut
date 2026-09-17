@@ -1,0 +1,15 @@
+allowBuilds:
+  "@cloudflare-workers-hs/runtime@https://codeload.github.com/lihs-ie/cloudflare-workers-hs-runtime/tar.gz/5fa280bf928eb834d5815c6d560db8e473c64bb7": true
+  esbuild: true
+  sharp: true
+  workerd: true
+
+minimumReleaseAgeExclude:
+  - '@cloudflare/workerd-darwin-64@1.20260915.1 || 1.20260916.1'
+  - '@cloudflare/workerd-darwin-arm64@1.20260915.1 || 1.20260916.1'
+  - '@cloudflare/workerd-linux-64@1.20260915.1 || 1.20260916.1'
+  - '@cloudflare/workerd-linux-arm64@1.20260915.1 || 1.20260916.1'
+  - '@cloudflare/workerd-windows-64@1.20260915.1 || 1.20260916.1'
+  - miniflare@5.20260915.0-alpha || 5.20260916.0-alpha
+  - workerd@1.20260915.1 || 1.20260916.1
+  - "wrangler@4.133.0"

@@ -1,0 +1,39 @@
+{
+  "name": "@hut/media-workers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build:wasm": "bash scripts/build-wasm.sh",
+    "verify:generated-artifacts": "for file in runtime/*/generated/application-jsffi.mjs; do grep -q 'generatedArtifactKind = \"generated\"' \"$file\" || { echo \"Refusing to deploy stub artifact: $file\" >&2; exit 1; }; done",
+    "generate:types": "corepack pnpm@12.4.2 exec wrangler types runtime/media-api-worker/generated/worker-configuration.d.ts --config runtime/media-api-worker/wrangler.jsonc --env stg --env-interface MediaApiWorkerEnv && corepack pnpm@12.4.2 exec wrangler types runtime/media-inspection-worker/generated/worker-configuration.d.ts --config runtime/media-inspection-worker/wrangler.jsonc --env stg --env-interface MediaInspectionWorkerEnv && corepack pnpm@12.4.2 exec wrangler types runtime/media-reference-projection-worker/generated/worker-configuration.d.ts --config runtime/media-reference-projection-worker/wrangler.jsonc --env stg --env-interface MediaReferenceProjectionWorkerEnv && corepack pnpm@12.4.2 exec wrangler types runtime/media-retention-worker/generated/worker-configuration.d.ts --config runtime/media-retention-worker/wrangler.jsonc --env stg --env-interface MediaRetentionWorkerEnv",
+    "test:feature": "test/feature/run.sh",
+    "test:presigner": "node --test runtime/media-api-worker/test/r2-presigner.test.mjs",
+    "type-check": "corepack pnpm@12.4.2 exec tsc --project runtime/media-api-worker/tsconfig.json && corepack pnpm@12.4.2 exec tsc --project runtime/media-inspection-worker/tsconfig.json && corepack pnpm@12.4.2 exec tsc --project runtime/media-reference-projection-worker/tsconfig.json && corepack pnpm@12.4.2 exec tsc --project runtime/media-retention-worker/tsconfig.json",
+    "dry-run:media-api-worker": "corepack pnpm@12.4.2 exec wrangler deploy --config runtime/media-api-worker/wrangler.jsonc --env stg --dry-run",
+    "dry-run:media-inspection-worker": "corepack pnpm@12.4.2 exec wrangler deploy --config runtime/media-inspection-worker/wrangler.jsonc --env stg --dry-run",
+    "dry-run:media-reference-projection-worker": "corepack pnpm@12.4.2 exec wrangler deploy --config runtime/media-reference-projection-worker/wrangler.jsonc --env stg --dry-run",
+    "dry-run:media-retention-worker": "corepack pnpm@12.4.2 exec wrangler deploy --config runtime/media-retention-worker/wrangler.jsonc --env stg --dry-run",
+    "dry-run": "corepack pnpm@12.4.2 run dry-run:media-api-worker && corepack pnpm@12.4.2 run dry-run:media-inspection-worker && corepack pnpm@12.4.2 run dry-run:media-reference-projection-worker && corepack pnpm@12.4.2 run dry-run:media-retention-worker",
+    "dry-run:dev:media-api-worker": "corepack pnpm@12.4.2 exec wrangler deploy --config runtime/media-api-worker/wrangler.jsonc --env dev --dry-run --x-provision=false --x-auto-create=false",
+    "dry-run:dev:media-inspection-worker": "corepack pnpm@12.4.2 exec wrangler deploy --config runtime/media-inspection-worker/wrangler.jsonc --env dev --dry-run --x-provision=false --x-auto-create=false",
+    "dry-run:dev:media-reference-projection-worker": "corepack pnpm@12.4.2 exec wrangler deploy --config runtime/media-reference-projection-worker/wrangler.jsonc --env dev --dry-run --x-provision=false --x-auto-create=false",
+    "dry-run:dev:media-retention-worker": "corepack pnpm@12.4.2 exec wrangler deploy --config runtime/media-retention-worker/wrangler.jsonc --env dev --dry-run --x-provision=false --x-auto-create=false",
+    "dry-run:dev": "corepack pnpm@12.4.2 run verify:generated-artifacts && corepack pnpm@12.4.2 run dry-run:dev:media-api-worker && corepack pnpm@12.4.2 run dry-run:dev:media-inspection-worker && corepack pnpm@12.4.2 run dry-run:dev:media-reference-projection-worker && corepack pnpm@12.4.2 run dry-run:dev:media-retention-worker",
+    "d1:migrate:local": "corepack pnpm@12.4.2 exec wrangler d1 migrations apply hut-media-stg --local --config runtime/media-api-worker/wrangler.jsonc --env stg",
+    "d1:migrate:dev": "corepack pnpm@12.4.2 exec wrangler d1 migrations apply MEDIA_DATABASE --remote --config runtime/media-api-worker/wrangler.jsonc --env dev --x-provision=false --x-auto-create=false"
+  },
+  "dependencies": {
+    "@cloudflare-workers-hs/runtime": "github:lihs-ie/cloudflare-workers-hs-runtime#5fa280bf928eb834d5815c6d560db8e473c64bb7",
+    "aws4fetch": "1.0.20"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.4",
+    "typescript": "7.0.2",
+    "wrangler": "4.133.0"
+  }
+}

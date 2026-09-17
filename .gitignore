@@ -21,6 +21,11 @@ test-results
 .next
 out
 
+# OpenNext / Cloudflare Workers
+.open-next
+.wrangler
+applications/frontend/reader/cloudflare-env.d.ts
+
 # production
 build
 
@@ -60,3 +65,5 @@ applications/docker/frontend/firebase-debug.log
 applications/docker/frontend/firestore-debug.log
 applications/docker/frontend/ui-debug.log
 applications/docker/frontend/.firebase/
+
+/dist-newstyle/

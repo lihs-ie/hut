@@ -40,6 +40,7 @@ export const chapterSchema = z
     content: contentSchema,
     images: z.array(imageIdentifierSchema),
     status: publishStatusSchema,
+    publishedAt: z.date().nullable(),
     timeline: timelineSchema,
   })
   .brand("Chapter");
@@ -53,6 +54,7 @@ export type UnvalidatedChapter = {
   content: string;
   images: string[];
   status: string;
+  publishedAt: Date | null;
   timeline: {
     createdAt: Date;
     updatedAt: Date;

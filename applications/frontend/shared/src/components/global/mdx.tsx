@@ -6,21 +6,26 @@ import rehypeSlug from "rehype-slug";
 import React from "react";
 import styles from "./mdx.module.css";
 import { remarkLinkCard } from "@shared/plugins/remark-link-card";
+import { remarkMermaid } from "@shared/plugins/remark-mermaid";
 import { LinkCard } from "@shared/components/molecules/card/link";
 import { ContentImage } from "@shared/components/atoms/image/content";
-import { MermaidRenderer } from "@shared/components/molecules/mermaid";
 import { CopyButton } from "@shared/components/molecules/button/copy";
+import { MermaidClient } from "@shared/components/molecules/mermaid/client";
 
 export type MarkdownRenderer = (content: string) => React.ReactNode;
 
 export const mdxOptions: MDXRemoteProps["options"] = {
   mdxOptions: {
-    remarkPlugins: [remarkGfm, remarkBreaks, remarkLinkCard],
+    remarkPlugins: [remarkGfm, remarkBreaks, remarkLinkCard, remarkMermaid],
     rehypePlugins: [
       [
         rehypeShiki,
         {
-          theme: "github-dark",
+          themes: {
+            light: "github-light-high-contrast",
+            dark: "github-dark-high-contrast",
+          },
+          defaultColor: false,
           addLanguageClass: true,
         },
       ],
@@ -32,15 +37,6 @@ export const mdxOptions: MDXRemoteProps["options"] = {
 
 type PreProps = React.HTMLAttributes<HTMLPreElement> & {
   children?: React.ReactNode;
-};
-
-const extractLanguage = (children: React.ReactNode): string | null => {
-  if (!React.isValidElement<{ className?: string }>(children)) return null;
-
-  const className = children.props.className ?? "";
-  const match = className.match(/language-(\w+)/);
-
-  return match ? match[1] : null;
 };
 
 const extractTextContent = (node: React.ReactNode): string => {
@@ -55,13 +51,6 @@ const extractTextContent = (node: React.ReactNode): string => {
 };
 
 const CodeBlock = (props: PreProps) => {
-  const language = extractLanguage(props.children);
-
-  if (language === "mermaid") {
-    const code = extractTextContent(props.children);
-    return <MermaidRenderer code={code} />;
-  }
-
   const textContent = extractTextContent(props.children);
   const mergedClassName = `${styles.pre} ${props.className ?? ""}`.trim();
 
@@ -77,24 +66,40 @@ const CodeBlock = (props: PreProps) => {
   );
 };
 
-const mdxComponents = {
-  h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h1 {...props} />,
-  h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h2 {...props} />,
-  img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-    <ContentImage
-      src={typeof props.src === "string" ? props.src : ""}
-      alt={props.alt ?? ""}
-    />
-  ),
-  pre: CodeBlock,
-  LinkCard: (props: { url: string }) => <LinkCard url={props.url} />,
+const createMdxComponents = () => {
+  const firstImageRef = { used: false };
+
+  return {
+    h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h1 {...props} />,
+    h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h2 {...props} />,
+    img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {
+      const isFirst = !firstImageRef.used;
+      firstImageRef.used = true;
+      return (
+        <ContentImage
+          src={typeof props.src === "string" ? props.src : ""}
+          alt={props.alt ?? ""}
+          priority={isFirst}
+        />
+      );
+    },
+    pre: CodeBlock,
+    LinkCard: (props: { url: string }) => <LinkCard url={props.url} />,
+    MermaidClient: (props: { code: string }) => (
+      <MermaidClient code={props.code} />
+    ),
+  };
 };
 
 export const MDXRenderer: MarkdownRenderer = (
   content: string,
   options: MDXRemoteProps["options"] = mdxOptions,
 ) => (
-  <MDXRemote source={content} options={options} components={mdxComponents} />
+  <MDXRemote
+    source={content}
+    options={options}
+    components={createMdxComponents()}
+  />
 );
 
 export type Heading = {
@@ -145,7 +150,7 @@ export type Node = {
   children: Node[];
 };
 
-const buildTocTree = (headings: Heading[]): Node[] => {
+const buildTOCTree = (headings: Heading[]): Node[] => {
   const root: Node[] = [];
   const stack: { level: number; node: Node }[] = [];
 
@@ -172,8 +177,8 @@ const buildTocTree = (headings: Heading[]): Node[] => {
   return root;
 };
 
-export const generateToc = (mdx: string): Node[] => {
+export const generateTOC = (mdx: string): Node[] => {
   const headings = extractHeadings(mdx);
 
-  return buildTocTree(headings);
+  return buildTOCTree(headings);
 };

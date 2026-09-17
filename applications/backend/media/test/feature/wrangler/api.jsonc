@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "hut-media-api-worker-feature",
+  "main": "../../../runtime/media-api-worker/src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "MEDIA_TMP_UPLOADS_BUCKET_NAME": "hut-media-tmp-uploads-feature",
+    "R2_S3_ACCESS_KEY_ID": "feature-access-key",
+    "R2_S3_SECRET_ACCESS_KEY": "feature-secret-key",
+    "R2_ACCOUNT_IDENTIFIER": "feature-account"
+  },
+  "d1_databases": [
+    {
+      "binding": "MEDIA_DATABASE",
+      "database_name": "hut-media-feature",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "../../../migrations"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "MEDIA_INSPECTION_QUEUE",
+        "queue": "hut-media-inspection-feature"
+      }
+    ]
+  }
+}

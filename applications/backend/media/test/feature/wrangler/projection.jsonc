@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "hut-media-reference-projection-worker-feature",
+  "main": "../../../runtime/media-reference-projection-worker/src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "MEDIA_DATABASE",
+      "database_name": "hut-media-feature",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "../../../migrations"
+    }
+  ],
+  "queues": {
+    "consumers": [
+      {
+        "queue": "hut-media-reference-projection-feature",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 0
+      }
+    ]
+  }
+}

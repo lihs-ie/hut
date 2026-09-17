@@ -38,7 +38,7 @@ type Props = {
   type: ContentType;
   title: string;
   excerpt?: string;
-  date: Date;
+  date: Date | null;
   tagNames: TagName[];
   href?: string;
 };
@@ -58,9 +58,11 @@ export const HomeContentCard = (props: Props) => {
             <ContentTypeBadge variant={badge.variant} className={styles.badge}>
               {badge.text}
             </ContentTypeBadge>
-            <span className={styles.date}>
-              {formatDate(props.date)}
-            </span>
+            {props.date && (
+              <span className={styles.date}>
+                {formatDate(props.date)}
+              </span>
+            )}
           </div>
         </div>
 

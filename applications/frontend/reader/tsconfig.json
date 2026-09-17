@@ -5,13 +5,16 @@
       "@/*": ["./src/*"],
       "@shared/*": ["../shared/src/*"]
     },
-    "plugins": [{ "name": "next" }]
+    "plugins": [{ "name": "next" }],
+    "types": ["@cloudflare/workers-types"]
   },
   "include": [
     "src/**/*",
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "next.config.ts",
+    "open-next.config.ts",
+    "cloudflare-env.d.ts",
     "../shared/src/actions",
     "../shared/types"
   ]

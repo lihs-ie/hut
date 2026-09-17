@@ -22,5 +22,12 @@
     "emulator:build": "docker compose -f applications/docker/docker-compose.yaml build --no-cache",
     "emulator:logs": "docker compose -f applications/docker/docker-compose.yaml logs -f",
     "emulator:clean": "rm -rf applications/docker/frontend/data/*"
-  }
+  },
+  "browserslist": [
+    ">0.3%",
+    "last 2 versions",
+    "Firefox ESR",
+    "not dead",
+    "not op_mini all"
+  ]
 }

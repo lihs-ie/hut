@@ -13,6 +13,7 @@ export default meta;
 export const Default: StoryObj<typeof TitlePresenter> = {
   args: {
     title: "サンプル記事タイトル",
+    publishedAt: new Date(),
     timeline: Forger(TimelineMold).forge(),
   },
 };
@@ -21,6 +22,7 @@ export const LongTitle: StoryObj<typeof TitlePresenter> = {
   args: {
     title:
       "これは非常に長いタイトルで、タイトルコンポーネントのレイアウトがどのように処理されるかをテストするためのサンプルです",
+    publishedAt: new Date(),
     timeline: Forger(TimelineMold).forge(),
   },
 };
@@ -28,6 +30,7 @@ export const LongTitle: StoryObj<typeof TitlePresenter> = {
 export const ShortTitle: StoryObj<typeof TitlePresenter> = {
   args: {
     title: "短いタイトル",
+    publishedAt: new Date(),
     timeline: Forger(TimelineMold).forge(),
   },
 };
@@ -35,6 +38,7 @@ export const ShortTitle: StoryObj<typeof TitlePresenter> = {
 export const RecentlyUpdated: StoryObj<typeof TitlePresenter> = {
   args: {
     title: "最近更新された記事",
+    publishedAt: new Date("2024-01-01"),
     timeline: {
       createdAt: new Date("2024-01-01"),
       updatedAt: new Date(),
@@ -45,6 +49,7 @@ export const RecentlyUpdated: StoryObj<typeof TitlePresenter> = {
 export const OldArticle: StoryObj<typeof TitlePresenter> = {
   args: {
     title: "古い記事",
+    publishedAt: new Date("2020-01-15"),
     timeline: {
       createdAt: new Date("2020-01-15"),
       updatedAt: new Date("2020-02-20"),

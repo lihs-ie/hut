@@ -5,12 +5,13 @@ import React from "react";
 
 type Props = {
   children: React.ReactNode;
+  defaultTheme?: "light" | "dark" | "system";
 };
 
 export const ThemeProvider = (props: Props) => (
   <NextThemesProvider
     attribute="class"
-    defaultTheme="light"
+    defaultTheme={props.defaultTheme ?? "light"}
     themes={["light", "dark"]}
     disableTransitionOnChange
   >

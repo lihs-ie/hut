@@ -137,10 +137,10 @@ function buildArticle(identifier: string, title: string, tags: string[]) {
     status: "published",
     tags,
     images: [],
+    publishedAt: new Date(),
     timeline: {
       createdAt: new Date(),
       updatedAt: new Date(),
-      publishedAt: new Date(),
     },
   });
 }
@@ -154,10 +154,10 @@ function buildMemo(identifier: string, title: string) {
     status: "published",
     tags: [],
     images: [],
+    publishedAt: new Date(),
     timeline: {
       createdAt: new Date(),
       updatedAt: new Date(),
-      publishedAt: new Date(),
     },
   });
 }
