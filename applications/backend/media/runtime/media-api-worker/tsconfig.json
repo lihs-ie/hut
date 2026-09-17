@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "generated/worker-configuration.d.ts",
+    "generated/**/*.d.mts",
+    "../shared/**/*.ts",
+    "../shared/**/*.d.ts"
+  ]
+}

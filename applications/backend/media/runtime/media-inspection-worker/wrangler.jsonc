@@ -1,0 +1,111 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "hut-media-inspection-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "env": {
+    "dev": {
+      "name": "hut-media-inspection-worker-dev",
+      "d1_databases": [
+        {
+          "binding": "MEDIA_DATABASE",
+          "database_name": "hut-media-dev",
+          "migrations_dir": "../../migrations"
+        }
+      ],
+      "r2_buckets": [
+        { "binding": "MEDIA_TMP_UPLOADS", "bucket_name": "hut-media-tmp-uploads-dev" },
+        { "binding": "MEDIA_ASSETS", "bucket_name": "hut-media-assets-dev" }
+      ],
+      "images": { "binding": "IMAGES" },
+      "queues": {
+        "consumers": [
+          {
+            "queue": "hut-media-inspection-dev",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-media-inspection-dlq-dev"
+          },
+          {
+            "queue": "hut-media-inspection-dlq-dev",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 0
+          }
+        ]
+      }
+    },
+    "stg": {
+      "name": "hut-media-inspection-worker-stg",
+      "d1_databases": [
+        {
+          "binding": "MEDIA_DATABASE",
+          "database_name": "hut-media-stg",
+          "migrations_dir": "../../migrations"
+        }
+      ],
+      "r2_buckets": [
+        { "binding": "MEDIA_TMP_UPLOADS", "bucket_name": "hut-media-tmp-uploads-stg" },
+        { "binding": "MEDIA_ASSETS", "bucket_name": "hut-media-assets-stg" }
+      ],
+      "images": { "binding": "IMAGES" },
+      "queues": {
+        "consumers": [
+          {
+            "queue": "hut-media-inspection-stg",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-media-inspection-dlq-stg"
+          },
+          {
+            "queue": "hut-media-inspection-dlq-stg",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 0
+          }
+        ]
+      }
+    },
+    "prd": {
+      "name": "hut-media-inspection-worker-prd",
+      "d1_databases": [
+        {
+          "binding": "MEDIA_DATABASE",
+          "database_name": "hut-media-prd",
+          "migrations_dir": "../../migrations"
+        }
+      ],
+      "r2_buckets": [
+        { "binding": "MEDIA_TMP_UPLOADS", "bucket_name": "hut-media-tmp-uploads-prd" },
+        { "binding": "MEDIA_ASSETS", "bucket_name": "hut-media-assets-prd" }
+      ],
+      "images": { "binding": "IMAGES" },
+      "queues": {
+        "consumers": [
+          {
+            "queue": "hut-media-inspection-prd",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-media-inspection-dlq-prd"
+          },
+          {
+            "queue": "hut-media-inspection-dlq-prd",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 0
+          }
+        ]
+      }
+    }
+  }
+}

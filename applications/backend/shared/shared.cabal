@@ -1,0 +1,70 @@
+cabal-version: 3.0
+name:          shared
+version:       0.1.0.0
+build-type:    Simple
+
+common defaults
+  default-language:   GHC2024
+  default-extensions:
+    DataKinds
+    DerivingStrategies
+    DuplicateRecordFields
+    GADTs
+    OverloadedRecordDot
+    OverloadedStrings
+    PolyKinds
+    TypeOperators
+
+  ghc-options:        -Wall -Wcompat
+
+library
+  import:          defaults
+  hs-source-dirs:  src
+  exposed-modules:
+    Shared.Domain.Date
+    Shared.Domain.DevelopLanguage
+    Shared.Domain.Error
+    Shared.Domain.Event
+    Shared.Domain.Excerpt
+    Shared.Domain.Identifier
+    Shared.Domain.Image
+    Shared.Domain.Pager
+    Shared.Domain.Publication
+    Shared.Domain.Slug
+    Shared.Domain.Tag
+    Shared.FFI.SecureRandom
+    Shared.UseCase.Command
+    Shared.UseCase.Context
+    Shared.UseCase.Event
+    Shared.UseCase.Identifier
+
+  build-depends:
+    , aeson       >=2.2.5  && <2.3
+    , base        >=4.22   && <4.23
+    , bytestring  >=0.12.2 && <0.13
+    , text        >=2.1.2  && <2.2
+    , time        >=1.15   && <1.16
+
+  if os(wasi)
+    cpp-options: -DWASI
+  else
+    build-depends: entropy >=0.4.1 && <0.5
+
+test-suite shared-test
+  import:          defaults
+  type:            exitcode-stdio-1.0
+  hs-source-dirs:  test/unit
+  main-is:         Main.hs
+  other-modules:
+    Shared.Domain.CommonSpec
+    Shared.Domain.IdentifierSpec
+    Shared.FFI.SecureRandomSpec
+    Shared.UseCase.CommonSpec
+    Shared.UseCase.IdentifierSpec
+
+  build-depends:
+    , base        >=4.22   && <4.23
+    , bytestring  >=0.12.2 && <0.13
+    , shared      ==0.1.0.0
+    , text        >=2.1.2  && <2.2
+    , time        >=1.15   && <1.16

@@ -1,0 +1,227 @@
+cabal-version: 3.0
+name:          media
+version:       0.1.0.0
+synopsis:      Media bounded context domain model
+build-type:    Simple
+
+common defaults
+  default-language:   GHC2024
+  default-extensions:
+    DataKinds
+    DerivingStrategies
+    DeriveAnyClass
+    DuplicateRecordFields
+    GADTs
+    MultilineStrings
+    NoFieldSelectors
+    OverloadedRecordDot
+    OverloadedStrings
+    PackageImports
+    TypeFamilies
+    TypeData
+    TypeOperators
+    CPP
+
+  ghc-options:        -Wall -Wcompat
+
+library
+  import:          defaults
+  hs-source-dirs:  src
+  exposed-modules:
+    Media.Domain.Image
+    Media.Domain.Image.Event
+    Media.Domain.Image.Inspection
+    Media.Domain.Image.Retention
+    Media.Domain.ImageUsage
+    Media.UseCase.GetImageStatus
+    Media.UseCase.InspectImage
+    Media.UseCase.ProcessImageInspection
+    Media.UseCase.ProjectImageUsage
+    Media.UseCase.RequestImageUpload
+    Media.UseCase.RetainImages
+    Media.UseCase.Result
+    Media.UseCase.RetryImageInspection
+    Media.UseCase.RetryImageUpload
+
+  other-modules:
+    Media.Internal.Result
+    Media.Internal.UploadDestination
+
+  build-depends:
+    , base    >=4.22 && <4.23
+    , shared  ==0.1.0.0
+    , text    >=2.1  && <2.2
+    , time    >=1.15 && <1.16
+
+library worker-adapters
+  import:          defaults
+  hs-source-dirs:  src
+  exposed-modules:
+    Media.Infrastructure.Cache.CloudflarePurger
+    Media.Infrastructure.D1.ImageRepository
+    Media.Infrastructure.D1.ImageUsageRepository
+    Media.Infrastructure.Images.Normalizer
+    Media.Infrastructure.Presign.Aws4Fetch
+    Media.Infrastructure.Queue.Inspection
+    Media.Presentation.API
+    Media.Presentation.API.GetImageStatus
+    Media.Presentation.API.RequestImageUpload
+    Media.Presentation.API.RetryImageInspection
+    Media.Presentation.API.RetryImageUpload
+    Media.Presentation.Handler.API.Error
+    Media.Presentation.Handler.API.GetImageStatus
+    Media.Presentation.Handler.API.Metadata
+    Media.Presentation.Handler.API.RequestImageUpload
+    Media.Presentation.Handler.API.RetryImageInspection
+    Media.Presentation.Handler.API.RetryImageUpload
+    Media.Presentation.Handler.InspectionQueue
+    Media.Presentation.Handler.ReferenceProjectionQueue
+    Media.Presentation.Handler.RetentionScheduled
+    Media.Presentation.Server.API
+    Media.Worker.API.Composition
+    Media.Worker.API.Env
+    Media.Worker.Inspection.Composition
+    Media.Worker.Inspection.Env
+    Media.Worker.ReferenceProjection.Composition
+    Media.Worker.ReferenceProjection.Env
+    Media.Worker.Retention.Composition
+    Media.Worker.Retention.Env
+
+  build-depends:
+    , aeson               >=2.2  && <2.3
+    , base                >=4.22 && <4.23
+    , bytestring          >=0.11 && <0.13
+    , cloudflare-workers  ==0.1.0.0
+    , cloudflare-workers:ghc-wasm-shim
+    , media               ==0.1.0.0
+    , mtl                 >=2.2  && <2.4
+    , servant             >=0.20 && <0.21
+    , servant-client-core >=0.20 && <0.21
+    , servant-cloudflare-workers ==0.1.0.0
+    , servant-cloudflare-workers-client ==0.1.0.0
+    , shared              ==0.1.0.0
+    , text                >=2.1  && <2.2
+    , time                >=1.15 && <1.16
+
+  if !os(wasi)
+    ghc-options: -fplugin GHC.Wasm.FFI.Plugin
+
+  if os(wasi)
+    build-depends: ghc-experimental >=9.1401 && <9.1500
+    default-extensions: JavaScriptFFI
+
+executable media-api-worker
+  import:          defaults
+  hs-source-dirs:  app/media-api-worker
+  main-is:         Main.hs
+  build-depends:
+    base,
+    cloudflare-workers,
+    cloudflare-workers:ghc-wasm-shim,
+    media,
+    media:worker-adapters
+  if !os(wasi)
+    buildable: False
+  if os(wasi)
+    build-depends: ghc-experimental >=9.1401 && <9.1500
+    default-extensions: JavaScriptFFI
+    ghc-options: -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=fetch"
+
+executable media-inspection-worker
+  import:          defaults
+  hs-source-dirs:  app/media-inspection-worker
+  main-is:         Main.hs
+  build-depends:
+    base,
+    cloudflare-workers,
+    cloudflare-workers:ghc-wasm-shim,
+    media,
+    media:worker-adapters
+  if !os(wasi)
+    buildable: False
+  if os(wasi)
+    build-depends: ghc-experimental >=9.1401 && <9.1500
+    default-extensions: JavaScriptFFI
+    ghc-options: -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=queue"
+
+executable media-reference-projection-worker
+  import:          defaults
+  hs-source-dirs:  app/media-reference-projection-worker
+  main-is:         Main.hs
+  build-depends:
+    base,
+    cloudflare-workers,
+    cloudflare-workers:ghc-wasm-shim,
+    media,
+    media:worker-adapters
+  if !os(wasi)
+    buildable: False
+  if os(wasi)
+    build-depends: ghc-experimental >=9.1401 && <9.1500
+    default-extensions: JavaScriptFFI
+    ghc-options: -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=queue"
+
+executable media-retention-worker
+  import:          defaults
+  hs-source-dirs:  app/media-retention-worker
+  main-is:         Main.hs
+  build-depends:
+    base,
+    cloudflare-workers,
+    cloudflare-workers:ghc-wasm-shim,
+    media,
+    media:worker-adapters
+  if !os(wasi)
+    buildable: False
+  if os(wasi)
+    build-depends: ghc-experimental >=9.1401 && <9.1500
+    default-extensions: JavaScriptFFI
+    ghc-options: -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=scheduled"
+
+test-suite media-unit-test
+  import:          defaults
+  type:            exitcode-stdio-1.0
+  hs-source-dirs:  test/unit
+  main-is:         Main.hs
+
+  other-modules:
+    Media.Domain.Image.RetentionSpec
+    Media.Domain.ImageSpec
+    Media.Domain.ImageUsageSpec
+    Media.Presentation.API.RequestImageUploadSpec
+    Media.Presentation.APISpec
+    Media.Presentation.Handler.API.GetImageStatusSpec
+    Media.Presentation.Handler.API.MetadataSpec
+    Media.Presentation.Handler.API.RequestImageUploadSpec
+    Media.Presentation.Handler.API.RetryImageInspectionSpec
+    Media.Presentation.Handler.API.RetryImageUploadSpec
+    Media.Presentation.Handler.API.TestSupport
+    Media.Presentation.Handler.InspectionQueueSpec
+    Media.Presentation.Handler.QueueTestSupport
+    Media.Presentation.Handler.ReferenceProjectionQueueSpec
+    Media.Presentation.Handler.RetentionScheduledSpec
+    Media.Presentation.Server.API.ServerSpec
+    Media.TestSupport
+    Media.UseCase.GetImageStatusSpec
+    Media.UseCase.InspectImageSpec
+    Media.UseCase.ProcessImageInspectionSpec
+    Media.UseCase.ProjectImageUsageSpec
+    Media.UseCase.RequestImageUploadSpec
+    Media.UseCase.RetainImagesSpec
+    Media.UseCase.RetryImageInspectionSpec
+    Media.UseCase.RetryImageUploadSpec
+
+  build-depends:
+    , aeson
+    , base                >=4.22 && <4.23
+    , bytestring          >=0.11 && <0.13
+    , cloudflare-workers  ==0.1.0.0
+    , cloudflare-workers:host-testkit
+    , media:worker-adapters
+    , media               ==0.1.0.0
+    , mtl                 >=2.2  && <2.4
+    , servant             >=0.20 && <0.21
+    , servant-cloudflare-workers ==0.1.0.0
+    , shared              ==0.1.0.0
+    , text                >=2.1  && <2.2
+    , time                >=1.15 && <1.16

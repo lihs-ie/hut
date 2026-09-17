@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "hut-media-retention-worker-feature",
+  "main": "../../../runtime/media-retention-worker/src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "CLOUDFLARE_ZONE_IDENTIFIER": "feature-zone",
+    "CLOUDFLARE_CACHE_PURGE_TOKEN": "feature-token",
+    "MEDIA_PUBLIC_BASE_URL": "https://media.invalid"
+  },
+  "d1_databases": [
+    {
+      "binding": "MEDIA_DATABASE",
+      "database_name": "hut-media-feature",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "../../../migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_TMP_UPLOADS",
+      "bucket_name": "hut-media-tmp-uploads-feature"
+    },
+    {
+      "binding": "MEDIA_ASSETS",
+      "bucket_name": "hut-media-assets-feature"
+    }
+  ],
+  "triggers": { "crons": ["0 3 * * *"] }
+}

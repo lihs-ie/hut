@@ -1,0 +1,8 @@
+services:
+  feature:
+    build:
+      context: ../..
+      dockerfile: test/feature/Dockerfile
+    network_mode: none
+    environment:
+      WRANGLER_SEND_METRICS: "false"
