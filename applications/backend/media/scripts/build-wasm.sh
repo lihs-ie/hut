@@ -33,8 +33,13 @@ build_worker() {
   wasm_binary="$(
     wasm32-wasi-cabal list-bin "exe:${executable}" \
       --project-file="${PROJECT_FILE}" \
-      --builddir="${BUILD_DIR}"
+      --builddir="${BUILD_DIR}" \
+      | awk 'NF { line = $0 } END { print line }'
   )"
+  if [[ ! -f "${wasm_binary}" ]]; then
+    echo "WASM executable was not found: ${wasm_binary}" >&2
+    exit 1
+  fi
   post_linker="$(wasm32-wasi-ghc --print-libdir)/post-link.mjs"
 
   "${post_linker}" \
