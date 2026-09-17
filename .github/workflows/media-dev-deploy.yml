@@ -40,7 +40,7 @@ jobs:
 
       - name: Install Media dependencies
         working-directory: ${{ env.MEDIA_DIRECTORY }}
-        run: corepack pnpm@12.4.2 install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Set up Haskell
         id: setup-haskell
