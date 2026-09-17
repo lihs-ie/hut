@@ -163,7 +163,11 @@ async function eventually(label, operation, predicate, timeout = 60_000) {
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error(`${label} timed out: ${String(last)}`);
+  const diagnostic =
+    last instanceof Error
+      ? last.stack ?? last.message
+      : JSON.stringify(last);
+  throw new Error(`${label} timed out: ${diagnostic}`);
 }
 
 async function waitForReady(url) {
@@ -214,8 +218,13 @@ async function uploadFixture(extension, inputType, outputType) {
   const state = await eventually(
     `${extension} inspection`,
     () => driverJSON(`/state/${identifier}`),
-    (value) => value.image?.state === "available",
+    (value) => ["available", "rejected"].includes(value.image?.state),
     90_000,
+  );
+  assert.equal(
+    state.image.state,
+    "available",
+    `${extension} inspection failed: ${JSON.stringify(state)}`,
   );
   assert.equal(state.temporaryExists, false);
   assert.equal(state.finalExists, true);
