@@ -11,9 +11,11 @@ import Cloudflare.Workers.Streaming (
     readableStreamToLazyByteString,
  )
 import Control.Exception (SomeException, fromException, throwIO, try)
+import Data.ByteString qualified as ByteString
 import Data.ByteString.Lazy qualified as LazyByteString
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Numeric (showHex)
 import Shared.Domain.Error (
     createServiceUnavailable,
     createUnexpectedError,
@@ -33,31 +35,36 @@ newImageNormalizer ::
     R2Bucket ->
     R2Bucket ->
     Images ->
+    ImageUploadDeclaration ->
     TemporaryObjectKey ->
     FinalObjectKey ->
     IO InspectionNormalization
-newImageNormalizer temporaryBucket assetBucket images temporaryKey finalKey =
+newImageNormalizer temporaryBucket assetBucket images declaration temporaryKey finalKey =
     infrastructureOperation "normalize image" $ do
         source <- requireObject temporaryBucket (temporaryObjectKeyText temporaryKey)
-        inspected <- imagesInfo images source.r2ObjectBody
-        case inspected of
-            Left err
-                | permanentImagesError err ->
-                    pure (ImagePermanentlyRejected MalformedImage)
-                | otherwise ->
-                    throwIO
-                        ( createServiceUnavailable
-                            "CloudflareImages"
-                            "image inspection failed"
-                        )
-            Right SVGImageInfo ->
-                pure (ImagePermanentlyRejected UnsupportedImageFormat)
-            Right (RasterImageInfo format sourceBytes width height) ->
-                case outputFor format of
-                    Nothing ->
+        integrity <- verifyIntegrity declaration source.r2ObjectMeta
+        case integrity of
+            Left rejection -> pure (ImagePermanentlyRejected rejection)
+            Right () -> do
+                inspected <- imagesInfo images source.r2ObjectBody
+                case inspected of
+                    Left err
+                        | permanentImagesError err ->
+                            pure (ImagePermanentlyRejected MalformedImage)
+                        | otherwise ->
+                            throwIO
+                                ( createServiceUnavailable
+                                    "CloudflareImages"
+                                    "image inspection failed"
+                                )
+                    Right SVGImageInfo ->
                         pure (ImagePermanentlyRejected UnsupportedImageFormat)
-                    Just output ->
-                        normalizeRaster format sourceBytes width height output
+                    Right (RasterImageInfo format sourceBytes width height) ->
+                        case outputFor format of
+                            Nothing ->
+                                pure (ImagePermanentlyRejected UnsupportedImageFormat)
+                            Just output ->
+                                normalizeRaster format sourceBytes width height output
   where
     normalizeRaster format sourceBytes width height output = do
         freshSource <- requireObject temporaryBucket (temporaryObjectKeyText temporaryKey)
@@ -117,6 +124,28 @@ newImageNormalizer temporaryBucket assetBucket images temporaryKey finalKey =
                 "CloudflareImages"
                 ("could not buffer normalized image: " <> Text.pack (show failure))
             )
+
+verifyIntegrity ::
+    ImageUploadDeclaration -> R2ObjectMeta -> IO (Either ImageRejection ())
+verifyIntegrity declaration metadata = do
+    actualByteSize <- either invalid pure (newImageByteSize metadata.r2ObjectMetaSize)
+    actualSha256 <- traverse digestValue metadata.r2ObjectMetaChecksums.r2ChecksumsSha256
+    pure (verifyImageUploadIntegrity declaration actualByteSize actualSha256)
+  where
+    digestValue = either invalid pure . newImageSha256 . byteStringHex
+    invalid _ =
+        throwIO
+            ( createUnexpectedError
+                "MediaTemporaryBucket"
+                "R2 returned invalid image integrity metadata"
+            )
+
+byteStringHex :: ByteString.ByteString -> Text
+byteStringHex = Text.pack . concatMap byteHex . ByteString.unpack
+  where
+    byteHex byte =
+        let rendered = showHex byte ""
+         in if length rendered == 1 then '0' : rendered else rendered
 
 maximumNormalizedByteSize :: Int
 maximumNormalizedByteSize = 20 * 1024 * 1024

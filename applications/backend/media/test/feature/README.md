@@ -31,3 +31,9 @@ state is recreated for every run.
 - An expired temporary image is seeded through the retention Worker's real D1 and R2 bindings. The
   real Scheduled handler is dispatched with Wrangler's Test Harness and deletion is observed
   through those bindings.
+
+`remote/run.mjs` is the post-deployment dev smoke suite. It starts only temporary local Wrangler
+drivers with remote bindings; it does not deploy a public probe Worker. The suite uploads PNG,
+JPEG, WebP, HEIC, and animated GIF fixtures through the private API, verifies normalization and
+edge-cache hits, then exercises reference projection and scheduled retention against dev D1/R2.
+Every created image and cache entry is removed in a `finally` cleanup.

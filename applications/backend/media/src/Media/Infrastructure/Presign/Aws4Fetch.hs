@@ -57,16 +57,19 @@ newAws4FetchPresigner rawEnvironment lifetime awaiting = do
                 )
   where
     issue = do
-        let (imageIdentifier, attempt, declaredType, requestedAt) =
+        let (imageIdentifier, attempt, declaredType, declaredSha256, requestedAt) =
                 foldAwaitingUploadImage
                     ( \identifier uploadAttempt declaration timestamp ->
-                        ( identifier
-                        , uploadAttempt
-                        , foldImageUploadDeclaration
-                            (\declared _ _ -> declaredImageContentTypeText declared)
+                        foldImageUploadDeclaration
+                            ( \declared _ digest ->
+                                ( identifier
+                                , uploadAttempt
+                                , declaredImageContentTypeText declared
+                                , imageSha256Text digest
+                                , timestamp
+                                )
+                            )
                             declaration
-                        , timestamp
-                        )
                     )
                     awaiting
             expiresAt = addUTCTime lifetime requestedAt
@@ -80,6 +83,7 @@ newAws4FetchPresigner rawEnvironment lifetime awaiting = do
                 rawEnvironment
                 (textToJSVal objectKey)
                 (textToJSVal declaredType)
+                (textToJSVal declaredSha256)
                 expiresInSeconds
         pure
             ( textFromJSVal rawURL
@@ -99,9 +103,10 @@ foreign import javascript safe
         await presignR2Put({
           objectKey: $2,
           contentType: $3,
-          expiresInSeconds: $4
+          sha256: $4,
+          expiresInSeconds: $5
         })
       ).toString();
     })()
     """
-    jsPresignR2Put :: JSVal -> JSVal -> JSVal -> Int -> IO JSVal
+    jsPresignR2Put :: JSVal -> JSVal -> JSVal -> JSVal -> Int -> IO JSVal

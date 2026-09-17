@@ -63,7 +63,9 @@ coverage_report() {
   hpc report \
     "${tix_file}" \
     "--hpcdir=${CORE_MIX_DIRECTORY}" \
+    "--hpcdir=${CORE_PACKAGE_MIX_DIRECTORY}" \
     "--hpcdir=${PRESENTATION_MIX_DIRECTORY}" \
+    "--hpcdir=${PRESENTATION_PACKAGE_MIX_DIRECTORY}" \
     "${include_flags[@]}"
 }
 
@@ -99,15 +101,26 @@ cabal test \
   "shared:shared-test" \
   --test-show-details=direct
 
+find "${REPOSITORY_ROOT}/dist-newstyle" \
+  -path '*/hpc/vanilla/tix/media-unit-test.tix' \
+  -delete
+
 cabal test \
   "media:${UNIT_TEST}" \
   --enable-coverage \
+  --disable-shared \
+  --enable-static \
   --disable-optimization \
   --test-show-details=direct \
   -j1
 
 unit_test_binary="$(
-  cabal list-bin "media:${UNIT_TEST}" --enable-coverage --disable-optimization
+  cabal list-bin \
+    "media:${UNIT_TEST}" \
+    --enable-coverage \
+    --disable-shared \
+    --enable-static \
+    --disable-optimization
 )"
 unit_component_root="${unit_test_binary%/build/"${UNIT_TEST}"/"${UNIT_TEST}"}"
 package_root="${unit_component_root%%/t/*}"
@@ -116,10 +129,15 @@ component_profile="${unit_component_root#"${package_root}/t/${UNIT_TEST}"}"
 CORE_MIX_DIRECTORY="${package_root}${component_profile}/build/"
 CORE_MIX_DIRECTORY+="extra-compilation-artifacts/hpc/vanilla/mix"
 readonly CORE_MIX_DIRECTORY
+CORE_PACKAGE_MIX_DIRECTORY="${CORE_MIX_DIRECTORY}/media-0.1.0.0-inplace"
+readonly CORE_PACKAGE_MIX_DIRECTORY
 PRESENTATION_MIX_DIRECTORY="${package_root}/l/worker-adapters${component_profile}/"
 PRESENTATION_MIX_DIRECTORY+="build/worker-adapters/"
 PRESENTATION_MIX_DIRECTORY+="extra-compilation-artifacts/hpc/vanilla/mix"
 readonly PRESENTATION_MIX_DIRECTORY
+PRESENTATION_PACKAGE_MIX_DIRECTORY="${PRESENTATION_MIX_DIRECTORY}/"
+PRESENTATION_PACKAGE_MIX_DIRECTORY+="media-0.1.0.0-inplace-worker-adapters"
+readonly PRESENTATION_PACKAGE_MIX_DIRECTORY
 
 unit_tix="${unit_component_root}/hpc/vanilla/tix/${UNIT_TEST}.tix"
 

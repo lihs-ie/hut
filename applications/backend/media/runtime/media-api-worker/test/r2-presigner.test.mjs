@@ -9,6 +9,7 @@ const environment = {
   R2_ACCOUNT_IDENTIFIER: "test-account",
   MEDIA_TMP_UPLOADS_BUCKET_NAME: "hut-media-tmp-uploads-stg",
 };
+const sha256 = "a".repeat(64);
 
 test("creates the private JSFFI presign function", () => {
   const adapters = createMediaApiAdapters(environment);
@@ -21,6 +22,7 @@ test("signs a PUT URL for the configured temporary bucket", async () => {
   const signed = await binding.presignR2Put({
     objectKey: "tmp/test key",
     contentType: "image/png",
+    sha256,
     expiresInSeconds: 60,
   });
 
@@ -30,6 +32,10 @@ test("signs a PUT URL for the configured temporary bucket", async () => {
   );
   assert.equal(signed.searchParams.get("X-Amz-Expires"), "60");
   assert.equal(signed.searchParams.get("X-Amz-Algorithm"), "AWS4-HMAC-SHA256");
+  assert.match(
+    signed.searchParams.get("X-Amz-SignedHeaders") ?? "",
+    /x-amz-checksum-sha256/,
+  );
 });
 
 test("rejects object keys that URL normalization could escape", async () => {
@@ -40,6 +46,7 @@ test("rejects object keys that URL normalization could escape", async () => {
       binding.presignR2Put({
         objectKey,
         contentType: "image/png",
+        sha256,
         expiresInSeconds: 60,
       }),
       TypeError,
@@ -54,6 +61,7 @@ test("rejects invalid expiry and content type values", async () => {
     binding.presignR2Put({
       objectKey: "tmp/key",
       contentType: " ",
+      sha256,
       expiresInSeconds: 60,
     }),
     TypeError,
@@ -64,9 +72,24 @@ test("rejects invalid expiry and content type values", async () => {
       binding.presignR2Put({
         objectKey: "tmp/key",
         contentType: "image/png",
+        sha256,
         expiresInSeconds,
       }),
       RangeError,
     );
   }
+});
+
+test("rejects a checksum that is not a SHA-256 hex digest", async () => {
+  const binding = createMediaApiAdapters(environment);
+
+  await assert.rejects(
+    binding.presignR2Put({
+      objectKey: "tmp/key",
+      contentType: "image/png",
+      sha256: "not-a-sha256",
+      expiresInSeconds: 60,
+    }),
+    TypeError,
+  );
 });

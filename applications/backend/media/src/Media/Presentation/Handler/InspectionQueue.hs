@@ -23,13 +23,17 @@ newtype R2ObjectData = R2ObjectData {key :: Text}
     deriving stock (Generic)
     deriving anyclass (FromJSON)
 
-newtype R2EventNotification = R2EventNotification {object :: R2ObjectData}
+data R2EventNotification = R2EventNotification
+    { object :: R2ObjectData
+    , eventTime :: Maybe UTCTime
+    }
     deriving stock (Generic)
 
 instance FromJSON R2EventNotification where
     parseJSON = withObject "R2EventNotification" $ \value ->
         R2EventNotification
             <$> (value .: "object" <|> value .: "data")
+            <*> value .:? "eventTime"
 
 data InspectionHandlerDependencies = InspectionHandlerDependencies
     { inspection :: InspectionDependencies
@@ -48,9 +52,15 @@ handleBatch batch handlerDependencies _ = do
 handleNormal :: InspectionHandlerDependencies -> QueueMessage -> IO ()
 handleNormal handlerDependencies message = do
     let dependencies = handlerDependencies.inspection
-    attempt <- decodeAttempt message.queueMessageBody
+    (attempt, notifiedAt) <- decodeNotification message.queueMessageBody
     correlation <- handlerDependencies.generateCorrelationIdentifier
-    command <- systemCommand message correlation attempt
+    processingStartedAt <- dependencies.currentTime
+    let uploadedAt = maybe (millisecondsToUTC message.queueMessageTimestamp) id notifiedAt
+    command <-
+        systemCommand
+            processingStartedAt
+            correlation
+            (newProcessImageInspection attempt uploadedAt)
     outcome <- try @SomeException (processUploadedImage dependencies command)
     case outcome of
         Right _ -> message.queueMessageAck
@@ -70,27 +80,31 @@ handleDLQ dependencies message = do
     message.queueMessageAck
 
 decodeAttempt :: ByteString -> IO UploadAttemptIdentifier
-decodeAttempt bytes = do
+decodeAttempt bytes = fst <$> decodeNotification bytes
+
+decodeNotification :: ByteString -> IO (UploadAttemptIdentifier, Maybe UTCTime)
+decodeNotification bytes = do
     notification <-
         either
             fail
             pure
             (eitherDecodeStrict' bytes :: Either String R2EventNotification)
-    let R2EventNotification (R2ObjectData key) = notification
+    let R2EventNotification (R2ObjectData key) notifiedAt = notification
         rawAttempt = last (Text.splitOn "/" key)
-    either (fail . show) pure (uploadAttemptIdentifierFromText rawAttempt)
+    attempt <- either (fail . show) pure (uploadAttemptIdentifierFromText rawAttempt)
+    pure (attempt, notifiedAt)
 
 systemCommand ::
-    QueueMessage ->
+    UTCTime ->
     CorrelationIdentifier ->
     payload ->
     IO (Command payload)
-systemCommand message correlation payload = do
+systemCommand timestamp correlation payload = do
     actor <- either (fail . show) pure (newActor "media-inspection-worker")
     pure
         ( Command
             payload
-            (millisecondsToUTC message.queueMessageTimestamp)
+            timestamp
             actor
             correlation
             Nothing
