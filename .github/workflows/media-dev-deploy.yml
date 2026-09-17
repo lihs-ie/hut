@@ -388,6 +388,7 @@ jobs:
           trap - ERR
 
       - name: Run remote Media lifecycle smoke tests
+        timeout-minutes: 20
         working-directory: ${{ env.MEDIA_DIRECTORY }}
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

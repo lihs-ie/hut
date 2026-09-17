@@ -10,7 +10,7 @@ function checksumText(value) {
 async function forwardToAPI(request, environment, path) {
   const headers = new Headers(request.headers);
   headers.set("X-Hut-Actor", "media-remote-smoke");
-  headers.set("X-Correlation-Identifier", crypto.randomUUID());
+  headers.delete("X-Correlation-Identifier");
   return environment.MEDIA_API_WORKER.fetch(
     new Request(`https://media.internal${path}`, {
       method: request.method,

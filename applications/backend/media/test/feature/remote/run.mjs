@@ -31,6 +31,10 @@ const fixtures = [
   ["gif", "image/gif", "image/gif"],
 ];
 
+function timedFetch(input, init = {}, timeout = 15_000) {
+  return fetch(input, { ...init, signal: AbortSignal.timeout(timeout) });
+}
+
 function configuration(main, bindings = {}) {
   return {
     $schema: "../../../node_modules/wrangler/config-schema.json",
@@ -128,6 +132,7 @@ function startWrangler(configPath, port, extraArguments = []) {
     ],
     {
       cwd: root,
+      detached: true,
       env: { ...process.env, WRANGLER_SEND_METRICS: "false" },
       stdio: ["ignore", "pipe", "pipe"],
     },
@@ -135,6 +140,15 @@ function startWrangler(configPath, port, extraArguments = []) {
   child.stdout.on("data", (chunk) => process.stdout.write(chunk));
   child.stderr.on("data", (chunk) => process.stderr.write(chunk));
   return child;
+}
+
+function stopWrangler(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  try {
+    process.kill(-child.pid, "SIGTERM");
+  } catch (error) {
+    if (error.code !== "ESRCH") throw error;
+  }
 }
 
 async function eventually(label, operation, predicate, timeout = 60_000) {
@@ -155,7 +169,7 @@ async function eventually(label, operation, predicate, timeout = 60_000) {
 async function waitForReady(url) {
   await eventually(
     `Worker ${url}`,
-    async () => (await fetch(url)).status,
+    async () => (await timedFetch(url)).status,
     (status) => status === 200,
   );
 }
@@ -163,13 +177,13 @@ async function waitForReady(url) {
 async function waitForListening(url) {
   await eventually(
     `Worker ${url}`,
-    async () => (await fetch(url)).status,
+    async () => (await timedFetch(url)).status,
     (status) => Number.isInteger(status),
   );
 }
 
 async function driverJSON(pathname, init) {
-  const response = await fetch(`${driverURL}${pathname}`, init);
+  const response = await timedFetch(`${driverURL}${pathname}`, init);
   const body = await response.json();
   assert.ok(response.ok, `${pathname}: ${response.status} ${JSON.stringify(body)}`);
   return body;
@@ -187,14 +201,14 @@ async function uploadFixture(extension, inputType, outputType) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ contentType: inputType, byteSize: bytes.length, sha256 }),
   });
-  const uploaded = await fetch(issued.uploadDestination, {
+  const uploaded = await timedFetch(issued.uploadDestination, {
     method: "PUT",
     headers: {
       "content-type": inputType,
       "x-amz-checksum-sha256": checksum,
     },
     body: bytes,
-  });
+  }, 60_000);
   assert.ok(uploaded.ok, `${extension} PUT failed: ${uploaded.status}`);
   const identifier = issued.imageIdentifier;
   const state = await eventually(
@@ -212,7 +226,7 @@ async function uploadFixture(extension, inputType, outputType) {
   assert.ok(state.image.inspectionStartedAt <= state.image.availableAt);
 
   const publicURL = `${publicBaseURL}/images/${identifier}`;
-  const first = await fetch(publicURL);
+  const first = await timedFetch(publicURL);
   assert.equal(first.status, 200);
   assert.match(first.headers.get("content-type") ?? "", new RegExp(`^${outputType}`));
   const output = new Uint8Array(await first.arrayBuffer());
@@ -227,7 +241,7 @@ async function uploadFixture(extension, inputType, outputType) {
     );
     assert.ok(frameControls >= 2, "animated GIF lost its animation frames");
   }
-  const second = await fetch(publicURL);
+  const second = await timedFetch(publicURL);
   assert.equal(second.status, 200);
   assert.equal(second.headers.get("cf-cache-status"), "HIT");
   return { identifier, publicURL };
@@ -255,7 +269,7 @@ async function sendProjection(identifier, position, references) {
 }
 
 async function invokeRetention() {
-  const response = await fetch(
+  const response = await timedFetch(
     `http://127.0.0.1:${retentionPort}/__scheduled?cron=0+3+*+*+*`,
   );
   assert.ok(response.ok, `scheduled retention failed: ${response.status}`);
@@ -266,7 +280,7 @@ async function purgeURLs(urls) {
   const endpoint =
     "https://api.cloudflare.com/client/v4/zones/" +
     `${process.env.CLOUDFLARE_ZONE_IDENTIFIER}/purge_cache`;
-  const response = await fetch(
+  const response = await timedFetch(
     endpoint,
     {
       method: "POST",
@@ -327,7 +341,7 @@ async function main() {
       (state) => state.image === null && state.finalExists === false,
     );
     for (const image of [unreferenced, referenced]) {
-      const response = await fetch(image.publicURL, { cache: "no-store" });
+      const response = await timedFetch(image.publicURL, { cache: "no-store" });
       assert.equal(response.status, 404);
       assert.notEqual(response.headers.get("cf-cache-status"), "HIT");
     }
@@ -343,7 +357,7 @@ async function main() {
         await purgeURLs(uploaded.map(({ publicURL }) => publicURL));
       }
     } finally {
-      for (const child of children) child.kill("SIGTERM");
+      for (const child of children) stopWrangler(child);
       await Promise.allSettled([
         rm(configs.driverPath, { force: true }),
         rm(configs.retentionPath, { force: true }),
