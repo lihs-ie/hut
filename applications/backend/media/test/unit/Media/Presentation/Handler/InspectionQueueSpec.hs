@@ -8,6 +8,7 @@ import Control.Monad (forM)
 import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.Text (Text)
 import Media.Presentation.Handler.QueueTestSupport (
+    cloudflareR2Body,
     commandMetadataMatches,
     emptyInspectionDependencies,
     fixedTime,
@@ -24,6 +25,7 @@ import Media.Presentation.Handler.QueueTestSupport (
     testUploadAttemptIdentifier,
     validMessageID,
  )
+import "media" Media.Domain.Image (uploadAttemptIdentifierText)
 import "media" Media.UseCase.ProcessImageInspection (
     InspectionClaim (InspectionClaim),
     InspectionDependencies (
@@ -83,7 +85,9 @@ inspectionSuccess = do
         "media-inspection"
         dependencies
         disposition
-        (inspectionBody attempt)
+        ( cloudflareR2Body
+            ("tmp/uploads/" <> uploadAttemptIdentifierText attempt)
+        )
         "opaque-cloudflare-message"
     actualCalls <- readIORef calls
     command <- readIORef capturedCommand
