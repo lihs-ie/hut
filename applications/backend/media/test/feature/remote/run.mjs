@@ -242,9 +242,19 @@ async function uploadFixture(extension, inputType, outputType) {
     );
     assert.ok(frameControls >= 2, "animated GIF lost its animation frames");
   }
-  const second = await timedFetch(publicURL);
-  assert.equal(second.status, 200);
-  assert.equal(second.headers.get("cf-cache-status"), "HIT");
+  await eventually(
+    `${extension} public cache`,
+    async () => {
+      const response = await timedFetch(publicURL);
+      await response.arrayBuffer();
+      return {
+        status: response.status,
+        cacheStatus: response.headers.get("cf-cache-status"),
+      };
+    },
+    (value) => value.status === 200 && value.cacheStatus === "HIT",
+    30_000,
+  );
   return { identifier, publicURL };
 }
 
