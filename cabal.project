@@ -1,0 +1,35 @@
+packages:
+  applications/backend/shared
+  applications/backend/media
+
+source-repository-package
+  type: git
+  location: https://github.com/haskell-servant/servant.git
+  tag: 890f01be216ebb4ef7bf8255278a8f9180364456
+  subdir: servant
+
+source-repository-package
+  type: git
+  location: https://github.com/haskell-servant/servant.git
+  tag: 890f01be216ebb4ef7bf8255278a8f9180364456
+  subdir: servant-server
+
+source-repository-package
+  type: git
+  location: https://github.com/haskell-servant/servant.git
+  tag: 890f01be216ebb4ef7bf8255278a8f9180364456
+  subdir: servant-client-core
+
+source-repository-package
+  type: git
+  location: https://github.com/lihs-ie/cloudflare-workers-hs.git
+  tag: 1d4231e15a32cad94c3decfd87f3eace79fb0ec2
+  subdir:
+    cloudflare-workers
+    servant-cloudflare-workers
+    servant-cloudflare-workers-access
+    servant-cloudflare-workers-client
+
+package *
+  extra-include-dirs: /opt/homebrew/opt/libffi/include
+  extra-lib-dirs: /opt/homebrew/opt/libffi/lib

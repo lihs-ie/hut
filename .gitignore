@@ -65,3 +65,5 @@ applications/docker/frontend/firebase-debug.log
 applications/docker/frontend/firestore-debug.log
 applications/docker/frontend/ui-debug.log
 applications/docker/frontend/.firebase/
+
+/dist-newstyle/

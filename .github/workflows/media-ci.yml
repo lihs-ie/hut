@@ -1,0 +1,116 @@
+name: Media CI
+
+on:
+  pull_request:
+    branches: [main, staging]
+    paths:
+      - applications/backend/media/**
+      - applications/backend/shared/**
+      - cabal.project
+      - .github/workflows/media-ci.yml
+  push:
+    branches: [staging]
+    paths:
+      - applications/backend/media/**
+      - applications/backend/shared/**
+      - cabal.project
+      - .github/workflows/media-ci.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-test:
+    name: Unit tests and coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Haskell
+        id: setup-haskell
+        uses: haskell-actions/setup@64aa5146ed5bd91f181552b8b5fbe50fbd2bd3fe # v2.7.1
+        with:
+          ghc-version: 9.14.1
+          cabal-version: 3.16.1.0
+
+      - name: Cache Cabal dependencies
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: |
+            ${{ steps.setup-haskell.outputs.cabal-store }}
+            dist-newstyle
+          key: >-
+            media-cabal-${{ runner.os }}-${{ steps.setup-haskell.outputs.ghc-version }}-
+            ${{ hashFiles('cabal.project', 'applications/backend/**/*.cabal') }}
+          restore-keys: |
+            media-cabal-${{ runner.os }}-${{ steps.setup-haskell.outputs.ghc-version }}-
+
+      - name: Update package index
+        run: cabal update
+
+      - name: Run unit tests and enforce coverage
+        run: applications/backend/media/scripts/check-coverage.sh
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: media-coverage-report
+          path: dist-newstyle/**/media-*/t/*/hpc/vanilla/html/
+          if-no-files-found: ignore
+
+  feature-test:
+    name: Docker and Wrangler feature tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+
+      - name: Cache WASM Cabal dependencies
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: |
+            ${{ runner.temp }}/cabal-wasm/packages
+            ${{ runner.temp }}/cabal-wasm/store
+            applications/backend/media/dist-newstyle-wasm
+          key: >-
+            media-wasm-${{ runner.os }}-
+            ${{ hashFiles('applications/backend/media/cabal-wasm.project',
+            'applications/backend/**/*.cabal') }}
+
+      - name: Initialize WASM Cabal configuration
+        run: >-
+          nix develop
+          github:lihs-ie/cloudflare-workers-hs/1d4231e15a32cad94c3decfd87f3eace79fb0ec2
+          --command wasm32-wasi-cabal user-config init
+        env:
+          CABAL_DIR: ${{ runner.temp }}/cabal-wasm
+
+      - name: Update WASM package index
+        run: >-
+          nix develop
+          github:lihs-ie/cloudflare-workers-hs/1d4231e15a32cad94c3decfd87f3eace79fb0ec2
+          --command wasm32-wasi-cabal update
+        env:
+          CABAL_DIR: ${{ runner.temp }}/cabal-wasm
+
+      - name: Build Haskell Workers for wasm32-wasi
+        run: >-
+          nix develop
+          github:lihs-ie/cloudflare-workers-hs/1d4231e15a32cad94c3decfd87f3eace79fb0ec2
+          --command bash applications/backend/media/scripts/build-wasm.sh
+        env:
+          CABAL_DIR: ${{ runner.temp }}/cabal-wasm
+
+      - name: Run feature tests
+        run: applications/backend/media/test/feature/run.sh

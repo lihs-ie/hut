@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "hut-media-inspection-worker-feature",
+  "main": "../../../runtime/media-inspection-worker/src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "MEDIA_DATABASE",
+      "database_name": "hut-media-feature",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "../../../migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_TMP_UPLOADS",
+      "bucket_name": "hut-media-tmp-uploads-feature"
+    },
+    {
+      "binding": "MEDIA_ASSETS",
+      "bucket_name": "hut-media-assets-feature"
+    }
+  ],
+  "images": { "binding": "IMAGES" },
+  "queues": {
+    "consumers": [
+      {
+        "queue": "hut-media-inspection-feature",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 0
+      }
+    ]
+  }
+}

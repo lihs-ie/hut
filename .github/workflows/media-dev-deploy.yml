@@ -1,0 +1,389 @@
+name: Media Dev Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: media-dev-deploy
+  cancel-in-progress: false
+
+env:
+  MEDIA_DIRECTORY: applications/backend/media
+  TERRAFORM_DIRECTORY: infrastructure/environments/dev
+  TERRAFORM_VERSION: "1.14.8"
+
+jobs:
+  deploy:
+    name: Test, provision, migrate, and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: applications/backend/media/pnpm-lock.yaml
+
+      - name: Install Media dependencies
+        working-directory: ${{ env.MEDIA_DIRECTORY }}
+        run: corepack pnpm@12.4.2 install --frozen-lockfile
+
+      - name: Set up Haskell
+        id: setup-haskell
+        uses: haskell-actions/setup@64aa5146ed5bd91f181552b8b5fbe50fbd2bd3fe # v2.7.1
+        with:
+          ghc-version: 9.14.1
+          cabal-version: 3.16.1.0
+
+      - name: Cache native Cabal dependencies
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: |
+            ${{ steps.setup-haskell.outputs.cabal-store }}
+            dist-newstyle
+          key: >-
+            media-dev-native-${{ runner.os }}-${{ steps.setup-haskell.outputs.ghc-version }}-
+            ${{ hashFiles('cabal.project', 'applications/backend/**/*.cabal') }}
+          restore-keys: |
+            media-dev-native-${{ runner.os }}-${{ steps.setup-haskell.outputs.ghc-version }}-
+
+      - name: Update native Cabal package index
+        run: cabal update
+
+      - name: Run unit tests and enforce coverage
+        run: applications/backend/media/scripts/check-coverage.sh
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+
+      - name: Cache WASM Cabal dependencies
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: |
+            ${{ runner.temp }}/cabal-wasm/packages
+            ${{ runner.temp }}/cabal-wasm/store
+            applications/backend/media/dist-newstyle-wasm
+          key: >-
+            media-dev-wasm-${{ runner.os }}-
+            ${{ hashFiles('applications/backend/media/cabal-wasm.project',
+            'applications/backend/**/*.cabal') }}
+
+      - name: Initialize WASM Cabal configuration
+        run: >-
+          nix develop
+          github:lihs-ie/cloudflare-workers-hs/1d4231e15a32cad94c3decfd87f3eace79fb0ec2
+          --command wasm32-wasi-cabal user-config init
+        env:
+          CABAL_DIR: ${{ runner.temp }}/cabal-wasm
+
+      - name: Update WASM package index
+        run: >-
+          nix develop
+          github:lihs-ie/cloudflare-workers-hs/1d4231e15a32cad94c3decfd87f3eace79fb0ec2
+          --command wasm32-wasi-cabal update
+        env:
+          CABAL_DIR: ${{ runner.temp }}/cabal-wasm
+
+      - name: Build Haskell Workers for wasm32-wasi
+        run: >-
+          nix develop
+          github:lihs-ie/cloudflare-workers-hs/1d4231e15a32cad94c3decfd87f3eace79fb0ec2
+          --command bash applications/backend/media/scripts/build-wasm.sh
+        env:
+          CABAL_DIR: ${{ runner.temp }}/cabal-wasm
+
+      - name: Reject generated WASM stubs
+        working-directory: ${{ env.MEDIA_DIRECTORY }}
+        run: corepack pnpm@12.4.2 run verify:generated-artifacts
+
+      - name: Type-check Worker entrypoints
+        working-directory: ${{ env.MEDIA_DIRECTORY }}
+        run: corepack pnpm@12.4.2 run type-check
+
+      - name: Run Docker and Wrangler feature tests
+        run: applications/backend/media/test/feature/run.sh
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+        run: terraform init -input=false
+
+      - name: Terraform plan
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TERRAFORM_API_TOKEN }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_IDENTIFIER }}
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Terraform apply
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TERRAFORM_API_TOKEN }}
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Confirm Terraform convergence
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TERRAFORM_API_TOKEN }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_IDENTIFIER }}
+        run: terraform plan -input=false -detailed-exitcode
+
+      - name: Configure Wrangler from Terraform outputs
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+          MEDIA_DIRECTORY: ${{ github.workspace }}/${{ env.MEDIA_DIRECTORY }}
+          CLOUDFLARE_ZONE_IDENTIFIER: ${{ vars.CLOUDFLARE_ZONE_IDENTIFIER }}
+        run: |
+          set -Eeuo pipefail
+
+          : "${CLOUDFLARE_ZONE_IDENTIFIER:?CLOUDFLARE_ZONE_IDENTIFIER is required}"
+
+          terraform output -json > "${RUNNER_TEMP}/media-terraform-output.json"
+          D1_DATABASE_ID="$({
+            jq -r '
+              .d1_database_id.value //
+              .media_cloudflare.value.d1_database_id //
+              empty
+            ' "${RUNNER_TEMP}/media-terraform-output.json"
+          })"
+
+          if [ -z "${D1_DATABASE_ID}" ]; then
+            echo "Terraform did not output the Media D1 database identifier" >&2
+            exit 1
+          fi
+
+          export D1_DATABASE_ID
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from "node:fs/promises";
+          import path from "node:path";
+
+          const runtimeDirectory = path.join(process.env.MEDIA_DIRECTORY, "runtime");
+          const workers = [
+            "media-api-worker",
+            "media-inspection-worker",
+            "media-reference-projection-worker",
+            "media-retention-worker",
+          ];
+
+          for (const worker of workers) {
+            const configPath = path.join(runtimeDirectory, worker, "wrangler.jsonc");
+            const config = JSON.parse(await readFile(configPath, "utf8"));
+            const dev = config.env.dev;
+
+            for (const database of dev.d1_databases) {
+              database.database_id = process.env.D1_DATABASE_ID;
+            }
+
+            if (worker === "media-retention-worker") {
+              dev.vars.CLOUDFLARE_ZONE_IDENTIFIER =
+                process.env.CLOUDFLARE_ZONE_IDENTIFIER;
+            }
+
+            await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
+          }
+          NODE
+
+      - name: Dry-run all Media dev Workers
+        working-directory: ${{ env.MEDIA_DIRECTORY }}
+        run: corepack pnpm@12.4.2 run dry-run:dev
+
+      - name: Apply forward-only D1 migrations
+        working-directory: ${{ env.MEDIA_DIRECTORY }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKER_DEPLOY_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: corepack pnpm@12.4.2 run d1:migrate:dev
+
+      - name: Prepare Worker secrets
+        env:
+          R2_SIGNING_ACCESS_KEY_ID: ${{ secrets.R2_SIGNING_ACCESS_KEY_ID }}
+          R2_SIGNING_SECRET_ACCESS_KEY: ${{ secrets.R2_SIGNING_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_IDENTIFIER: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_CACHE_PURGE_TOKEN: ${{ secrets.CLOUDFLARE_CACHE_PURGE_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+
+          : "${R2_SIGNING_ACCESS_KEY_ID:?R2_SIGNING_ACCESS_KEY_ID is required}"
+          : "${R2_SIGNING_SECRET_ACCESS_KEY:?R2_SIGNING_SECRET_ACCESS_KEY is required}"
+          : "${R2_ACCOUNT_IDENTIFIER:?R2_ACCOUNT_IDENTIFIER is required}"
+          : "${CLOUDFLARE_CACHE_PURGE_TOKEN:?CLOUDFLARE_CACHE_PURGE_TOKEN is required}"
+
+          jq -n \
+            --arg access_key "${R2_SIGNING_ACCESS_KEY_ID}" \
+            --arg secret_key "${R2_SIGNING_SECRET_ACCESS_KEY}" \
+            --arg account "${R2_ACCOUNT_IDENTIFIER}" \
+            '{
+              R2_S3_ACCESS_KEY_ID: $access_key,
+              R2_S3_SECRET_ACCESS_KEY: $secret_key,
+              R2_ACCOUNT_IDENTIFIER: $account
+            }' > "${RUNNER_TEMP}/media-api-secrets.json"
+
+          jq -n \
+            --arg token "${CLOUDFLARE_CACHE_PURGE_TOKEN}" \
+            '{CLOUDFLARE_CACHE_PURGE_TOKEN: $token}' \
+            > "${RUNNER_TEMP}/media-retention-secrets.json"
+
+      - name: Deploy consumer Workers, then Media API
+        working-directory: ${{ env.MEDIA_DIRECTORY }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKER_DEPLOY_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -Eeuo pipefail
+
+          declare -a DEPLOYED_CONFIGS=()
+          declare -a PREVIOUS_VERSIONS=()
+
+          current_version() {
+            local config="$1"
+            local deployments
+
+            deployments="$(
+              corepack pnpm@12.4.2 exec wrangler deployments list \
+                --config "${config}" \
+                --env dev \
+                --json 2>/dev/null || true
+            )"
+
+            jq -r '
+              (.[0].versions // [])
+              | map(select((.percentage // 0) == 100))[0].version_id
+              // empty
+            ' <<<"${deployments:-[]}" 2>/dev/null || true
+          }
+
+          rollback_workers() {
+            local status="$?"
+            local index
+
+            trap - ERR
+            echo "Worker deployment failed; Terraform and D1 are left applied." >&2
+
+            for ((index=${#DEPLOYED_CONFIGS[@]} - 1; index>=0; index--)); do
+              if [ -z "${PREVIOUS_VERSIONS[$index]}" ]; then
+                echo \
+                  "No previous version for ${DEPLOYED_CONFIGS[$index]}; skipping rollback." \
+                  >&2
+                continue
+              fi
+
+              corepack pnpm@12.4.2 exec wrangler rollback \
+                "${PREVIOUS_VERSIONS[$index]}" \
+                --config "${DEPLOYED_CONFIGS[$index]}" \
+                --env dev \
+                --yes \
+                --message "Automatic rollback after failed Media dev deployment" || true
+            done
+
+            exit "${status}"
+          }
+
+          deploy_worker() {
+            local config="$1"
+            local secrets_file="${2:-}"
+            local previous_version
+
+            previous_version="$(current_version "${config}")"
+
+            if [ -n "${secrets_file}" ]; then
+              corepack pnpm@12.4.2 exec wrangler deploy \
+                --config "${config}" \
+                --env dev \
+                --strict \
+                --x-provision=false \
+                --x-auto-create=false \
+                --secrets-file "${secrets_file}"
+            else
+              corepack pnpm@12.4.2 exec wrangler deploy \
+                --config "${config}" \
+                --env dev \
+                --strict \
+                --x-provision=false \
+                --x-auto-create=false
+            fi
+
+            DEPLOYED_CONFIGS+=("${config}")
+            PREVIOUS_VERSIONS+=("${previous_version}")
+          }
+
+          trap rollback_workers ERR
+
+          corepack pnpm@12.4.2 run verify:generated-artifacts
+          deploy_worker runtime/media-inspection-worker/wrangler.jsonc
+          deploy_worker runtime/media-reference-projection-worker/wrangler.jsonc
+          deploy_worker \
+            runtime/media-retention-worker/wrangler.jsonc \
+            "${RUNNER_TEMP}/media-retention-secrets.json"
+          deploy_worker \
+            runtime/media-api-worker/wrangler.jsonc \
+            "${RUNNER_TEMP}/media-api-secrets.json"
+
+          corepack pnpm@12.4.2 exec wrangler d1 migrations list MEDIA_DATABASE \
+            --remote \
+            --config runtime/media-api-worker/wrangler.jsonc \
+            --env dev \
+            --x-provision=false \
+            --x-auto-create=false
+
+          for config in runtime/*/wrangler.jsonc; do
+            corepack pnpm@12.4.2 exec wrangler deployments list \
+              --config "${config}" \
+              --env dev \
+              --json \
+              | jq -e 'length > 0' >/dev/null
+          done
+
+          node --input-type=module <<'NODE'
+          import { readFile } from "node:fs/promises";
+          import { glob } from "node:fs/promises";
+
+          for await (const configPath of glob("runtime/*/wrangler.jsonc")) {
+            const config = JSON.parse(await readFile(configPath, "utf8"));
+            if (config.workers_dev !== false || config.preview_urls !== false) {
+              throw new Error(`${configPath} enables a public Worker URL`);
+            }
+            if (config.routes !== undefined || config.env.dev.routes !== undefined) {
+              throw new Error(`${configPath} defines an external route`);
+            }
+          }
+          NODE
+
+          trap - ERR
