@@ -185,7 +185,7 @@ async function driverJSON(pathname, init) {
   return body;
 }
 
-async function uploadFixture(extension, inputType, outputType) {
+async function uploadFixture(extension, inputType, outputType, trackedUploads) {
   const bytes = await readFile(
     path.join(remoteDirectory, "fixtures", `sample.${extension}`),
   );
@@ -197,6 +197,11 @@ async function uploadFixture(extension, inputType, outputType) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ contentType: inputType, byteSize: bytes.length, sha256 }),
   });
+  const upload = {
+    identifier: issued.imageIdentifier,
+    publicURL: `${publicBaseURL}/images/${issued.imageIdentifier}`,
+  };
+  trackedUploads.push(upload);
   const uploaded = await timedFetch(issued.uploadDestination, {
     method: "PUT",
     headers: {
@@ -206,7 +211,7 @@ async function uploadFixture(extension, inputType, outputType) {
     body: bytes,
   }, 60_000);
   assert.ok(uploaded.ok, `${extension} PUT failed: ${uploaded.status}`);
-  const identifier = issued.imageIdentifier;
+  const { identifier, publicURL } = upload;
   const state = await eventually(
     `${extension} inspection`,
     () => driverJSON(`/state/${identifier}`),
@@ -226,7 +231,6 @@ async function uploadFixture(extension, inputType, outputType) {
   assert.ok(state.attempt.uploadedAt <= state.inspection.inspectedAt);
   assert.equal(state.inspection.inspectedAt, state.image.availableAt);
 
-  const publicURL = `${publicBaseURL}/images/${identifier}`;
   const first = await timedFetch(publicURL);
   assert.equal(first.status, 200);
   assert.match(first.headers.get("content-type") ?? "", new RegExp(`^${outputType}`));
@@ -255,7 +259,7 @@ async function uploadFixture(extension, inputType, outputType) {
     (value) => value.status === 200 && value.cacheStatus === "HIT",
     30_000,
   );
-  return { identifier, publicURL };
+  return upload;
 }
 
 async function sendProjection(identifier, position, references) {
@@ -331,7 +335,7 @@ async function main() {
     await waitForReady(`${driverURL}/ready`);
 
     for (const fixture of fixtures) {
-      uploaded.push(await uploadFixture(...fixture));
+      await uploadFixture(...fixture, uploaded);
     }
 
     const [unreferenced, referenced] = uploaded;
