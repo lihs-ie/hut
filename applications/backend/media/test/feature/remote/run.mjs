@@ -326,6 +326,11 @@ async function purgeURLs(urls) {
 }
 
 async function main() {
+  await purgeURLs([
+    `${publicBaseURL}/images/01M2PRG8J329SXB73KMF3ZTBFF`,
+    `${publicBaseURL}/images/01M2RJ9N6EY6191JBNQDTE6JBT`,
+    `${publicBaseURL}/images/01M2RMQT3DGZ7JA8CV7BZ9ZCQT`,
+  ]);
   const configs = await writeConfigurations();
   const children = [];
   const uploaded = [];
