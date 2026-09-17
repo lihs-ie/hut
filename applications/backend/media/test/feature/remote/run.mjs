@@ -220,10 +220,10 @@ async function uploadFixture(extension, inputType, outputType) {
   assert.equal(state.temporaryExists, false);
   assert.equal(state.finalExists, true);
   assert.ok(state.attempt.uploadedAt);
-  assert.ok(state.image.inspectionStartedAt);
+  assert.ok(state.inspection.inspectedAt);
   assert.ok(state.image.availableAt);
-  assert.ok(state.attempt.uploadedAt <= state.image.inspectionStartedAt);
-  assert.ok(state.image.inspectionStartedAt <= state.image.availableAt);
+  assert.ok(state.attempt.uploadedAt <= state.inspection.inspectedAt);
+  assert.equal(state.inspection.inspectedAt, state.image.availableAt);
 
   const publicURL = `${publicBaseURL}/images/${identifier}`;
   const first = await timedFetch(publicURL);

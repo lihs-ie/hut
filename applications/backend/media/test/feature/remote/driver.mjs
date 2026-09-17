@@ -36,6 +36,12 @@ async function imageState(environment, identifier) {
   )
     .bind(identifier)
     .first();
+  const inspection = await environment.MEDIA_DATABASE.prepare(
+    "SELECT inspected_at AS inspectedAt FROM image_inspections " +
+      "WHERE image_identifier=? ORDER BY inspected_at DESC LIMIT 1",
+  )
+    .bind(identifier)
+    .first();
   const finalKey = `images/${identifier}`;
   const temporary = attempt?.temporaryObjectKey
     ? await environment.MEDIA_TMP_UPLOADS.head(attempt.temporaryObjectKey)
@@ -49,6 +55,7 @@ async function imageState(environment, identifier) {
   return json({
     image,
     attempt,
+    inspection,
     temporaryExists: temporary !== null,
     finalExists: final !== null,
     finalSize: final?.size ?? null,
