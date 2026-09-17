@@ -155,6 +155,23 @@ inspectionBody attempt =
 r2Body :: Text -> ByteString
 r2Body key = strictEncode (object ["data" .= object ["key" .= key]])
 
+cloudflareR2Body :: Text -> ByteString
+cloudflareR2Body key =
+    strictEncode
+        ( object
+            [ "account" .= ("account" :: Text)
+            , "action" .= ("PutObject" :: Text)
+            , "bucket" .= ("hut-media-tmp-uploads-dev" :: Text)
+            , "object"
+                .= object
+                    [ "key" .= key
+                    , "size" .= (2048 :: Integer)
+                    , "eTag" .= ("etag" :: Text)
+                    ]
+            , "eventTime" .= fixedTime
+            ]
+        )
+
 projectionBody :: Text -> [Text] -> ByteString
 projectionBody kind references =
     projectionBodyWith kind "source-1" "position-1" references

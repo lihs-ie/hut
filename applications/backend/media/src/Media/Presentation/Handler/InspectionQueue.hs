@@ -4,6 +4,7 @@ module Media.Presentation.Handler.InspectionQueue (
 ) where
 
 import Cloudflare.Workers.Entrypoint.Queue
+import Control.Applicative ((<|>))
 import Control.Exception (SomeException, try)
 import Control.Monad (forM_)
 import Data.Aeson
@@ -22,12 +23,13 @@ newtype R2ObjectData = R2ObjectData {key :: Text}
     deriving stock (Generic)
     deriving anyclass (FromJSON)
 
-newtype R2EventNotification = R2EventNotification {data' :: R2ObjectData}
+newtype R2EventNotification = R2EventNotification {object :: R2ObjectData}
     deriving stock (Generic)
 
 instance FromJSON R2EventNotification where
     parseJSON = withObject "R2EventNotification" $ \value ->
-        R2EventNotification <$> value .: "data"
+        R2EventNotification
+            <$> (value .: "object" <|> value .: "data")
 
 data InspectionHandlerDependencies = InspectionHandlerDependencies
     { inspection :: InspectionDependencies
