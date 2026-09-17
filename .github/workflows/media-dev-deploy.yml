@@ -180,13 +180,25 @@ jobs:
               empty
             ' "${RUNNER_TEMP}/media-terraform-output.json"
           })"
+          REFERENCE_QUEUE_ID="$({
+            jq -r '
+              .queue_ids.value.reference_projection //
+              .media_cloudflare.value.queue_ids.reference_projection //
+              empty
+            ' "${RUNNER_TEMP}/media-terraform-output.json"
+          })"
 
           if [ -z "${D1_DATABASE_ID}" ]; then
             echo "Terraform did not output the Media D1 database identifier" >&2
             exit 1
           fi
+          if [ -z "${REFERENCE_QUEUE_ID}" ]; then
+            echo "Terraform did not output the Media reference Queue identifier" >&2
+            exit 1
+          fi
 
           echo "MEDIA_D1_DATABASE_ID=${D1_DATABASE_ID}" >> "${GITHUB_ENV}"
+          echo "MEDIA_REFERENCE_QUEUE_ID=${REFERENCE_QUEUE_ID}" >> "${GITHUB_ENV}"
 
           export D1_DATABASE_ID
           node --input-type=module <<'NODE'

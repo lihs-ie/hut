@@ -17,6 +17,7 @@ const requiredEnvironment = [
   "CLOUDFLARE_CACHE_PURGE_TOKEN",
   "CLOUDFLARE_ZONE_IDENTIFIER",
   "MEDIA_D1_DATABASE_ID",
+  "MEDIA_REFERENCE_QUEUE_ID",
 ];
 
 for (const name of requiredEnvironment) {
@@ -81,15 +82,6 @@ async function writeConfigurations() {
         remote: true,
       },
     ],
-    queues: {
-      producers: [
-        {
-          binding: "MEDIA_REFERENCE_QUEUE",
-          queue: "hut-media-reference-projection-dev",
-          remote: true,
-        },
-      ],
-    },
   });
   const retention = configuration(
     "../../../runtime/media-retention-worker/src/index.ts",
@@ -258,18 +250,34 @@ async function uploadFixture(extension, inputType, outputType) {
 
 async function sendProjection(identifier, position, references) {
   const sourceIdentifier = `remote-smoke-${identifier}`;
-  await driverJSON("/projection", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      eventIdentifier: `remote-smoke-${identifier}-${position}`,
-      sourcePosition: String(position),
-      sourceKind: "article",
-      sourceIdentifier,
-      referencedImages: references,
-      occurredAt: new Date().toISOString(),
-    }),
-  });
+  const response = await timedFetch(
+    `https://api.cloudflare.com/client/v4/accounts/` +
+      `${process.env.CLOUDFLARE_ACCOUNT_ID}/queues/` +
+      `${process.env.MEDIA_REFERENCE_QUEUE_ID}/messages`,
+    {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        body: {
+          eventIdentifier: `remote-smoke-${identifier}-${position}`,
+          sourcePosition: String(position),
+          sourceKind: "article",
+          sourceIdentifier,
+          referencedImages: references,
+          occurredAt: new Date().toISOString(),
+        },
+        content_type: "json",
+      }),
+    },
+  );
+  const result = await response.json();
+  assert.ok(
+    response.ok && result.success,
+    `projection enqueue failed: ${response.status} ${JSON.stringify(result)}`,
+  );
   await eventually(
     `projection ${position}`,
     () => driverJSON(`/state/${identifier}`),

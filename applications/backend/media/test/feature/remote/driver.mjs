@@ -77,11 +77,6 @@ async function ageImages(request, environment) {
   return json({ updated: identifiers.length });
 }
 
-async function sendProjection(request, environment) {
-  await environment.MEDIA_REFERENCE_QUEUE.send(await request.json());
-  return json({ queued: true }, 202);
-}
-
 async function cleanup(request, environment) {
   const { identifiers } = await request.json();
   for (const identifier of identifiers) {
@@ -129,9 +124,6 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/age") {
       return ageImages(request, environment);
-    }
-    if (request.method === "POST" && url.pathname === "/projection") {
-      return sendProjection(request, environment);
     }
     if (request.method === "POST" && url.pathname === "/cleanup") {
       return cleanup(request, environment);
