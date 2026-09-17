@@ -80,7 +80,7 @@ jobs:
       - name: Update WASM package index
         run: >-
           nix develop
-          github:lihs-ie/cloudflare-workers-hs/1d4231e15a32cad94c3decfd87f3eace79fb0ec2
+          github:lihs-ie/cloudflare-workers-hs/ab1877a336fc29264bb11f9a50953113cda4dc8b
           --command wasm32-wasi-cabal update
         env:
           CABAL_DIR: ${{ runner.temp }}/cabal-wasm
@@ -88,7 +88,7 @@ jobs:
       - name: Build Haskell Workers for wasm32-wasi
         run: >-
           nix develop
-          github:lihs-ie/cloudflare-workers-hs/1d4231e15a32cad94c3decfd87f3eace79fb0ec2
+          github:lihs-ie/cloudflare-workers-hs/ab1877a336fc29264bb11f9a50953113cda4dc8b
           --command bash applications/backend/media/scripts/build-wasm.sh
         env:
           CABAL_DIR: ${{ runner.temp }}/cabal-wasm

@@ -96,7 +96,7 @@ library worker-adapters
     , media               ==0.1.0.0
     , mtl                 >=2.2  && <2.4
     , servant             >=0.20 && <0.21
-    , servant-client-core >=0.20 && <0.22
+    , servant-client-core >=0.20 && <0.21
     , servant-cloudflare-workers ==0.1.0.0
     , servant-cloudflare-workers-client ==0.1.0.0
     , shared              ==0.1.0.0
