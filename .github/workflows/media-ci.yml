@@ -88,14 +88,6 @@ jobs:
             ${{ hashFiles('applications/backend/media/cabal-wasm.project',
             'applications/backend/**/*.cabal') }}
 
-      - name: Initialize WASM Cabal configuration
-        run: >-
-          nix develop
-          github:lihs-ie/cloudflare-workers-hs/1d4231e15a32cad94c3decfd87f3eace79fb0ec2
-          --command wasm32-wasi-cabal user-config init
-        env:
-          CABAL_DIR: ${{ runner.temp }}/cabal-wasm
-
       - name: Update WASM package index
         run: >-
           nix develop
