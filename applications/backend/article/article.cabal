@@ -1,0 +1,54 @@
+cabal-version: 3.0
+name: article
+version: 0.1.0.0
+synopsis: Article domain model
+build-type: Simple
+extra-source-files:
+  scripts/check-domain.sh
+  test/unit/typecheck/*.hs
+
+common defaults
+  default-language: GHC2024
+  default-extensions:
+    DataKinds
+    DerivingStrategies
+    DuplicateRecordFields
+    NoFieldSelectors
+    OverloadedRecordDot
+    OverloadedStrings
+    StrictData
+  ghc-options: -Wall -Wcompat
+
+library
+  import: defaults
+  hs-source-dirs: src
+  exposed-modules:
+    Domain.Article
+    Domain.Article.Common
+    Domain.Article.Draft
+    Domain.Article.Published
+    Domain.Article.Private
+  build-depends:
+    base >=4.22 && <4.23,
+    containers >=0.8 && <0.9,
+    shared ==0.1.0.0,
+    text >=2.1 && <2.2,
+    time >=1.15 && <1.16
+
+test-suite article-unit-test
+  import: defaults
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test/unit
+  main-is: Main.hs
+  other-modules:
+    TestSupport
+    Domain.Article.CommonSpec
+    Domain.Article.DraftSpec
+    Domain.Article.LifecycleSpec
+  build-depends:
+    base,
+    article,
+    containers,
+    shared,
+    text,
+    time

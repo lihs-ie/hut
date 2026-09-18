@@ -1,4 +1,5 @@
 packages:
+  applications/backend/article
   applications/backend/shared
   applications/backend/media
 
