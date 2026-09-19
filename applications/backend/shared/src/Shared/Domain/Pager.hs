@@ -15,22 +15,30 @@ type Total = Int
 type Items = Int
 type Current = Int
 
-data Pager = Pager
-    { total :: Total
-    , items :: Items
-    , current :: Current
-    }
+data Pager = Pager Total Items Current
     deriving stock (Show, Eq)
 
+total :: Pager -> Total
+total (Pager value _ _) = value
+
+items :: Pager -> Items
+items (Pager _ value _) = value
+
+current :: Pager -> Current
+current (Pager _ _ value) = value
+
 newPager :: Total -> Items -> Current -> Either DomainError Pager
-newPager total items current =
-    if total < 0 || items < 0 || current < 0
+newPager count size page =
+    if count < 0 || size <= 0 || page <= 0
         then
             Left $
                 createInvariantViolation
                     "Pager"
-                    "total, items and current must be positive or zero"
-        else Right $ Pager total items current
+                    "total must be nonnegative; items and current must be positive"
+        else
+            if (toInteger page - 1) * toInteger size > toInteger (maxBound :: Int)
+                then Left (createInvariantViolation "Pager" "offset exceeds supported range")
+                else Right $ Pager count size page
 
 offset :: Pager -> Int
 offset pager = (current pager - 1) * items pager
@@ -41,6 +49,4 @@ firstPage pager = if total pager == 0 then 0 else 1
 lastPage :: Pager -> Int
 lastPage pager
     | total pager == 0 = 0
-    | items pager <= 0 = 0
-    | otherwise =
-        ceiling (fromIntegral (total pager) / fromIntegral (items pager) :: Double)
+    | otherwise = 1 + (total pager - 1) `div` items pager

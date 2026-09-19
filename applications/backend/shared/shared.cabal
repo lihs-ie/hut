@@ -57,6 +57,7 @@ test-suite shared-test
   main-is:         Main.hs
   other-modules:
     Shared.Domain.CommonSpec
+    Shared.Domain.PagerSpec
     Shared.Domain.IdentifierSpec
     Shared.FFI.SecureRandomSpec
     Shared.UseCase.CommonSpec

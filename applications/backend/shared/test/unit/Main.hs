@@ -3,6 +3,7 @@ module Main (main) where
 import Control.Monad (unless)
 import Shared.Domain.CommonSpec qualified as DomainCommonSpec
 import Shared.Domain.IdentifierSpec qualified as IdentifierSpec
+import Shared.Domain.PagerSpec qualified as PagerSpec
 import Shared.FFI.SecureRandomSpec qualified as SecureRandomSpec
 import Shared.UseCase.CommonSpec qualified as UseCaseCommonSpec
 import Shared.UseCase.IdentifierSpec qualified as UseCaseIdentifierSpec
@@ -13,6 +14,7 @@ main = do
     results <-
         sequence
             [ DomainCommonSpec.run
+            , PagerSpec.run
             , IdentifierSpec.run
             , SecureRandomSpec.run
             , UseCaseCommonSpec.run
