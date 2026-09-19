@@ -28,6 +28,23 @@ library
     Domain.Article.Draft
     Domain.Article.Published
     Domain.Article.Private
+    Domain.Article.Event
+    UseCase.Result
+    UseCase.Persistence
+    UseCase.JotDown
+    UseCase.AmendDraft
+    UseCase.Proofread
+    UseCase.PrepareToPublish
+    UseCase.Publish
+    UseCase.TakeDown
+    UseCase.ResumePublication
+    UseCase.DiscardArticle
+    UseCase.Reading
+    UseCase.BrowseArticlesForAdmin
+    UseCase.ViewArticleForAdmin
+    UseCase.BrowseArticlesForReader
+    UseCase.ReadArticle
+    UseCase.CheckSlugAvailability
   build-depends:
     base >=4.22 && <4.23,
     containers >=0.8 && <0.9,
@@ -45,6 +62,23 @@ test-suite article-unit-test
     Domain.Article.CommonSpec
     Domain.Article.DraftSpec
     Domain.Article.LifecycleSpec
+    UseCase.TestSupport
+    UseCase.JotDownSpec
+    UseCase.AmendDraftSpec
+    UseCase.ProofreadSpec
+    UseCase.PrepareToPublishSpec
+    UseCase.GenerationRevisionSpec
+    UseCase.PublishSpec
+    UseCase.TakeDownSpec
+    UseCase.ResumePublicationSpec
+    UseCase.DiscardArticleSpec
+    UseCase.ReadingSupport
+    UseCase.ReadingSpec
+    UseCase.BrowseArticlesForAdminSpec
+    UseCase.ViewArticleForAdminSpec
+    UseCase.BrowseArticlesForReaderSpec
+    UseCase.ReadArticleSpec
+    UseCase.CheckSlugAvailabilitySpec
   build-depends:
     base,
     article,
