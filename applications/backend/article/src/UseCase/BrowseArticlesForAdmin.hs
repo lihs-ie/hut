@@ -6,7 +6,8 @@ module UseCase.BrowseArticlesForAdmin (
     browseArticlesForAdmin,
 ) where
 
-import Domain.Article (Article)
+import Domain.Article
+import Shared.Domain.Common.Transaction (Transaction, TransactionManager, abort, fromEither, runTransaction)
 import Shared.Domain.Error (DomainError, createUnexpectedError)
 import Shared.Domain.Event (Events (..))
 import Shared.Domain.Pager (Pager)
@@ -29,22 +30,20 @@ data BrowseArticlesForAdminResult = BrowseArticlesForAdminResult
     }
 
 -- Apply the state filter before counting/paging; order by (updatedAt DESC, identifier DESC).
-newtype Dependencies m = Dependencies
-    { browseArticles :: ArticleFilter -> ReadPage m Article
+data Dependencies context m = Dependencies
+    { transactionManager :: TransactionManager context m
+    , searchArticles :: SearchArticles (Transaction context m)
     }
 
 browseArticlesForAdmin ::
     (Monad m) =>
-    Dependencies m ->
+    Dependencies context m ->
     BrowseArticlesForAdminCommand ->
     m (Either DomainError BrowseArticlesForAdminResult)
-browseArticlesForAdmin dependencies command = case newPageRequest command.payload.current command.payload.items of
-    Left err -> pure (Left err)
-    Right request -> do
-        found <- dependencies.browseArticles command.payload.status request
-        pure $ do
-            (total, articles) <- found
-            pager <- pageResult request total articles
-            if all (matchesFilter command.payload.status) articles
-                then Right (BrowseArticlesForAdminResult articles pager (Events []))
-                else Left (createUnexpectedError "Article" "page contains articles outside requested state")
+browseArticlesForAdmin dependencies command = runTransaction dependencies.transactionManager $ do
+    request <- fromEither (newCriteria command.payload.status command.payload.current command.payload.items)
+    (total, articles) <- dependencies.searchArticles request
+    pager <- fromEither (pageResult request total articles)
+    if all (matchesFilter command.payload.status) articles
+        then pure (BrowseArticlesForAdminResult articles pager (Events []))
+        else abort (createUnexpectedError "Article" "page contains articles outside requested state")

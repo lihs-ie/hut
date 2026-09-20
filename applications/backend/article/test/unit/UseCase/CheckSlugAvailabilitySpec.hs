@@ -8,6 +8,7 @@ import TestSupport
 import UseCase.CheckSlugAvailability qualified as Slug
 import UseCase.ReadingSupport
 import UseCase.TestSupport (command, expectError)
+import UseCase.TransactionSupport qualified as Tx
 
 run :: IO ()
 run = do
@@ -16,7 +17,7 @@ run = do
     articles <- states
     request <- command (Slug.CheckSlugAvailabilityPayload value "haskell-syntax")
     let dependencies found owner =
-            Slug.Dependencies
+            Tx.checkSlugAvailabilityDependencies
                 (\requested -> check "target identity" (requested == value) >> pure found)
                 (\slug -> check "candidate validated" (slugText slug == "haskell-syntax") >> pure owner)
     forM_ articles $ \article ->
@@ -24,7 +25,7 @@ run = do
             result <- Slug.checkSlugAvailability (dependencies (Right (Just article)) (Right owner)) request >>= right
             check "owner comparison" (result.availability == expected)
             checkEmptyEvents result.events
-    let noOwner found = Slug.Dependencies (const (pure found)) (const (fail "unexpected owner lookup"))
+    let noOwner found = Tx.checkSlugAvailabilityDependencies (const (pure found)) (const (fail "unexpected owner lookup"))
     missing <- Slug.checkSlugAvailability (noOwner (Right Nothing)) request
     expectError "missing target" (createAggregateNotFound "Article" (articleIdentifierText value)) missing
     failed <- Slug.checkSlugAvailability (noOwner (Left failure)) request
@@ -41,6 +42,6 @@ run = do
     invalid <- command (Slug.CheckSlugAvailabilityPayload value "INVALID")
     invalidResult <-
         Slug.checkSlugAvailability
-            (Slug.Dependencies (const (fail "invalid input queried")) (const (fail "invalid slug queried")))
+            (Tx.checkSlugAvailabilityDependencies (const (fail "invalid input queried")) (const (fail "invalid slug queried")))
             invalid
     checkFailure invalidResult

@@ -20,9 +20,10 @@ import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
 import Shared.Domain.Excerpt (newExcerpt)
 import Shared.UseCase.Command qualified as Command
 import TestSupport
-import UseCase.Persistence
+import UseCase.LegacyPersistence
 import UseCase.TakeDown qualified as Workflow
 import UseCase.TestSupport (command, expectError)
+import UseCase.TransactionSupport qualified as Tx
 
 run :: IO ()
 run = do
@@ -42,13 +43,13 @@ run = do
                 pure outcome
             _ -> fail "expected exactly one TakeDown event"
         dependencies state outcome =
-            Workflow.Dependencies
+            Tx.takeDownDependencies
                 ( \requested -> do
                     modifyIORef' loads (<> [requested])
                     pure (Right (Just (LoadedForTakeDown state (save outcome))))
                 )
         success state = dependencies state (Right ())
-        noSave = check "rejected operation never saved" . null =<< readIORef calls
+        noPersist = check "rejected operation never saved" . null =<< readIORef calls
     request <- command (Workflow.TakeDownPayload value)
     result <- Workflow.takeDown (success (Published published)) request >>= right
     check "loads requested identity once" . (== [value]) =<< readIORef loads
@@ -78,16 +79,16 @@ run = do
         check "invalid state rejected" $ case outcome of
             Left (OperationNotAllowed _) -> True
             _ -> False
-        noSave
+        noPersist
     future <- right (Published <$> Published.publish (timestamp 20) ready)
     stale <- Workflow.takeDown (success future) request
     check "backward timestamp rejected" $ case stale of
         Left (InvariantViolation _) -> True
         _ -> False
-    noSave
+    noPersist
     missing <-
         Workflow.takeDown
-            (Workflow.Dependencies (const (pure (Right Nothing))))
+            (Tx.takeDownDependencies (const (pure (Right Nothing))))
             request
     expectError
         "missing article"
@@ -96,7 +97,7 @@ run = do
     let loadFailure = createServiceUnavailable "Article" "load failed"
     failedLoad <-
         Workflow.takeDown
-            (Workflow.Dependencies (const (pure (Left loadFailure))))
+            (Tx.takeDownDependencies (const (pure (Left loadFailure))))
             request
     expectError "load error preserved" loadFailure failedLoad
     other <- right (newArticleIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAW")
@@ -106,7 +107,7 @@ run = do
         "loaded identity mismatch rejected"
         (createUnexpectedError "Article" "loaded identity does not match request")
         wrong
-    noSave
+    noPersist
     forM_
         [ createOperationNotAllowed "Article" "concurrent update or deletion"
         , createOperationNotAllowed "Slug" "already in use"

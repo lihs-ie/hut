@@ -1,6 +1,7 @@
 module Media.Presentation.Handler.API.RetryImageUploadSpec (run) where
 
 import Media.Presentation.Handler.API.TestSupport (
+    changedTargetError,
     checkErrors,
     correlated,
     invariantError,
@@ -13,6 +14,7 @@ import Media.Presentation.Handler.API.TestSupport (
     suppliedBytes,
     unavailableError,
     unexpectedError,
+    unknownOutcomeError,
     uploadRetryHandler,
     uploadRetryOutput,
     uploadRetryResponse,
@@ -47,4 +49,6 @@ uploadRetryErrors =
         , (notAllowedError, 409, "image_upload_cannot_be_retried")
         , (unavailableError, 503, "service_unavailable")
         , (unexpectedError, 500, "unexpected_error")
+        , (unknownOutcomeError, 500, "transaction_outcome_unknown")
+        , (changedTargetError, 409, "processing_target_changed")
         ]

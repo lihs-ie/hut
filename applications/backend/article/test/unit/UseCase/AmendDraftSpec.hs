@@ -20,8 +20,9 @@ import Shared.Domain.Excerpt (newExcerpt)
 import Shared.UseCase.Command qualified as Command
 import TestSupport
 import UseCase.AmendDraft qualified as Amend
-import UseCase.Persistence
+import UseCase.LegacyPersistence
 import UseCase.TestSupport
+import UseCase.TransactionSupport qualified as Tx
 
 run :: IO ()
 run = do
@@ -36,7 +37,7 @@ run = do
     calls <- newIORef []
     loads <- newIORef []
     let dependencies article outcome =
-            Amend.Dependencies
+            Tx.amendDraftDependencies
                 ( \requested -> do
                     modifyIORef' loads (<> [requested])
                     pure (Right (Just (LoadedArticle article (recorder calls outcome))))
@@ -47,7 +48,7 @@ run = do
         writeIORef calls []
         writeIORef loads []
         result <- Amend.amendDraft (dependencies state (Right ())) request >>= right
-        checkSaved calls request result.article result.events
+        checkPersisted calls request result.article result.events
         check "load requested article once" . (== [value]) =<< readIORef loads
         check
             "identical input still becomes unvalidated and updates time"
@@ -59,7 +60,7 @@ run = do
     writeIORef calls []
     clear <- command (amendmentPayload value (DraftInput "New title" "" Nothing []))
     cleared <- Amend.amendDraft (dependencies (Article.Ready ready) (Right ())) clear >>= right
-    checkSaved calls clear cleared.article cleared.events
+    checkPersisted calls clear cleared.article cleared.events
     check
         "full replacement clears images tags slug body"
         ( Set.null (Draft.draftContent cleared.article).images
@@ -90,7 +91,7 @@ run = do
     writeIORef calls []
     let extractionError = createInvariantViolation "Images" "bad URL"
         extractFail =
-            Amend.Dependencies
+            Tx.amendDraftDependencies
                 ( \_ ->
                     pure
                         ( Right
@@ -116,7 +117,7 @@ run = do
     check "stale command not saved" . null =<< readIORef calls
     missing <-
         Amend.amendDraft
-            ( Amend.Dependencies
+            ( Tx.amendDraftDependencies
                 (const (pure (Right Nothing)))
                 extractImages
             )
@@ -131,7 +132,7 @@ run = do
     let loadError = createServiceUnavailable "ArticleStore" "load failed"
     failedLoad <-
         Amend.amendDraft
-            ( Amend.Dependencies
+            ( Tx.amendDraftDependencies
                 (const (pure (Left loadError)))
                 extractImages
             )

@@ -6,18 +6,14 @@ module UseCase.JotDown (
     jotDown,
 ) where
 
-import Domain.Article.Common (
-    ArticleIdentifier,
-    DraftInput,
-    ExtractImageReferences,
-    newDraftContent,
- )
+import Domain.Article
 import Domain.Article.Draft (UnvalidatedDraft, newUnvalidatedDraft)
 import Domain.Article.Event (draftImageReferences)
+import Shared.Domain.Common.Transaction (Transaction, TransactionManager, fromEither, runTransaction)
 import Shared.Domain.Error (DomainError)
 import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
-import Shared.UseCase.Command (Command (..))
-import UseCase.Persistence (SaveDraft, commandContext)
+import Shared.UseCase.Command (Command (..), commandContext)
+import Shared.UseCase.Outbox (Append)
 import UseCase.Result (ArticleEventsFor, ArticleUseCase (JotDown))
 
 type JotDownPayload = DraftInput
@@ -28,25 +24,25 @@ data JotDownResult = JotDownResult
     , events :: Events (ArticleEventsFor 'JotDown)
     }
 
-data Dependencies m = Dependencies
-    { newArticleIdentifier :: m (Either DomainError ArticleIdentifier)
+data Dependencies context m = Dependencies
+    { transactionManager :: TransactionManager context m
+    , newArticleIdentifier :: m (Either DomainError ArticleIdentifier)
     , extractImageReferences :: ExtractImageReferences
-    , -- Insert-only, including identity collisions: never upsert an existing article.
-      saveNewDraft :: SaveDraft m (ArticleEventsFor 'JotDown)
+    , persistArticle :: PersistArticle (Transaction context m)
+    , appendEvents :: Append (ArticleEventsFor 'JotDown) (Transaction context m)
     }
 
-jotDown :: (Monad m) => Dependencies m -> JotDownCommand -> m (Either DomainError JotDownResult)
+jotDown :: (Monad m) => Dependencies context m -> JotDownCommand -> m (Either DomainError JotDownResult)
 jotDown dependencies command =
     case newDraftContent dependencies.extractImageReferences command.payload of
         Left err -> pure (Left err)
         Right content -> do
             generated <- dependencies.newArticleIdentifier
-            case generated
-                >>= ( \identifier ->
-                        newUnvalidatedDraft identifier command.timestamp content
-                    ) of
+            case generated of
                 Left err -> pure (Left err)
-                Right article -> do
+                Right identifier -> runTransaction dependencies.transactionManager $ do
+                    article <- fromEither (newUnvalidatedDraft identifier command.timestamp content)
                     let events = Events [Here (DomainEvent (draftImageReferences article))]
-                    saved <- dependencies.saveNewDraft (commandContext command) article events
-                    pure (JotDownResult article events <$ saved)
+                    dependencies.persistArticle (Unvalidated article)
+                    dependencies.appendEvents (commandContext command) events
+                    pure (JotDownResult article events)

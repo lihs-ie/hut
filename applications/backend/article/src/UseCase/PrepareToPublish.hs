@@ -7,19 +7,15 @@ module UseCase.PrepareToPublish (
 ) where
 
 import Data.Text (Text)
-import Domain.Article (Article (..), articleIdentifier)
-import Domain.Article.Common (ArticleIdentifier, articleIdentifierText)
+import Domain.Article
 import Domain.Article.Draft qualified as Draft
-import Shared.Domain.Error (
-    DomainError,
-    createAggregateNotFound,
-    createOperationNotAllowed,
-    createUnexpectedError,
- )
+import Shared.Domain.Common.Transaction (Transaction, TransactionManager, fromEither, runTransaction)
+import Shared.Domain.Error (DomainError, createOperationNotAllowed)
 import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
 import Shared.Domain.Excerpt (newExcerpt)
-import Shared.UseCase.Command (Command (..))
-import UseCase.Persistence (LoadForPreparation, LoadedForPreparation (..), commandContext)
+import Shared.UseCase.Command (Command (..), commandContext)
+import Shared.UseCase.Outbox (Append)
+import UseCase.Helper
 import UseCase.Result (ArticleEventsFor)
 import UseCase.Result qualified as Result
 
@@ -37,61 +33,34 @@ data PrepareToPublishResult = PrepareToPublishResult
     , events :: Events (ArticleEventsFor 'Result.PrepareToPublish)
     }
 
-data Dependencies m = Dependencies
-    { -- Bound by the consumer to the target revision from the event envelope.
-      -- Reject stale revisions on load AND conditional save; never use "latest".
-      loadGenerationTarget :: LoadForPreparation m
-    , loadRevisionTarget :: LoadForPreparation m
+data Dependencies context m = Dependencies
+    { transactionManager :: TransactionManager context m
+    , findArticle :: FindArticle (Transaction context m)
+    , persistArticle :: PersistArticle (Transaction context m)
+    , appendEvents :: Append (ArticleEventsFor 'Result.PrepareToPublish) (Transaction context m)
     }
 
 prepareToPublish ::
     (Monad m) =>
-    Dependencies m ->
+    Dependencies context m ->
     PrepareToPublishCommand ->
     m (Either DomainError PrepareToPublishResult)
-prepareToPublish dependencies command =
-    case newExcerpt command.payload.excerpt of
-        Left err -> pure (Left err)
-        Right excerpt -> do
-            loaded <- loadTarget command.payload.article
-            case loaded of
-                Left err -> pure (Left err)
-                Right Nothing ->
-                    pure
-                        ( Left
-                            ( createAggregateNotFound
-                                "Article"
-                                (articleIdentifierText command.payload.article)
-                            )
-                        )
-                Right (Just snapshot)
-                    | articleIdentifier snapshot.article /= command.payload.article ->
-                        pure
-                            ( Left
-                                ( createUnexpectedError
-                                    "Article"
-                                    "loaded identity does not match request"
-                                )
-                            )
-                    | otherwise ->
-                        case transition excerpt snapshot.article of
-                            Left err -> pure (Left err)
-                            Right article -> do
-                                let events = case command.payload of
-                                        ApplyGeneratedExcerpt{} ->
-                                            Events [Here (DomainEvent (Draft.draftIdentifier article))]
-                                        ReviseExcerpt{} -> Events []
-                                saved <- snapshot.savePreparation (commandContext command) article events
-                                pure (PrepareToPublishResult article events <$ saved)
+prepareToPublish dependencies command = runTransaction dependencies.transactionManager $ do
+    excerpt <- fromEither (newExcerpt command.payload.excerpt)
+    source <- requireArticle dependencies.findArticle command.payload.article
+    article <- fromEither (transition excerpt source)
+    let events = case command.payload of
+            ApplyGeneratedExcerpt{} -> Events [Here (DomainEvent (Draft.draftIdentifier article))]
+            ReviseExcerpt{} -> Events []
+    dependencies.persistArticle (Ready article)
+    case command.payload of
+        ApplyGeneratedExcerpt{} -> dependencies.appendEvents (commandContext command) events
+        ReviseExcerpt{} -> pure ()
+    pure (PrepareToPublishResult article events)
   where
-    loadTarget = case command.payload of
-        ApplyGeneratedExcerpt{} -> dependencies.loadGenerationTarget
-        ReviseExcerpt{} -> dependencies.loadRevisionTarget
     transition excerpt article = case (command.payload, article) of
-        (ApplyGeneratedExcerpt{}, Proofreaded draft) ->
-            Draft.prepareToPublish command.timestamp excerpt draft
-        (ReviseExcerpt{}, Ready draft) ->
-            Draft.reviseExcerpt command.timestamp excerpt draft
+        (ApplyGeneratedExcerpt{}, Proofreaded draft) -> Draft.prepareToPublish command.timestamp excerpt draft
+        (ReviseExcerpt{}, Ready draft) -> Draft.reviseExcerpt command.timestamp excerpt draft
         _ ->
             Left
                 ( createOperationNotAllowed

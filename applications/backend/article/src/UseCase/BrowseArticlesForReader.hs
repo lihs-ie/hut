@@ -6,7 +6,9 @@ module UseCase.BrowseArticlesForReader (
     browseArticlesForReader,
 ) where
 
+import Domain.Article
 import Domain.Article.Published (PublishedArticle)
+import Shared.Domain.Common.Transaction (Transaction, TransactionManager, fromEither, runTransaction)
 import Shared.Domain.Error (DomainError)
 import Shared.Domain.Event (Events (..))
 import Shared.Domain.Pager (Pager)
@@ -28,20 +30,18 @@ data BrowseArticlesForReaderResult = BrowseArticlesForReaderResult
     }
 
 -- Only published articles, ordered by (publishedAt DESC, identifier DESC).
-newtype Dependencies m = Dependencies
-    { browseArticles :: ReadPage m PublishedArticle
+data Dependencies context m = Dependencies
+    { transactionManager :: TransactionManager context m
+    , searchArticles :: SearchPublishedArticles (Transaction context m)
     }
 
 browseArticlesForReader ::
     (Monad m) =>
-    Dependencies m ->
+    Dependencies context m ->
     BrowseArticlesForReaderCommand ->
     m (Either DomainError BrowseArticlesForReaderResult)
-browseArticlesForReader dependencies command = case newPageRequest command.payload.current command.payload.items of
-    Left err -> pure (Left err)
-    Right request -> do
-        found <- dependencies.browseArticles request
-        pure $ do
-            (total, articles) <- found
-            pager <- pageResult request total articles
-            pure (BrowseArticlesForReaderResult articles pager (Events []))
+browseArticlesForReader dependencies command = runTransaction dependencies.transactionManager $ do
+    request <- fromEither (newCriteria PublishedOnly command.payload.current command.payload.items)
+    (total, articles) <- dependencies.searchArticles request
+    pager <- fromEither (pageResult request total articles)
+    pure (BrowseArticlesForReaderResult articles pager (Events []))

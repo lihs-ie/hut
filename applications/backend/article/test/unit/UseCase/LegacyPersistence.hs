@@ -1,6 +1,7 @@
-module UseCase.Persistence (
-    SaveDraft,
-    SaveArticle,
+-- Fixtures for the pre-transaction behavioral regression tests only.
+module UseCase.LegacyPersistence (
+    PersistDraft,
+    PersistArticle,
     LoadedForProofreading (..),
     LoadedForPreparation (..),
     LoadForProofreading,
@@ -26,19 +27,19 @@ import Domain.Article.Private (PrivateArticle)
 import Domain.Article.Published (PublishedArticle)
 import Shared.Domain.Error (DomainError)
 import Shared.Domain.Event (Events)
-import Shared.UseCase.Command (Command (..))
+import Shared.UseCase.Command (Command, commandContext)
 
 -- One atomic operation: enforce Slug uniqueness, persist the article and append
 -- enveloped events to the outbox. Failure must leave both stores unchanged.
 -- The adapter creates envelope identifiers; it must not publish to a queue here.
-type SaveArticle m article events =
+type PersistArticle m article events =
     Command () -> article -> Events events -> m (Either DomainError ())
 
-type SaveDraft m events = SaveArticle m UnvalidatedDraft events
+type PersistDraft m events = PersistArticle m UnvalidatedDraft events
 
 data LoadedForResumption m = LoadedForResumption
     { article :: Article
-    , saveResumption :: SaveArticle m ReadyToPublish '[]
+    , persistResumption :: PersistArticle m ReadyToPublish '[]
     }
 
 type LoadForResumption m =
@@ -60,12 +61,12 @@ type LoadForDiscard m =
 
 data LoadedForPublication m = LoadedForPublication
     { article :: Article
-    , savePublication :: SaveArticle m PublishedArticle '[ArticlePublished]
+    , persistPublication :: PersistArticle m PublishedArticle '[ArticlePublished]
     }
 
 data LoadedForTakeDown m = LoadedForTakeDown
     { article :: Article
-    , saveTakeDown :: SaveArticle m PrivateArticle '[ArticleTakenDown]
+    , persistTakeDown :: PersistArticle m PrivateArticle '[ArticleTakenDown]
     }
 
 type LoadForPublication m =
@@ -76,12 +77,12 @@ type LoadForTakeDown m =
 
 data LoadedForProofreading m = LoadedForProofreading
     { article :: Article
-    , saveProofreading :: SaveArticle m ProofreadedDraft '[ArticleProofreaded]
+    , persistProofreading :: PersistArticle m ProofreadedDraft '[ArticleProofreaded]
     }
 
 data LoadedForPreparation m = LoadedForPreparation
     { article :: Article
-    , savePreparation :: SaveArticle m ReadyToPublish '[ArticleReadyToPublish]
+    , persistPreparation :: PersistArticle m ReadyToPublish '[ArticleReadyToPublish]
     }
 
 type LoadForProofreading m =
@@ -99,18 +100,8 @@ data LoadedArticle m = LoadedArticle
     { article :: Article
     , -- Bound to the loaded identity and revision by the infrastructure adapter.
       -- A concurrent update/deletion must fail, never overwrite or recreate.
-      saveAmendment :: SaveDraft m '[ArticleDraftAmended]
+      persistAmendment :: PersistDraft m '[ArticleDraftAmended]
     }
 
 type LoadArticleForAmendment m =
     ArticleIdentifier -> m (Either DomainError (Maybe (LoadedArticle m)))
-
-commandContext :: Command payload -> Command ()
-commandContext command =
-    Command
-        { payload = ()
-        , timestamp = command.timestamp
-        , actor = command.actor
-        , correlation = command.correlation
-        , causation = command.causation
-        }

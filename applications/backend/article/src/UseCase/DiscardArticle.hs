@@ -6,12 +6,13 @@ module UseCase.DiscardArticle (
     discardArticle,
 ) where
 
-import Domain.Article (Article (..), articleIdentifier)
-import Domain.Article.Common (ArticleIdentifier, articleIdentifierText)
-import Shared.Domain.Error (DomainError, createAggregateNotFound, createOperationNotAllowed, createUnexpectedError)
+import Domain.Article
+import Shared.Domain.Common.Transaction (Transaction, TransactionManager, abort, runTransaction)
+import Shared.Domain.Error (DomainError, createOperationNotAllowed)
 import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
-import Shared.UseCase.Command (Command (..))
-import UseCase.Persistence (LoadForDiscard, LoadedForDiscard (..), commandContext)
+import Shared.UseCase.Command (Command (..), commandContext)
+import Shared.UseCase.Outbox (Append)
+import UseCase.Helper
 import UseCase.Result (ArticleEventsFor)
 import UseCase.Result qualified as Result
 
@@ -25,32 +26,27 @@ data DiscardArticleResult = DiscardArticleResult
     , events :: Events (ArticleEventsFor 'Result.DiscardArticle)
     }
 
-newtype Dependencies m = Dependencies {loadArticle :: LoadForDiscard m}
+data Dependencies context m = Dependencies
+    { transactionManager :: TransactionManager context m
+    , findArticle :: FindArticle (Transaction context m)
+    , terminateArticle :: TerminateArticle (Transaction context m)
+    , appendEvents :: Append (ArticleEventsFor 'Result.DiscardArticle) (Transaction context m)
+    }
 
 discardArticle ::
     (Monad m) =>
-    Dependencies m ->
+    Dependencies context m ->
     DiscardArticleCommand ->
     m (Either DomainError DiscardArticleResult)
-discardArticle dependencies command = do
-    loaded <- dependencies.loadArticle command.payload.article
-    case loaded of
-        Left err -> pure (Left err)
-        Right Nothing ->
-            pure (Left (createAggregateNotFound "Article" (articleIdentifierText command.payload.article)))
-        Right (Just snapshot)
-            | articleIdentifier snapshot.article /= command.payload.article ->
-                pure (Left (createUnexpectedError "Article" "loaded identity does not match request"))
-            | otherwise -> case snapshot.article of
-                Published _ ->
-                    pure (Left (createOperationNotAllowed "DiscardArticle" "published articles must be taken down first"))
-                Unvalidated _ -> commit snapshot
-                Proofreaded _ -> commit snapshot
-                Ready _ -> commit snapshot
-                Private _ -> commit snapshot
-  where
-    commit snapshot = do
-        let article = articleIdentifier snapshot.article
-            events = Events [Here (DomainEvent article)]
-        saved <- snapshot.commitDiscard (commandContext command) events
-        pure (DiscardArticleResult article events <$ saved)
+discardArticle dependencies command = runTransaction dependencies.transactionManager $ do
+    source <- requireArticle dependencies.findArticle command.payload.article
+    case source of
+        Published _ ->
+            abort
+                (createOperationNotAllowed "DiscardArticle" "published articles must be taken down first")
+        _ -> pure ()
+    let article = articleIdentifier source
+        events = Events [Here (DomainEvent article)]
+    dependencies.terminateArticle article
+    dependencies.appendEvents (commandContext command) events
+    pure (DiscardArticleResult article events)

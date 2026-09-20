@@ -20,12 +20,14 @@ import Shared.Domain.Error (
 import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
 import Shared.Domain.Excerpt (excerptText, newExcerpt)
 import TestSupport
-import UseCase.Persistence
+import UseCase.LegacyPersistence
 import UseCase.PrepareToPublish qualified as Prepare
 import UseCase.TestSupport (command, expectError)
+import UseCase.TransactionSupport qualified as Tx
 
 run :: IO ()
 run = do
+    context <- command ()
     value <- right identifier
     initial <- right start
     available <- right confirmed
@@ -47,12 +49,13 @@ run = do
             modifyIORef' loads (<> [(label, requested)])
             pure (Right (Just (LoadedForPreparation state (persist outcome))))
         dependencies state outcome =
-            Prepare.Dependencies
+            Tx.prepareToPublishDependencies
+                context
                 (loader "generation" state outcome)
                 (loader "revision" state outcome)
     generated <- command (Prepare.ApplyGeneratedExcerpt value "Generated")
     result <-
-        Prepare.prepareToPublish
+        Tx.prepareToPublish
             (dependencies (Article.Proofreaded proof) (Right ()))
             generated
             >>= right
@@ -71,7 +74,7 @@ run = do
     writeIORef saved []
     writeIORef loads []
     revision <- command (Prepare.ReviseExcerpt value "Edited")
-    revised <- Prepare.prepareToPublish (dependencies (Article.Ready ready) (Right ())) revision >>= right
+    revised <- Tx.prepareToPublish (dependencies (Article.Ready ready) (Right ())) revision >>= right
     check "manual edit uses latest-revision loader" . (== [("revision", value)]) =<< readIORef loads
     check "manual edit has no event" $ case revised.events of
         Events [] -> True
@@ -94,7 +97,7 @@ run = do
         ]
         $ \state -> do
             writeIORef saved []
-            outcome <- Prepare.prepareToPublish (dependencies state (Right ())) generated
+            outcome <- Tx.prepareToPublish (dependencies state (Right ())) generated
             check "generated result cannot overwrite other states" $ case outcome of
                 Left (OperationNotAllowed _) -> True
                 _ -> False
@@ -106,7 +109,7 @@ run = do
         , Article.Private private
         ]
         $ \state -> do
-            outcome <- Prepare.prepareToPublish (dependencies state (Right ())) revision
+            outcome <- Tx.prepareToPublish (dependencies state (Right ())) revision
             check "manual revision requires ready" $ case outcome of
                 Left (OperationNotAllowed _) -> True
                 _ -> False
@@ -114,7 +117,7 @@ run = do
     forM_ ["", "  ", Text.replicate 201 "a"] $ \invalid -> do
         writeIORef loads []
         request <- command (Prepare.ApplyGeneratedExcerpt value invalid)
-        outcome <- Prepare.prepareToPublish (dependencies (Article.Proofreaded proof) (Right ())) request
+        outcome <- Tx.prepareToPublish (dependencies (Article.Proofreaded proof) (Right ())) request
         case newExcerpt invalid of
             Left err -> expectError "excerpt validation" err outcome
             Right _ -> fail "bad fixture"
@@ -122,18 +125,18 @@ run = do
     let loadFailure = createServiceUnavailable "Article" "unavailable"
         noUse = const (fail "wrong loader selected")
     failedLoad <-
-        Prepare.prepareToPublish
-            (Prepare.Dependencies (const (pure (Left loadFailure))) noUse)
+        Tx.prepareToPublish
+            (Tx.prepareToPublishDependencies context (const (pure (Left loadFailure))) noUse)
             generated
     expectError "load failure propagated" loadFailure failedLoad
     missing <-
-        Prepare.prepareToPublish
-            (Prepare.Dependencies noUse (const (pure (Right Nothing))))
+        Tx.prepareToPublish
+            (Tx.prepareToPublishDependencies context noUse (const (pure (Right Nothing))))
             revision
     expectError "missing article" (createAggregateNotFound "Article" (articleIdentifierText value)) missing
     other <- right (newArticleIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAW")
     wrongRequest <- command (Prepare.ApplyGeneratedExcerpt other "Generated")
-    wrong <- Prepare.prepareToPublish (dependencies (Article.Proofreaded proof) (Right ())) wrongRequest
+    wrong <- Tx.prepareToPublish (dependencies (Article.Proofreaded proof) (Right ())) wrongRequest
     expectError
         "wrong identity"
         ( createUnexpectedError
@@ -142,7 +145,7 @@ run = do
         )
         wrong
     futureProof <- right (Draft.proofread (timestamp 20) available initial)
-    stale <- Prepare.prepareToPublish (dependencies (Article.Proofreaded futureProof) (Right ())) generated
+    stale <- Tx.prepareToPublish (dependencies (Article.Proofreaded futureProof) (Right ())) generated
     check "stale timestamp rejected" $ case stale of
         Left (InvariantViolation _) -> True
         _ -> False
@@ -154,6 +157,6 @@ run = do
         $ \err -> do
             forM_ [(Article.Proofreaded proof, generated), (Article.Ready ready, revision)] $ \(state, request) -> do
                 writeIORef saved []
-                outcome <- Prepare.prepareToPublish (dependencies state (Left err)) request
+                outcome <- Tx.prepareToPublish (dependencies state (Left err)) request
                 expectError "conditional save error" err outcome
                 check "single commit attempt" . (== 1) . length =<< readIORef saved

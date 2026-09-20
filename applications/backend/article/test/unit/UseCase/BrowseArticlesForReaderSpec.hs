@@ -8,13 +8,14 @@ import UseCase.BrowseArticlesForReader qualified as Browse
 import UseCase.Reading
 import UseCase.ReadingSupport
 import UseCase.TestSupport (command, expectError)
+import UseCase.TransactionSupport qualified as Tx
 
 run :: IO ()
 run = do
     article <- published
     let payload current items = Browse.BrowseArticlesForReaderPayload current items
         dependencies output =
-            Browse.Dependencies
+            Tx.browseArticlesForReaderDependencies
                 ( \request -> do
                     check "request forwarded" (pageNumber request == 1 && pageSize request == 10 && pageOffset request == 0)
                     pure output
@@ -30,13 +31,13 @@ run = do
     checkFailure badCount
     forM_ [(0, Nothing), (1, Just 0), (1, Just 101), (maxBound, Just 100)] $ \(current, items) -> do
         invalid <- command (payload current items)
-        outcome <- Browse.browseArticlesForReader (Browse.Dependencies (\_ -> fail "invalid request queried")) invalid
+        outcome <- Browse.browseArticlesForReader (Tx.browseArticlesForReaderDependencies (\_ -> fail "invalid request queried")) invalid
         checkFailure outcome
     forM_ [(0, 1), (1, 3)] $ \(total, current) -> do
         beyond <- command (payload current (Just 1))
         empty <-
             Browse.browseArticlesForReader
-                ( Browse.Dependencies
+                ( Tx.browseArticlesForReaderDependencies
                     ( \page -> do
                         check "paging forwarded" (pageSize page == 1 && pageNumber page == current && pageOffset page == current - 1)
                         pure (Right (total, []))

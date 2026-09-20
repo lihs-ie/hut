@@ -4,9 +4,9 @@ module UseCase.TestSupport (
     command,
     expectError,
     references,
-    SaveCall,
+    PersistCall,
     recorder,
-    checkSaved,
+    checkPersisted,
     amendmentPayload,
 ) where
 
@@ -19,7 +19,7 @@ import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
 import Shared.UseCase.Command (Command (Command), newActor, newCausation, newCorrelationIdentifier)
 import TestSupport (check, right, timestamp)
 import UseCase.AmendDraft (AmendDraftPayload (..))
-import UseCase.Persistence (SaveDraft, commandContext)
+import UseCase.LegacyPersistence (PersistDraft, commandContext)
 
 command :: payload -> IO (Command payload)
 command payload = do
@@ -37,24 +37,24 @@ references :: Events '[DomainEvent kind ImageReferences] -> IO ImageReferences
 references (Events [Here (DomainEvent payload)]) = pure payload
 references _ = fail "expected exactly one image reference event"
 
-type SaveCall = (Command (), UnvalidatedDraft, ImageReferences)
+type PersistCall = (Command (), UnvalidatedDraft, ImageReferences)
 
 recorder ::
-    IORef [SaveCall] ->
+    IORef [PersistCall] ->
     Either DomainError () ->
-    SaveDraft IO '[DomainEvent kind ImageReferences]
+    PersistDraft IO '[DomainEvent kind ImageReferences]
 recorder calls outcome context article events = do
     payload <- references events
     modifyIORef' calls (<> [(context, article, payload)])
     pure outcome
 
-checkSaved ::
-    IORef [SaveCall] ->
+checkPersisted ::
+    IORef [PersistCall] ->
     Command payload ->
     UnvalidatedDraft ->
     Events '[DomainEvent kind ImageReferences] ->
     IO ()
-checkSaved calls original article events = do
+checkPersisted calls original article events = do
     saved <- readIORef calls
     emitted <- references events
     check

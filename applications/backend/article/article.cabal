@@ -24,13 +24,14 @@ library
   hs-source-dirs: src
   exposed-modules:
     Domain.Article
+    Domain.Article.Criteria
     Domain.Article.Common
     Domain.Article.Draft
     Domain.Article.Published
     Domain.Article.Private
     Domain.Article.Event
     UseCase.Result
-    UseCase.Persistence
+    UseCase.Helper
     UseCase.JotDown
     UseCase.AmendDraft
     UseCase.Proofread
@@ -63,6 +64,15 @@ test-suite article-unit-test
     Domain.Article.DraftSpec
     Domain.Article.LifecycleSpec
     UseCase.TestSupport
+    UseCase.LegacyPersistence
+    UseCase.TransactionSupport
+    UseCase.Transaction.Fixture
+    UseCase.Transaction.VersionSpec
+    Domain.Article.CriteriaSpec
+    Domain.Article.EventSpec
+    UseCase.Transaction.WriteSpec
+    UseCase.Transaction.ReadSpec
+    UseCase.Transaction.ProofreadSpec
     UseCase.JotDownSpec
     UseCase.AmendDraftSpec
     UseCase.ProofreadSpec

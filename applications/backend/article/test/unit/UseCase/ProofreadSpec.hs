@@ -23,9 +23,10 @@ import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
 import Shared.Domain.Excerpt (newExcerpt)
 import Shared.UseCase.Command qualified as Command
 import TestSupport
-import UseCase.Persistence
+import UseCase.LegacyPersistence
 import UseCase.Proofread qualified as Proof
 import UseCase.TestSupport (command, expectError)
+import UseCase.TransactionSupport qualified as Tx
 
 run :: IO ()
 run = do
@@ -47,7 +48,7 @@ run = do
                 pure outcome
             _ -> fail "expected one ArticleProofreaded event"
         dependencies state availability outcome =
-            Proof.Dependencies
+            Tx.proofreadDependencies
                 ( \requested -> do
                     modifyIORef' loaded (<> [requested])
                     pure (Right (Just (LoadedForProofreading state (persist outcome))))
@@ -56,7 +57,7 @@ run = do
         success state = dependencies state (Right (Set.singleton reference)) (Right ())
     request <- command (Proof.ProofreadPayload value)
     result <- Proof.proofread (success (Article.Unvalidated initial)) request >>= right
-    check "loads requested article once" . (== [value]) =<< readIORef loaded
+    check "reloads requested article after Media check" . (== [value, value]) =<< readIORef loaded
     check "checks exact image set" . (== [Set.singleton reference]) =<< readIORef checked
     payload <- case result.events of
         Events [Here (DomainEvent event)] -> pure event
@@ -150,7 +151,7 @@ run = do
     check "stale command not saved" . null =<< readIORef saved
     missing <-
         Proof.proofread
-            ( Proof.Dependencies
+            ( Tx.proofreadDependencies
                 (const (pure (Right Nothing)))
                 (const (fail "unexpected Media query"))
             )
@@ -159,7 +160,7 @@ run = do
     let loadFailure = createServiceUnavailable "Article" "load failed"
     failedLoad <-
         Proof.proofread
-            ( Proof.Dependencies
+            ( Tx.proofreadDependencies
                 (const (pure (Left loadFailure)))
                 (const (fail "unexpected Media query"))
             )

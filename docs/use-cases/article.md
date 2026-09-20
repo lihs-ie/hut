@@ -369,11 +369,13 @@ ArticleEventsFor型族により、それぞれArticleDraftStarted、ArticleDraft
 空集合も通知し、画像をすべて外す編集を表現する。
 
 JotDownは入力検証・画像参照抽出の成功後に識別子を生成し、
-新規下書きとイベントをまとめて保存する依存関数を1回呼ぶ。
+新規下書きのPersistとOutbox追加を同じTransaction内で実行する。
 AmendDraftは記事を取得して状態を確認し、下書きの3段階のみを編集する。
 Published / Privateは拒否する。全置換後は常にUnvalidatedDraftとなる。
 
-UseCase.PersistenceのSaveDraftは以下をアダプターへ要求する契約である。
+永続化はDomain.Articleの関数型を注入する方式へ移行した。
+詳細は[TransactionManager設計](article-transaction-manager.md)を正とする。
+TransactionManagerと具体アダプターには以下を要求する。
 
 - Slugの一意性、記事の保存、Envelopeを付けたOutbox追加を原子的に実行する。
 - 新規保存では既存識別子へのupsertを禁止する。
@@ -381,8 +383,8 @@ UseCase.PersistenceのSaveDraftは以下をアダプターへ要求する契約�
 - 失敗時に一部だけ保存しない。削除された記事を再作成しない。
 - 保存中にQueueへ配信しない。Resultのイベントを別途直接送信して二重配信しない。
 
-LoadArticleForAmendmentはArticleと保存関数を組にして返す。
-インフラ実装は取得時のリビジョンを保存関数のクロージャに保持するため、
+FindArticleはArticleだけを返し、PersistArticleはArticleを受け取る。
+インフラ実装は取得時のリビジョンを同一トランザクションの内部文脈に保持するため、
 ArticleやCommand payloadにArticleVersionを追加しない。
 Commandのtimestamp・actor・correlation・causationはCommand ()へ引き継ぎ、
 保存アダプターがOutboxのEnvelopeを構築する際に利用する。
@@ -391,7 +393,7 @@ Commandのtimestamp・actor・correlation・causationはCommand ()へ引き継�
 全下書き状態からの編集、公開・非公開の拒否、画像参照全件、
 メタデータの引き継ぎ、保存失敗・Slug競合・同時更新エラーの伝播を検証する。
 検証スクリプトはドメインと実装済みユースケースそれぞれに式カバレッジ90%以上を要求する。
-D1アダプター・実際のMarkdownパーサ・Media問い合わせ・HTTP APIは未実装であり、
+本番DBアダプター・実際のMarkdownパーサ・Media問い合わせ・HTTP APIは未実装であり、
 実際のトランザクションの原子性を検証したものではない。
 
 ### Proofread / PrepareToPublish の実装
@@ -409,7 +411,8 @@ PrepareToPublishCommandのpayloadはApplyGeneratedExcerptとReviseExcerptに分�
 生成結果用の取得関数は、コンシューマーがEnvelopeの対象リビジョンに束縛する。
 取得時と保存時の両方でリビジョンを照合し、最新リビジョンへの読み替えは禁止する。
 校正時のOutboxには保存後の対象リビジョンを付ける必要がある。
-リビジョンは保存クロージャとEnvelopeの関心事であり、ドメイン集約には持たせない。
+リビジョンはInfrastructureのトランザクション文脈とEnvelopeの関心事であり、
+ドメイン集約やCommandには持たせない。不一致はProcessingTargetChangedで区別する。
 
 分割ユニットテストで状態制約、入力検証、画像確認、イベントとメタデータ、
 保存失敗を検証する。メモリ上の条件付き保存アダプターでは、再校正後の古い結果、
@@ -434,8 +437,8 @@ PublishResultはArticlePublished、TakeDownResultはArticleTakenDownをそれぞ
 型族は返せるイベントの種類を制限し、件数はユニットテストで保証する。
 ユースケース内からQueueへの配信や公開ログ出力は行わない。
 
-LoadedForPublication / LoadedForTakeDownの保存関数は、取得時の識別子とリビジョンに
-束縛した条件付き保存とOutbox追加を一つの原子的操作として実装する契約とする。
+FindArticle・PersistArticle・型付きOutbox追加を同じTransaction内で合成する。
+取得時の識別子とリビジョンはInfrastructure内部で追跡し、条件付き更新に使用する。
 保存が失敗した場合はDomainErrorを返し、成功Resultを返さない。
 分割ユニットテストで全状態の許可・拒否、時刻の逆行、再公開、取得失敗、
 識別子不一致、保存失敗、メタデータとイベントの引き継ぎを確認する。
@@ -446,13 +449,13 @@ LoadedForPublication / LoadedForTakeDownの保存関数は、取得時の識別�
 ResumePublicationはPrivateArticleのみを受け付け、保持していたPublicationContentから
 ReadyToPublishへ戻す。本文・Excerpt・Slug・画像参照・createdAtを保持し、updatedAtを更新する。
 公開は行わない。ResumePublicationResultのeventsはEvents '[]とし、イベントを含められない。
-保存関数は取得時の識別子とリビジョンに束縛し、更新・削除との競合を拒否する。
+PersistArticleは同じトランザクション内で追跡した取得時のリビジョンで更新し、競合を拒否する。
 
 DiscardArticleは全段階の下書きとPrivateArticleを受け付け、PublishedArticleは拒否する。
 DiscardArticleResultは削除した記事への参照とArticleDiscardedを1件含む。
 削除後の集約や論理削除状態は作らない。存在しない記事への要求はAggregateNotFoundを返す。
 
-LoadedForDiscardのcommitDiscardは取得時の識別子とリビジョンに束縛した操作であり、
+TerminateArticleとOutbox追加を同じTransaction内で合成し、
 記事の物理削除・Slugの解放・Outbox追加を原子的に実行する契約である。
 読み取り後に公開された記事を削除しないよう、削除時にもリビジョンを照合する。
 Mediaへの参照解除や画像削除は直接行わず、ArticleDiscardedのコンシューマーが担当する。
@@ -461,7 +464,7 @@ Mediaへの参照解除や画像削除は直接行わず、ArticleDiscardedの�
 test/unit配下の専用ファイルで全状態、取得失敗、識別子不一致、保存・削除失敗、
 メタデータ、イベント数、再公開準備時の内容保持と日時を検証する。
 再公開準備へのイベント追加と、削除イベントの取り違えはコンパイル失敗テストで検証する。
-実際の物理削除・一意制約解放・Outboxの原子性は、今後のD1アダプターとfeatureテストで検証する。
+実際の物理削除・一意制約解放・Outboxの原子性は、本番DBアダプターとfeatureテストで検証する。
 
 ## 12. 実装前の残事項と検証条件
 
@@ -472,7 +475,8 @@ test/unit配下の専用ファイルで全状態、取得失敗、識別子不�
 Slug使用状況は対象記事の存在と識別子を確認し、全状態を対象とする所有者照会の結果から
 自分の記事を除外してAvailable / InUseを返す。確認は予約ではなく、後続の保存時の一意性保証は必須。
 
-一覧の依存関数は検証済みPageRequestを受け取り、総件数と対象ページの集約を一緒に返す。
+一覧の依存関数は状態条件・ページ番号・件数を含む検証済みCriteriaを受け取り、
+総件数と対象ページの集約を一緒に返す。検索関数型はDomain.Articleに定義する。
 取得アダプターは同じスナップショット・同じ絞り込み条件で集計と取得を行い、
 規定の日時・識別子の降順で並べた後にoffset / limitを適用する。
 ユースケースでは件数と総件数の整合性を検証し、管理用は取得結果の状態も確認する。
@@ -486,7 +490,7 @@ Pagerは読み取り専用のアクセサを公開し、レコード更新によ
 分割ユニットテストでページ境界・入力不正・全状態の絞り込み・非公開情報の非返却・
 Slugの自己除外・依存関数の失敗を検証する。5つの読み取りResultへのイベント追加は
 コンパイル失敗テストで検証する。読み取り系とPagerにも個別に式カバレッジ90%以上を要求する。
-認証済みの呼び出し境界、D1での並び順・スナップショット・一意性、HTTP契約は未接続であり、
+認証済みの呼び出し境界、実DBでの並び順・スナップショット・一意性、HTTP契約は未接続であり、
 実アダプターとfeatureテストでの検証を残す。
 
 業務ルールを変更せず、以下を実装設計で具体化する。
@@ -512,3 +516,18 @@ featureテストはtest/featureに配置し、DockerとWranglerで実接続を�
 - 生成中の編集、古い生成結果、重複配送、手動修正との競合。
 - 本文と画像参照の一致、利用可能性確認、非公開時の参照維持、削除後の順序逆転。
 - 公開以外の読者向け取得拒否、一覧の順序とページング。
+
+## ドメイン共通基盤の追加
+
+- Domain.ArticleにFind/Persist/Terminateと検索関数の型を配置する。
+- Domain.Article.Criteriaは状態条件・ページ番号・取得件数を保持し、既定10件・上限100件で検証する。
+- Domain.Article.Eventに記事イベントと純粋なpayload構築を配置する。
+- Shared.Domain.Common.Primitiveに非公開コンストラクタのPositiveIntegerを定義する。
+  生の数値は境界で検証し、Num/Read/coerceによる検証の迂回を許可しない。
+- Shared.Domain.Common.Transactionはトランザクション抽象と純粋な処理合成だけを公開する。
+  実行器・バージョン追跡・ユースケース接続は後続のユースケースPRで実装する。
+- Shared.Domain.ErrorにProcessingTargetChangedとTransactionOutcomeUnknownを追加し、
+  既存MediaのHTTPエラー変換も追随する。
+
+このPRのテストはドメイン・Criteria・Pager・正数型を対象とする。
+実DBトランザクションの原子性やOutboxの配信を検証したものではない。

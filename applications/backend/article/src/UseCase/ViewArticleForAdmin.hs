@@ -6,12 +6,13 @@ module UseCase.ViewArticleForAdmin (
     viewArticleForAdmin,
 ) where
 
-import Domain.Article (Article (..), articleIdentifier)
-import Domain.Article.Common (ArticleIdentifier, articleIdentifierText)
+import Domain.Article
 
-import Shared.Domain.Error (DomainError, createAggregateNotFound, createUnexpectedError)
+import Shared.Domain.Common.Transaction (Transaction, TransactionManager, runTransaction)
+import Shared.Domain.Error (DomainError)
 import Shared.Domain.Event (Events (..))
 import Shared.UseCase.Command (Command (..))
+import UseCase.Helper
 import UseCase.Result (ArticleEventsFor)
 import UseCase.Result qualified as Result
 
@@ -22,21 +23,16 @@ data ViewArticleForAdminResult = ViewArticleForAdminResult
     { article :: Article
     , events :: Events (ArticleEventsFor 'Result.ViewArticleForAdmin)
     }
-newtype Dependencies m = Dependencies
-    { findArticle :: ArticleIdentifier -> m (Either DomainError (Maybe Article))
+data Dependencies context m = Dependencies
+    { transactionManager :: TransactionManager context m
+    , findArticle :: FindArticle (Transaction context m)
     }
 
 viewArticleForAdmin ::
     (Monad m) =>
-    Dependencies m ->
+    Dependencies context m ->
     ViewArticleForAdminCommand ->
     m (Either DomainError ViewArticleForAdminResult)
-viewArticleForAdmin dependencies command = do
-    found <- dependencies.findArticle command.payload.article
-    pure $ case found of
-        Left err -> Left err
-        Right Nothing -> Left (createAggregateNotFound "Article" (articleIdentifierText command.payload.article))
-        Right (Just article)
-            | articleIdentifier article == command.payload.article ->
-                Right (ViewArticleForAdminResult article (Events []))
-            | otherwise -> Left (createUnexpectedError "Article" "loaded identity does not match request")
+viewArticleForAdmin dependencies command = runTransaction dependencies.transactionManager $ do
+    article <- requireArticle dependencies.findArticle command.payload.article
+    pure (ViewArticleForAdminResult article (Events []))

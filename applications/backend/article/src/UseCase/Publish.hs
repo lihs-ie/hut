@@ -6,19 +6,15 @@ module UseCase.Publish (
     publish,
 ) where
 
-import Domain.Article (Article (..), articleIdentifier)
-import Domain.Article.Common (ArticleIdentifier, articleIdentifierText)
+import Domain.Article
 import Domain.Article.Published (PublishedArticle)
 import Domain.Article.Published qualified as Domain
-import Shared.Domain.Error (
-    DomainError,
-    createAggregateNotFound,
-    createOperationNotAllowed,
-    createUnexpectedError,
- )
+import Shared.Domain.Common.Transaction (Transaction, TransactionManager, abort, fromEither, runTransaction)
+import Shared.Domain.Error (DomainError, createOperationNotAllowed)
 import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
-import Shared.UseCase.Command (Command (..))
-import UseCase.Persistence (LoadForPublication, LoadedForPublication (..), commandContext)
+import Shared.UseCase.Command (Command (..), commandContext)
+import Shared.UseCase.Outbox (Append)
+import UseCase.Helper
 import UseCase.Result (ArticleEventsFor)
 import UseCase.Result qualified as Result
 
@@ -32,32 +28,21 @@ data PublishResult = PublishResult
     , events :: Events (ArticleEventsFor 'Result.Publish)
     }
 
-newtype Dependencies m = Dependencies
-    { loadArticle :: LoadForPublication m
+data Dependencies context m = Dependencies
+    { transactionManager :: TransactionManager context m
+    , findArticle :: FindArticle (Transaction context m)
+    , persistArticle :: PersistArticle (Transaction context m)
+    , appendEvents :: Append (ArticleEventsFor 'Result.Publish) (Transaction context m)
     }
 
-publish ::
-    (Monad m) =>
-    Dependencies m ->
-    PublishCommand ->
-    m (Either DomainError PublishResult)
-publish dependencies command = do
-    loaded <- dependencies.loadArticle command.payload.article
-    case loaded of
-        Left err -> pure (Left err)
-        Right Nothing ->
-            pure
-                (Left (createAggregateNotFound "Article" (articleIdentifierText command.payload.article)))
-        Right (Just snapshot)
-            | articleIdentifier snapshot.article /= command.payload.article ->
-                pure (Left (createUnexpectedError "Article" "loaded identity does not match request"))
-            | otherwise -> case snapshot.article of
-                Ready source ->
-                    case Domain.publish command.timestamp source of
-                        Left err -> pure (Left err)
-                        Right article -> do
-                            let events = Events [Here (DomainEvent article.identifier)]
-                            saved <- snapshot.savePublication (commandContext command) article events
-                            pure (PublishResult article events <$ saved)
-                _ ->
-                    pure (Left (createOperationNotAllowed "Publish" "only ready drafts can be published"))
+publish :: (Monad m) => Dependencies context m -> PublishCommand -> m (Either DomainError PublishResult)
+publish dependencies command =
+    runTransaction dependencies.transactionManager $ do
+        source <- requireArticle dependencies.findArticle command.payload.article
+        article <- case source of
+            Ready draft -> fromEither (Domain.publish command.timestamp draft)
+            _ -> abort (createOperationNotAllowed "Publish" "only ready drafts can be published")
+        let events = Events [Here (DomainEvent article.identifier)]
+        dependencies.persistArticle (Published article)
+        dependencies.appendEvents (commandContext command) events
+        pure (PublishResult article events)

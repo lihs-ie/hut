@@ -19,8 +19,9 @@ import Shared.Domain.Error (
 import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
 import Shared.Domain.Excerpt (newExcerpt)
 import TestSupport
-import UseCase.Persistence
+import UseCase.LegacyPersistence
 import UseCase.TestSupport (command, expectError)
+import UseCase.TransactionSupport qualified as Tx
 
 import UseCase.DiscardArticle qualified as Workflow
 
@@ -43,7 +44,7 @@ run = do
                 pure outcome
             _ -> fail "expected exactly one ArticleDiscarded"
         dependencies state outcome =
-            Workflow.Dependencies
+            Tx.discardArticleDependencies
                 ( \requested -> do
                     modifyIORef' loads (<> [requested])
                     pure (Right (Just (LoadedForDiscard state (commit outcome))))
@@ -73,7 +74,7 @@ run = do
     noCommit
     missing <-
         Workflow.discardArticle
-            (Workflow.Dependencies (const (pure (Right Nothing))))
+            (Tx.discardArticleDependencies (const (pure (Right Nothing))))
             request
     expectError
         "missing article"
@@ -82,7 +83,7 @@ run = do
     let loadFailure = createServiceUnavailable "Article" "load failed"
     failedLoad <-
         Workflow.discardArticle
-            (Workflow.Dependencies (const (pure (Left loadFailure))))
+            (Tx.discardArticleDependencies (const (pure (Left loadFailure))))
             request
     expectError "load error propagated" loadFailure failedLoad
     other <- right (newArticleIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAW")

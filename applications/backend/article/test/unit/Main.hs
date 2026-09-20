@@ -1,6 +1,8 @@
 module Main (main) where
 
+import Domain.Article.EventSpec qualified as Event
 import Domain.Article.CommonSpec qualified as Common
+import Domain.Article.CriteriaSpec qualified as Criteria
 import Domain.Article.DraftSpec qualified as Draft
 import Domain.Article.LifecycleSpec qualified as Lifecycle
 import UseCase.AmendDraftSpec qualified as AmendDraft
@@ -17,11 +19,16 @@ import UseCase.ReadArticleSpec qualified as ReadArticle
 import UseCase.ReadingSpec qualified as Reading
 import UseCase.ResumePublicationSpec qualified as ResumePublication
 import UseCase.TakeDownSpec qualified as TakeDown
+import UseCase.Transaction.ProofreadSpec qualified as TransactionProofread
+import UseCase.Transaction.ReadSpec qualified as TransactionRead
+import UseCase.Transaction.VersionSpec qualified as TransactionVersion
+import UseCase.Transaction.WriteSpec qualified as TransactionWrite
 import UseCase.ViewArticleForAdminSpec qualified as ViewAdmin
 
 main :: IO ()
 main = do
     Common.run
+    Event.run
     Draft.run
     Lifecycle.run
     JotDown.run
@@ -39,4 +46,9 @@ main = do
     CheckSlug.run
     ResumePublication.run
     DiscardArticle.run
+    TransactionWrite.run
+    TransactionVersion.run
+    Criteria.run
+    TransactionRead.run
+    TransactionProofread.run
     putStrLn "Article domain and use-case tests passed"

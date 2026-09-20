@@ -5,16 +5,17 @@ import Domain.Article (Article (..))
 import Shared.Domain.Pager qualified as Pager
 import TestSupport
 import UseCase.BrowseArticlesForAdmin qualified as Browse
-import UseCase.Reading
+import UseCase.Reading hiding (status)
 import UseCase.ReadingSupport
 import UseCase.TestSupport (command, expectError)
+import UseCase.TransactionSupport qualified as Tx
 
 run :: IO ()
 run = do
     article <- Unvalidated <$> right start
     let payload current items = Browse.BrowseArticlesForAdminPayload current items AllArticles
         dependencies output =
-            Browse.Dependencies
+            Tx.browseArticlesForAdminDependencies
                 ( \status request -> do
                     check "filter forwarded" (status == AllArticles)
                     check "request forwarded" (pageNumber request == 1 && pageSize request == 10 && pageOffset request == 0)
@@ -31,13 +32,13 @@ run = do
     checkFailure badCount
     forM_ [(0, Nothing), (1, Just 0), (1, Just 101), (maxBound, Just 100)] $ \(current, items) -> do
         invalid <- command (payload current items)
-        outcome <- Browse.browseArticlesForAdmin (Browse.Dependencies (\_ _ -> fail "invalid request queried")) invalid
+        outcome <- Browse.browseArticlesForAdmin (Tx.browseArticlesForAdminDependencies (\_ _ -> fail "invalid request queried")) invalid
         checkFailure outcome
     forM_ [(0, 1), (1, 3)] $ \(total, current) -> do
         beyond <- command (payload current (Just 1))
         empty <-
             Browse.browseArticlesForAdmin
-                ( Browse.Dependencies
+                ( Tx.browseArticlesForAdminDependencies
                     ( \_ page -> do
                         check "paging forwarded" (pageSize page == 1 && pageNumber page == current && pageOffset page == current - 1)
                         pure (Right (total, []))
@@ -52,13 +53,13 @@ run = do
         let selected = filter (matchesFilter status) articles
         filtered <-
             Browse.browseArticlesForAdmin
-                (Browse.Dependencies (\actual _ -> check "specific filter forwarded" (actual == status) >> pure (Right (length selected, selected))))
+                (Tx.browseArticlesForAdminDependencies (\actual _ -> check "specific filter forwarded" (actual == status) >> pure (Right (length selected, selected))))
                 filteredRequest
                 >>= right
         check "filtered articles intact" (filtered.articles == selected)
     privateRequest <- command (Browse.BrowseArticlesForAdminPayload 1 Nothing PrivateOnly)
     mismatch <-
         Browse.browseArticlesForAdmin
-            (Browse.Dependencies (\_ _ -> pure (Right (1, [article]))))
+            (Tx.browseArticlesForAdminDependencies (\_ _ -> pure (Right (1, [article]))))
             privateRequest
     checkFailure mismatch

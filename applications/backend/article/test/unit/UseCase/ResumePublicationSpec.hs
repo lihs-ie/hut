@@ -20,13 +20,15 @@ import Shared.Domain.Event (Events (..))
 import Shared.Domain.Excerpt (newExcerpt)
 import Shared.UseCase.Command qualified as Command
 import TestSupport
-import UseCase.Persistence
+import UseCase.LegacyPersistence
 import UseCase.TestSupport (command, expectError)
+import UseCase.TransactionSupport qualified as Tx
 
 import UseCase.ResumePublication qualified as Workflow
 
 run :: IO ()
 run = do
+    context <- command ()
     value <- right identifier
     initial <- right start
     available <- right confirmed
@@ -43,13 +45,14 @@ run = do
             modifyIORef' calls (<> [(context, article)])
             pure outcome
         dependencies state outcome =
-            Workflow.Dependencies
+            Tx.resumePublicationDependencies
+                context
                 ( \requested -> do
                     modifyIORef' loads (<> [requested])
                     pure (Right (Just (LoadedForResumption state (save outcome))))
                 )
         success state = dependencies state (Right ())
-        noSave = check "rejected operation not saved" . null =<< readIORef calls
+        noPersist = check "rejected operation not saved" . null =<< readIORef calls
     request <- command (Workflow.ResumePublicationPayload value)
     result <- Workflow.resumePublication (success (Private private)) request >>= right
     check "load requested identity once" . (== [value]) =<< readIORef loads
@@ -73,16 +76,16 @@ run = do
         check "wrong state rejected" $ case rejected of
             Left (OperationNotAllowed _) -> True
             _ -> False
-        noSave
+        noPersist
     future <- right (Private.takeDown (timestamp 20) published)
     stale <- Workflow.resumePublication (success (Private future)) request
     check "backward timestamp rejected" $ case stale of
         Left (InvariantViolation _) -> True
         _ -> False
-    noSave
+    noPersist
     missing <-
         Workflow.resumePublication
-            (Workflow.Dependencies (const (pure (Right Nothing))))
+            (Tx.resumePublicationDependencies context (const (pure (Right Nothing))))
             request
     expectError
         "missing article"
@@ -91,7 +94,7 @@ run = do
     let loadFailure = createServiceUnavailable "Article" "load failed"
     failedLoad <-
         Workflow.resumePublication
-            (Workflow.Dependencies (const (pure (Left loadFailure))))
+            (Tx.resumePublicationDependencies context (const (pure (Left loadFailure))))
             request
     expectError "load error propagated" loadFailure failedLoad
     other <- right (newArticleIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAW")
@@ -101,7 +104,7 @@ run = do
         "identity mismatch"
         (createUnexpectedError "Article" "loaded identity does not match request")
         wrong
-    noSave
+    noPersist
     forM_
         [ createOperationNotAllowed "Article" "concurrent update or deletion"
         , createServiceUnavailable "Article" "commit failed"

@@ -8,13 +8,14 @@ import TestSupport
 import UseCase.ReadArticle qualified as Read
 import UseCase.ReadingSupport
 import UseCase.TestSupport (command, expectError)
+import UseCase.TransactionSupport qualified as Tx
 
 run :: IO ()
 run = do
     article <- published
     request <- command (Read.ReadArticlePayload "haskell-syntax")
     let dependencies found =
-            Read.Dependencies
+            Tx.readArticleDependencies
                 (\slug -> check "validated slug" (slugText slug == "haskell-syntax") >> pure found)
     result <- Read.readArticle (dependencies (Right (Just (Published article)))) request >>= right
     check "published article returned intact" (result.article == article)
@@ -30,10 +31,10 @@ run = do
     expectError "failure preserved" failure failed
     forM_ ["", "Invalid", "-invalid", "invalid--slug"] $ \slug -> do
         invalid <- command (Read.ReadArticlePayload slug)
-        outcome <- Read.readArticle (Read.Dependencies (const (fail "invalid input queried"))) invalid
+        outcome <- Read.readArticle (Tx.readArticleDependencies (const (fail "invalid input queried"))) invalid
         checkFailure outcome
     different <- command (Read.ReadArticlePayload "different")
-    mismatch <- Read.readArticle (Read.Dependencies (const (pure (Right (Just (Published article)))))) different
+    mismatch <- Read.readArticle (Tx.readArticleDependencies (const (pure (Right (Just (Published article)))))) different
     expectError
         "wrong slug not returned"
         (createUnexpectedError "Article" "loaded slug does not match request")

@@ -59,10 +59,11 @@ assert_coverage "Article use cases" \
   --include=UseCase.BrowseArticlesForReader \
   --include=UseCase.ReadArticle \
   --include=UseCase.CheckSlugAvailability \
-  --include=UseCase.Persistence \
+  --include=UseCase.Helper \
   --include=UseCase.Result
 
 fixtures="applications/backend/article/test/unit/typecheck"
+assert_coverage "Article Criteria" --include=Domain.Article.Criteria
 assert_coverage "Article reading use cases" \
   --include=UseCase.Reading \
   --include=UseCase.BrowseArticlesForAdmin \
@@ -79,6 +80,12 @@ assert_coverage "Article reading use cases" \
   mix="${package_root}${profile}/build/extra-compilation-artifacts/hpc/vanilla/mix"
   tix="${component_root}/hpc/vanilla/tix/shared-test.tix"
   assert_coverage "Shared Pager" --include=Shared.Domain.Pager
+  assert_coverage "Shared PositiveInteger" --include=Shared.Domain.Common.Primitive
+  assert_coverage "Shared version tracking" --include=Shared.Infrastructure.Versioning
+  assert_coverage "Shared Transaction" \
+    --include=Shared.Domain.Common.Transaction \
+    --include=Shared.Domain.Common.Transaction.Internal \
+    --include=Shared.Infrastructure.Transaction
 )
 
 compile() {
@@ -87,7 +94,42 @@ compile() {
     -package article "$1"
 }
 compile "${fixtures}/ValidPublish.hs"
-for fixture in InvalidPublish InvalidCoerce InvalidContentUpdate InvalidDraftEvent \
+transaction_fixtures="applications/backend/shared/test/unit/typecheck"
+compile "${transaction_fixtures}/ValidTransaction.hs"
+compile "${transaction_fixtures}/ValidVersioning.hs"
+for fixture in InvalidVersionInteger InvalidPositiveConstructor InvalidPositiveLiteral InvalidPositiveRead \
+  InvalidPositiveCoerce InvalidVersionContext InvalidVersionContextCoerce; do
+  if output="$(compile "${transaction_fixtures}/${fixture}.hs" 2>&1)"; then
+    echo "${fixture}: unexpectedly compiled" >&2
+    exit 1
+  fi
+  case "${fixture}" in
+    InvalidPositiveConstructor) expected_error="GHC-01928" ;;
+    InvalidPositiveLiteral|InvalidPositiveRead) expected_error="No instance for" ;;
+    *) expected_error="Couldn't match" ;;
+  esac
+  if ! grep -q "${expected_error}" <<<"${output}"; then
+    printf '%s\n' "${output}" >&2
+    exit 1
+  fi
+  echo "${fixture}: rejected as expected"
+done
+for fixture in InvalidTransactionIO InvalidTransactionNesting InvalidTransactionInternal; do
+  if output="$(compile "${transaction_fixtures}/${fixture}.hs" 2>&1)"; then
+    echo "${fixture}: unexpectedly compiled" >&2
+    exit 1
+  fi
+  expected_error=GHC-83865
+  if [[ "${fixture}" == InvalidTransactionInternal ]]; then
+    expected_error="hidden module"
+  fi
+  if ! grep -q "${expected_error}" <<<"${output}"; then
+    printf '%s\n' "${output}" >&2
+    exit 1
+  fi
+  echo "${fixture}: rejected as expected"
+done
+for fixture in InvalidOutboxEvent InvalidPublish InvalidCoerce InvalidContentUpdate InvalidDraftEvent \
   InvalidPublishEvent InvalidTakeDownEvent InvalidResumeEvent InvalidDiscardEvent \
   InvalidBrowseArticlesForAdminEvent InvalidBrowseArticlesForReaderEvent \
   InvalidViewArticleForAdminEvent InvalidReadArticleEvent InvalidCheckSlugAvailabilityEvent; do

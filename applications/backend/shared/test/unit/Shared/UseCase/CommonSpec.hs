@@ -4,7 +4,7 @@ import Data.Either (isLeft)
 import Data.Time (UTCTime (UTCTime), fromGregorian)
 import Shared.Domain.Error (createInvariantViolation)
 import Shared.Domain.Event (DomainEvent (DomainEvent))
-import Shared.UseCase.Command (Command (Command))
+import Shared.UseCase.Command (Command (Command), commandContext)
 import Shared.UseCase.Context (
     actorText,
     causationText,
@@ -30,10 +30,26 @@ run =
             , isLeft (newCausation "")
             , contextValuesRoundTrip
             , commandHasCommonShape
+            , commandContextPreservesMetadata
             , envelopeHasDeliveryMetadata
             , isLeft (newEventIdentifier "")
             ]
         )
+
+commandContextPreservesMetadata :: Bool
+commandContextPreservesMetadata =
+    case ( newActor "administrator"
+         , newCorrelationIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+         , newCausation "cause"
+         ) of
+        (Right actor, Right correlation, Right cause) ->
+            all
+                ( \causation ->
+                    commandContext (Command (42 :: Int) baseTime actor correlation causation)
+                        == Command () baseTime actor correlation causation
+                )
+                [Nothing, Just cause]
+        _ -> False
 
 commandHasCommonShape :: Bool
 commandHasCommonShape =

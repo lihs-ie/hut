@@ -8,24 +8,18 @@ module UseCase.Proofread (
 
 import Data.Set (Set)
 import Data.Set qualified as Set
-import Domain.Article (Article (..), articleIdentifier)
-import Domain.Article.Common (
-    ArticleIdentifier,
-    ImageReference,
-    articleIdentifierText,
-    confirmAvailableImageReferences,
- )
+import Domain.Article
 import Domain.Article.Draft qualified as Draft
 import Domain.Article.Event (proofreadedArticleContent)
+import Shared.Domain.Common.Transaction (Transaction, TransactionManager, abort, fromEither, runTransaction)
 import Shared.Domain.Error (
     DomainError,
-    createAggregateNotFound,
     createOperationNotAllowed,
-    createUnexpectedError,
  )
 import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
-import Shared.UseCase.Command (Command (..))
-import UseCase.Persistence (LoadForProofreading, LoadedForProofreading (..), commandContext)
+import Shared.UseCase.Command (Command (..), commandContext)
+import Shared.UseCase.Outbox (Append)
+import UseCase.Helper
 import UseCase.Result (ArticleEventsFor)
 import UseCase.Result qualified as Result
 
@@ -39,47 +33,45 @@ data ProofreadResult = ProofreadResult
     , events :: Events (ArticleEventsFor 'Result.Proofread)
     }
 
-data Dependencies m = Dependencies
-    { loadArticle :: LoadForProofreading m
+data Dependencies context m = Dependencies
+    { transactionManager :: TransactionManager context m
+    , findArticle :: FindArticle (Transaction context m)
+    , persistArticle :: PersistArticle (Transaction context m)
+    , appendEvents :: Append (ArticleEventsFor 'Result.Proofread) (Transaction context m)
     , findAvailableImages :: Set ImageReference -> m (Either DomainError (Set ImageReference))
     }
 
-proofread :: (Monad m) => Dependencies m -> ProofreadCommand -> m (Either DomainError ProofreadResult)
+proofread :: (Monad m) => Dependencies context m -> ProofreadCommand -> m (Either DomainError ProofreadResult)
 proofread dependencies command = do
-    loaded <- dependencies.loadArticle command.payload.article
-    case loaded of
+    preview <- runTransaction dependencies.transactionManager loadDraft
+    case preview of
         Left err -> pure (Left err)
-        Right Nothing ->
-            pure
-                ( Left
-                    ( createAggregateNotFound
-                        "Article"
-                        (articleIdentifierText command.payload.article)
-                    )
-                )
-        Right (Just snapshot)
-            | articleIdentifier snapshot.article /= command.payload.article ->
-                pure (Left (createUnexpectedError "Article" "loaded identity does not match request"))
-            | otherwise -> case snapshot.article of
-                Unvalidated draft -> do
-                    let requested = (Draft.draftContent draft).images
-                    availability <-
-                        if Set.null requested
-                            then pure (Right Set.empty)
-                            else dependencies.findAvailableImages requested
-                    case availability
-                        >>= confirmAvailableImageReferences requested
-                        >>= (\available -> Draft.proofread command.timestamp available draft) of
-                        Left err -> pure (Left err)
-                        Right article -> do
-                            let events = Events [Here (DomainEvent (proofreadedArticleContent article))]
-                            saved <- snapshot.saveProofreading (commandContext command) article events
-                            pure (ProofreadResult article events <$ saved)
-                _ ->
-                    pure
-                        ( Left
-                            ( createOperationNotAllowed
-                                "Proofread"
-                                "only unvalidated drafts can be proofread"
-                            )
-                        )
+        Right draft -> do
+            let requested = (Draft.draftContent draft).images
+            availability <-
+                if Set.null requested
+                    then pure (Right Set.empty)
+                    else dependencies.findAvailableImages requested
+            case availability >>= confirmAvailableImageReferences requested of
+                Left err -> pure (Left err)
+                Right available -> runTransaction dependencies.transactionManager $ do
+                    current <- loadDraft
+                    if (Draft.draftContent current).images /= requested
+                        then
+                            abort
+                                ( createOperationNotAllowed
+                                    "Proofread"
+                                    "image references changed during availability check"
+                                )
+                        else pure ()
+                    article <- fromEither (Draft.proofread command.timestamp available current)
+                    let events = Events [Here (DomainEvent (proofreadedArticleContent article))]
+                    dependencies.persistArticle (Proofreaded article)
+                    dependencies.appendEvents (commandContext command) events
+                    pure (ProofreadResult article events)
+  where
+    loadDraft = do
+        article <- requireArticle dependencies.findArticle command.payload.article
+        case article of
+            Unvalidated draft -> pure draft
+            _ -> abort (createOperationNotAllowed "Proofread" "only unvalidated drafts can be proofread")

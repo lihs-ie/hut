@@ -7,25 +7,18 @@ module UseCase.AmendDraft (
 ) where
 
 import Data.Text (Text)
-import Domain.Article (Article (..), articleIdentifier)
-import Domain.Article.Common (
-    ArticleIdentifier,
-    DraftInput (..),
-    ExtractImageReferences,
-    articleIdentifierText,
-    newDraftContent,
- )
+import Domain.Article
 import Domain.Article.Draft qualified as Draft
 import Domain.Article.Event (draftImageReferences)
+import Shared.Domain.Common.Transaction (Transaction, TransactionManager, fromEither, runTransaction)
 import Shared.Domain.Error (
     DomainError,
-    createAggregateNotFound,
     createOperationNotAllowed,
-    createUnexpectedError,
  )
 import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
-import Shared.UseCase.Command (Command (..))
-import UseCase.Persistence (LoadArticleForAmendment, LoadedArticle (..), commandContext)
+import Shared.UseCase.Command (Command (..), commandContext)
+import Shared.UseCase.Outbox (Append)
+import UseCase.Helper
 import UseCase.Result (ArticleEventsFor)
 import UseCase.Result qualified as Result
 
@@ -45,41 +38,24 @@ data AmendDraftResult = AmendDraftResult
     , events :: Events (ArticleEventsFor 'Result.AmendDraft)
     }
 
-data Dependencies m = Dependencies
-    { loadArticle :: LoadArticleForAmendment m
+data Dependencies context m = Dependencies
+    { transactionManager :: TransactionManager context m
+    , findArticle :: FindArticle (Transaction context m)
+    , persistArticle :: PersistArticle (Transaction context m)
+    , appendEvents :: Append (ArticleEventsFor 'Result.AmendDraft) (Transaction context m)
     , extractImageReferences :: ExtractImageReferences
     }
 
-amendDraft ::
-    (Monad m) => Dependencies m -> AmendDraftCommand -> m (Either DomainError AmendDraftResult)
-amendDraft dependencies command = do
-    loaded <- dependencies.loadArticle command.payload.article
-    case loaded of
-        Left err -> pure (Left err)
-        Right Nothing ->
-            pure
-                ( Left
-                    ( createAggregateNotFound
-                        "Article"
-                        (articleIdentifierText command.payload.article)
-                    )
-                )
-        Right (Just snapshot)
-            | articleIdentifier snapshot.article /= command.payload.article ->
-                pure (Left (createUnexpectedError "Article" "loaded identity does not match request"))
-            | otherwise -> case amend snapshot.article of
-                Left err -> pure (Left err)
-                Right article -> do
-                    let events = Events [Here (DomainEvent (draftImageReferences article))]
-                    saved <- snapshot.saveAmendment (commandContext command) article events
-                    pure (AmendDraftResult article events <$ saved)
+amendDraft :: (Monad m) => Dependencies context m -> AmendDraftCommand -> m (Either DomainError AmendDraftResult)
+amendDraft dependencies command = runTransaction dependencies.transactionManager $ do
+    source <- requireArticle dependencies.findArticle command.payload.article
+    article <- fromEither (amend source)
+    let events = Events [Here (DomainEvent (draftImageReferences article))]
+    dependencies.persistArticle (Unvalidated article)
+    dependencies.appendEvents (commandContext command) events
+    pure (AmendDraftResult article events)
   where
-    input =
-        DraftInput
-            command.payload.title
-            command.payload.body
-            command.payload.slug
-            command.payload.tags
+    input = DraftInput command.payload.title command.payload.body command.payload.slug command.payload.tags
     amend article = case article of
         Unvalidated draft -> apply draft
         Proofreaded draft -> apply draft

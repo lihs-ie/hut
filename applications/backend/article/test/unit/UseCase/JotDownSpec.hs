@@ -10,6 +10,7 @@ import Shared.UseCase.Command qualified
 import TestSupport
 import UseCase.JotDown qualified as Jot
 import UseCase.TestSupport
+import UseCase.TransactionSupport qualified as Tx
 
 run :: IO ()
 run = do
@@ -17,10 +18,10 @@ run = do
     calls <- newIORef []
     generations <- newIORef (0 :: Int)
     let generate = modifyIORef' generations (+ 1) >> pure (Right value)
-        dependencies = Jot.Dependencies generate extractImages (recorder calls (Right ()))
+        dependencies = Tx.jotDownDependencies generate extractImages (recorder calls (Right ()))
     request <- command input
     result <- Jot.jotDown dependencies request >>= right
-    checkSaved calls request result.article result.events
+    checkPersisted calls request result.article result.events
     check "identifier generated once" . (== 1) =<< readIORef generations
     check
         "command time used for creation and update"
@@ -30,7 +31,7 @@ run = do
     writeIORef calls []
     titleOnly <- command (DraftInput "Idea" "" Nothing [])
     minimal <- Jot.jotDown dependencies titleOnly >>= right
-    checkSaved calls titleOnly minimal.article minimal.events
+    checkPersisted calls titleOnly minimal.article minimal.events
     check
         "title only permitted"
         ( (draftContent minimal.article).slug == Nothing
@@ -59,7 +60,7 @@ run = do
     writeIORef calls []
     failed <-
         Jot.jotDown
-            ( Jot.Dependencies
+            ( Tx.jotDownDependencies
                 (pure (Left generationError))
                 extractImages
                 (recorder calls (Right ()))
@@ -70,7 +71,7 @@ run = do
     writeIORef generations 0
     failedExtraction <-
         Jot.jotDown
-            ( Jot.Dependencies
+            ( Tx.jotDownDependencies
                 generate
                 (const (Left extractionError))
                 (recorder calls (Right ()))
@@ -81,13 +82,13 @@ run = do
     check "no save on extraction failure" . null =<< readIORef calls
     forM_ [storageError, conflictError] $ \err -> do
         writeIORef calls []
-        failedSave <-
+        failedPersist <-
             Jot.jotDown
-                ( Jot.Dependencies
+                ( Tx.jotDownDependencies
                     generate
                     extractImages
                     (recorder calls (Left err))
                 )
                 request
-        expectError "failed commit never returns a successful result" err failedSave
+        expectError "failed commit never returns a successful result" err failedPersist
         check "one commit attempt" . (== 1) . length =<< readIORef calls
