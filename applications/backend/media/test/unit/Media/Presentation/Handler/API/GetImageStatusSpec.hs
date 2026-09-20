@@ -4,6 +4,7 @@ import Media.Presentation.API.GetImageStatus (
     GetImageStatusResponse (..),
  )
 import Media.Presentation.Handler.API.TestSupport (
+    changedTargetError,
     checkErrors,
     correlated,
     invariantError,
@@ -18,6 +19,7 @@ import Media.Presentation.Handler.API.TestSupport (
     suppliedBytes,
     unavailableError,
     unexpectedError,
+    unknownOutcomeError,
     validImage,
  )
 
@@ -49,4 +51,6 @@ statusErrors =
         , (notAllowedError, 409, "image_status_unavailable")
         , (unavailableError, 503, "service_unavailable")
         , (unexpectedError, 500, "unexpected_error")
+        , (unknownOutcomeError, 500, "transaction_outcome_unknown")
+        , (changedTargetError, 409, "processing_target_changed")
         ]

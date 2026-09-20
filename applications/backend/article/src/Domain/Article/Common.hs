@@ -42,7 +42,7 @@ import Shared.Domain.Slug (Slug, newSlug)
 import Shared.Domain.Tag (TagIdentifier, newTagIdentifier)
 
 newtype ArticleIdentifier = ArticleIdentifier ULID
-    deriving stock (Show, Eq)
+    deriving stock (Show, Eq, Ord)
 
 newArticleIdentifier :: Text -> Either DomainError ArticleIdentifier
 newArticleIdentifier = fmap ArticleIdentifier . newULID

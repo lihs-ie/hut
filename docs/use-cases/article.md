@@ -347,3 +347,18 @@ featureテストはtest/featureに配置し、DockerとWranglerで実接続を�
 - 生成中の編集、古い生成結果、重複配送、手動修正との競合。
 - 本文と画像参照の一致、利用可能性確認、非公開時の参照維持、削除後の順序逆転。
 - 公開以外の読者向け取得拒否、一覧の順序とページング。
+
+## ドメイン共通基盤の追加
+
+- Domain.ArticleにFind/Persist/Terminateと検索関数の型を配置する。
+- Domain.Article.Criteriaは状態条件・ページ番号・取得件数を保持し、既定10件・上限100件で検証する。
+- Domain.Article.Eventに記事イベントと純粋なpayload構築を配置する。
+- Shared.Domain.Common.Primitiveに非公開コンストラクタのPositiveIntegerを定義する。
+  生の数値は境界で検証し、Num/Read/coerceによる検証の迂回を許可しない。
+- Shared.Domain.Common.Transactionはトランザクション抽象と純粋な処理合成だけを公開する。
+  実行器・バージョン追跡・ユースケース接続は後続のユースケースPRで実装する。
+- Shared.Domain.ErrorにProcessingTargetChangedとTransactionOutcomeUnknownを追加し、
+  既存MediaのHTTPエラー変換も追随する。
+
+このPRのテストはドメイン・Criteria・Pager・正数型を対象とする。
+実DBトランザクションの原子性やOutboxの配信を検証したものではない。

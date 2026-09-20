@@ -24,6 +24,8 @@ library
   hs-source-dirs: src
   exposed-modules:
     Domain.Article
+    Domain.Article.Criteria
+    Domain.Article.Event
     Domain.Article.Common
     Domain.Article.Draft
     Domain.Article.Published
@@ -43,6 +45,8 @@ test-suite article-unit-test
   other-modules:
     TestSupport
     Domain.Article.CommonSpec
+    Domain.Article.CriteriaSpec
+    Domain.Article.EventSpec
     Domain.Article.DraftSpec
     Domain.Article.LifecycleSpec
   build-depends:

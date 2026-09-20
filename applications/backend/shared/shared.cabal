@@ -22,6 +22,8 @@ library
   hs-source-dirs:  src
   exposed-modules:
     Shared.Domain.Date
+    Shared.Domain.Common.Primitive
+    Shared.Domain.Common.Transaction
     Shared.Domain.DevelopLanguage
     Shared.Domain.Error
     Shared.Domain.Event
@@ -37,6 +39,9 @@ library
     Shared.UseCase.Context
     Shared.UseCase.Event
     Shared.UseCase.Identifier
+
+  other-modules:
+    Shared.Domain.Common.Transaction.Internal
 
   build-depends:
     , aeson       >=2.2.5  && <2.3
@@ -57,6 +62,8 @@ test-suite shared-test
   main-is:         Main.hs
   other-modules:
     Shared.Domain.CommonSpec
+    Shared.Domain.Common.PrimitiveSpec
+    Shared.Domain.PagerSpec
     Shared.Domain.IdentifierSpec
     Shared.FFI.SecureRandomSpec
     Shared.UseCase.CommonSpec

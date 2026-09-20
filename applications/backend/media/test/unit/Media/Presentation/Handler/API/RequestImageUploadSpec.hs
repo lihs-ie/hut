@@ -10,6 +10,7 @@ import Media.Presentation.Handler.API.RequestImageUpload (
  )
 import Media.Presentation.Handler.API.TestSupport (
     actorValue,
+    changedTargetError,
     checkErrors,
     correlated,
     fixedTime,
@@ -24,6 +25,7 @@ import Media.Presentation.Handler.API.TestSupport (
     suppliedBytes,
     unavailableError,
     unexpectedError,
+    unknownOutcomeError,
     uploadHandler,
     uploadOutput,
     uploadRequest,
@@ -83,4 +85,6 @@ uploadErrors =
         , (notAllowedError, 409, "image_upload_not_allowed")
         , (unavailableError, 503, "service_unavailable")
         , (unexpectedError, 500, "unexpected_error")
+        , (unknownOutcomeError, 500, "transaction_outcome_unknown")
+        , (changedTargetError, 409, "processing_target_changed")
         ]
