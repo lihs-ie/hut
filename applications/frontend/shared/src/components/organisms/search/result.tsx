@@ -1,14 +1,12 @@
 import { UnvalidatedCriteria } from "@shared/domains/search-token";
 import { SearchResultPresenter } from "./result.presenter";
-import { Memo } from "@shared/domains/memo";
-import { Series } from "@shared/domains/series";
 import { Article } from "@shared/domains/articles";
 import { Tag } from "@shared/domains/attributes/tag";
 
 export type Props = {
   search: (
     unvalidated: UnvalidatedCriteria,
-  ) => Promise<(Article | Series | Memo)[]>;
+  ) => Promise<Article[]>;
   unvalidatedCriteria: UnvalidatedCriteria;
   findAllTags: (identifiers: string[]) => Promise<Tag[]>;
   ofNamesTags: (names: string[]) => Promise<Tag[]>;

@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "hut-article-projection-sink-feature",
+  "main": "../projection-sink/index.mjs",
+  "compatibility_date": "2026-09-13",
+  "kv_namespaces": [
+    {
+      "binding": "MESSAGES",
+      "id": "ac71c1f5db314a4cbf9bd2258092fd6a"
+    }
+  ],
+  "queues": {
+    "consumers": [
+      {
+        "queue": "hut-media-reference-projection-feature",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1
+      }
+    ]
+  }
+}

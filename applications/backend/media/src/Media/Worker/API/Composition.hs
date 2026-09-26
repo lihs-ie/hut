@@ -9,12 +9,14 @@ import Cloudflare.Workers.Env (getBinding)
 import Data.Proxy (Proxy (Proxy))
 import Data.Time (NominalDiffTime, getCurrentTime)
 import Media.Infrastructure.D1.ImageRepository (
+    findAvailableImagesResult,
     findImageResult,
     newImageIdentifierResult,
     newUploadAttemptIdentifierResult,
     persistImageResult,
  )
 import Media.Infrastructure.Queue.Inspection (newInspectionEnqueuer)
+import Media.Presentation.Handler.API.FindAvailableImages qualified as AvailabilityHandler
 import Media.Presentation.Handler.API.GetImageStatus qualified as GetStatusHandler
 import Media.Presentation.Handler.API.Metadata (
     MetadataDependencies (MetadataDependencies),
@@ -36,6 +38,7 @@ import Shared.UseCase.Identifier (
     generateULID,
  )
 import "media" Media.Domain.Image
+import "media" Media.UseCase.FindAvailableImages qualified as FindAvailableImages
 import "media" Media.UseCase.GetImageStatus qualified as GetImageStatus
 import "media" Media.UseCase.RequestImageUpload qualified as RequestImageUpload
 import "media" Media.UseCase.Result qualified as UseCase
@@ -72,6 +75,10 @@ apiServerDependencies issueDestination environment =
             GetStatusHandler.GetImageStatusHandlerDependencies
                 metadata
                 (executeGetStatus getStatusDependencies)
+        , findAvailableImages =
+            AvailabilityHandler.FindAvailableImagesHandlerDependencies
+                metadata
+                (executeFindAvailable availabilityDependencies)
         , retryImageInspection =
             RetryInspectionHandler.RetryImageInspectionHandlerDependencies
                 metadata
@@ -103,6 +110,8 @@ apiServerDependencies issueDestination environment =
             (issueDestination uploadDestinationLifetime)
     getStatusDependencies =
         GetImageStatus.Dependencies (findImageResult database)
+    availabilityDependencies =
+        FindAvailableImages.Dependencies (findAvailableImagesResult database)
     retryInspectionDependencies =
         RetryImageInspection.Dependencies
             (findImageResult database)
@@ -131,6 +140,14 @@ executeGetStatus ::
 executeGetStatus dependencies command =
     fmap (getStatusOutput . UseCase.resultOutput)
         <$> GetImageStatus.getImageStatus dependencies command
+
+executeFindAvailable ::
+    FindAvailableImages.Dependencies ->
+    Command FindAvailableImages.FindAvailableImages ->
+    IO (Either DomainError [ImageIdentifier])
+executeFindAvailable dependencies command =
+    fmap UseCase.resultOutput
+        <$> FindAvailableImages.findAvailableImages dependencies command
 
 executeRetryInspection ::
     RetryImageInspection.Dependencies ->

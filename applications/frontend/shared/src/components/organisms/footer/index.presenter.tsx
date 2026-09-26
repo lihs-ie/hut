@@ -39,12 +39,6 @@ export const FooterPresenter = (props: Props) => (
             <li>
               <NavigableLink href={Routes.page.articles.index}>記事</NavigableLink>
             </li>
-            <li>
-              <NavigableLink href={Routes.page.memos.index}>メモ</NavigableLink>
-            </li>
-            <li>
-              <NavigableLink href={Routes.page.series.index}>連載</NavigableLink>
-            </li>
           </ul>
         </div>
 

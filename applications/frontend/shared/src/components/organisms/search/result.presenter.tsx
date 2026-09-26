@@ -1,13 +1,11 @@
-import { Article, articleSchema } from "@shared/domains/articles";
-import { Memo, memoSchema } from "@shared/domains/memo";
-import { Series } from "@shared/domains/series";
+import { Article } from "@shared/domains/articles";
 import styles from "./result.module.css";
 import { HomeContentCard } from "@shared/components/molecules/list/card/home-content";
 import { ContentType, UnvalidatedCriteria } from "@shared/domains/search-token";
 import { TagName } from "@shared/domains/attributes/tag";
 import { SearchEmpty } from "@shared/components/molecules/empty/search";
 
-type ContentWithTagNames = (Article | Series | Memo) & { tagNames: TagName[] };
+type ContentWithTagNames = Article & { tagNames: TagName[] };
 
 export type Props = {
   contents: ContentWithTagNames[];
@@ -20,18 +18,6 @@ const hasSearchCriteria = (criteria: UnvalidatedCriteria): boolean => {
     (criteria.tags !== null && criteria.tags.length > 0) ||
     criteria.type !== null
   );
-};
-
-const determineType = (
-  content: Article | Series | Memo,
-): ContentType => {
-  if (articleSchema.safeParse(content).success) {
-    return ContentType.ARTICLE;
-  } else if (memoSchema.safeParse(content).success) {
-    return ContentType.MEMO;
-  } else {
-    return ContentType.SERIES;
-  }
 };
 
 export const SearchResultPresenter = (props: Props) => {
@@ -50,7 +36,7 @@ export const SearchResultPresenter = (props: Props) => {
             <HomeContentCard
               key={content.slug}
               slug={content.slug}
-              type={determineType(content)}
+              type={ContentType.ARTICLE}
               title={content.title}
               date={content.publishedAt}
               tagNames={content.tagNames}

@@ -1,14 +1,14 @@
-module Shared.Domain.Tag (TagIdentifier, newTagIdentifier) where
+module Shared.Domain.Tag (TagIdentifier, newTagIdentifier, tagIdentifierText) where
 
 import Data.Text (Text)
-import Data.Text qualified as Text
-import Shared.Domain.Error (DomainError, createInvariantViolation)
+import Shared.Domain.Error (DomainError)
+import Shared.Domain.Identifier (ULID, newULID, ulidText)
 
-newtype TagIdentifier = TagIdentifier Text
+newtype TagIdentifier = TagIdentifier ULID
     deriving stock (Show, Eq)
 
 newTagIdentifier :: Text -> Either DomainError TagIdentifier
-newTagIdentifier value =
-    if Text.null value || Text.length value > 255
-        then Left $ createInvariantViolation "TagIdentifier" "Value length must be 1 ~ 255."
-        else Right $ TagIdentifier value
+newTagIdentifier = fmap TagIdentifier . newULID
+
+tagIdentifierText :: TagIdentifier -> Text
+tagIdentifierText (TagIdentifier value) = ulidText value

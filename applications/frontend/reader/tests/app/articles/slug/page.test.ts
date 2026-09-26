@@ -11,7 +11,7 @@ vi.mock("react", () => ({
   cache: <T extends (...args: unknown[]) => unknown>(fn: T) => fn,
 }));
 
-vi.mock("@shared/actions/tag", () => ({
+vi.mock("@/actions/tag", () => ({
   findAllTags: vi.fn(),
 }));
 
@@ -24,14 +24,13 @@ vi.mock("@shared/components/templates/article", () => ({
   ArticleIndex: vi.fn(),
 }));
 
-vi.mock("@shared/actions/view", () => ({
+vi.mock("@/actions/view", () => ({
   incrementViewCount: vi.fn(),
 }));
 
 vi.mock("@/actions/article", () => ({
   findBySlug: vi.fn(),
   createTableOfContents: vi.fn(),
-  searchAllSlugs: vi.fn().mockResolvedValue(["slug-1", "slug-2", "slug-3"]),
 }));
 
 describe("/articles/[slug] page", () => {
@@ -46,15 +45,9 @@ describe("/articles/[slug] page", () => {
       expect(typeof generateStaticParams).toBe("function");
     });
 
-    it("generateStaticParams がslugの配列を返す", async () => {
+    it("ビルド時には記事の slug を取得しない", async () => {
       const result = await generateStaticParams();
-
-      expect(Array.isArray(result)).toBe(true);
-      expect(result).toEqual([
-        { slug: "slug-1" },
-        { slug: "slug-2" },
-        { slug: "slug-3" },
-      ]);
+      expect(result).toEqual([]);
     });
   });
 });

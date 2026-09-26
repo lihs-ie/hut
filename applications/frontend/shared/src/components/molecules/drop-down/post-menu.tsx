@@ -4,8 +4,6 @@ import { DropDownItem } from "./blueprint/item";
 import { DropDown } from "./blueprint";
 import { ReactNode } from "react";
 import { FileTextIcon } from "@shared/components/atoms/icon/file-text";
-import { FacingBookIcon } from "@shared/components/atoms/icon/facing-book";
-import { MessageIcon } from "@shared/components/atoms/icon/message";
 import { BallpenIcon } from "@shared/components/atoms/icon/ballpen";
 import styles from "./post-menu.module.css";
 
@@ -16,22 +14,6 @@ const items: Record<string, ReactNode> = {
         <FileTextIcon />
       </i>
       <p className={styles.text}>記事</p>
-    </Link>
-  ),
-  series: (
-    <Link href={Routes.page.series.new} className={styles.content}>
-      <i className={styles.icon}>
-        <FacingBookIcon />
-      </i>
-      <p className={styles.text}>連載</p>
-    </Link>
-  ),
-  memo: (
-    <Link href={Routes.page.memos.new} className={styles.content}>
-      <i className={styles.icon}>
-        <MessageIcon />
-      </i>
-      <p className={styles.text}>メモ</p>
     </Link>
   ),
 };

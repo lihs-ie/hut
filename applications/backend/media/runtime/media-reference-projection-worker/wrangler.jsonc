@@ -24,7 +24,15 @@
             "max_batch_size": 10,
             "max_batch_timeout": 5,
             "max_retries": 3,
-            "retry_delay": 60
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-media-reference-projection-dlq-dev"
+          },
+          {
+            "queue": "hut-media-reference-projection-dlq-dev",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 100,
+            "retry_delay": 600
           }
         ]
       }
@@ -45,7 +53,15 @@
             "max_batch_size": 10,
             "max_batch_timeout": 5,
             "max_retries": 3,
-            "retry_delay": 60
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-media-reference-projection-dlq-stg"
+          },
+          {
+            "queue": "hut-media-reference-projection-dlq-stg",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 100,
+            "retry_delay": 600
           }
         ]
       }
@@ -66,7 +82,15 @@
             "max_batch_size": 10,
             "max_batch_timeout": 5,
             "max_retries": 3,
-            "retry_delay": 60
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-media-reference-projection-dlq-prd"
+          },
+          {
+            "queue": "hut-media-reference-projection-dlq-prd",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 100,
+            "retry_delay": 600
           }
         ]
       }

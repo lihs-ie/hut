@@ -1,0 +1,43 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "hut-article-excerpt-worker-feature",
+  "main": "../../../runtime/article-excerpt-worker/src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "GENERATION_QUEUE_NAME": "hut-article-excerpt-generation-feature",
+    "GENERATION_DLQ_NAME": "hut-article-excerpt-generation-dlq-feature"
+  },
+  "ai": { "binding": "AI", "remote": true },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ARTICLE_DO",
+        "class_name": "ArticleDurableObject",
+        "script_name": "hut-article-api-worker-feature"
+      }
+    ]
+  },
+  "queues": {
+    "producers": [
+      {
+        "binding": "ARTICLE_EXCERPT_COMPLETION_QUEUE",
+        "queue": "hut-article-excerpt-completion-feature"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "hut-article-excerpt-generation-feature",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 3,
+        "dead_letter_queue": "hut-article-excerpt-generation-dlq-feature"
+      },
+      {
+        "queue": "hut-article-excerpt-generation-dlq-feature",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1
+      }
+    ]
+  }
+}

@@ -2,12 +2,10 @@ import { AdminSidebar, NavItem } from "../_components/organisms/admin/sidebar";
 import { Routes } from "@/config/routes";
 import styles from "./layout.module.css";
 import { FileTextIcon } from "@shared/components/atoms/icon/file-text";
-import { MessageSquareIcon } from "@shared/components/atoms/icon/message";
 import { TagIcon } from "@shared/components/atoms/icon/tag";
 import { UserIcon } from "@shared/components/atoms/icon/user";
 import { ShieldIcon } from "@shared/components/atoms/icon/shield";
 import { BarChartIcon } from "@shared/components/atoms/icon/bar-chart";
-import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 import { getSession } from "@/actions/auth";
 import { redirect } from "next/navigation";
 
@@ -16,16 +14,6 @@ const navItems: NavItem[] = [
     href: Routes.admin.articles.list,
     label: "記事の管理",
     icon: <FileTextIcon />,
-  },
-  {
-    href: Routes.admin.memos.list,
-    label: "メモの管理",
-    icon: <MessageSquareIcon />,
-  },
-  {
-    href: Routes.admin.series.list,
-    label: "連載の管理",
-    icon: <BookOpenIcon />,
   },
   { href: Routes.admin.tag.list, label: "タグ管理", icon: <TagIcon /> },
   {

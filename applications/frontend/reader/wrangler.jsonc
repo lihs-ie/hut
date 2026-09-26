@@ -43,5 +43,53 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
+  },
+  "env": {
+    "dev": {
+      "name": "hut-dev-reader",
+      "workers_dev": true,
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "hut-dev-reader"
+        },
+        {
+          "binding": "ARTICLE_API",
+          "service": "hut-article-api-worker-dev"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "NEXT_INC_CACHE_R2_BUCKET",
+          "bucket_name": "hut-dev-reader-cache"
+        }
+      ],
+      "vars": {
+        "NEXT_INC_CACHE_R2_PREFIX": "dev"
+      },
+      "images": {
+        "binding": "IMAGES"
+      },
+      "unsafe": {
+        "bindings": [
+          {
+            "name": "RATE_LIMITER_GENERAL",
+            "type": "ratelimit",
+            "namespace_id": "2001",
+            "simple": { "limit": 100, "period": 60 }
+          },
+          {
+            "name": "RATE_LIMITER_API",
+            "type": "ratelimit",
+            "namespace_id": "2002",
+            "simple": { "limit": 30, "period": 60 }
+          }
+        ]
+      }
+    }
   }
 }

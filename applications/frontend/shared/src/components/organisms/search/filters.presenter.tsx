@@ -6,8 +6,6 @@ import { SearchIcon } from "@shared/components/atoms/icon/search";
 import { FilterIcon } from "@shared/components/atoms/icon/filter";
 import { XIcon } from "@shared/components/atoms/icon/cross";
 import { FileTextIcon } from "@shared/components/atoms/icon/file-text";
-import { MessageSquareIcon } from "@shared/components/atoms/icon/message";
-import { BookOpenIcon } from "@shared/components/atoms/icon/facing-book";
 import { ChevronDownIcon } from "@shared/components/atoms/icon/chevron-down";
 import { TextInput } from "@shared/components/atoms/input/text";
 import { VariantButton } from "@shared/components/atoms/button/variant";
@@ -215,24 +213,6 @@ export const SearchFilterPresenter = (props: Props) => {
               >
                 <FileTextIcon className={styles["button-icon"]} />
                 記事
-              </VariantButton>
-              <VariantButton
-                variant={type === ContentType.MEMO ? "default" : "outline"}
-                size="sm"
-                onClick={() => setType(ContentType.MEMO)}
-                className={styles["filter-button"]}
-              >
-                <MessageSquareIcon className={styles["button-icon"]} />
-                メモ
-              </VariantButton>
-              <VariantButton
-                variant={type === ContentType.SERIES ? "default" : "outline"}
-                size="sm"
-                onClick={() => setType(ContentType.SERIES)}
-                className={styles["filter-button"]}
-              >
-                <BookOpenIcon className={styles["button-icon"]} />
-                連載
               </VariantButton>
             </div>
           </div>

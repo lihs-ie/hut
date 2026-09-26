@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "hut-media-api-worker-feature",
+  "main": "../media/index.mjs",
+  "compatibility_date": "2026-09-13"
+}

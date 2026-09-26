@@ -8,6 +8,10 @@ module Media.Presentation.API (
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import GHC.Generics (Generic)
+import Media.Presentation.API.FindAvailableImages (
+    FindAvailableImagesRequest,
+    FindAvailableImagesResponse,
+ )
 import Media.Presentation.API.GetImageStatus (GetImageStatusResponse)
 import Media.Presentation.API.RequestImageUpload (
     RequestImageUploadRequest,
@@ -44,6 +48,12 @@ data MediaRoutes mode = MediaRoutes
             :- "images"
                 :> Capture "imageIdentifier" Text
                 :> Get '[JSON] (CorrelatedResponse GetImageStatusResponse)
+    , findAvailableImages ::
+        mode
+            :- "images"
+                :> "availability"
+                :> ReqBody '[JSON] FindAvailableImagesRequest
+                :> Post '[JSON] (CorrelatedResponse FindAvailableImagesResponse)
     , retryImageInspection ::
         mode
             :- "images"

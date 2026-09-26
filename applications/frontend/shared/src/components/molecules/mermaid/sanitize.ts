@@ -1,4 +1,4 @@
-import DOMPurify from "isomorphic-dompurify";
+import DOMPurify from "dompurify";
 
 const FOREIGN_OBJECT_HTML_TAGS = [
   "foreignObject",

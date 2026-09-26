@@ -15,10 +15,6 @@ const newContentPath = (contentType: ContentType) => {
   switch (contentType) {
     case ContentType.ARTICLE:
       return Routes.page.articles.new;
-    case ContentType.MEMO:
-      return Routes.page.memos.new;
-    case ContentType.SERIES:
-      return Routes.page.series.new;
     default:
       return Routes.admin.dashboard;
   }

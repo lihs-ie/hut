@@ -27,30 +27,12 @@ vi.mock("@shared/components/atoms/icon/file-text", () => ({
   FileTextIcon: () => <span>FileText</span>,
 }));
 
-vi.mock("@shared/components/atoms/icon/facing-book", () => ({
-  FacingBookIcon: () => <span>FacingBook</span>,
-}));
-
-vi.mock("@shared/components/atoms/icon/message", () => ({
-  MessageIcon: () => <span>Message</span>,
-}));
-
 vi.mock("@shared/components/atoms/icon/ballpen", () => ({
   BallpenIcon: () => <span>Ballpen</span>,
 }));
 
 describe("components/molecules/drop-down/PostMenuDropDown", () => {
-  it("「連載」メニューが表示される", async () => {
-    const { PostMenuDropDown } = await import(
-      "@shared/components/molecules/drop-down/post-menu"
-    );
-
-    render(<PostMenuDropDown />);
-
-    expect(screen.getByText("連載")).toBeInTheDocument();
-  });
-
-  it("「記事」メニューが表示される", async () => {
+  it("記事だけの作成メニューを表示する", async () => {
     const { PostMenuDropDown } = await import(
       "@shared/components/molecules/drop-down/post-menu"
     );
@@ -58,15 +40,7 @@ describe("components/molecules/drop-down/PostMenuDropDown", () => {
     render(<PostMenuDropDown />);
 
     expect(screen.getByText("記事")).toBeInTheDocument();
-  });
-
-  it("「メモ」メニューが表示される", async () => {
-    const { PostMenuDropDown } = await import(
-      "@shared/components/molecules/drop-down/post-menu"
-    );
-
-    render(<PostMenuDropDown />);
-
-    expect(screen.getByText("メモ")).toBeInTheDocument();
+    expect(screen.queryByText("メモ")).not.toBeInTheDocument();
+    expect(screen.queryByText("連載")).not.toBeInTheDocument();
   });
 });

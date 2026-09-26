@@ -6,7 +6,6 @@ import {
   getAverageDwellTime,
   getSearchCount,
   getPageViewTrend,
-  getContentTypeComparison,
   getContentRanking,
   getReferrerRanking,
   getDeviceDistribution,
@@ -42,7 +41,6 @@ export default async function AnalyticsPage(props: Props) {
       getAverageDwellTime={getAverageDwellTime}
       getSearchCount={getSearchCount}
       getPageViewTrend={getPageViewTrend}
-      getContentTypeComparison={getContentTypeComparison}
       getContentRanking={getContentRanking}
       getReferrerRanking={getReferrerRanking}
       getDeviceDistribution={getDeviceDistribution}

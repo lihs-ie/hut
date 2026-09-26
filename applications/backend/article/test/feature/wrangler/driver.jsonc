@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "hut-article-feature-driver",
+  "main": "../driver/index.mjs",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ARTICLE_DO",
+        "class_name": "ArticleDurableObject",
+        "script_name": "hut-article-api-worker-feature"
+      }
+    ]
+  },
+  "services": [
+    {
+      "binding": "ARTICLE_API",
+      "service": "hut-article-api-worker-feature"
+    },
+    {
+      "binding": "MEDIA_PROJECTION_SINK",
+      "service": "hut-article-projection-sink-feature"
+    }
+  ]
+}

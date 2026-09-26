@@ -2,16 +2,20 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi } from "vitest";
-import { revalidate } from "../../../src/app/privacy/page";
+import { connection } from "next/server";
+import Page from "../../../src/app/privacy/page";
+import { PrivacyIndex } from "@shared/components/templates/legal/privacy";
+import { getPrivacyPolicy } from "@/actions/document";
 
-vi.mock("@shared/pages/privacy/page", () => ({
-  default: vi.fn(),
-}));
+vi.mock("next/server", () => ({ connection: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/actions/document", () => ({ getPrivacyPolicy: vi.fn() }));
+vi.mock("@shared/components/templates/legal/privacy", () => ({ PrivacyIndex: vi.fn() }));
 
 describe("/privacy page", () => {
-  describe("revalidate", () => {
-    it("revalidate が 3600 でexportされている", () => {
-      expect(revalidate).toBe(3600);
-    });
+  it("Reader のプライバシーポリシーをリクエスト時に取得する", async () => {
+    const element = await Page();
+    expect(connection).toHaveBeenCalled();
+    expect(element.type).toBe(PrivacyIndex);
+    expect(element.props.getPrivacy).toBe(getPrivacyPolicy);
   });
 });

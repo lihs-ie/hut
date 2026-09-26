@@ -8,6 +8,8 @@ module Domain.Article.Draft (
     ProofreadedDraft,
     ReadyToPublish,
     newUnvalidatedDraft,
+    newUnvalidatedDraftWithTimeline,
+    newProofreadedDraft,
     amendDraft,
     proofread,
     prepareToPublish,
@@ -48,6 +50,14 @@ newUnvalidatedDraft ::
 newUnvalidatedDraft identifier timestamp content = do
     timeline <- newTimeline timestamp timestamp
     pure (UnvalidatedDraft identifier content timeline)
+
+newUnvalidatedDraftWithTimeline ::
+    ArticleIdentifier -> DraftContent -> Timeline -> UnvalidatedDraft
+newUnvalidatedDraftWithTimeline = UnvalidatedDraft
+
+newProofreadedDraft ::
+    ArticleIdentifier -> ProofreadedContent -> Timeline -> ProofreadedDraft
+newProofreadedDraft = ProofreadedDraft
 
 amendDraft ::
     UTCTime -> DraftContent -> Draft phase -> Either DomainError UnvalidatedDraft

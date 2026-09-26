@@ -1,0 +1,138 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "hut-article-excerpt-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "env": {
+    "dev": {
+      "name": "hut-article-excerpt-worker-dev",
+      "vars": {
+        "GENERATION_QUEUE_NAME": "hut-article-excerpt-generation-dev",
+        "GENERATION_DLQ_NAME": "hut-article-excerpt-generation-dlq-dev"
+      },
+      "ai": { "binding": "AI" },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "ARTICLE_DO",
+            "class_name": "ArticleDurableObject",
+            "script_name": "hut-article-api-worker-dev"
+          }
+        ]
+      },
+      "queues": {
+        "producers": [
+          {
+            "binding": "ARTICLE_EXCERPT_COMPLETION_QUEUE",
+            "queue": "hut-article-excerpt-completion-dev"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "hut-article-excerpt-generation-dev",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-article-excerpt-generation-dlq-dev"
+          },
+          {
+            "queue": "hut-article-excerpt-generation-dlq-dev",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 100,
+            "retry_delay": 600
+          }
+        ]
+      }
+    },
+    "stg": {
+      "name": "hut-article-excerpt-worker-stg",
+      "vars": {
+        "GENERATION_QUEUE_NAME": "hut-article-excerpt-generation-stg",
+        "GENERATION_DLQ_NAME": "hut-article-excerpt-generation-dlq-stg"
+      },
+      "ai": { "binding": "AI" },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "ARTICLE_DO",
+            "class_name": "ArticleDurableObject",
+            "script_name": "hut-article-api-worker-stg"
+          }
+        ]
+      },
+      "queues": {
+        "producers": [
+          {
+            "binding": "ARTICLE_EXCERPT_COMPLETION_QUEUE",
+            "queue": "hut-article-excerpt-completion-stg"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "hut-article-excerpt-generation-stg",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-article-excerpt-generation-dlq-stg"
+          },
+          {
+            "queue": "hut-article-excerpt-generation-dlq-stg",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 100,
+            "retry_delay": 600
+          }
+        ]
+      }
+    },
+    "prd": {
+      "name": "hut-article-excerpt-worker-prd",
+      "vars": {
+        "GENERATION_QUEUE_NAME": "hut-article-excerpt-generation-prd",
+        "GENERATION_DLQ_NAME": "hut-article-excerpt-generation-dlq-prd"
+      },
+      "ai": { "binding": "AI" },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "ARTICLE_DO",
+            "class_name": "ArticleDurableObject",
+            "script_name": "hut-article-api-worker-prd"
+          }
+        ]
+      },
+      "queues": {
+        "producers": [
+          {
+            "binding": "ARTICLE_EXCERPT_COMPLETION_QUEUE",
+            "queue": "hut-article-excerpt-completion-prd"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "hut-article-excerpt-generation-prd",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-article-excerpt-generation-dlq-prd"
+          },
+          {
+            "queue": "hut-article-excerpt-generation-dlq-prd",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 100,
+            "retry_delay": 600
+          }
+        ]
+      }
+    }
+  }
+}

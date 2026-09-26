@@ -3,13 +3,9 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { SearchIndex } from "@shared/components/templates/search";
 import { Forger } from "@lihs-ie/forger-ts";
 import { ArticleMold } from "../../../../support/molds/domains/article";
-import { MemoMold } from "../../../../support/molds/domains/memo";
-import { SeriesMold } from "../../../../support/molds/domains/series";
 import { TagMold } from "../../../../support/molds/domains/attributes/tag";
 import { Tag } from "@shared/domains/attributes/tag";
 import { Article } from "@shared/domains/articles";
-import { Memo } from "@shared/domains/memo";
-import { Series } from "@shared/domains/series";
 
 const meta = {
   component: SearchIndex,
@@ -23,14 +19,7 @@ export default meta;
 const tags = Forger(TagMold).forgeMultiWithSeed(10, 1);
 
 const articles = Forger(ArticleMold).forgeMultiWithSeed(5, 1);
-const memos = Forger(MemoMold).forgeMultiWithSeed(5, 2);
-const seriesList = Forger(SeriesMold).forgeMultiWithSeed(3, 3);
-
-const search = async (): Promise<(Article | Memo | Series)[]> => [
-  ...articles,
-  ...memos,
-  ...seriesList,
-];
+const search = async (): Promise<Article[]> => articles;
 
 const getAllTags = async (): Promise<Tag[]> => tags;
 
@@ -74,7 +63,7 @@ export const WithFreeWord: StoryObj<typeof SearchIndex> = {
   },
 };
 
-const searchEmpty = async (): Promise<(Article | Memo | Series)[]> => [];
+const searchEmpty = async (): Promise<Article[]> => [];
 
 export const NoResults: StoryObj<typeof SearchIndex> = {
   args: {
@@ -93,8 +82,7 @@ export const NoResults: StoryObj<typeof SearchIndex> = {
   },
 };
 
-const searchArticlesOnly = async (): Promise<(Article | Memo | Series)[]> =>
-  articles;
+const searchArticlesOnly = async (): Promise<Article[]> => articles;
 
 export const ArticlesOnly: StoryObj<typeof SearchIndex> = {
   args: {

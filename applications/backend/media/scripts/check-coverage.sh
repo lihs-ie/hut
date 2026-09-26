@@ -22,6 +22,7 @@ readonly USE_CASE_MODULES=(
   Media.Internal.Result
   Media.Internal.UploadDestination
   Media.UseCase.GetImageStatus
+  Media.UseCase.FindAvailableImages
   Media.UseCase.InspectImage
   Media.UseCase.ProcessImageInspection
   Media.UseCase.ProjectImageUsage
@@ -35,11 +36,13 @@ readonly USE_CASE_MODULES=(
 readonly PRESENTATION_MODULES=(
   Media.Presentation.API
   Media.Presentation.API.GetImageStatus
+  Media.Presentation.API.FindAvailableImages
   Media.Presentation.API.RequestImageUpload
   Media.Presentation.API.RetryImageInspection
   Media.Presentation.API.RetryImageUpload
   Media.Presentation.Handler.API.Error
   Media.Presentation.Handler.API.GetImageStatus
+  Media.Presentation.Handler.API.FindAvailableImages
   Media.Presentation.Handler.API.Metadata
   Media.Presentation.Handler.API.RequestImageUpload
   Media.Presentation.Handler.API.RetryImageInspection

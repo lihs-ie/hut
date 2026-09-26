@@ -9,6 +9,7 @@
     "build:cloudflare": "bash scripts/build-cloudflare.sh",
     "preview:cloudflare": "pnpm build:cloudflare && opennextjs-cloudflare preview",
     "deploy:cloudflare": "pnpm build:cloudflare && opennextjs-cloudflare deploy",
+    "deploy:cloudflare:dev": "pnpm build:cloudflare && opennextjs-cloudflare deploy --env dev",
     "upload:cloudflare": "pnpm build:cloudflare && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start -p 3000",

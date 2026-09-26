@@ -2,6 +2,7 @@ module Domain.Article.Private (
     PrivateArticle,
     takeDown,
     resumePublication,
+    newPrivateArticle,
 ) where
 
 import Data.Time (UTCTime)
@@ -10,7 +11,7 @@ import Domain.Article.Draft (ReadyToPublish, newReadyToPublish)
 import Domain.Article.Published (PublishedArticle)
 import GHC.Records (HasField (..))
 import Shared.Domain.Date (Timeline)
-import Shared.Domain.Error (DomainError)
+import Shared.Domain.Error (DomainError, createInvariantViolation)
 
 data PrivateArticle
     = PrivateArticle
@@ -29,6 +30,13 @@ resumePublication :: UTCTime -> PrivateArticle -> Either DomainError ReadyToPubl
 resumePublication timestamp article = do
     timeline <- amendTimeline timestamp article.timeline
     pure (newReadyToPublish article.identifier article.publication timeline)
+
+newPrivateArticle ::
+    ArticleIdentifier -> PublicationContent -> Timeline -> UTCTime -> Either DomainError PrivateArticle
+newPrivateArticle identifier content timeline publishedAt
+    | publishedAt < timeline.createdAt || publishedAt > timeline.updatedAt =
+        Left (createInvariantViolation "PrivateArticle" "publishedAt must be within the article timeline")
+    | otherwise = Right (PrivateArticle identifier content timeline publishedAt)
 
 instance HasField "identifier" PrivateArticle ArticleIdentifier where
     getField (PrivateArticle value _ _ _) = value

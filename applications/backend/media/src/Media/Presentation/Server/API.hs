@@ -25,6 +25,7 @@ import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Media.Presentation.API
+import Media.Presentation.Handler.API.FindAvailableImages
 import Media.Presentation.Handler.API.GetImageStatus
 import Media.Presentation.Handler.API.Metadata (
     MetadataDependencies (generateCorrelationIdentifier),
@@ -43,6 +44,7 @@ data APIServerDependencies = APIServerDependencies
     { requestImageUpload :: RequestImageUploadHandlerDependencies
     , retryImageUpload :: RetryImageUploadHandlerDependencies
     , getImageStatus :: GetImageStatusHandlerDependencies
+    , findAvailableImages :: FindAvailableImagesHandlerDependencies
     , retryImageInspection :: RetryImageInspectionHandlerDependencies
     }
 
@@ -84,6 +86,11 @@ mediaRoutes dependencies actor correlation =
                 (getImageStatusDependencies dependencies)
                 actor
                 correlation
+        , findAvailableImages =
+            findAvailableImagesHandler
+                (findAvailableImagesDependencies dependencies)
+                actor
+                correlation
         , retryImageInspection =
             retryImageInspectionHandler
                 (retryImageInspectionDependencies dependencies)
@@ -108,6 +115,11 @@ getImageStatusDependencies ::
     GetImageStatusHandlerDependencies
 getImageStatusDependencies dependencies =
     dependencies.getImageStatus
+
+findAvailableImagesDependencies ::
+    APIServerDependencies -> FindAvailableImagesHandlerDependencies
+findAvailableImagesDependencies dependencies =
+    dependencies.findAvailableImages
 
 retryImageInspectionDependencies ::
     APIServerDependencies ->

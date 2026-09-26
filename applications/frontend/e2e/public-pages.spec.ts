@@ -16,8 +16,8 @@ test.describe("public pages", () => {
     // Verify ARTICLE section is displayed
     await expect(page.getByRole("heading", { name: "ARTICLE" })).toBeVisible();
 
-    // Verify MEMO section is displayed
-    await expect(page.getByRole("heading", { name: "MEMO" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "MEMO" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "SERIES" })).toHaveCount(0);
   });
 
   test("about page renders", async ({ page }: TestArgs) => {
@@ -48,16 +48,10 @@ test.describe("public pages", () => {
     await expect(page.locator("main")).toBeVisible();
   });
 
-  test("memos list page renders", async ({ page }: TestArgs) => {
-    await page.goto("/memos", { waitUntil: "load" });
-
-    // Verify page content is displayed
-    await expect(page.locator("main")).toBeVisible();
-  });
-
-  test("series list page renders", async ({ page }: TestArgs) => {
-    await page.goto("/series", { waitUntil: "load" });
-
-    await expect(page.locator("main")).toBeVisible();
+  test("memo と series の公開ページは存在しない", async ({ page }: TestArgs) => {
+    const memoResponse = await page.goto("/memos", { waitUntil: "load" });
+    expect(memoResponse?.status()).toBe(404);
+    const seriesResponse = await page.goto("/series", { waitUntil: "load" });
+    expect(seriesResponse?.status()).toBe(404);
   });
 });

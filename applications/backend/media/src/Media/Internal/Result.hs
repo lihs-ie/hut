@@ -15,6 +15,7 @@ type data ImageUseCase
     = RequestImageUpload
     | RetryImageUpload
     | GetImageStatus
+    | FindAvailableImages
     | RetryImageInspection
     | InspectImage
 
@@ -22,6 +23,7 @@ type family ImageEventsFor (useCase :: ImageUseCase) :: [Type] where
     ImageEventsFor RequestImageUpload = '[]
     ImageEventsFor RetryImageUpload = '[]
     ImageEventsFor GetImageStatus = '[]
+    ImageEventsFor FindAvailableImages = '[]
     ImageEventsFor RetryImageInspection = '[]
     ImageEventsFor InspectImage = '[ImageBecameAvailable, ImageUploadRejected]
 

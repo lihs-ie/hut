@@ -5,6 +5,7 @@ module Media.Infrastructure.D1.ImageRepository (
     newUploadAttemptIdentifierResult,
     persistImageResult,
     findImageResult,
+    findAvailableImagesResult,
 ) where
 
 import Cloudflare.Workers.Binding.D1 (
@@ -178,6 +179,26 @@ findImageResult database imageIdentifier =
             )
             imageDecoder
         )
+
+findAvailableImagesResult ::
+    D1 ->
+    [ImageIdentifier] ->
+    IO (Either DomainError [ImageIdentifier])
+findAvailableImagesResult _ [] = pure (Right [])
+findAvailableImagesResult database identifiers =
+    databaseResult "find available images" $
+        d1Query
+            database
+            ( statement
+                ( "SELECT identifier FROM images WHERE state='available' "
+                    <> "AND identifier IN (SELECT value FROM json_each(?))"
+                )
+                [D1Text encoded]
+            )
+            (d1Column "identifier" imageIdentifierDecoder)
+  where
+    encoded = TextEncoding.decodeUtf8 $ LazyByteString.toStrict $ encode $
+        map imageIdentifierText identifiers
 
 persistNew :: D1 -> AwaitingUploadImage -> UTCTime -> TemporaryObjectKey -> IO ()
 persistNew database awaiting expiresAt key = do

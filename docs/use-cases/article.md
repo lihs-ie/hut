@@ -178,19 +178,42 @@ PrepareToPublishは初回生成の適用と手動修正を一つのユースケ�
 ## 6. 非同期Excerpt生成
 
 1. Proofreadは必須項目と管理対象画像の利用可能性を確認して校正済みとして保存する。
-2. ArticleProofreadedに生成対象のタイトル・本文を含める。
-3. ドメイン外のEnvelopeに、生成対象の記事リビジョンを付与する。
-4. コンシューマーがAIにExcerpt生成を依頼する。失敗時は再試行する。
-5. 生成完了イベントにExcerptと元の対象リビジョンを引き継ぐ。
-6. 現在も校正済みで対象リビジョンが一致する場合だけ、生成結果を適用する。
+2. ArticleProofreadedには記事識別子だけを含め、保存時の記事リビジョンをドメイン外のEnvelopeに付与する。
+3. 記事保存と生成依頼のOutbox追加を同一トランザクションで確定する。
+4. OutboxからQueueへ配送し、コンシューマーが識別子と期待リビジョンで対象を取得する。
+5. コンシューマーはCloudflare Workers AIのGemma 4でExcerptを生成する。
+6. 生成完了イベントにExcerptと元の対象リビジョンを含め、別QueueでArticle側へ配送する。
+7. 現在も校正済みで対象リビジョンが一致する場合だけ、生成結果を適用する。
 
 照合と保存はインフラ層で原子的に実行する。途中の編集や重複配送で上書きしない。
 古い生成結果は手動修正済みのExcerptにも適用しない。
 イベント形式のschemaVersionや生成完了イベントの到着順では新旧を判定しない。
+AIの生成依頼ごとに、インフラ専用の生成依頼識別子を付ける。
+同じ記事リビジョンへの依頼Aが失敗して依頼Bを開始した後にAの結果が届いても、
+Article DOは現在有効な依頼Bの識別子との不一致でAを破棄する。
+生成完了通知は`ExcerptGenerated`と呼ぶワーカー間の処理イベントであり、
+Articleのドメインイベントではない。
+
+AIの出力が空文やExcerptの制約に違反した場合は失敗として再試行する。
+再試行上限に達したメッセージはDLQへ送り、インフラの運用記録に残して通知する。
+DLQから無期限に自動再投入しない。原因を修正した後、管理者向けの内部操作で
+現在の校正済み記事に対する新しい生成依頼をOutboxへ記録する。
+これはQueueメッセージの手動配送ではなく、通常の編集・校正フローも変更しない。
+再生成依頼は新たな校正事実ではないためArticleProofreadedを再発行せず、
+Resultにも新たなドメインイベントを含めない。Outboxに生成用の処理依頼を記録する。
+管理者向けの内部操作は`RequestExcerptRegeneration`と呼ぶ。
+同じ記事・同じリビジョンで処理中の依頼があれば既存依頼を返し、AIを重複して実行しない。
+失敗が確定してDLQへ到達した後は、新しい生成依頼を許可する。
+
+生成完了イベントの別Queueから記事への適用が再試行上限に達した場合も、
+運用記録と通知を残し、自動再投入を停止する。生成済みExcerptを別途保管したり、
+DLQをpullして再適用したりしない。復旧には管理者向けの内部再生成操作を使い、
+現在の校正済み記事から新しい依頼を作る。AIの再実行を許容する。
+記事が変更済みなら古い生成結果を破棄する。
 
 ArticleVersionやProofreadingIdentifierはドメインに追加しない。
 ExcerptGenerationFailedというドメイン状態・イベントも追加しない。
-生成完了イベントの具体名とEnvelopeの具体的な型拡張は未確定。
+生成用Envelopeの具体的な型拡張と配送契約の詳細は実装時に確定する。
 
 ## 7. 画像とMedia連携
 
@@ -239,7 +262,7 @@ identifier、occurredAt、actor、correlation、causationはSharedのEnvelopeで
 
 | 読み取り | 条件 |
 | --- | --- |
-| 管理用一覧 | updatedAt降順。下書き・公開・非公開で絞り込み |
+| 管理用一覧 | updatedAt降順。下書き3段階・公開・非公開の各状態で絞り込み |
 | 管理用詳細 | 全状態を管理者のみ取得可能。プレビューにも使用 |
 | Slug使用状況 | 自分の記事を除いた使用状況を確認 |
 | 読者用一覧 | 公開記事のみ。publishedAt降順 |
@@ -247,7 +270,46 @@ identifier、occurredAt、actor、correlation、causationはSharedのEnvelopeで
 
 両一覧にページングを設け、同時刻の記事も安定するよう記事識別子を第2の並び順にする。
 管理用一覧では下書きの3段階を表示する。再公開で読者用一覧の先頭側へ移る。
-読み取りユースケースの名前、ページング方式・件数、第2ソートの方向は未確定。
+管理用一覧の状態フィルターは「すべて」またはUnvalidated・Proofreaded・ReadyToPublish・Published・Privateのいずれか1つとする。
+ページングはShared.Domain.Pagerを利用するページ番号方式とする。
+Commandで現在ページと1ページの件数を受け取り、Resultに記事一覧とPagerを含める。
+現在ページと1ページの件数は1以上、総件数は0以上とする。
+検索結果が0件でも1ページ目を要求でき、空の記事一覧を返す。
+Pagerは現在ページ0・件数0を拒否する。Intの範囲を超えるoffsetもDomainErrorで拒否する。
+最終ページを超えた要求はエラーや自動補正にせず、空の記事一覧を返す。
+その場合もPagerには要求された現在ページと実際の総件数を保持する。
+管理用・読者用ともに1ページの件数は既定10件、上限100件とする。
+指定可能な範囲は1〜100件で、範囲外は自動補正せずDomainErrorを返す。
+管理用は(updatedAt DESC, identifier DESC)、読者用は(publishedAt DESC, identifier DESC)で並べる。
+同じ日時の記事も記事識別子の降順で順序を確定する。
+読み取りユースケースは以下の名前とする。入力はCommand、出力は各ユースケース名にResultを付けた型とする。
+
+| ユースケース | 利用目的 |
+| --- | --- |
+| BrowseArticlesForAdmin | 管理対象の記事を一覧する |
+| ViewArticleForAdmin | 編集・プレビュー用に記事を確認する |
+| BrowseArticlesForReader | 公開記事を一覧する |
+| ReadArticle | Slugで公開記事を読む |
+| CheckSlugAvailability | 候補のSlugが使用可能か確認する |
+
+一覧用のSummary型は作らず、管理用一覧はArticle、読者用一覧はPublishedArticleを返す。
+どちらも本文を含む集約全体を返し、画面に必要な項目の選択・整形はBFFが担当する。
+MVPではArticleからBFFへの本文の取得・転送コストを許容する。
+公開範囲の制約はBFFに委譲せず、Article側で読者用の取得対象を公開済みに限定する。
+
+詳細取得は管理用と読者用の別ユースケースとし、いずれもCommandを入力とする。
+管理用はArticleIdentifierで検索し、全状態のArticleを取得する。編集・プレビューに利用する。
+読者用はSlugで検索し、PublishedArticleだけを取得する。
+読者用では下書き・非公開・存在しない記事を区別せず、見つからないものとして扱う。
+詳細の画面向け整形もBFFが担当する。
+
+Slug使用状況の確認は下書き作成後に行う。
+入力には候補のSlugと対象記事への参照article :: ArticleIdentifierを必須とし、Maybeにはしない。
+対象記事自身を除いた全状態の記事について、候補のSlugが使われているか確認する。
+確認結果はSlugの予約ではなく、保存時には別途一意性を保証する。
+対象記事が存在しない場合はAggregateNotFoundを返し、利用可能とは回答しない。
+Slugの正常な確認結果はAvailable | InUseのADTで表す。
+使用中はエラーではなく確認結果とし、不正なSlug・対象記事なし・取得失敗はDomainErrorで返す。
 
 ## 10. 削除とMVP対象外
 
@@ -306,7 +368,7 @@ AvailableImageReferencesはユースケースが取得した確認結果から�
 校正時にも対象Draftの参照集合と一致することを検証する。
 実際のMarkdown解析とMediaへの問い合わせは次段階で接続する。
 
-このPRはドメインとテストのみをArticleパッケージとして追加する。
+ドメイン整備のPRではドメインとテストのみをArticleパッケージとして追加する。
 ローカルの先行実装にあるPostや未完成のAPIは含めない。
 ユースケース・イベント・Outbox・API実装は未完了であり、
 これらを完成済みとして扱わない。
@@ -322,13 +384,163 @@ bash applications/backend/article/scripts/check-domain.sh
 カバレッジの対象は今回整備したDomain.Article配下とDomain.Articleであり、
 未整備のユースケース・Presentationを含むサービス全体の値ではない。
 
+### JotDown / AmendDraft の実装
+
+後続ブランチでJotDownCommand / JotDownResultとAmendDraftCommand / AmendDraftResultを実装した。
+ArticleEventsFor型族により、それぞれArticleDraftStarted、ArticleDraftAmendedだけを返せる。
+イベントpayloadは記事への参照と管理対象画像の全件集合を持つ。
+空集合も通知し、画像をすべて外す編集を表現する。
+
+JotDownは入力検証・画像参照抽出の成功後に識別子を生成し、
+新規下書きのPersistとOutbox追加を同じTransaction内で実行する。
+AmendDraftは記事を取得して状態を確認し、下書きの3段階のみを編集する。
+Published / Privateは拒否する。全置換後は常にUnvalidatedDraftとなる。
+
+永続化はDomain.Articleの関数型を注入する方式へ移行した。
+詳細は[TransactionManager設計](article-transaction-manager.md)を正とする。
+TransactionManagerと具体アダプターには以下を要求する。
+
+- Slugの一意性、記事の保存、Envelopeを付けたOutbox追加を原子的に実行する。
+- 新規保存では既存識別子へのupsertを禁止する。
+- 編集保存では取得時の識別子・リビジョンに対する条件付き保存を行う。
+- 失敗時に一部だけ保存しない。削除された記事を再作成しない。
+- 保存中にQueueへ配信しない。Resultのイベントを別途直接送信して二重配信しない。
+
+FindArticleはArticleだけを返し、PersistArticleはArticleを受け取る。
+インフラ実装は取得時のリビジョンを同一トランザクションの内部文脈に保持するため、
+ArticleやCommand payloadにArticleVersionを追加しない。
+Commandのtimestamp・actor・correlation・causationはCommand ()へ引き継ぎ、
+保存アダプターがOutboxのEnvelopeを構築する際に利用する。
+
+ユニットテストでは依存関数を差し替え、入力拒否時の保存抑止、
+全下書き状態からの編集、公開・非公開の拒否、画像参照全件、
+メタデータの引き継ぎ、保存失敗・Slug競合・同時更新エラーの伝播を検証する。
+検証スクリプトはドメインと実装済みユースケースそれぞれに式カバレッジ90%以上を要求する。
+永続化アダプターと内部Worker契約は実装した。管理用HTTP APIから校正・再生成を呼び、
+校正時のMedia画像確認と生成完了までの経路を接続した。
+Markdownパーサと記事作成・編集APIの結合は未完了である。
+
+### Proofread / PrepareToPublish の実装
+
+ProofreadはUnvalidatedDraftのみを受け付け、管理対象画像の利用可能性を確認して
+ProofreadedDraftへ遷移する。画像参照が空ならMedia問い合わせは行わない。
+ArticleProofreadedには記事識別子のみを含める。
+集約とイベントを保存してからProofreadResultを返す。Infrastructureは保存後の
+リビジョンを生成依頼のEnvelopeに記録し、コンシューマーはその版の記事を取得する。
+
+PrepareToPublishCommandのpayloadはApplyGeneratedExcerptとReviseExcerptに分ける。
+前者はProofreadedDraftに生成結果を適用し、ArticleReadyToPublishを1件返す。
+後者はReadyToPublishのExcerptのみを修正し、イベントは返さない。
+生成由来か手動修正かはユースケースの入力で区別し、ドメインの状態には追加しない。
+
+生成結果用の取得関数は、コンシューマーがEnvelopeの対象リビジョンに束縛する。
+取得時と保存時の両方でリビジョンを照合し、最新リビジョンへの読み替えは禁止する。
+校正時のOutboxには保存後の対象リビジョンを付ける必要がある。
+リビジョンはInfrastructureのトランザクション文脈とEnvelopeの関心事であり、
+ドメイン集約やCommandには持たせない。不一致はProcessingTargetChangedで区別する。
+
+分割ユニットテストで状態制約、入力検証、画像確認、イベントとメタデータ、
+保存失敗を検証する。メモリ上の条件付き保存アダプターでは、再校正後の古い結果、
+取得から保存までの編集、重複配送、手動修正後の遅延結果を拒否し、
+記事とOutboxが変更されないことを検証する。
+Docker上のfeatureテストは、管理用Servant API、Article DO、Mediaの画像状態応答を返す
+テストWorkerを接続し、校正と再生成要求を検証する。Mediaの本番Workerはこのテストに含めない。
+別のlive AIテストは、Wranglerのremote AI bindingでCloudflare Workers AIを実行し、
+生成Queue、完了Queue、Article DOを経てReadyToPublishになることを確認する。
+このテストはCloudflare認証と通信が必要で、推論料金が発生し得る。
+Docker内のremote AI bindingはCloudflareから`InferenceUpstreamError`を返したため、
+実AIテストはホストのWrangler harnessで実行する。DockerテストはMedia応答を
+テストWorkerで提供し、校正・再生成入口を検証する。
+
+管理用の入口は`POST /admin/articles/{articleIdentifier}/proofreading`と
+`POST /admin/articles/{articleIdentifier}/excerpt-generation-requests`である。
+両方とも`X-Hut-Actor`を必須とし、`X-Correlation-Identifier`は省略時に生成する。
+プレゼンテーション層が`DomainError`をHTTP応答へ変換する。
+公開経路は設けず、管理用BFFからService Bindingで呼ぶ前提とする。
+
+```sh
+cd applications/backend/article
+pnpm test:feature
+pnpm test:feature:live-ai
+```
+
+### Publish / TakeDown の実装
+
+PublishCommandは対象articleを受け取り、ReadyToPublishからのみ公開する。
+publishedAtとupdatedAtにはCommandのtimestampを設定し、createdAtとPublicationContentを保持する。
+非公開から公開準備を再開した記事も同じ経路で公開し、publishedAtを今回の公開日時に更新する。
+PrivateArticleからの直接公開や、公開済み記事への再度のPublishは拒否する。
+
+TakeDownCommandは対象articleを受け取り、PublishedArticleからのみ非公開化する。
+updatedAtを更新し、createdAt、直近のpublishedAt、本文・Excerpt・画像参照を含む
+PublicationContentは保持する。Mediaの参照解除は行わない。
+
+PublishResultはArticlePublished、TakeDownResultはArticleTakenDownをそれぞれ1件含む。
+両イベントのpayloadは記事への参照のみで、時刻やactorはEnvelopeで扱う。
+型族は返せるイベントの種類を制限し、件数はユニットテストで保証する。
+ユースケース内からQueueへの配信や公開ログ出力は行わない。
+
+FindArticle・PersistArticle・型付きOutbox追加を同じTransaction内で合成する。
+取得時の識別子とリビジョンはInfrastructure内部で追跡し、条件付き更新に使用する。
+保存が失敗した場合はDomainErrorを返し、成功Resultを返さない。
+分割ユニットテストで全状態の許可・拒否、時刻の逆行、再公開、取得失敗、
+識別子不一致、保存失敗、メタデータとイベントの引き継ぎを確認する。
+イベント取り違えのコンパイル失敗も検証する。実際のD1・Queue接続は未実装である。
+
+### ResumePublication / DiscardArticle の実装
+
+ResumePublicationはPrivateArticleのみを受け付け、保持していたPublicationContentから
+ReadyToPublishへ戻す。本文・Excerpt・Slug・画像参照・createdAtを保持し、updatedAtを更新する。
+公開は行わない。ResumePublicationResultのeventsはEvents '[]とし、イベントを含められない。
+PersistArticleは同じトランザクション内で追跡した取得時のリビジョンで更新し、競合を拒否する。
+
+DiscardArticleは全段階の下書きとPrivateArticleを受け付け、PublishedArticleは拒否する。
+DiscardArticleResultは削除した記事への参照とArticleDiscardedを1件含む。
+削除後の集約や論理削除状態は作らない。存在しない記事への要求はAggregateNotFoundを返す。
+
+TerminateArticleとOutbox追加を同じTransaction内で合成し、
+記事の物理削除・Slugの解放・Outbox追加を原子的に実行する契約である。
+読み取り後に公開された記事を削除しないよう、削除時にもリビジョンを照合する。
+Mediaへの参照解除や画像削除は直接行わず、ArticleDiscardedのコンシューマーが担当する。
+失敗時には削除結果を返さず、DomainErrorを伝播する。
+
+test/unit配下の専用ファイルで全状態、取得失敗、識別子不一致、保存・削除失敗、
+メタデータ、イベント数、再公開準備時の内容保持と日時を検証する。
+再公開準備へのイベント追加と、削除イベントの取り違えはコンパイル失敗テストで検証する。
+実際の物理削除・一意制約解放・Outboxの原子性は、本番DBアダプターとfeatureテストで検証する。
+
 ## 12. 実装前の残事項と検証条件
+
+### 読み取りユースケースの実装状況
+
+合意した5ユースケースを実装した。各入力はCommand、各Resultのeventsは型族でEvents '[]となる。
+管理用詳細は全状態を返し、読者用詳細は非公開状態と未存在を同じAggregateNotFoundにする。
+Slug使用状況は対象記事の存在と識別子を確認し、全状態を対象とする所有者照会の結果から
+自分の記事を除外してAvailable / InUseを返す。確認は予約ではなく、後続の保存時の一意性保証は必須。
+
+一覧の依存関数は状態条件・ページ番号・件数を含む検証済みCriteriaを受け取り、
+総件数と対象ページの集約を一緒に返す。検索関数型はDomain.Articleに定義する。
+取得アダプターは同じスナップショット・同じ絞り込み条件で集計と取得を行い、
+規定の日時・識別子の降順で並べた後にoffset / limitを適用する。
+ユースケースでは件数と総件数の整合性を検証し、管理用は取得結果の状態も確認する。
+読者用一覧の依存関数の返却型はPublishedArticleに限定する。
+画面用Summaryは作らず、本文を含む集約全体を返す。
+
+Pagerは読み取り専用のアクセサを公開し、レコード更新による検証回避を防ぐ。
+最終ページ計算は浮動小数点数を使わず、整数演算で行う。
+既定10件・上限100件はArticleの入力契約であり、共通Pager自体に100件上限は設けない。
+
+分割ユニットテストでページ境界・入力不正・全状態の絞り込み・非公開情報の非返却・
+Slugの自己除外・依存関数の失敗を検証する。5つの読み取りResultへのイベント追加は
+コンパイル失敗テストで検証する。読み取り系とPagerにも個別に式カバレッジ90%以上を要求する。
+認証済みの呼び出し境界、実DBでの並び順・スナップショット・一意性、HTTP契約は未接続であり、
+実アダプターとfeatureテストでの検証を残す。
 
 業務ルールを変更せず、以下を実装設計で具体化する。
 
 - 型・モジュール配置、確認済み画像情報の構築境界。
 - Markdownパーサと管理対象URLの識別方法。
-- 読み取り系の命名、ページング契約。
+- 読み取りアダプターでのスナップショットと安定した順序の実現。
 - リビジョン付きEnvelope、生成完了イベント、競合時の再試行・破棄の扱い。
 - Slugの一意制約とOutboxを含む原子的な永続化契約。
 - SharedのSlug/Excerpt変更が他コンテキストに与える影響。

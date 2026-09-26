@@ -1,6 +1,7 @@
 import { SearchIndex } from "@shared/components/templates/search";
 import { getAllTags, findAllTags, ofNames } from "@shared/actions/tag";
-import { searchByToken } from "@shared/actions/search-token";
+import { search as searchArticles } from "@shared/actions/article";
+import { UnvalidatedCriteria } from "@shared/domains/search-token";
 
 type SearchParams = {
   freeWord?: string;
@@ -18,12 +19,22 @@ const parseAsArray = (values: string): string[] => {
   return values.split(",").map((value) => value.trim());
 };
 
+const search = (criteria: UnvalidatedCriteria) =>
+  criteria.type && criteria.type !== "article"
+    ? Promise.resolve([])
+    : searchArticles({
+        freeWord: criteria.freeWord,
+        tags: criteria.tags,
+        sortBy: criteria.sortBy === "latest" ? "updatedAt" : "createdAt",
+        order: criteria.sortBy === "oldest" ? "asc" : "desc",
+      });
+
 export default async function SearchPage(props: Props) {
   const parameters = await props.searchParams;
 
   return (
     <SearchIndex
-      search={searchByToken}
+      search={search}
       getAllTags={getAllTags}
       findAllTags={findAllTags}
       ofNamesTags={ofNames}
