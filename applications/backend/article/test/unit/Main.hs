@@ -11,14 +11,18 @@ import Domain.Article.LifecycleSpec qualified as Lifecycle
 import Infrastructure.Article.Excerpt.WorkersAISpec qualified as WorkersAI
 import Infrastructure.Article.DurableObject.TransactionSpec qualified as DOTransaction
 import Infrastructure.Article.DurableObject.RepositorySpec qualified as DORepository
+import Infrastructure.Article.DurableObject.QuerySpec qualified as DOQuery
 import Infrastructure.Article.DurableObject.CodecSpec qualified as DOCodec
 import Infrastructure.Article.DurableObject.OutboxSpec qualified as DOOutbox
+import Infrastructure.Article.DurableObject.MediaOutboxSpec qualified as DOMediaOutbox
+import Infrastructure.Article.DurableObject.LogOutboxSpec qualified as DOLogOutbox
 import Infrastructure.Article.DurableObject.GenerationJobSpec qualified as DOGenerationJob
 import Infrastructure.Article.DurableObject.CompletionSpec qualified as DOCompletion
 import Infrastructure.Article.DurableObject.ReadyOutboxSpec qualified as DOReadyOutbox
 import Infrastructure.Article.DurableObject.ProofreadOutboxSpec qualified as DOProofreadOutbox
 import Infrastructure.Article.Queue.ExcerptGenerationSpec qualified as ExcerptGeneration
 import Infrastructure.Article.Media.ImageAvailabilitySpec qualified as ImageAvailability
+import Infrastructure.Article.Media.ImageReferencesSpec qualified as ImageReferences
 import Presentation.Handler.DO.ExcerptClaimSpec qualified as ExcerptClaim
 import Presentation.Handler.DO.ExcerptCompleteSpec qualified as ExcerptComplete
 import Presentation.Handler.Queue.ExcerptGenerationSpec qualified as GenerationHandler
@@ -57,14 +61,18 @@ main = do
     WorkersAI.run
     _ <- DOTransaction.run
     DORepository.run
+    DOQuery.run
     DOCodec.run
     DOOutbox.run
+    DOMediaOutbox.run
+    DOLogOutbox.run
     DOGenerationJob.run
     DOCompletion.run
     DOReadyOutbox.run
     DOProofreadOutbox.run
     ExcerptGeneration.run
     ImageAvailability.run
+    ImageReferences.run
     ExcerptClaim.run
     ExcerptComplete.run
     GenerationHandler.run

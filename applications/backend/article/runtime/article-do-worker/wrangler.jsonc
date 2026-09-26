@@ -10,6 +10,7 @@
   "env": {
     "dev": {
       "name": "hut-article-api-worker-dev",
+      "vars": { "MEDIA_ASSET_ORIGIN": "https://assets.hut.dev.lihs-dev.com" },
       "services": [
         { "binding": "MEDIA_API", "service": "hut-media-api-worker-dev" }
       ],
@@ -22,6 +23,10 @@
           {
             "binding": "ARTICLE_EXCERPT_GENERATION_QUEUE",
             "queue": "hut-article-excerpt-generation-dev"
+          },
+          {
+            "binding": "ARTICLE_MEDIA_PROJECTION_QUEUE",
+            "queue": "hut-media-reference-projection-dev"
           }
         ]
       }
@@ -40,6 +45,10 @@
           {
             "binding": "ARTICLE_EXCERPT_GENERATION_QUEUE",
             "queue": "hut-article-excerpt-generation-stg"
+          },
+          {
+            "binding": "ARTICLE_MEDIA_PROJECTION_QUEUE",
+            "queue": "hut-media-reference-projection-stg"
           }
         ]
       }
@@ -58,6 +67,10 @@
           {
             "binding": "ARTICLE_EXCERPT_GENERATION_QUEUE",
             "queue": "hut-article-excerpt-generation-prd"
+          },
+          {
+            "binding": "ARTICLE_MEDIA_PROJECTION_QUEUE",
+            "queue": "hut-media-reference-projection-prd"
           }
         ]
       }

@@ -26,9 +26,17 @@ import Shared.Infrastructure.Transaction (
     transactionAction,
  )
 import Shared.Infrastructure.Versioning (newVersion)
-import Shared.UseCase.Command (newActor, newCorrelationIdentifier)
+import Shared.UseCase.Command (
+    Command (..),
+    actorText,
+    causationText,
+    correlationIdentifierText,
+    newActor,
+    newCorrelationIdentifier,
+ )
 import Shared.UseCase.Event (newEventEnvelope, newEventIdentifier)
-import TestSupport (check, confirmed, identifier, right, start, timestamp)
+import TestSupport (check, confirmed, identifier, right, start)
+import TestSupport qualified as Support
 import UseCase.PrepareToPublish qualified as Prepare
 
 requestText :: Text.Text
@@ -50,7 +58,7 @@ message = do
     actor <- right (newActor "system")
     correlation <- right (newCorrelationIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAX")
     pure $ ExcerptGeneratedMessage $
-        newEventEnvelope event (timestamp 2) actor correlation Nothing
+        newEventEnvelope event (Support.timestamp 2) actor correlation Nothing
             (ExcerptGenerated request article revision excerpt)
 
 driver :: TransactionDriver () IO
@@ -63,13 +71,14 @@ run = do
     appliesWithoutNestedTransaction
     acknowledgesObsoleteWithoutWriting
     rollsBackFailedTransition
+    reportsUnknownTransactionOutcome
 
 appliesWithoutNestedTransaction :: IO ()
 appliesWithoutNestedTransaction = do
     generated <- message
     original <- right start
     images <- right confirmed
-    draft <- right (proofread (timestamp 1) images original)
+    draft <- right (proofread (Support.timestamp 1) images original)
     saved <- newIORef Nothing
     eventCount <- newIORef (0 :: Int)
     sqlCalls <- newIORef (0 :: Int)
@@ -86,7 +95,13 @@ appliesWithoutNestedTransaction = do
             , Prepare.persistArticle = \article -> transactionAction $ \_ -> do
                 writeIORef saved (Just article)
                 pure (Right ())
-            , Prepare.appendEvents = \_ _ -> transactionAction $ \_ -> do
+            , Prepare.appendEvents = \command _ -> transactionAction $ \_ -> do
+                check "completion forwards event context"
+                    (actorText command.actor == "system"
+                        && correlationIdentifierText command.correlation
+                            == "01ARZ3NDEKTSV4RRFFQ69G5FAX"
+                        && fmap causationText command.causation
+                            == Just "completion-event")
                 writeIORef eventCount 1
                 pure (Right ())
             }
@@ -144,3 +159,22 @@ rollsBackFailedTransition = do
         Left (_ :: DomainError) -> True
         Right _ -> False
     check "failed transition never marks the job completed" . (== 1) =<< readIORef sqlCalls
+
+reportsUnknownTransactionOutcome :: IO ()
+reportsUnknownTransactionOutcome = do
+    generated <- message
+    let unknownDriver = TransactionDriver $ \_ -> pure (OutcomeUnknown "commit uncertain")
+        dependencies = Prepare.Dependencies
+            { Prepare.transactionManager = newTransactionManager unknownDriver
+            , Prepare.findArticle = \_ -> transactionAction $ \_ ->
+                fail "unknown transaction must not run the use case"
+            , Prepare.persistArticle = \_ -> transactionAction $ \_ ->
+                fail "unknown transaction must not persist"
+            , Prepare.appendEvents = \_ _ -> transactionAction $ \_ ->
+                fail "unknown transaction must not append"
+            }
+    outcome <- applyGeneratedExcerptWith unknownDriver
+        (\_ _ -> fail "unknown transaction must not query") dependencies generated
+    check "unknown transaction maps to domain error" (case outcome of
+        Left err -> "TransactionOutcomeUnknown" `Text.isInfixOf` Text.pack (show err)
+        _ -> False)

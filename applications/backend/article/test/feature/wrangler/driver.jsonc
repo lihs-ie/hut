@@ -17,6 +17,10 @@
     {
       "binding": "ARTICLE_API",
       "service": "hut-article-api-worker-feature"
+    },
+    {
+      "binding": "MEDIA_PROJECTION_SINK",
+      "service": "hut-article-projection-sink-feature"
     }
   ]
 }

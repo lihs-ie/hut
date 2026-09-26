@@ -4,6 +4,7 @@
   "main": "../../../runtime/article-do-worker/src/index.ts",
   "compatibility_date": "2026-09-13",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": { "MEDIA_ASSET_ORIGIN": "https://assets.hut.dev.lihs-dev.com" },
   "durable_objects": {
     "bindings": [
       { "name": "ARTICLE_DO", "class_name": "ArticleDurableObject" }
@@ -17,6 +18,10 @@
       {
         "binding": "ARTICLE_EXCERPT_GENERATION_QUEUE",
         "queue": "hut-article-excerpt-generation-feature"
+      },
+      {
+        "binding": "ARTICLE_MEDIA_PROJECTION_QUEUE",
+        "queue": "hut-media-reference-projection-feature"
       }
     ]
   },

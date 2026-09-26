@@ -29,8 +29,9 @@ import Control.Exception (try)
 import Data.IORef (IORef, readIORef, writeIORef)
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Time (UTCTime, defaultTimeLocale, diffTimeToPicoseconds, formatTime, utctDay, utctDayTime)
 import "article" Domain.Article (Article (..), ArticleIdentifier, articleIdentifier, articleIdentifierText)
-import "article" Domain.Article.Draft (draftContent, proofreadedContent, publicationContent)
+import "article" Domain.Article.Draft (draftContent, draftTimeline, proofreadedContent, publicationContent)
 import Shared.Domain.Common.Primitive (newPositiveInteger)
 import Shared.Domain.Error (
     DomainError,
@@ -73,16 +74,16 @@ data OutboxRecord = OutboxRecord
     }
 
 sqlLimits :: SQLLimits
-sqlLimits = SQLLimits{maximumRows = 2, maximumBytes = 16777216, maximumStatements = 1}
+sqlLimits = SQLLimits{maximumRows = 3, maximumBytes = 16777216, maximumStatements = 1}
 
 storageSQL :: DurableObjectStorage -> ExecuteSQL
 storageSQL storage = sqlExec storage sqlLimits
 
-initializeSchema :: DurableObjectStorage -> IO (Either DomainError ())
-initializeSchema = initializeSchemaWith . storageSQL
+initializeSchema :: DurableObjectStorage -> ArticleCodec -> IO (Either DomainError ())
+initializeSchema storage = initializeSchemaWith (storageSQL storage)
 
-initializeSchemaWith :: ExecuteSQL -> IO (Either DomainError ())
-initializeSchemaWith execute = do
+initializeSchemaWith :: ExecuteSQL -> ArticleCodec -> IO (Either DomainError ())
+initializeSchemaWith execute codec = do
     created <- executeSQL execute articleSchema []
     case created of
         Left err -> pure (Left err)
@@ -91,13 +92,18 @@ initializeSchemaWith execute = do
             case outbox of
                 Left err -> pure (Left err)
                 Right _ -> do
-                    indexed <- executeSQL execute outboxIndex []
-                    pure (() <$ indexed)
+                    migrated <- migrateArticleSchema execute codec
+                    case migrated of
+                        Left err -> pure (Left err)
+                        Right () -> createIndexes [adminIndex, filteredAdminIndex, readerIndex, outboxIndex]
   where
     articleSchema =
         "CREATE TABLE IF NOT EXISTS article_aggregates ("
             <> "identifier TEXT PRIMARY KEY, "
             <> "slug TEXT UNIQUE, "
+            <> "phase TEXT NOT NULL, "
+            <> "updated_order TEXT NOT NULL, "
+            <> "published_order TEXT, "
             <> "payload TEXT NOT NULL, "
             <> "revision INTEGER NOT NULL CHECK (revision > 0 AND revision <= 9007199254740991))"
     outboxSchema =
@@ -113,6 +119,90 @@ initializeSchemaWith execute = do
     outboxIndex =
         "CREATE INDEX IF NOT EXISTS article_outbox_pending "
             <> "ON article_outbox (status, identifier)"
+    adminIndex =
+        "CREATE INDEX IF NOT EXISTS article_admin_order "
+            <> "ON article_aggregates (updated_order DESC, identifier DESC)"
+    filteredAdminIndex =
+        "CREATE INDEX IF NOT EXISTS article_admin_phase_order "
+            <> "ON article_aggregates (phase, updated_order DESC, identifier DESC)"
+    readerIndex =
+        "CREATE INDEX IF NOT EXISTS article_reader_order "
+            <> "ON article_aggregates (phase, published_order DESC, identifier DESC)"
+    createIndexes [] = pure (Right ())
+    createIndexes (statement : rest) = do
+        result <- executeSQL execute statement []
+        case result of
+            Left err -> pure (Left err)
+            Right _ -> createIndexes rest
+
+migrateArticleSchema :: ExecuteSQL -> ArticleCodec -> IO (Either DomainError ())
+migrateArticleSchema execute codec = do
+    columns <- executeSQL execute
+        ( "SELECT name FROM pragma_table_info('article_aggregates') "
+            <> "WHERE name IN ('phase', 'updated_order', 'published_order')"
+        )
+        []
+    case columns >>= readIndexColumns of
+        Left err -> pure (Left err)
+        Right present -> do
+            added <- addMissing (filter (\(name, _) -> name `notElem` present) missing)
+            case added of
+                Left err -> pure (Left err)
+                Right () -> backfill
+  where
+    missing =
+        [ ("phase", "ALTER TABLE article_aggregates ADD COLUMN phase TEXT NOT NULL DEFAULT ''")
+        , ("updated_order", "ALTER TABLE article_aggregates ADD COLUMN updated_order TEXT NOT NULL DEFAULT ''")
+        , ("published_order", "ALTER TABLE article_aggregates ADD COLUMN published_order TEXT")
+        ]
+    addMissing remaining = case remaining of
+        [] -> pure (Right ())
+        ((_, statement) : rest) -> do
+            added <- executeSQL execute statement []
+            case added of
+                Left err -> pure (Left err)
+                Right _ -> addMissing rest
+    backfill = do
+        found <- executeSQL execute
+            ( "SELECT identifier, slug, payload FROM article_aggregates "
+                <> "WHERE phase = '' OR updated_order = '' LIMIT 1"
+            )
+            []
+        case found >>= readLegacyArticle codec of
+            Left err -> pure (Left err)
+            Right Nothing -> pure (Right ())
+            Right (Just (identifier, slug, payload, article)) -> do
+                updated <- executeSQL execute
+                    ( "UPDATE article_aggregates SET phase = ?, updated_order = ?, "
+                        <> "published_order = ? WHERE identifier = ? AND slug IS ? "
+                        <> "AND payload = ? RETURNING identifier"
+                    )
+                    (articleIndexParameters article <> [identifier, slug, payload])
+                case updated >>= changedExactlyOnce identifier of
+                    Left err -> pure (Left err)
+                    Right False -> pure (Left staleArticle)
+                    Right True -> backfill
+
+readIndexColumns :: SQLResult -> Either DomainError [Text]
+readIndexColumns result = traverse readColumn result.rows
+  where
+    readColumn [SQLText name]
+        | name `elem` ["phase", "updated_order", "published_order"] = Right name
+    readColumn _ = Left (corruptStorage "article index schema has an invalid row")
+
+readLegacyArticle :: ArticleCodec -> SQLResult -> Either DomainError (Maybe (SQLValue, SQLValue, SQLValue, Article))
+readLegacyArticle codec result = case result.rows of
+    [] -> Right Nothing
+    [[identifier@(SQLText rawIdentifier), slug, payload@(SQLText encoded)]] -> do
+        article <- either
+            (const (Left (corruptStorage "legacy article payload fails domain validation")))
+            Right
+            (codec.decodeArticle encoded)
+        if articleIdentifierText (articleIdentifier article) /= rawIdentifier
+            || slug /= maybe SQLNull (SQLText . slugText) (articleSlug article)
+            then Left (corruptStorage "legacy article indexes differ from the payload")
+            else Right (Just (identifier, slug, payload, article))
+    _ -> Left (corruptStorage "legacy article query returned an invalid row")
 
 findArticle ::
     DurableObjectStorage ->
@@ -166,10 +256,10 @@ persistArticleWith execute versions codec article = do
             encoded <- codec.encodeArticle article
             let slug = maybe SQLNull (SQLText . slugText) (articleSlug article)
             case mode of
-                Insert -> Right (mode, insertStatement identifier slug encoded, initialVersion)
+                Insert -> Right (mode, insertStatement identifier slug encoded article, initialVersion)
                 Update previous -> do
                     next <- checkedNextVersion previous
-                    Right (mode, updateStatement identifier slug encoded previous next, next)
+                    Right (mode, updateStatement identifier slug encoded article previous next, next)
     case prepared of
         Left err -> pure (Left err)
         Right (mode, statement, next) -> do
@@ -291,31 +381,57 @@ versionNumber = SQLNumber . fromInteger . versionInteger
 maxSafeInteger :: Integer
 maxSafeInteger = 9007199254740991
 
-insertStatement :: ArticleIdentifier -> SQLValue -> Text -> SQLStatement
-insertStatement identifier slug encoded =
+insertStatement :: ArticleIdentifier -> SQLValue -> Text -> Article -> SQLStatement
+insertStatement identifier slug encoded article =
     SQLStatement
         { sql =
-            "INSERT INTO article_aggregates (identifier, slug, payload, revision) "
-                <> "VALUES (?, ?, ?, 1) "
+            "INSERT INTO article_aggregates "
+                <> "(identifier, slug, phase, updated_order, published_order, payload, revision) "
+                <> "VALUES (?, ?, ?, ?, ?, ?, 1) "
                 <> "ON CONFLICT DO NOTHING RETURNING revision"
-        , parameters = [SQLText (articleIdentifierText identifier), slug, SQLText encoded]
+        , parameters =
+            [SQLText (articleIdentifierText identifier), slug]
+                <> articleIndexParameters article
+                <> [SQLText encoded]
         }
 
-updateStatement :: ArticleIdentifier -> SQLValue -> Text -> Version -> Version -> SQLStatement
-updateStatement identifier slug encoded previous next =
+updateStatement :: ArticleIdentifier -> SQLValue -> Text -> Article -> Version -> Version -> SQLStatement
+updateStatement identifier slug encoded article previous next =
     SQLStatement
         { sql =
             "UPDATE OR IGNORE article_aggregates "
-                <> "SET slug = ?, payload = ?, revision = ? "
+                <> "SET slug = ?, phase = ?, updated_order = ?, published_order = ?, "
+                <> "payload = ?, revision = ? "
                 <> "WHERE identifier = ? AND revision = ? RETURNING revision"
         , parameters =
-            [ slug
-            , SQLText encoded
+            [slug]
+                <> articleIndexParameters article
+                <> [ SQLText encoded
             , versionNumber next
             , SQLText (articleIdentifierText identifier)
             , versionNumber previous
-            ]
+                ]
         }
+
+articleIndexParameters :: Article -> [SQLValue]
+articleIndexParameters article =
+    [ SQLText phase
+    , SQLText (timeOrder updatedAt)
+    , maybe SQLNull (SQLText . timeOrder) publishedAt
+    ]
+  where
+    (phase, updatedAt, publishedAt) = case article of
+        Unvalidated draft -> ("unvalidated", (draftTimeline draft).updatedAt, Nothing)
+        Proofreaded draft -> ("proofreaded", (draftTimeline draft).updatedAt, Nothing)
+        Ready draft -> ("ready", (draftTimeline draft).updatedAt, Nothing)
+        Published value -> ("published", value.timeline.updatedAt, Just value.publishedAt)
+        Private value -> ("private", value.timeline.updatedAt, Just value.publishedAt)
+
+timeOrder :: UTCTime -> Text
+timeOrder value =
+    Text.pack (formatTime defaultTimeLocale "%Y%m%d" (utctDay value))
+        <> Text.justifyRight 17 '0'
+            (Text.pack (show (diffTimeToPicoseconds (utctDayTime value))))
 
 changedExactlyOnce :: SQLValue -> SQLResult -> Either DomainError Bool
 changedExactlyOnce expected result = case result.rows of

@@ -23,7 +23,11 @@ const reactor = await createReactor(
     fetch: bindExport<
       [
         request: Request,
-        env: { STORAGE: DurableObjectStorage; MEDIA_API: Fetcher },
+        env: {
+          STORAGE: DurableObjectStorage;
+          MEDIA_API: Fetcher;
+          MEDIA_ASSET_ORIGIN?: string;
+        },
         context: DurableObjectState,
       ],
       Response
@@ -37,7 +41,11 @@ const reactor = await createReactor(
       Response
     >(exports, "apiFetch", decodeResponse),
     alarm: bindExport<
-      [storage: DurableObjectStorage, queue: Queue<unknown>],
+      [
+        storage: DurableObjectStorage,
+        generationQueue: Queue<unknown>,
+        mediaQueue: Queue<unknown>,
+      ],
       void
     >(exports, "alarm", decodeVoid),
   }),
@@ -45,7 +53,9 @@ const reactor = await createReactor(
 
 interface ArticleDOEnv {
   ARTICLE_EXCERPT_GENERATION_QUEUE: Queue<unknown>;
+  ARTICLE_MEDIA_PROJECTION_QUEUE: Queue<unknown>;
   MEDIA_API: Fetcher;
+  MEDIA_ASSET_ORIGIN?: string;
 }
 
 interface ArticleWorkerEnv extends ArticleDOEnv {
@@ -60,7 +70,11 @@ export class ArticleDurableObject extends DurableObject<ArticleDOEnv> {
       () =>
         reactor.fetch(
           request,
-          { STORAGE: this.ctx.storage, MEDIA_API: this.env.MEDIA_API },
+          {
+            STORAGE: this.ctx.storage,
+            MEDIA_API: this.env.MEDIA_API,
+            MEDIA_ASSET_ORIGIN: this.env.MEDIA_ASSET_ORIGIN,
+          },
           this.ctx,
         ),
       true,
@@ -74,6 +88,7 @@ export class ArticleDurableObject extends DurableObject<ArticleDOEnv> {
         reactor.alarm(
           this.ctx.storage,
           this.env.ARTICLE_EXCERPT_GENERATION_QUEUE,
+          this.env.ARTICLE_MEDIA_PROJECTION_QUEUE,
         ),
       true,
     );

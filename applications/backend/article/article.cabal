@@ -71,22 +71,31 @@ library worker-adapters
     Article.Worker.Completion.Contract
     Article.Worker.Completion.Composition
     Presentation.API
+    Presentation.API.ArticleView
     Presentation.Handler.API.Error
     Presentation.Handler.API.Metadata
+    Presentation.Handler.API.Reading
+    Presentation.Handler.API.DraftWriting
+    Presentation.Handler.API.Publication
     Presentation.Handler.API.Proofread
     Presentation.Handler.API.RequestExcerptRegeneration
     Presentation.Server.API
     Infrastructure.Article.Excerpt.WorkersAI
     Infrastructure.Article.DurableObject.Transaction
     Infrastructure.Article.DurableObject.Repository
+    Infrastructure.Article.DurableObject.Query
     Infrastructure.Article.DurableObject.Codec
     Infrastructure.Article.DurableObject.Outbox
     Infrastructure.Article.DurableObject.GenerationJob
     Infrastructure.Article.DurableObject.Completion
     Infrastructure.Article.DurableObject.ReadyOutbox
     Infrastructure.Article.DurableObject.ProofreadOutbox
+    Infrastructure.Article.DurableObject.DomainOutbox
+        Infrastructure.Article.DurableObject.MediaOutbox
+        Infrastructure.Article.DurableObject.LogOutbox
     Infrastructure.Article.Queue.ExcerptGeneration
     Infrastructure.Article.Media.ImageAvailability
+    Infrastructure.Article.Media.ImageReferences
     Presentation.Handler.DO.ExcerptClaim
     Presentation.Handler.DO.ExcerptComplete
     Presentation.Handler.Queue.ExcerptGeneration
@@ -185,14 +194,18 @@ test-suite article-unit-test
     Infrastructure.Article.Excerpt.WorkersAISpec
     Infrastructure.Article.DurableObject.TransactionSpec
     Infrastructure.Article.DurableObject.RepositorySpec
+    Infrastructure.Article.DurableObject.QuerySpec
     Infrastructure.Article.DurableObject.CodecSpec
     Infrastructure.Article.DurableObject.OutboxSpec
+    Infrastructure.Article.DurableObject.MediaOutboxSpec
+    Infrastructure.Article.DurableObject.LogOutboxSpec
     Infrastructure.Article.DurableObject.GenerationJobSpec
     Infrastructure.Article.DurableObject.CompletionSpec
     Infrastructure.Article.DurableObject.ReadyOutboxSpec
     Infrastructure.Article.DurableObject.ProofreadOutboxSpec
     Infrastructure.Article.Queue.ExcerptGenerationSpec
     Infrastructure.Article.Media.ImageAvailabilitySpec
+    Infrastructure.Article.Media.ImageReferencesSpec
     Presentation.Server.APISpec
     Presentation.Handler.DO.ExcerptClaimSpec
     Presentation.Handler.DO.ExcerptCompleteSpec

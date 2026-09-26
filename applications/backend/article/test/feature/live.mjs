@@ -24,6 +24,7 @@ async function main() {
       "driver.jsonc",
       "do.jsonc",
       "media.jsonc",
+      "projection-sink.jsonc",
       "excerpt-live.jsonc",
       "completion.jsonc",
     ].map((name) => ({ configPath: path.join(root, "test/feature/wrangler", name) })),
@@ -40,7 +41,9 @@ async function main() {
 
     await fetch(doRoute("/internal/excerpt-generation/claim"));
     await storage.exec(
-      "INSERT INTO article_aggregates (identifier, slug, payload, revision) VALUES (?, ?, ?, 1)",
+      "INSERT INTO article_aggregates " +
+        "(identifier, slug, phase, updated_order, published_order, payload, revision) " +
+        "VALUES (?, ?, 'unvalidated', '20260101000000000000000000', NULL, ?, 1)",
       articleIdentifier,
       slug,
       JSON.stringify({
@@ -53,7 +56,7 @@ async function main() {
           "A Haskell function applies to its argument using a space.",
           "For example, square 3 applies square to 3.",
           "",
-          `![Syntax diagram](https://media.test/images/${imageIdentifier})`,
+          `![Syntax diagram](https://assets.hut.dev.lihs-dev.com/images/${imageIdentifier})`,
         ].join("\n"),
         slug,
         excerpt: null,

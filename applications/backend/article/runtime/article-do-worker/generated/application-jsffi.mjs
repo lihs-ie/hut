@@ -143,6 +143,8 @@ ZC0ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziBindingziDurableO
     return {ok:false,message};
   }
 })()),
+ZC0ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBindingEnvZC: ($1) => ($1 === undefined || $1 === null),
+ZC1ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBindingEnvZC: ($1) => (typeof $1 === 'string'),
 ZC0ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBytesZC: ($1,$2,$3) => (new Uint8Array(__exports.memory.buffer, $2, $3).set($1.bytes)),
 ZC1ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBytesZC: ($1) => ($1.length),
 ZC2ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBytesZC: ($1) => ((() => {

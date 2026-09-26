@@ -82,6 +82,8 @@ lastStatement = firstStatement . reverse
 run :: IO ()
 run = do
     createsSchema
+    migratesLegacySchema
+    rejectsBrokenLegacySchema
     observesMissingArticle
     insertsAndTracksVersion
     findsAndUpdates
@@ -176,8 +178,10 @@ fixtureCodec =
 
 createsSchema :: IO ()
 createsSchema = do
-    (execute, statements) <- newScript (replicate 3 emptyResult)
-    result <- initializeSchemaWith execute
+    (execute, statements) <- newScript
+        ([emptyResult, emptyResult, SQLResult [] [[SQLText "phase"], [SQLText "updated_order"], [SQLText "published_order"]] 0 3, emptyResult]
+            <> replicate 4 emptyResult)
+    result <- initializeSchemaWith execute fixtureCodec
     check "schema initializes" (result == Right ())
     issued <- statements
     articleStatement <- firstStatement issued
@@ -189,13 +193,68 @@ createsSchema = do
     check
         "outbox table created"
         ("CREATE TABLE IF NOT EXISTS article_outbox" `Text.isInfixOf` outboxStatement.sql)
-    check "outbox pending index created" (length issued == 3)
+    check "article and outbox indexes created" (length issued == 8)
     indexStatement <- lastStatement issued
     check "outbox pending index targets status and identifier"
         (indexStatement.sql == "CREATE INDEX IF NOT EXISTS article_outbox_pending "
             <> "ON article_outbox (status, identifier)")
     check "schema statements have no parameters"
         (all (\statement -> null statement.parameters) issued)
+    check "article phase and sort keys are stored"
+        (all (`Text.isInfixOf` articleStatement.sql)
+            ["phase TEXT NOT NULL", "updated_order TEXT NOT NULL", "published_order TEXT"])
+
+migratesLegacySchema :: IO ()
+migratesLegacySchema = do
+    article <- start
+    let identifier = articleIdentifierText (articleIdentifier article)
+        row = oneRow [SQLText identifier, SQLText "haskell-syntax", SQLText identifier]
+        existingColumns = oneRow [SQLText "phase"]
+    (execute, statements) <- newScript
+        ( [emptyResult, emptyResult, existingColumns, emptyResult, emptyResult, row]
+            <> [oneRow [SQLText identifier], emptyResult]
+            <> replicate 4 emptyResult
+        )
+    result <- initializeSchemaWith execute fixtureCodec
+    check "legacy schema migrates" (result == Right ())
+    issued <- statements
+    check "only missing columns are added"
+        (length (filter (Text.isPrefixOf "ALTER TABLE" . (.sql)) issued) == 2)
+    check "legacy aggregate is backfilled"
+        (any (Text.isInfixOf "UPDATE article_aggregates SET phase" . (.sql)) issued)
+    check "indexes are created after backfill"
+        (Text.isPrefixOf "CREATE INDEX" (last issued).sql)
+
+rejectsBrokenLegacySchema :: IO ()
+rejectsBrokenLegacySchema = do
+    article <- start
+    let identifier = articleIdentifierText (articleIdentifier article)
+        columns = SQLResult []
+            [[SQLText "phase"], [SQLText "updated_order"], [SQLText "published_order"]]
+            0 3
+        schemaPrefix = [emptyResult, emptyResult, columns]
+        validRow = oneRow
+            [SQLText identifier, SQLText "haskell-syntax", SQLText identifier]
+        runMigration rows = do
+            (execute, _) <- newScript (schemaPrefix <> rows)
+            initializeSchemaWith execute fixtureCodec
+    malformedColumns <- runMigration [oneRow [SQLNumber 1]]
+    check "malformed legacy row is rejected" (isUnexpected malformedColumns)
+    malformedPayload <- runMigration
+        [oneRow [SQLText identifier, SQLText "haskell-syntax", SQLText "invalid"]]
+    check "invalid legacy payload is rejected" (isUnexpected malformedPayload)
+    wrongSlug <- runMigration
+        [oneRow [SQLText identifier, SQLText "other-slug", SQLText identifier]]
+    check "legacy slug mismatch is rejected" (isUnexpected wrongSlug)
+    stale <- runMigration [validRow, emptyResult]
+    checkError "legacy backfill conflict is reported" staleArticleError stale
+    (execute, _) <- newScript
+        [emptyResult, emptyResult, oneRow [SQLNumber 1]]
+    invalidColumns <- initializeSchemaWith execute fixtureCodec
+    check "malformed schema metadata is rejected" (isUnexpected invalidColumns)
+  where
+    staleArticleError = createProcessingTargetChanged
+        "Article" "the observed article changed"
 
 observesMissingArticle :: IO ()
 observesMissingArticle = do
@@ -228,6 +287,9 @@ insertsAndTracksVersion = do
         (statement.parameters ==
             [ SQLText (articleIdentifierText (articleIdentifier article))
             , SQLText "haskell-syntax"
+            , SQLText "unvalidated"
+            , SQLText "2026010100000000000000000"
+            , SQLNull
             , SQLText (articleIdentifierText (articleIdentifier article))
             ])
 
@@ -258,12 +320,16 @@ findsAndUpdates = do
     statement <- lastStatement issued
     check "update is conditional on the observed revision"
         (statement.sql == "UPDATE OR IGNORE article_aggregates "
-            <> "SET slug = ?, payload = ?, revision = ? "
+            <> "SET slug = ?, phase = ?, updated_order = ?, published_order = ?, "
+            <> "payload = ?, revision = ? "
             <> "WHERE identifier = ? AND revision = ? RETURNING revision")
     check
         "update compares original revision"
         ( statement.parameters
             == [ SQLText "haskell-syntax"
+               , SQLText "unvalidated"
+               , SQLText "2026010100000000000000000"
+               , SQLNull
                , SQLText (articleIdentifierText identifier)
                , SQLNumber 2
                , SQLText (articleIdentifierText identifier)
@@ -500,13 +566,13 @@ rejectsRevisionOverflow = do
 rejectsSchemaFailure :: IO ()
 rejectsSchemaFailure = do
     let unavailable _ = throwIO (SQLError "storage unavailable")
-    first <- initializeSchemaWith unavailable
+    first <- initializeSchemaWith unavailable fixtureCodec
     check "first schema failure is reported" (isServiceUnavailable first)
     count <- newIORef (0 :: Int)
     let second _ = do
             step <- atomicModifyIORef' count $ \value -> (value + 1, value)
             if step == 0 then pure emptyResult else throwIO (SQLError "index unavailable")
-    later <- initializeSchemaWith second
+    later <- initializeSchemaWith second fixtureCodec
     check "later schema failure is reported" (isServiceUnavailable later)
     check "failed schema creation stops before the index" =<< (== 2) <$> readIORef count
     article <- start
@@ -591,7 +657,7 @@ rejectsSQLFailures = do
         unavailable = createServiceUnavailable
             "ArticleStorage" (Text.pack (show (SQLError "storage unavailable")))
     (schemaSQL, schemaStatements) <- newFailingScript 3 (replicate 2 emptyResult)
-    schema <- initializeSchemaWith schemaSQL
+    schema <- initializeSchemaWith schemaSQL fixtureCodec
     checkError "index SQL failure is returned" unavailable schema
     check "schema stops at failed index" . (== 2) . length =<< schemaStatements
     versions <- newVersions

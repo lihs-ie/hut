@@ -4,7 +4,10 @@ import Data.Aeson (Value (..), decodeStrict')
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Text.Encoding (encodeUtf8)
 import Domain.Article.Event (ArticleReadyToPublish)
-import Infrastructure.Article.DurableObject.ReadyOutbox (appendReadyEventsWith)
+import Infrastructure.Article.DurableObject.ReadyOutbox (
+    appendReadyEventsWith,
+    appendReadyEventsWithSchedule,
+ )
 import Infrastructure.Article.DurableObject.Repository (OutboxRecord (..))
 import Shared.Domain.Error (createServiceUnavailable)
 import Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
@@ -18,6 +21,7 @@ run = do
     storesEnvelope
     emptyEventsDoNotGenerate
     propagatesFailures
+    schedulesOnlyAfterAppend
 
 storesEnvelope :: IO ()
 storesEnvelope = do
@@ -81,3 +85,31 @@ propagatesFailures = do
             command
             events
     check "outbox failure aborts" (appendFailure == Left unavailable)
+
+schedulesOnlyAfterAppend :: IO ()
+schedulesOnlyAfterAppend = do
+    article <- right identifier
+    actor <- right (newActor "system")
+    correlation <- right (newCorrelationIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAX")
+    event <- right (newEventIdentifier "event-1")
+    sequenceLog <- newIORef []
+    let command = Command () (timestamp 3) actor correlation Nothing
+        events = Events [Here (DomainEvent article)] :: Events '[ArticleReadyToPublish]
+        append _ _ = writeIORef sequenceLog ["append"] >> pure (Right ())
+        schedule _ = do
+            before <- readIORef sequenceLog
+            check "alarm follows append" (before == ["append"])
+            writeIORef sequenceLog ["append", "schedule"]
+    outcome <- runTransactionInContext () $
+        appendReadyEventsWithSchedule append (pure (Right event)) schedule command events
+    check "ready event and alarm complete" (outcome == Right ())
+    check "ready alarm called" . (== ["append", "schedule"]) =<< readIORef sequenceLog
+    failed <- runTransactionInContext () $
+        appendReadyEventsWithSchedule
+            (\_ _ -> pure (Left (createServiceUnavailable "Outbox" "down")))
+            (pure (Right event))
+            (\_ -> fail "failed append must not schedule")
+            command events
+    check "failed append skips alarm" (case failed of
+        Left _ -> True
+        _ -> False)

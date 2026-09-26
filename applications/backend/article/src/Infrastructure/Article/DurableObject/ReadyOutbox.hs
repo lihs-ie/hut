@@ -4,13 +4,17 @@
 module Infrastructure.Article.DurableObject.ReadyOutbox (
     appendReadyEvents,
     appendReadyEventsWith,
+    appendReadyEventsWithSchedule,
 ) where
 
 import Data.Aeson (encode, object, (.=))
 import Control.Monad (foldM)
+import Cloudflare.Workers.Binding.DurableObject (doStorageSetAlarm)
 import Data.ByteString.Lazy qualified as Lazy
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
+import Data.Time (getCurrentTime)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import "article" Domain.Article (articleIdentifierText)
 import "article" UseCase.Result (ArticleEventsFor)
 import "article" UseCase.Result qualified as Result
@@ -29,7 +33,28 @@ appendReadyEvents ::
     IO (Either DomainError EventIdentifier) ->
     Append (ArticleEventsFor 'Result.PrepareToPublish)
         (Transaction ArticleTransactionContext IO)
-appendReadyEvents = appendReadyEventsWith (\context -> appendOutbox context.storage)
+appendReadyEvents newIdentifier command events = do
+    appendReadyEventsWithSchedule
+        (\context -> appendOutbox context.storage)
+        newIdentifier
+        schedule
+        command
+        events
+  where
+    schedule context = do
+        now <- getCurrentTime
+        doStorageSetAlarm context.storage
+            (floor (utcTimeToPOSIXSeconds now * 1000) + 1000)
+
+appendReadyEventsWithSchedule ::
+    (context -> OutboxRecord -> IO (Either DomainError ())) ->
+    IO (Either DomainError EventIdentifier) ->
+    (context -> IO ()) ->
+    Append (ArticleEventsFor 'Result.PrepareToPublish)
+        (Transaction context IO)
+appendReadyEventsWithSchedule append newIdentifier schedule command events = do
+    appendReadyEventsWith append newIdentifier command events
+    transactionAction $ \context -> schedule context >> pure (Right ())
 
 appendReadyEventsWith ::
     (context -> OutboxRecord -> IO (Either DomainError ())) ->

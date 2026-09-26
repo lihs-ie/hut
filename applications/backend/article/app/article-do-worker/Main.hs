@@ -18,13 +18,14 @@ apiFetch = createFetchHandler articleAPIHandler
 
 foreign export javascript "apiFetch" apiFetch :: JSVal -> JSVal -> JSVal -> IO JSVal
 
-alarm :: JSVal -> JSVal -> IO ()
-alarm storage queue =
+alarm :: JSVal -> JSVal -> JSVal -> IO ()
+alarm storage generationQueue mediaQueue =
     dispatchArticleOutboxAlarm
         (DurableObjectStorage storage)
-        (QueueProducer queue)
+        (QueueProducer generationQueue)
+        (QueueProducer mediaQueue)
 
-foreign export javascript "alarm" alarm :: JSVal -> JSVal -> IO ()
+foreign export javascript "alarm" alarm :: JSVal -> JSVal -> JSVal -> IO ()
 
 main :: IO ()
 main = pure ()

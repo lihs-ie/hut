@@ -1,12 +1,14 @@
 module Presentation.Handler.API.Metadata (
     MetadataDependencies (..),
     newCommand,
+    parseArticleIdentifier,
 ) where
 
 import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
 import Data.Time (UTCTime)
+import "article" Domain.Article.Common (ArticleIdentifier, newArticleIdentifier)
 import Presentation.Handler.API.Error (publicError)
 import Servant.Cloudflare.Workers.Handler (Handler)
 import Shared.Domain.Error (DomainError, createInvariantViolation)
@@ -78,3 +80,10 @@ checkedCorrelation value = do
 
 emergencyCorrelation :: Text
 emergencyCorrelation = "00000000000000000000000000"
+
+parseArticleIdentifier :: Text -> Text -> Handler env ArticleIdentifier
+parseArticleIdentifier correlation raw =
+    either
+        (const (throwError (publicError 400 "invalid_article_identifier" correlation)))
+        pure
+        (newArticleIdentifier raw)

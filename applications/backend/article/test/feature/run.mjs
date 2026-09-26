@@ -22,6 +22,7 @@ async function main() {
       { configPath: path.join(root, "test/feature/wrangler/driver.jsonc") },
       { configPath: path.join(root, "test/feature/wrangler/do.jsonc") },
       { configPath: path.join(root, "test/feature/wrangler/media.jsonc") },
+      { configPath: path.join(root, "test/feature/wrangler/projection-sink.jsonc") },
     ],
   });
   try {
@@ -30,6 +31,31 @@ async function main() {
     const storage = await worker.getDurableObjectStorage("ARTICLE_DO", {
       name: "articles",
     });
+    await storage.exec(
+      "CREATE TABLE article_aggregates (" +
+        "identifier TEXT PRIMARY KEY, slug TEXT UNIQUE, payload TEXT NOT NULL, " +
+        "revision INTEGER NOT NULL)",
+    );
+    const legacyIdentifier = "01ARZ3NDEKTSV4RRFFQ69G5FB9";
+    await storage.exec(
+      "INSERT INTO article_aggregates (identifier, slug, payload, revision) " +
+        "VALUES (?, ?, ?, 1)",
+      legacyIdentifier,
+      "legacy-draft",
+      JSON.stringify({
+        phase: "unvalidated",
+        identifier: legacyIdentifier,
+        title: "Legacy draft",
+        body: "A draft saved before search indexes existed.",
+        slug: "legacy-draft",
+        excerpt: null,
+        tags: [],
+        images: [],
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+        publishedAt: null,
+      }),
+    );
     await fetch(`${url.origin}/article-do?path=${encodeURIComponent("/internal/excerpt-generation/claim")}`);
     const drafts = [
       ["01ARZ3NDEKTSV4RRFFQ69G5FB0", "01ARZ3NDEKTSV4RRFFQ69G5FA1"],
@@ -51,7 +77,9 @@ async function main() {
         publishedAt: null,
       });
       await storage.exec(
-        "INSERT INTO article_aggregates (identifier, slug, payload, revision) VALUES (?, ?, ?, 1)",
+        "INSERT INTO article_aggregates " +
+          "(identifier, slug, phase, updated_order, published_order, payload, revision) " +
+          "VALUES (?, ?, 'unvalidated', '20260101000000000000000000', NULL, ?, 1)",
         identifier,
         `haskell-syntax-${identifier.toLowerCase()}`,
         payload,

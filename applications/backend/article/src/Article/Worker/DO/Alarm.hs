@@ -1,5 +1,6 @@
 module Article.Worker.DO.Alarm (
     dispatchArticleOutboxAlarm,
+    dispatchAllWith,
     runOutboxAlarmWith,
 ) where
 
@@ -22,18 +23,47 @@ import Infrastructure.Article.DurableObject.Outbox (
     OutboxDispatchResult (..),
     dispatchPending,
  )
+import Infrastructure.Article.DurableObject.MediaOutbox (dispatchPendingMedia)
+import Infrastructure.Article.DurableObject.LogOutbox (dispatchPendingLogs)
 import "shared" Shared.Domain.Error (DomainError)
 
-dispatchArticleOutboxAlarm :: DurableObjectStorage -> QueueProducer -> IO ()
-dispatchArticleOutboxAlarm storage queue =
+dispatchArticleOutboxAlarm :: DurableObjectStorage -> QueueProducer -> QueueProducer -> IO ()
+dispatchArticleOutboxAlarm storage generationQueue mediaQueue =
     runOutboxAlarmWith
-        (dispatchPending storage send)
+        dispatchAll
         (doStorageSetAlarm storage)
         getCurrentTime
   where
-    send message = do
+    send queue message = do
         queueSend queue (Lazy.toStrict (encode message)) queueSendDefaultOptions
         pure (Right ())
+    dispatchAll = dispatchAllWith
+        (dispatchPending storage (send generationQueue))
+        (dispatchPendingMedia storage (send mediaQueue))
+        (dispatchPendingLogs storage)
+
+dispatchAllWith ::
+    IO (Either DomainError OutboxDispatchResult) ->
+    IO (Either DomainError OutboxDispatchResult) ->
+    IO (Either DomainError OutboxDispatchResult) ->
+    IO (Either DomainError OutboxDispatchResult)
+dispatchAllWith generation media logs = do
+    firstResult <- generation
+    secondResult <- media
+    thirdResult <- logs
+    pure $ do
+        first <- firstResult
+        second <- secondResult
+        third <- thirdResult
+        pure OutboxDispatchResult
+            { deliveredCount = first.deliveredCount + second.deliveredCount + third.deliveredCount
+            , hasPending = first.hasPending || second.hasPending || third.hasPending
+            , deliveryFailure = case first.deliveryFailure of
+                Just err -> Just err
+                Nothing -> case second.deliveryFailure of
+                    Just err -> Just err
+                    Nothing -> third.deliveryFailure
+            }
 
 runOutboxAlarmWith ::
     IO (Either DomainError OutboxDispatchResult) ->

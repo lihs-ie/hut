@@ -1,0 +1,224 @@
+name: Article Dev
+
+on:
+  pull_request:
+    branches: [main, staging]
+    paths:
+      - applications/backend/article/**
+      - applications/backend/shared/**
+      - infrastructure/environments/article-dev/**
+      - cabal.project
+      - .github/workflows/article-dev.yml
+  push:
+    branches: [staging]
+    paths:
+      - applications/backend/article/**
+      - applications/backend/shared/**
+      - infrastructure/environments/article-dev/**
+      - cabal.project
+      - .github/workflows/article-dev.yml
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Provision Article queues and deploy the dev Workers
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: article-dev-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  ARTICLE_DIRECTORY: applications/backend/article
+  TERRAFORM_DIRECTORY: infrastructure/environments/article-dev
+
+jobs:
+  verify:
+    name: Unit, feature, type, and infrastructure checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 12.4.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: applications/backend/article/pnpm-lock.yaml
+
+      - name: Install Article dependencies
+        working-directory: ${{ env.ARTICLE_DIRECTORY }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up Haskell
+        id: setup-haskell
+        uses: haskell-actions/setup@cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553 # v2.11.0
+        with:
+          ghc-version: 9.14.1
+          cabal-version: 3.16.1.0
+
+      - name: Cache native Cabal dependencies
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: |
+            ${{ steps.setup-haskell.outputs.cabal-store }}
+            _build/article-domain
+          key: >-
+            article-native-${{ runner.os }}-${{ steps.setup-haskell.outputs.ghc-version }}-
+            ${{ hashFiles('cabal.project', 'applications/backend/**/*.cabal') }}
+
+      - name: Update native Cabal package index
+        run: cabal update
+
+      - name: Run unit tests and enforce 90% coverage
+        run: applications/backend/article/scripts/check-domain.sh
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+
+      - name: Cache WASM Cabal dependencies
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: |
+            ${{ runner.temp }}/cabal-wasm/packages
+            ${{ runner.temp }}/cabal-wasm/store
+            applications/backend/article/dist-newstyle-wasm
+          key: >-
+            article-wasm-${{ runner.os }}-
+            ${{ hashFiles('applications/backend/article/cabal-wasm.project',
+            'applications/backend/**/*.cabal') }}
+
+      - name: Update WASM package index
+        run: >-
+          nix develop
+          github:lihs-ie/cloudflare-workers-hs/c7e695e9a1dd69570a996ada4c1d1784ecaf414b
+          --command wasm32-wasi-cabal update
+        env:
+          CABAL_DIR: ${{ runner.temp }}/cabal-wasm
+
+      - name: Build Article Workers for wasm32-wasi
+        run: >-
+          nix develop
+          github:lihs-ie/cloudflare-workers-hs/c7e695e9a1dd69570a996ada4c1d1784ecaf414b
+          --command bash applications/backend/article/scripts/build-wasm.sh
+        env:
+          CABAL_DIR: ${{ runner.temp }}/cabal-wasm
+
+      - name: Type-check Worker entrypoints
+        working-directory: ${{ env.ARTICLE_DIRECTORY }}
+        run: pnpm type-check
+
+      - name: Run Docker and Wrangler feature tests
+        run: applications/backend/article/test/feature/run.sh
+
+      - name: Dry-run Article dev Workers
+        working-directory: ${{ env.ARTICLE_DIRECTORY }}
+        run: pnpm dry-run:dev
+
+      - name: Upload generated Workers
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: article-wasm
+          path: applications/backend/article/runtime/*/generated/
+          if-no-files-found: error
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+        with:
+          terraform_version: 1.14.8
+          terraform_wrapper: false
+
+      - name: Check Article Terraform
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        run: |
+          terraform fmt -check
+          terraform init -backend=false -input=false
+          terraform validate -no-color
+
+  deploy:
+    name: Provision queues and deploy private Workers
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy }}
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: dev
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 12.4.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: applications/backend/article/pnpm-lock.yaml
+
+      - name: Install Article dependencies
+        working-directory: ${{ env.ARTICLE_DIRECTORY }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Download generated Workers
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: article-wasm
+          path: applications/backend/article/runtime
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+        with:
+          terraform_version: 1.14.8
+          terraform_wrapper: false
+
+      - name: Provision Article queues
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TERRAFORM_API_TOKEN }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          terraform init -input=false
+          terraform plan -input=false -out=tfplan
+          terraform apply -input=false -auto-approve tfplan
+          terraform plan -input=false -detailed-exitcode
+
+      - name: Deploy Article API and consumers
+        working-directory: ${{ env.ARTICLE_DIRECTORY }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKER_DEPLOY_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -Eeuo pipefail
+
+          for worker in article-do-worker article-excerpt-worker article-completion-worker; do
+            config="runtime/${worker}/wrangler.jsonc"
+            pnpm exec wrangler deploy \
+              --config "${config}" \
+              --env dev \
+              --strict \
+              --x-provision=false \
+              --x-auto-create=false
+            pnpm exec wrangler deployments list \
+              --config "${config}" \
+              --env dev \
+              --json | jq -e 'length > 0' >/dev/null
+          done
