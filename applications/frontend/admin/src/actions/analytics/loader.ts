@@ -10,12 +10,8 @@ import { validateCriteria as validateUniqueVisitorCriteria } from "@shared/domai
 import { validateCriteria as validateSearchRecordCriteria } from "@shared/domains/analytics/search-record";
 import { AdminAnalyticsRepositoryProvider } from "@/providers/infrastructure/analytics";
 import { AdminArticleRepositoryProvider } from "@/providers/infrastructure/articles";
-import { AdminMemoRepositoryProvider } from "@/providers/infrastructure/memo";
 import { AdminTagRepositoryProvider } from "@/providers/infrastructure/tag";
-import {
-  buildEmptyArticleCriteria,
-  buildEmptyMemoCriteria,
-} from "@shared/workflows/analytics/title-resolution";
+import { buildEmptyArticleCriteria } from "@shared/workflows/analytics/title-resolution";
 import { validateCriteria as validateTagCriteria } from "@shared/domains/attributes/tag";
 import type { DateRange, Period } from "@shared/domains/analytics/common";
 import type { AsyncResult } from "@shared/aspects/result";
@@ -36,25 +32,45 @@ const searchAndUnwrap = <T>(
 export const loadCurrentPageViews = cache(async (period: string) => {
   const dateRange = resolveDateRangeFromPeriod(period, resolveDateRange);
   const criteria = pageViewCriteriaSchema.parse({ dateRange });
-  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.pageView.search(criteria));
+  const records = await searchAndUnwrap(
+    AdminAnalyticsRepositoryProvider.pageView.search(criteria),
+  );
+  return records.filter(
+    (record) => record.identifier.reference.type === "article",
+  );
 });
 
 export const loadPreviousPageViews = cache(async (period: string) => {
   const dateRange = resolveDateRangeFromPeriod(period, resolvePreviousDateRange);
   const criteria = pageViewCriteriaSchema.parse({ dateRange });
-  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.pageView.search(criteria));
+  const records = await searchAndUnwrap(
+    AdminAnalyticsRepositoryProvider.pageView.search(criteria),
+  );
+  return records.filter(
+    (record) => record.identifier.reference.type === "article",
+  );
 });
 
 export const loadCurrentEngagement = cache(async (period: string) => {
   const dateRange = resolveDateRangeFromPeriod(period, resolveDateRange);
   const criteria = validateEngagementCriteria({ dateRange }).unwrap();
-  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.engagementRecord.search(criteria));
+  const records = await searchAndUnwrap(
+    AdminAnalyticsRepositoryProvider.engagementRecord.search(criteria),
+  );
+  return records.filter(
+    (record) => record.identifier.reference.type === "article",
+  );
 });
 
 export const loadPreviousEngagement = cache(async (period: string) => {
   const dateRange = resolveDateRangeFromPeriod(period, resolvePreviousDateRange);
   const criteria = validateEngagementCriteria({ dateRange }).unwrap();
-  return searchAndUnwrap(AdminAnalyticsRepositoryProvider.engagementRecord.search(criteria));
+  const records = await searchAndUnwrap(
+    AdminAnalyticsRepositoryProvider.engagementRecord.search(criteria),
+  );
+  return records.filter(
+    (record) => record.identifier.reference.type === "article",
+  );
 });
 
 export const loadCurrentUniqueVisitors = cache(async (period: string) => {
@@ -93,11 +109,6 @@ export const loadZeroHitSearchRecords = cache(async (period: string) => {
 export const loadAllArticles = cache(async () => {
   const criteria = buildEmptyArticleCriteria();
   return searchAndUnwrap(AdminArticleRepositoryProvider.firebase.search(criteria));
-});
-
-export const loadAllMemos = cache(async () => {
-  const criteria = buildEmptyMemoCriteria();
-  return searchAndUnwrap(AdminMemoRepositoryProvider.firebase.search(criteria));
 });
 
 export const loadAllTags = cache(async () => {

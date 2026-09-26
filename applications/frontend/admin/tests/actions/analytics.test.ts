@@ -4,7 +4,6 @@ import { engagementRecordSchema } from "@shared/domains/analytics/engagement";
 import { uniqueVisitorSchema } from "@shared/domains/analytics/unique-visitor";
 import { searchRecordSchema } from "@shared/domains/analytics/search-record";
 import { articleSchema } from "@shared/domains/articles";
-import { memoSchema } from "@shared/domains/memo";
 
 const ULID_A1 = "01JMABCDEF0123456789ABCDE1";
 const ULID_A2 = "01JMABCDEF0123456789ABCDE2";
@@ -25,7 +24,6 @@ const mockLoadCurrentSearchRecords = vi.fn();
 const mockLoadPreviousSearchRecords = vi.fn();
 const mockLoadZeroHitSearchRecords = vi.fn();
 const mockLoadAllArticles = vi.fn();
-const mockLoadAllMemos = vi.fn();
 const mockLoadAllTags = vi.fn();
 
 vi.mock("@/aspects/auth-guard", () => ({
@@ -52,7 +50,6 @@ vi.mock("@/actions/analytics/loader", () => ({
   loadZeroHitSearchRecords: (...args: unknown[]) =>
     mockLoadZeroHitSearchRecords(...args),
   loadAllArticles: (...args: unknown[]) => mockLoadAllArticles(...args),
-  loadAllMemos: (...args: unknown[]) => mockLoadAllMemos(...args),
   loadAllTags: (...args: unknown[]) => mockLoadAllTags(...args),
 }));
 
@@ -145,24 +142,6 @@ function buildArticle(identifier: string, title: string, tags: string[]) {
   });
 }
 
-function buildMemo(identifier: string, title: string) {
-  return memoSchema.parse({
-    identifier,
-    title,
-    slug: "test-slug-" + identifier.slice(-6).toLowerCase(),
-    entries: [{ text: "entry text", createdAt: new Date() }],
-    status: "published",
-    tags: [],
-    images: [],
-    publishedAt: new Date(),
-    timeline: {
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  });
-}
-
-
 describe("analytics server actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -185,7 +164,6 @@ describe("analytics server actions", () => {
       "getZeroHitKeywords",
       "getContentRanking",
       "getTagPageViews",
-      "getContentTypeComparison",
     ] as const;
 
     actionNames.forEach((actionName) => {
@@ -205,7 +183,6 @@ describe("analytics server actions", () => {
       const currentPageViews = [
         buildPageView("article", ULID_A1, "2024-01-15", "desktop", null),
         buildPageView("article", ULID_A2, "2024-01-16", "mobile", null),
-        buildPageView("memo", ULID_M1, "2024-01-15", "desktop", null),
       ];
       const previousPageViews = [
         buildPageView("article", ULID_A1, "2024-01-08", "desktop", null),
@@ -217,7 +194,7 @@ describe("analytics server actions", () => {
       const { getTotalPageViews } = await import("@/actions/analytics");
       const result = await getTotalPageViews("30d");
 
-      expect(result.current).toBe(3);
+      expect(result.current).toBe(2);
       expect(result.previous).toBe(2);
     });
 
@@ -332,7 +309,7 @@ describe("analytics server actions", () => {
   });
 
   describe("getDwellTimeRanking", () => {
-    it("コンテンツごとの平均滞在時間をタイトル解決して返す", async () => {
+    it("記事の平均滞在時間だけをタイトル解決して返す", async () => {
       const records = [
         buildEngagementRecord("article", ULID_A1, "2024-01-15", 300, 80),
         buildEngagementRecord("memo", ULID_M1, "2024-01-15", 60, 50),
@@ -340,19 +317,15 @@ describe("analytics server actions", () => {
       const articles = [
         buildArticle(ULID_A1, "Popular Article", []),
       ];
-      const memos = [
-        buildMemo(ULID_M1, "Some Memo"),
-      ];
       mockLoadCurrentEngagement.mockResolvedValue(records);
       mockLoadAllArticles.mockResolvedValue(articles);
-      mockLoadAllMemos.mockResolvedValue(memos);
 
       const { getDwellTimeRanking } = await import("@/actions/analytics");
       const result = await getDwellTimeRanking("30d");
 
       expect(result[0].label).toBe("Popular Article");
       expect(result[0].value).toBe(300);
-      expect(result[1].label).toBe("Some Memo");
+      expect(result).toHaveLength(1);
     });
   });
 
@@ -451,7 +424,7 @@ describe("analytics server actions", () => {
   });
 
   describe("getContentRanking", () => {
-    it("コンテンツごとのPV数をタイトル解決して返す", async () => {
+    it("記事のPV数だけをタイトル解決して返す", async () => {
       const pageViews = [
         buildPageView("article", ULID_A1, "2024-01-15", "desktop", null),
         buildPageView("article", ULID_A1, "2024-01-16", "desktop", null),
@@ -460,18 +433,15 @@ describe("analytics server actions", () => {
       const articles = [
         buildArticle(ULID_A1, "Popular Article", []),
       ];
-      const memos = [
-        buildMemo(ULID_M1, "Normal Memo"),
-      ];
       mockLoadCurrentPageViews.mockResolvedValue(pageViews);
       mockLoadAllArticles.mockResolvedValue(articles);
-      mockLoadAllMemos.mockResolvedValue(memos);
 
       const { getContentRanking } = await import("@/actions/analytics");
       const result = await getContentRanking("30d");
 
       expect(result[0].label).toBe("Popular Article");
       expect(result[0].value).toBe(2);
+      expect(result).toHaveLength(1);
     });
   });
 
@@ -498,23 +468,6 @@ describe("analytics server actions", () => {
       expect(result).toHaveLength(2);
       expect(result[0].value).toBe(2);
       expect(result[0].label).toBe("React");
-    });
-  });
-
-  describe("getContentTypeComparison", () => {
-    it("コンテンツタイプごとのPV数を Distribution 配列で返す", async () => {
-      const pageViews = [
-        buildPageView("article", ULID_A1, "2024-01-15", "desktop", null),
-        buildPageView("article", ULID_A2, "2024-01-15", "desktop", null),
-        buildPageView("memo", ULID_M1, "2024-01-15", "desktop", null),
-      ];
-      mockLoadCurrentPageViews.mockResolvedValue(pageViews);
-
-      const { getContentTypeComparison } = await import("@/actions/analytics");
-      const result = await getContentTypeComparison("30d");
-
-      expect(result[0].label).toBe("article");
-      expect(result[0].value).toBe(2);
     });
   });
 });

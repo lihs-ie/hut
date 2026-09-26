@@ -12,7 +12,6 @@ import {
   loadPreviousSearchRecords,
   loadZeroHitSearchRecords,
   loadAllArticles,
-  loadAllMemos,
   loadAllTags,
 } from "./analytics/loader";
 import { validatePeriodComparison } from "@shared/domains/analytics/common";
@@ -29,7 +28,6 @@ import {
 } from "@shared/workflows/analytics/page-view";
 import {
   aggregateByContent,
-  aggregateByContentType,
   aggregateByTag,
   buildArticleTagMap,
 } from "@shared/workflows/analytics/content";
@@ -42,10 +40,7 @@ import {
   aggregateByKeyword,
   aggregateSearchByDate,
 } from "@shared/workflows/analytics/search-record";
-import {
-  buildContentTitleMap,
-  resolveRankedItemTitles,
-} from "@shared/workflows/analytics/title-resolution";
+import { resolveRankedItemTitles } from "@shared/workflows/analytics/title-resolution";
 
 export async function getTotalPageViews(
   period: string,
@@ -122,13 +117,16 @@ export async function getDwellTimeRanking(
 ): Promise<RankedItem[]> {
   await requireAdmin();
 
-  const [records, articles, memos] = await Promise.all([
+  const [records, articles] = await Promise.all([
     loadCurrentEngagement(period),
     loadAllArticles(),
-    loadAllMemos(),
   ]);
-  const ranking = aggregateDwellTimeByContent(records);
-  const titleMap = buildContentTitleMap(articles, memos);
+  const titleMap = new Map<string, string>(
+    articles.map((article) => [article.identifier, article.title]),
+  );
+  const ranking = aggregateDwellTimeByContent(
+    records.filter((record) => record.identifier.reference.type === "article"),
+  ).filter((item) => titleMap.has(item.label));
   return resolveRankedItemTitles(ranking, titleMap);
 }
 
@@ -186,13 +184,18 @@ export async function getZeroHitKeywords(
 export async function getContentRanking(period: string): Promise<RankedItem[]> {
   await requireAdmin();
 
-  const [pageViews, articles, memos] = await Promise.all([
+  const [pageViews, articles] = await Promise.all([
     loadCurrentPageViews(period),
     loadAllArticles(),
-    loadAllMemos(),
   ]);
-  const ranking = aggregateByContent(pageViews);
-  const titleMap = buildContentTitleMap(articles, memos);
+  const titleMap = new Map<string, string>(
+    articles.map((article) => [article.identifier, article.title]),
+  );
+  const ranking = aggregateByContent(
+    pageViews.filter(
+      (pageView) => pageView.identifier.reference.type === "article",
+    ),
+  ).filter((item) => titleMap.has(item.label));
   return resolveRankedItemTitles(ranking, titleMap);
 }
 
@@ -207,13 +210,4 @@ export async function getTagPageViews(period: string): Promise<RankedItem[]> {
   const ranking = aggregateByTag(pageViews, buildArticleTagMap(articles));
   const tagNameMap = new Map(tags.map((tag) => [tag.identifier, tag.name]));
   return resolveRankedItemTitles(ranking, tagNameMap);
-}
-
-export async function getContentTypeComparison(
-  period: string,
-): Promise<Distribution[]> {
-  await requireAdmin();
-
-  const pageViews = await loadCurrentPageViews(period);
-  return aggregateByContentType(pageViews);
 }

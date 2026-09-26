@@ -34,7 +34,6 @@ type Props = {
   getAverageDwellTime: PeriodComparisonFetcher;
   getSearchCount: PeriodComparisonFetcher;
   getPageViewTrend: TrendPointFetcher;
-  getContentTypeComparison: DistributionFetcher;
   getContentRanking: RankedItemFetcher;
   getReferrerRanking: RankedItemFetcher;
   getDeviceDistribution: DistributionFetcher;
@@ -68,7 +67,6 @@ export const AnalyticsDashboard = async (props: Props) => {
         <PageViewTrend
           period={props.period}
           getPageViewTrend={props.getPageViewTrend}
-          getContentTypeComparison={props.getContentTypeComparison}
         />
       </Suspense>
 

@@ -157,9 +157,6 @@ function createMockProps(period: string = "30d") {
     getPageViewTrend: vi.fn().mockResolvedValue([
       { dateKey: "2025-01-01", value: 100 },
     ]),
-    getContentTypeComparison: vi.fn().mockResolvedValue([
-      { label: "article", value: 500 },
-    ]),
     getContentRanking: vi.fn().mockResolvedValue([
       { label: "article-1", value: 200, subLabel: "article" },
     ]),
