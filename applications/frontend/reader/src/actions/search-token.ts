@@ -6,9 +6,11 @@ import {
   restoreTimelineFromCache,
 } from "@shared/aspects/cache";
 import { Memo, MemoEntry } from "@shared/domains/memo";
-import { UnvalidatedCriteria } from "@shared/domains/search-token";
+import { ContentType, UnvalidatedCriteria, validateCriteria } from "@shared/domains/search-token";
 import { Series } from "@shared/domains/series";
 import { ReaderSearchTokenWorkflowProvider } from "@/providers/workflows/search-token";
+import { ArticleWorkflowProvider } from "@/providers/workflows/article";
+import { PublishStatus } from "@shared/domains/common";
 
 type CachedSearchResult = {
   identifier: string;
@@ -74,12 +76,42 @@ const restoreSearchResultDates = (
 const searchByTokenInternal = async (
   unvalidated: UnvalidatedCriteria,
 ): Promise<(Article | Series | Memo)[]> => {
-  return await unwrapForNextJs(
+  const criteria = await unwrapForNextJs(validateCriteria(unvalidated).toAsync());
+  const others = await unwrapForNextJs(
     ReaderSearchTokenWorkflowProvider.search({
       payload: unvalidated,
       now: new Date(),
     }),
   );
+  if (criteria.type !== null && criteria.type !== ContentType.ARTICLE) {
+    return others;
+  }
+  if (criteria.freeWord === null && !criteria.tags?.length
+    && criteria.type === null) {
+    return others;
+  }
+  const articles = await unwrapForNextJs(
+    ArticleWorkflowProvider.search({
+      payload: {
+        freeWord: criteria.freeWord,
+        tags: criteria.tags,
+        status: PublishStatus.PUBLISHED,
+      },
+      now: new Date(),
+    }),
+  );
+  const results = [...others, ...articles];
+  if (criteria.sortBy === null || criteria.order === null) return results;
+  return results.sort((left, right) => {
+    const leftDate = criteria.sortBy === "latest"
+      ? left.timeline.updatedAt
+      : left.timeline.createdAt;
+    const rightDate = criteria.sortBy === "latest"
+      ? right.timeline.updatedAt
+      : right.timeline.createdAt;
+    const direction = criteria.order === "desc" ? -1 : 1;
+    return direction * (leftDate.getTime() - rightDate.getTime());
+  });
 };
 
 export const searchByToken = async (
