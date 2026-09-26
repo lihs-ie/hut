@@ -19,6 +19,8 @@ test("unknown generation request is acknowledged by the real Article DO", async 
   const response = await fetch(route(path));
   assert.equal(response.status, 204);
   assert.equal(await response.text(), "");
+  const privateRoute = await fetch(apiRoute(path));
+  assert.equal(privateRoute.status, 404);
 });
 
 test("malformed internal requests are rejected", async () => {
