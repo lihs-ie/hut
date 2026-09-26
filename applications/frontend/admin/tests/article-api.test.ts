@@ -48,6 +48,20 @@ describe("Article admin API client", () => {
       .toBe("page=2&size=10&status=unvalidated");
   });
 
+  it("accepts the empty page shape returned by Pager", async () => {
+    const client = articleAdminApi({
+      fetch: async () => Response.json({
+        articles: [],
+        pagination: { total: 0, items: 10, current: 1, firstPage: 0, lastPage: 0 },
+      }),
+    }, "https://article.internal", "admin");
+
+    const result = await client.browse(1, 10);
+
+    expect(result.articles).toEqual([]);
+    expect(result.pagination.firstPage).toBe(0);
+  });
+
   it("addresses each lifecycle operation with its own method and route", async () => {
     const fetch = vi.fn(async (request: Request) => {
       const path = new URL(request.url).pathname;

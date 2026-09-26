@@ -31,7 +31,7 @@ const articlePageSchema = z.object({
     total: z.number().int().nonnegative(),
     items: z.number().int().nonnegative(),
     current: z.number().int().positive(),
-    firstPage: z.number().int().positive(),
+    firstPage: z.number().int().nonnegative(),
     lastPage: z.number().int().nonnegative(),
   }),
 });
