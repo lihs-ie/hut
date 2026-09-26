@@ -27,7 +27,7 @@ run = do
     ready <- right (Draft.prepareToPublish (timestamp 2) excerpt proof)
     published <- right (Published.publish (timestamp 3) ready)
     admin <- command (Admin.BrowseArticlesForAdminPayload 1 Nothing AllArticles)
-    reader <- command (Reader.BrowseArticlesForReaderPayload 1 Nothing)
+    reader <- command (Reader.BrowseArticlesForReaderPayload 1 Nothing Nothing [])
     view <- command (View.ViewArticleForAdminPayload value)
     readCommand <- command (Read.ReadArticlePayload (slugText published.publication.slug))
     slug <- command (Slug.CheckSlugAvailabilityPayload value (slugText published.publication.slug))

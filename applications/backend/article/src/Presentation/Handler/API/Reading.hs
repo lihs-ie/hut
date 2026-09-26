@@ -33,6 +33,7 @@ import "article" UseCase.CheckSlugAvailability qualified as CheckSlug
 import "article" UseCase.ReadArticle qualified as ReadArticle
 import "article" UseCase.ViewArticleForAdmin qualified as ViewAdmin
 import "shared" Shared.Domain.Error (DomainError)
+import "shared" Shared.Domain.Tag (newTagIdentifier)
 import "shared" Shared.UseCase.Command (Command (..))
 import Text.Read (readMaybe)
 
@@ -92,13 +93,20 @@ checkSlugHandler dependencies actorHeader correlationHeader rawArticle rawSlug =
 
 browseReaderHandler ::
     ReadingHandlerDependencies -> Maybe Text -> Maybe Text -> Maybe Text ->
+    Maybe Text -> [Text] ->
     Handler env (CorrelatedResponse ReaderArticlePage)
-browseReaderHandler dependencies correlationHeader rawPage rawSize = do
+browseReaderHandler dependencies correlationHeader rawPage rawSize rawKeyword rawTags = do
     (metadata, correlation) <- newCommand dependencies.metadata
         (Just "reader") correlationHeader ()
     page <- maybe (pure 1) (parsePositive "page" correlation) rawPage
     size <- traverse (parsePositive "size" correlation) rawSize
-    let command = metadata{payload = BrowseReader.BrowseArticlesForReaderPayload page size}
+    tags <- traverse
+        (either (throwError . domainErrorResponse correlation) pure . newTagIdentifier)
+        rawTags
+    let command = metadata
+            { payload = BrowseReader.BrowseArticlesForReaderPayload
+                page size rawKeyword tags
+            }
     before <- liftIO dependencies.catalogSnapshot
         >>= either (throwError . domainErrorResponse correlation) pure
     result <- liftIO (dependencies.browseReader command)

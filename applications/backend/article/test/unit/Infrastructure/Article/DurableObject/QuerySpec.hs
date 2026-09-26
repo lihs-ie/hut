@@ -26,7 +26,7 @@ import "article" Domain.Article.Common (
     confirmAvailableImageReferences,
     newDraftContent,
  )
-import "article" Domain.Article.Criteria (ArticleFilter (..), newCriteria)
+import "article" Domain.Article.Criteria (ArticleFilter (..), newCriteria, newReaderCriteria)
 import "article" Domain.Article.Draft (
     newUnvalidatedDraft,
     prepareToPublish,
@@ -39,6 +39,7 @@ import Infrastructure.Article.DurableObject.Repository (ArticleCodec (..), Execu
 import "shared" Shared.Domain.Error (DomainError (..))
 import "shared" Shared.Domain.Excerpt (newExcerpt)
 import "shared" Shared.Domain.Slug (newSlug)
+import "shared" Shared.Domain.Tag (newTagIdentifier)
 import "shared" Shared.Infrastructure.Versioning (VersionContext, emptyVersionContext)
 
 run :: IO ()
@@ -48,6 +49,7 @@ run = do
     findsArticleBySlug
     searchesAdminPage
     searchesReaderPage
+    searchesFilteredReaderPage
     rejectsInvalidResults
     rejectsMissingAndPrivateResults
     rejectsStorageErrors
@@ -180,6 +182,31 @@ searchesReaderPage = do
     check "reader page uses publication order" (case issued of
         [_, page, _] ->
             "ORDER BY published_order DESC, identifier DESC" `Text.isInfixOf` page.sql
+        _ -> False)
+
+searchesFilteredReaderPage :: IO ()
+searchesFilteredReaderPage = do
+    article <- publishedArticle
+    tag <- right (newTagIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAY")
+    criteria <- right (newReaderCriteria 1 (Just 10) (Just "syntax") [tag])
+    row <- storedRow article
+    (execute, statements) <- newScript
+        [oneRow [SQLNumber 1], oneRow [SQLText (articleIdentifierText (articleIdentifier article))], row]
+    tracked <- versions
+    found <- searchPublishedArticlesWith execute tracked articleCodec criteria
+    check "filtered reader query returns published article" (case found of
+        Right (1, [value]) -> Published value == article
+        _ -> False)
+    issued <- statements
+    check "count and page apply the same keyword and tag predicates" (case issued of
+        [count, page, _] ->
+            "json_extract(payload, '$.body')" `Text.isInfixOf` count.sql
+                && "json_each(article_aggregates.payload, '$.tags')" `Text.isInfixOf` count.sql
+                && "json_extract(payload, '$.body')" `Text.isInfixOf` page.sql
+                && "json_each(article_aggregates.payload, '$.tags')" `Text.isInfixOf` page.sql
+                && count.parameters ==
+                    [SQLText "published", SQLText "syntax", SQLText "syntax", SQLText "syntax", SQLText "01ARZ3NDEKTSV4RRFFQ69G5FAY"]
+                && take 5 page.parameters == count.parameters
         _ -> False)
 
 rejectsInvalidResults :: IO ()

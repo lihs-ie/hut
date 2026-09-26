@@ -7,11 +7,13 @@ module UseCase.BrowseArticlesForReader (
 ) where
 
 import Domain.Article
+import Data.Text (Text)
 import Domain.Article.Published (PublishedArticle)
 import Shared.Domain.Common.Transaction (Transaction, TransactionManager, fromEither, runTransaction)
 import Shared.Domain.Error (DomainError)
 import Shared.Domain.Event (Events (..))
 import Shared.Domain.Pager (Pager)
+import Shared.Domain.Tag (TagIdentifier)
 import Shared.UseCase.Command (Command (..))
 import UseCase.Reading
 import UseCase.Result (ArticleEventsFor)
@@ -20,6 +22,8 @@ import UseCase.Result qualified as Result
 data BrowseArticlesForReaderPayload = BrowseArticlesForReaderPayload
     { current :: Int
     , items :: Maybe Int
+    , keyword :: Maybe Text
+    , tags :: [TagIdentifier]
     }
     deriving stock (Show, Eq)
 type BrowseArticlesForReaderCommand = Command BrowseArticlesForReaderPayload
@@ -41,7 +45,12 @@ browseArticlesForReader ::
     BrowseArticlesForReaderCommand ->
     m (Either DomainError BrowseArticlesForReaderResult)
 browseArticlesForReader dependencies command = runTransaction dependencies.transactionManager $ do
-    request <- fromEither (newCriteria PublishedOnly command.payload.current command.payload.items)
+    request <- fromEither $
+        newReaderCriteria
+            command.payload.current
+            command.payload.items
+            command.payload.keyword
+            command.payload.tags
     (total, articles) <- dependencies.searchArticles request
     pager <- fromEither (pageResult request total articles)
     pure (BrowseArticlesForReaderResult articles pager (Events []))

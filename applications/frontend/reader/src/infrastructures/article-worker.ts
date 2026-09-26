@@ -59,7 +59,10 @@ async function requestArticle(service: ArticleService, path: string): Promise<Re
 }
 
 /** Retries a changing offset-based listing instead of returning duplicate or incomplete pages. */
-async function loadPublishedArticles(service: ArticleService): Promise<Article[]> {
+async function loadPublishedArticles(
+  service: ArticleService,
+  criteria: Parameters<ArticleRepository["search"]>[0],
+): Promise<Article[]> {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const articles: Article[] = [];
     const seen = new Set<string>();
@@ -67,7 +70,10 @@ async function loadPublishedArticles(service: ArticleService): Promise<Article[]
     let expectedSnapshot: string | undefined;
     let changed = false;
     for (let page = 1; ; page += 1) {
-      const response = await requestArticle(service, `/articles?page=${page}&size=100`);
+      const query = new URLSearchParams({ page: String(page), size: "100" });
+      if (criteria.freeWord) query.set("q", criteria.freeWord);
+      for (const tag of criteria.tags ?? []) query.append("tag", tag);
+      const response = await requestArticle(service, `/articles?${query}`);
       if (response.status === 503
         && response.headers.get("X-Article-Error-Code") === "snapshot_changed") {
         changed = true;
@@ -167,7 +173,7 @@ export function articleWorkerRepository(
             );
             return selectArticles([article], criteria);
           }
-          return selectArticles(await loadPublishedArticles(service), criteria);
+          return selectArticles(await loadPublishedArticles(service, criteria), criteria);
         })(),
         (cause) => unexpectedError("Failed to search Article API", cause),
       );

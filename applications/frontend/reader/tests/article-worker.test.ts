@@ -60,17 +60,12 @@ describe("Article Worker reader repository", () => {
     expect(isUnexpectedError(result)).toBe(true);
   });
 
-  it("reads every page before applying the reader's free-word filter", async () => {
+  it("asks the Article API to filter a free-word search", async () => {
     const fetch = vi.fn(async (request: Request) => {
-      const page = new URL(request.url).searchParams.get("page");
+      expect(new URL(request.url).searchParams.get("q")).toBe("reader match");
       return Response.json({
-        articles: page === "1"
-          ? Array.from({ length: 100 }, (_, index) => publishedView(
-            "Haskell syntax",
-            `${identifier.slice(0, -2)}${String(index).padStart(2, "0")}`,
-          ))
-          : [publishedView("Reader match", `${identifier.slice(0, -2)}A0`)],
-        pagination: { total: 101 },
+        articles: [publishedView("Reader match")],
+        pagination: { total: 1 },
         snapshot: "1",
       });
     });
@@ -83,8 +78,25 @@ describe("Article Worker reader repository", () => {
 
     expect(articles).toHaveLength(1);
     expect(articles[0].title).toBe("Reader match");
-    expect(fetch).toHaveBeenCalledTimes(2);
-    expect(new URL(fetch.mock.calls[1][0].url).searchParams.get("page")).toBe("2");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes all selected tags to the Article API", async () => {
+    const first = "01ARZ3NDEKTSV4RRFFQ69G5FAY";
+    const second = "01ARZ3NDEKTSV4RRFFQ69G5FAZ";
+    const fetch = vi.fn(async (request: Request) => {
+      expect(new URL(request.url).searchParams.getAll("tag")).toEqual([first, second]);
+      return Response.json({
+        articles: [{ ...publishedView(), tags: [second] }],
+        pagination: { total: 1 },
+        snapshot: "1",
+      });
+    });
+    const articles = await articleWorkerRepository({ fetch })
+      .search(criteriaSchema.parse({ tags: [first, second] })).unwrap();
+
+    expect(articles).toHaveLength(1);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it("does not query the worker for a non-published search", async () => {

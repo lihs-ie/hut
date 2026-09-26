@@ -34,9 +34,11 @@ import "article" Domain.Article (
 import "article" Domain.Article.Criteria (
     ArticleFilter (..),
     Criteria,
+    keyword,
     pageOffset,
     pageSize,
     status,
+    tags,
  )
 import "article" Domain.Article.Published (PublishedArticle)
 import Infrastructure.Article.DurableObject.Repository (
@@ -51,6 +53,7 @@ import "shared" Shared.Domain.Error (
     createUnexpectedError,
  )
 import "shared" Shared.Domain.Slug (Slug, slugText)
+import "shared" Shared.Domain.Tag (tagIdentifierText)
 import "shared" Shared.Infrastructure.Versioning (VersionContext)
 
 queryLimits :: SQLLimits
@@ -138,7 +141,7 @@ searchPublishedArticlesWith execute versions codec criteria
         pure (Left (createInvariantViolation "ArticleSearch" "published selection is required"))
     | otherwise = do
         found <- searchWith execute versions codec criteria "published_order"
-            (" WHERE phase = ?", [SQLText "published"])
+            (readerFilterFor criteria)
         pure $ found >>= \(total, articles) -> do
             published <- traverse requirePublished articles
             pure (total, published)
@@ -189,6 +192,30 @@ filterFor criteria = case status criteria of
     PrivateOnly -> selected "private"
   where
     selected phase = (" WHERE phase = ?", [SQLText phase])
+
+readerFilterFor :: Criteria -> (Text, [SQLValue])
+readerFilterFor criteria =
+    (" WHERE phase = ?" <> keywordClause <> tagClause,
+        [SQLText "published"] <> keywordParameters <> tagParameters)
+  where
+    (keywordClause, keywordParameters) = case keyword criteria of
+        Nothing -> ("", [])
+        Just value ->
+            ( " AND (instr(lower(json_extract(payload, '$.title')), lower(?)) > 0"
+                <> " OR instr(lower(json_extract(payload, '$.body')), lower(?)) > 0"
+                <> " OR instr(lower(json_extract(payload, '$.excerpt')), lower(?)) > 0)"
+            , replicate 3 (SQLText value)
+            )
+    selectedTags = map (SQLText . tagIdentifierText) (tags criteria)
+    (tagClause, tagParameters)
+        | null selectedTags = ("", [])
+        | otherwise =
+            ( " AND EXISTS (SELECT 1 FROM json_each(article_aggregates.payload, '$.tags') AS tag"
+                <> " WHERE tag.value IN ("
+                <> Text.intercalate ", " (replicate (length selectedTags) "?")
+                <> "))"
+            , selectedTags
+            )
 
 pageBounds :: Criteria -> Either DomainError (Double, Double)
 pageBounds criteria =

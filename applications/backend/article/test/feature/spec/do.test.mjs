@@ -262,6 +262,12 @@ test("article lifecycle is available through the admin and reader APIs", async (
   const publishedPage = await readerPage.json();
   assert.ok(publishedPage.articles.some((article) => article.identifier === identifier));
   assert.match(publishedPage.snapshot, /^\d+$/);
+  const filteredPage = await fetch(apiRoute(`/articles?q=lifecycle&tag=${tag}`));
+  assert.equal(filteredPage.status, 200, await filteredPage.clone().text());
+  assert.ok((await filteredPage.json()).articles.some((article) => article.identifier === identifier));
+  const absentPage = await fetch(apiRoute("/articles?q=unrelated"));
+  assert.equal(absentPage.status, 200, await absentPage.clone().text());
+  assert.equal((await absentPage.json()).pagination.total, 0);
 
   const takenDown = await fetch(apiRoute(`/admin/articles/${identifier}/publication`), {
     method: "DELETE",

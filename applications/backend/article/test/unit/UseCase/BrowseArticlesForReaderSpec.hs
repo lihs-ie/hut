@@ -3,6 +3,7 @@ module UseCase.BrowseArticlesForReaderSpec (run) where
 import Control.Monad (forM_)
 
 import Shared.Domain.Pager qualified as Pager
+import Shared.Domain.Tag (newTagIdentifier)
 import TestSupport
 import UseCase.BrowseArticlesForReader qualified as Browse
 import UseCase.Reading
@@ -13,7 +14,7 @@ import UseCase.TransactionSupport qualified as Tx
 run :: IO ()
 run = do
     article <- published
-    let payload current items = Browse.BrowseArticlesForReaderPayload current items
+    let payload current items = Browse.BrowseArticlesForReaderPayload current items Nothing []
         dependencies output =
             Tx.browseArticlesForReaderDependencies
                 ( \request -> do
@@ -25,6 +26,14 @@ run = do
     check "full article returned" (result.articles == [article])
     check "pager metadata" (Pager.total result.pager == 1 && Pager.items result.pager == 10 && Pager.current result.pager == 1)
     checkEmptyEvents result.events
+    tag <- right (newTagIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAY")
+    filtered <- command (Browse.BrowseArticlesForReaderPayload 1 Nothing (Just "syntax") [tag])
+    _ <- Browse.browseArticlesForReader
+        (Tx.browseArticlesForReaderDependencies (\criteria -> do
+            check "reader search conditions forwarded"
+                (keyword criteria == Just "syntax" && tags criteria == [tag])
+            pure (Right (1, [article]))))
+        filtered >>= right
     failed <- Browse.browseArticlesForReader (dependencies (Left failure)) request
     expectError "read failure" failure failed
     badCount <- Browse.browseArticlesForReader (dependencies (Right (1, []))) request

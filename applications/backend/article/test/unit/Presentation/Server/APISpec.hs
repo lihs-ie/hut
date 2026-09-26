@@ -55,6 +55,7 @@ import Shared.Domain.Error (
  )
 import Shared.Domain.Event (Events (..))
 import Shared.Domain.Pager (newPager)
+import Shared.Domain.Tag (newTagIdentifier)
 import Shared.UseCase.Command (
     Command (..),
     actorText,
@@ -262,6 +263,7 @@ invalidReadingInputs = do
 readingFilters :: IO ()
 readingFilters = do
     pager <- right (newPager 0 10 1)
+    tag <- right (newTagIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAY")
     let headers = [("X-Hut-Actor", "editor")]
         filters = [ ("all", AllArticles)
             , ("proofreaded", ProofreadedOnly)
@@ -291,15 +293,28 @@ readingFilters = do
     check "reader page exposes an infrastructure snapshot" $ case bodyJSON response of
         Just (page :: ReaderArticlePage) -> page.snapshot == "0"
         Nothing -> False
-    reads <- newIORef (0 :: Int)
+    snapshotReads <- newIORef (0 :: Int)
     let changing = reader
             { catalogSnapshot = do
-                count <- readIORef reads
-                writeIORef reads (count + 1)
+                count <- readIORef snapshotReads
+                writeIORef snapshotReads (count + 1)
                 pure (Right (if count == 0 then "1" else "2"))
             }
     changed <- send baseDependencies{reading = changing} GET "/articles" []
     check "reader rejects a mutation during page selection" (status changed == 503)
+    let filtered = reader
+            { browseReader = \command -> do
+                check "reader keyword and tag parsed"
+                    (command.payload.keyword == Just "syntax"
+                        && command.payload.tags == [tag])
+                pure (Right (BrowseReader.BrowseArticlesForReaderResult [] pager (Events [])))
+            }
+    selected <- send baseDependencies{reading = filtered} GET
+        "/articles?q=syntax&tag=01ARZ3NDEKTSV4RRFFQ69G5FAY" []
+    check "reader filtered response" (status selected == 200)
+    invalidTag <- send baseDependencies{reading = filtered} GET
+        "/articles?tag=invalid" []
+    check "reader invalid tag is rejected" (status invalidTag == 400)
 
 otherViews :: IO ()
 otherViews = do

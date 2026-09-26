@@ -148,6 +148,8 @@ data ArticleReaderRoutes mode = ArticleReaderRoutes
         mode
             :- QueryParam "page" Text
                 :> QueryParam "size" Text
+                :> QueryParam "q" Text
+                :> QueryParams "tag" Text
                 :> Get '[JSON] (CorrelatedResponse ReaderArticlePage)
     , readArticle ::
         mode
