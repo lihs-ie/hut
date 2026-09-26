@@ -4,10 +4,11 @@ locals {
   zone_cache_enabled    = local.custom_domain_enabled && var.manage_zone_cache
 
   queue_names = {
-    inspection             = "${local.resource_prefix}-inspection-${var.environment}"
-    inspection_dead_letter = "${local.resource_prefix}-inspection-dlq-${var.environment}"
-    reference_projection   = "${local.resource_prefix}-reference-projection-${var.environment}"
-    retention              = "${local.resource_prefix}-retention-${var.environment}"
+    inspection                       = "${local.resource_prefix}-inspection-${var.environment}"
+    inspection_dead_letter           = "${local.resource_prefix}-inspection-dlq-${var.environment}"
+    reference_projection             = "${local.resource_prefix}-reference-projection-${var.environment}"
+    reference_projection_dead_letter = "${local.resource_prefix}-reference-projection-dlq-${var.environment}"
+    retention                        = "${local.resource_prefix}-retention-${var.environment}"
   }
 }
 

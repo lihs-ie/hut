@@ -92,6 +92,7 @@ newJSVal: (v) => __ghc_wasm_jsffi_jsval_manager.newJSVal(v),
 getJSVal: (k) => __ghc_wasm_jsffi_jsval_manager.getJSVal(k),
 freeJSVal: (k) => __ghc_wasm_jsffi_jsval_manager.freeJSVal(k),
 scheduleWork: () => setImmediate(__exports.rts_schedulerLoop),
+ZC1ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBindingEnvZC: ($1) => (typeof $1 === 'string'),
 ZC0ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBytesZC: ($1,$2,$3) => (new Uint8Array(__exports.memory.buffer, $2, $3).set($1.bytes)),
 ZC1ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBytesZC: ($1) => ($1.length),
 ZC2ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBytesZC: ($1) => ((() => {

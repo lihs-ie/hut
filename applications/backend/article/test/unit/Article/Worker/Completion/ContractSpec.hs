@@ -66,7 +66,12 @@ run = do
         check ("HTTP " <> show status <> " retries") (isLeft rejected)
     failed <- try
         (handleCompletionMessage
-            (CompletionDependencies (postCompletionWith pure (\_ _ -> pure (http 503))))
+            ( CompletionDependencies
+                { applyGeneratedExcerpt =
+                    postCompletionWith pure (\_ _ -> pure (http 503))
+                , abandonGeneration = \_ -> pure (Right ())
+                }
+            )
             message) :: IO (Either DomainError ())
     check "handler retries rejected completion" (isLeft failed)
 

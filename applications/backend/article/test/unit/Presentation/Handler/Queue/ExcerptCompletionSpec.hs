@@ -27,27 +27,54 @@ run = do
                 (newEventEnvelope identifier (timestamp 2) actor correlation Nothing
                     (ExcerptGenerated request article revision excerpt))
     applied <- newIORef False
-    let dependencies = CompletionDependencies (\_ -> writeIORef applied True >> pure (Right ExcerptApplied))
+    abandoned <- newIORef Nothing
+    let dependencies =
+            CompletionDependencies
+                { applyGeneratedExcerpt = \_ ->
+                    writeIORef applied True >> pure (Right ExcerptApplied)
+                , abandonGeneration = \requestValue ->
+                    writeIORef abandoned (Just requestValue) >> pure (Right ())
+                }
     handleCompletionMessage dependencies message
     check "completion applies" =<< readIORef applied
+    handleCompletionDeadLetterMessage dependencies message
+    check "completion dead letter releases matching request"
+        . (== Just (ExcerptGenerationRequested request article revision))
+        =<< readIORef abandoned
 
     handleCompletionMessage
-        (CompletionDependencies (\_ -> pure (Right ExcerptAlreadyApplied)))
+        dependencies{applyGeneratedExcerpt = \_ -> pure (Right ExcerptAlreadyApplied)}
         message
     handleCompletionMessage
-        (CompletionDependencies (\_ -> pure (Right ExcerptNoLongerRequired)))
+        dependencies{applyGeneratedExcerpt = \_ -> pure (Right ExcerptNoLongerRequired)}
         message
     handleCompletionMessage
-        (CompletionDependencies
-            (\_ -> pure (Left (createProcessingTargetChanged "Article" "changed"))))
+        dependencies
+            { applyGeneratedExcerpt = \_ ->
+                pure (Left (createProcessingTargetChanged "Article" "changed"))
+            }
         message
 
     failed <- try
         ( handleCompletionMessage
-            (CompletionDependencies
-                (\_ -> pure (Left (createServiceUnavailable "Article" "temporarily unavailable"))))
+            dependencies
+                { applyGeneratedExcerpt = \_ ->
+                    pure (Left (createServiceUnavailable "Article" "temporarily unavailable"))
+                }
             message
         ) :: IO (Either DomainError ())
     check "temporary failure is retried" $ case failed of
+        Left _ -> True
+        Right _ -> False
+
+    failedAbandon <- try
+        ( handleCompletionDeadLetterMessage
+            dependencies
+                { abandonGeneration = \_ ->
+                    pure (Left (createServiceUnavailable "Article" "temporarily unavailable"))
+                }
+            message
+        ) :: IO (Either DomainError ())
+    check "failed completion dead-letter release is retried" $ case failedAbandon of
         Left _ -> True
         Right _ -> False

@@ -4,6 +4,10 @@
   "main": "../../../runtime/article-completion-worker/src/index.ts",
   "compatibility_date": "2026-09-13",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "COMPLETION_QUEUE_NAME": "hut-article-excerpt-completion-feature",
+    "COMPLETION_DLQ_NAME": "hut-article-excerpt-completion-dlq-feature"
+  },
   "durable_objects": {
     "bindings": [
       {
@@ -17,6 +21,11 @@
     "consumers": [
       {
         "queue": "hut-article-excerpt-completion-feature",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1
+      },
+      {
+        "queue": "hut-article-excerpt-completion-dlq-feature",
         "max_batch_size": 1,
         "max_batch_timeout": 1
       }

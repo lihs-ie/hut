@@ -10,6 +10,10 @@
   "env": {
     "dev": {
       "name": "hut-article-completion-worker-dev",
+      "vars": {
+        "COMPLETION_QUEUE_NAME": "hut-article-excerpt-completion-dev",
+        "COMPLETION_DLQ_NAME": "hut-article-excerpt-completion-dlq-dev"
+      },
       "durable_objects": {
         "bindings": [
           {
@@ -28,12 +32,23 @@
             "max_retries": 3,
             "retry_delay": 60,
             "dead_letter_queue": "hut-article-excerpt-completion-dlq-dev"
+          },
+          {
+            "queue": "hut-article-excerpt-completion-dlq-dev",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 100,
+            "retry_delay": 600
           }
         ]
       }
     },
     "stg": {
       "name": "hut-article-completion-worker-stg",
+      "vars": {
+        "COMPLETION_QUEUE_NAME": "hut-article-excerpt-completion-stg",
+        "COMPLETION_DLQ_NAME": "hut-article-excerpt-completion-dlq-stg"
+      },
       "durable_objects": {
         "bindings": [
           {
@@ -52,12 +67,23 @@
             "max_retries": 3,
             "retry_delay": 60,
             "dead_letter_queue": "hut-article-excerpt-completion-dlq-stg"
+          },
+          {
+            "queue": "hut-article-excerpt-completion-dlq-stg",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 100,
+            "retry_delay": 600
           }
         ]
       }
     },
     "prd": {
       "name": "hut-article-completion-worker-prd",
+      "vars": {
+        "COMPLETION_QUEUE_NAME": "hut-article-excerpt-completion-prd",
+        "COMPLETION_DLQ_NAME": "hut-article-excerpt-completion-dlq-prd"
+      },
       "durable_objects": {
         "bindings": [
           {
@@ -76,6 +102,13 @@
             "max_retries": 3,
             "retry_delay": 60,
             "dead_letter_queue": "hut-article-excerpt-completion-dlq-prd"
+          },
+          {
+            "queue": "hut-article-excerpt-completion-dlq-prd",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 100,
+            "retry_delay": 600
           }
         ]
       }
