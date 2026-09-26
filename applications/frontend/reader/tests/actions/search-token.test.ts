@@ -73,6 +73,12 @@ describe("Reader search", () => {
     expect(ArticleWorkflowProvider.search).not.toHaveBeenCalled();
   });
 
+  it("Article 指定時は旧 SearchToken 経路を呼ばない", async () => {
+    expect(await searchByToken({ ...baseCriteria, type: "article" })).toEqual([]);
+    expect(ReaderSearchTokenWorkflowProvider.search).not.toHaveBeenCalled();
+    expect(ArticleWorkflowProvider.search).toHaveBeenCalledOnce();
+  });
+
   it("条件がない初期画面で全記事を取得しない", async () => {
     expect(await searchByToken({ ...baseCriteria, freeWord: null })).toEqual([]);
     expect(ArticleWorkflowProvider.search).not.toHaveBeenCalled();

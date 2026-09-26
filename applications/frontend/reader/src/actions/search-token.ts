@@ -77,12 +77,14 @@ const searchByTokenInternal = async (
   unvalidated: UnvalidatedCriteria,
 ): Promise<(Article | Series | Memo)[]> => {
   const criteria = await unwrapForNextJs(validateCriteria(unvalidated).toAsync());
-  const others = await unwrapForNextJs(
-    ReaderSearchTokenWorkflowProvider.search({
-      payload: unvalidated,
-      now: new Date(),
-    }),
-  );
+  const others = criteria.type === ContentType.ARTICLE
+    ? []
+    : await unwrapForNextJs(
+      ReaderSearchTokenWorkflowProvider.search({
+        payload: unvalidated,
+        now: new Date(),
+      }),
+    );
   if (criteria.type !== null && criteria.type !== ContentType.ARTICLE) {
     return others;
   }
