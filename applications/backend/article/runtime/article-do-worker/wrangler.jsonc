@@ -1,0 +1,66 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "hut-article-api-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "env": {
+    "dev": {
+      "name": "hut-article-api-worker-dev",
+      "services": [
+        { "binding": "MEDIA_API", "service": "hut-media-api-worker-dev" }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "ARTICLE_DO", "class_name": "ArticleDurableObject" }]
+      },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ArticleDurableObject"] }],
+      "queues": {
+        "producers": [
+          {
+            "binding": "ARTICLE_EXCERPT_GENERATION_QUEUE",
+            "queue": "hut-article-excerpt-generation-dev"
+          }
+        ]
+      }
+    },
+    "stg": {
+      "name": "hut-article-api-worker-stg",
+      "services": [
+        { "binding": "MEDIA_API", "service": "hut-media-api-worker-stg" }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "ARTICLE_DO", "class_name": "ArticleDurableObject" }]
+      },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ArticleDurableObject"] }],
+      "queues": {
+        "producers": [
+          {
+            "binding": "ARTICLE_EXCERPT_GENERATION_QUEUE",
+            "queue": "hut-article-excerpt-generation-stg"
+          }
+        ]
+      }
+    },
+    "prd": {
+      "name": "hut-article-api-worker-prd",
+      "services": [
+        { "binding": "MEDIA_API", "service": "hut-media-api-worker-prd" }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "ARTICLE_DO", "class_name": "ArticleDurableObject" }]
+      },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ArticleDurableObject"] }],
+      "queues": {
+        "producers": [
+          {
+            "binding": "ARTICLE_EXCERPT_GENERATION_QUEUE",
+            "queue": "hut-article-excerpt-generation-prd"
+          }
+        ]
+      }
+    }
+  }
+}

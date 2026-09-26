@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "hut-article-api-worker-feature",
+  "main": "../../../runtime/article-do-worker/src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      { "name": "ARTICLE_DO", "class_name": "ArticleDurableObject" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["ArticleDurableObject"] }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "ARTICLE_EXCERPT_GENERATION_QUEUE",
+        "queue": "hut-article-excerpt-generation-feature"
+      }
+    ]
+  },
+  "services": [
+    {
+      "binding": "MEDIA_API",
+      "service": "hut-media-api-worker-feature"
+    }
+  ]
+}

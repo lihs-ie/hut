@@ -59,8 +59,43 @@ assert_coverage "Article use cases" \
   --include=UseCase.BrowseArticlesForReader \
   --include=UseCase.ReadArticle \
   --include=UseCase.CheckSlugAvailability \
+  --include=UseCase.RequestExcerptRegeneration \
   --include=UseCase.Helper \
   --include=UseCase.Result
+
+adapter_mix="${package_root}/l/worker-adapters${profile}/build/worker-adapters/extra-compilation-artifacts/hpc/vanilla/mix"
+unit_mix="${component_root}/build/article-unit-test/article-unit-test-tmp/extra-compilation-artifacts/hpc/vanilla/mix"
+shared_root="${package_root%/article-0.1.0.0}/shared-0.1.0.0"
+shared_mix="${shared_root}${profile}/build/extra-compilation-artifacts/hpc/vanilla/mix"
+article_report="$(hpc report "${tix}" \
+  "--hpcdir=${mix}" "--hpcdir=${adapter_mix}" "--hpcdir=${unit_mix}" \
+  "--hpcdir=${shared_mix}" \
+  --per-module)"
+article_counts="$(awk '
+  /^-----<module article-0.1.0.0-inplace\// ||
+  /^-----<module article-0.1.0.0-inplace-worker-adapters\// { article = 1; next }
+  /^-----<module / { article = 0 }
+  article && /expressions used/ {
+    if (match($0, /\([0-9]+\/[0-9]+\)/)) {
+      count = substr($0, RSTART + 1, RLENGTH - 2)
+      split(count, values, "/")
+      covered += values[1]
+      total += values[2]
+    }
+  }
+  END { print covered + 0, total + 0 }
+' <<<"${article_report}")"
+read -r article_covered article_total <<<"${article_counts}"
+if ((article_total == 0)); then
+  echo "Article production coverage could not be measured" >&2
+  exit 1
+fi
+awk -v covered="${article_covered}" -v total="${article_total}" \
+  'BEGIN { printf "Article production: %.2f%% (%d/%d expressions)\n", covered*100/total, covered, total }'
+if ((article_covered * 100 < article_total * 90)); then
+  echo "Article production coverage is below 90%" >&2
+  exit 1
+fi
 
 fixtures="applications/backend/article/test/unit/typecheck"
 assert_coverage "Article Criteria" --include=Domain.Article.Criteria

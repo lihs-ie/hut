@@ -10,7 +10,6 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Domain.Article
 import Domain.Article.Draft qualified as Draft
-import Domain.Article.Event (proofreadedArticleContent)
 import Shared.Domain.Common.Transaction (Transaction, TransactionManager, abort, fromEither, runTransaction)
 import Shared.Domain.Error (
     DomainError,
@@ -65,7 +64,7 @@ proofread dependencies command = do
                                 )
                         else pure ()
                     article <- fromEither (Draft.proofread command.timestamp available current)
-                    let events = Events [Here (DomainEvent (proofreadedArticleContent article))]
+                    let events = Events [Here (DomainEvent (Draft.draftIdentifier article))]
                     dependencies.persistArticle (Proofreaded article)
                     dependencies.appendEvents (commandContext command) events
                     pure (ProofreadResult article events)

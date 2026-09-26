@@ -3,6 +3,7 @@ module Shared.UseCase.Event (
     EventIdentifierError (..),
     EventEnvelope (..),
     newEventIdentifier,
+    eventIdentifierText,
     newEventEnvelope,
 ) where
 
@@ -33,6 +34,9 @@ newEventIdentifier :: Text -> Either EventIdentifierError EventIdentifier
 newEventIdentifier value
     | Text.null (Text.strip value) = Left (EventIdentifierError "value must not be empty")
     | otherwise = Right (EventIdentifier value)
+
+eventIdentifierText :: EventIdentifier -> Text
+eventIdentifierText (EventIdentifier value) = value
 
 newEventEnvelope ::
     EventIdentifier ->

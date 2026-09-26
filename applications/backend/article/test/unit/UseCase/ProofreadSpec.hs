@@ -8,7 +8,6 @@ import Data.Set qualified as Set
 import Domain.Article qualified as Article
 import Domain.Article.Common
 import Domain.Article.Draft qualified as Draft
-import Domain.Article.Event (ProofreadedArticleContent (..))
 import Domain.Article.Private qualified as Private
 import Domain.Article.Published qualified as Published
 import Shared.Domain.Error (
@@ -62,12 +61,7 @@ run = do
     payload <- case result.events of
         Events [Here (DomainEvent event)] -> pure event
         _ -> fail "expected proofread event"
-    check
-        "event carries generation snapshot"
-        ( payload.article == value
-            && titleText payload.title == input.title
-            && contentText payload.body == input.body
-        )
+    check "event carries only the article identifier" (payload == value)
     check "saved atomically with command metadata"
         . (== [(commandContext request, result.article, payload)])
         =<< readIORef saved

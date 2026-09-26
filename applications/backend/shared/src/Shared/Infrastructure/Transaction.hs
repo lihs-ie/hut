@@ -4,6 +4,7 @@ module Shared.Infrastructure.Transaction (
     TransactionOutcome (..),
     TransactionDriver (..),
     transactionAction,
+    runTransactionInContext,
     newTransactionManager,
 ) where
 
@@ -30,6 +31,12 @@ newtype TransactionDriver context m = TransactionDriver
 transactionAction ::
     (context -> m (Either DomainError a)) -> Transaction context m a
 transactionAction = Transaction
+
+-- Compose an existing transaction action inside its already-open physical
+-- transaction. Only infrastructure should hold or pass the execution context.
+runTransactionInContext ::
+    context -> Transaction context m a -> m (Either DomainError a)
+runTransactionInContext context (Transaction action) = action context
 
 newTransactionManager ::
     (Monad m) => TransactionDriver context m -> TransactionManager context m

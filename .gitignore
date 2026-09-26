@@ -69,3 +69,8 @@ applications/docker/frontend/.firebase/
 /dist-newstyle/
 /_build/article-domain/
 /_build/do-transaction-probe/
+/_build/article-delivery/
+/_build/article-delivery-cov/
+/_build/article-excerpt-contract-agent/
+/_build/article-generationjob-local/
+/_build/article-repository-agent/

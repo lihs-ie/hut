@@ -1,6 +1,7 @@
 module Domain.Article.Published (
     PublishedArticle,
     publish,
+    newPublishedArticle,
 ) where
 
 import Data.Time (UTCTime)
@@ -13,7 +14,7 @@ import Domain.Article.Draft (
  )
 import GHC.Records (HasField (..))
 import Shared.Domain.Date (Timeline)
-import Shared.Domain.Error (DomainError)
+import Shared.Domain.Error (DomainError, createInvariantViolation)
 
 data PublishedArticle
     = PublishedArticle
@@ -27,6 +28,13 @@ publish :: UTCTime -> ReadyToPublish -> Either DomainError PublishedArticle
 publish timestamp draft = do
     timeline <- amendTimeline timestamp (draftTimeline draft)
     pure (PublishedArticle (draftIdentifier draft) (publicationContent draft) timeline timestamp)
+
+newPublishedArticle ::
+    ArticleIdentifier -> PublicationContent -> Timeline -> UTCTime -> Either DomainError PublishedArticle
+newPublishedArticle identifier content timeline publishedAt
+    | publishedAt /= timeline.updatedAt =
+        Left (createInvariantViolation "PublishedArticle" "publishedAt must equal updatedAt")
+    | otherwise = Right (PublishedArticle identifier content timeline publishedAt)
 
 instance HasField "identifier" PublishedArticle ArticleIdentifier where
     getField (PublishedArticle value _ _ _) = value

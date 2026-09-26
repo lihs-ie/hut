@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "hut-article-completion-worker-feature",
+  "main": "../../../runtime/article-completion-worker/src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ARTICLE_DO",
+        "class_name": "ArticleDurableObject",
+        "script_name": "hut-article-api-worker-feature"
+      }
+    ]
+  },
+  "queues": {
+    "consumers": [
+      {
+        "queue": "hut-article-excerpt-completion-feature",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1
+      }
+    ]
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "hut-article-completion-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "env": {
+    "dev": {
+      "name": "hut-article-completion-worker-dev",
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "ARTICLE_DO",
+            "class_name": "ArticleDurableObject",
+            "script_name": "hut-article-api-worker-dev"
+          }
+        ]
+      },
+      "queues": {
+        "consumers": [
+          {
+            "queue": "hut-article-excerpt-completion-dev",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-article-excerpt-completion-dlq-dev"
+          }
+        ]
+      }
+    },
+    "stg": {
+      "name": "hut-article-completion-worker-stg",
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "ARTICLE_DO",
+            "class_name": "ArticleDurableObject",
+            "script_name": "hut-article-api-worker-stg"
+          }
+        ]
+      },
+      "queues": {
+        "consumers": [
+          {
+            "queue": "hut-article-excerpt-completion-stg",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-article-excerpt-completion-dlq-stg"
+          }
+        ]
+      }
+    },
+    "prd": {
+      "name": "hut-article-completion-worker-prd",
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "ARTICLE_DO",
+            "class_name": "ArticleDurableObject",
+            "script_name": "hut-article-api-worker-prd"
+          }
+        ]
+      },
+      "queues": {
+        "consumers": [
+          {
+            "queue": "hut-article-excerpt-completion-prd",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60,
+            "dead_letter_queue": "hut-article-excerpt-completion-dlq-prd"
+          }
+        ]
+      }
+    }
+  }
+}
