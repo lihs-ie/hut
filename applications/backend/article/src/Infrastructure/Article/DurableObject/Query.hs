@@ -201,10 +201,9 @@ readerFilterFor criteria =
     (keywordClause, keywordParameters) = case keyword criteria of
         Nothing -> ("", [])
         Just value ->
-            ( " AND (instr(lower(json_extract(payload, '$.title')), lower(?)) > 0"
-                <> " OR instr(lower(json_extract(payload, '$.body')), lower(?)) > 0"
-                <> " OR instr(lower(json_extract(payload, '$.excerpt')), lower(?)) > 0)"
-            , replicate 3 (SQLText value)
+            ( " AND EXISTS (SELECT 1 FROM json_each(article_aggregates.search_text) AS term"
+                <> " WHERE instr(term.value, ?) > 0)"
+            , [SQLText (Text.toLower value)]
             )
     selectedTags = map (SQLText . tagIdentifierText) (tags criteria)
     (tagClause, tagParameters)

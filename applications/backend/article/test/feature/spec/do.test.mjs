@@ -170,7 +170,7 @@ test("article lifecycle is available through the admin and reader APIs", async (
   const createdResponse = await fetch(apiRoute("/admin/articles"), {
     method: "POST",
     headers,
-    body: JSON.stringify({ title: "Lifecycle", body: "# Lifecycle\n\nA complete article.", slug, tags: [tag] }),
+    body: JSON.stringify({ title: "ÉCOLE Lifecycle", body: "# Lifecycle\n\nA complete article.", slug, tags: [tag] }),
   });
   assert.equal(createdResponse.status, 201, await createdResponse.clone().text());
   const created = await createdResponse.json();
@@ -195,7 +195,7 @@ test("article lifecycle is available through the admin and reader APIs", async (
   const amendedResponse = await fetch(apiRoute(`/admin/articles/${identifier}/draft`), {
     method: "PUT",
     headers,
-    body: JSON.stringify({ title: "Lifecycle", body: "# Lifecycle\n\nUpdated article.", slug, tags: [tag] }),
+    body: JSON.stringify({ title: "ÉCOLE Lifecycle", body: "# Lifecycle\n\nUpdated article.", slug, tags: [tag] }),
   });
   assert.equal(amendedResponse.status, 200, await amendedResponse.clone().text());
   assert.match((await amendedResponse.json()).body, /Updated article/);
@@ -265,6 +265,9 @@ test("article lifecycle is available through the admin and reader APIs", async (
   const filteredPage = await fetch(apiRoute(`/articles?q=lifecycle&tag=${tag}`));
   assert.equal(filteredPage.status, 200, await filteredPage.clone().text());
   assert.ok((await filteredPage.json()).articles.some((article) => article.identifier === identifier));
+  const unicodePage = await fetch(apiRoute("/articles?q=%C3%A9cole"));
+  assert.equal(unicodePage.status, 200, await unicodePage.clone().text());
+  assert.ok((await unicodePage.json()).articles.some((article) => article.identifier === identifier));
   const absentPage = await fetch(apiRoute("/articles?q=unrelated"));
   assert.equal(absentPage.status, 200, await absentPage.clone().text());
   assert.equal((await absentPage.json()).pagination.total, 0);

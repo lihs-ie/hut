@@ -26,11 +26,21 @@ import Cloudflare.Workers.Binding.DurableObject.SQL (
     sqlExec,
  )
 import Control.Exception (try)
+import Data.Aeson (encode)
+import Data.ByteString.Lazy qualified as Lazy
 import Data.IORef (IORef, readIORef, writeIORef)
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Encoding (decodeUtf8)
 import Data.Time (UTCTime, defaultTimeLocale, diffTimeToPicoseconds, formatTime, utctDay, utctDayTime)
-import "article" Domain.Article (Article (..), ArticleIdentifier, articleIdentifier, articleIdentifierText)
+import "article" Domain.Article (
+    Article (..),
+    ArticleIdentifier,
+    articleIdentifier,
+    articleIdentifierText,
+    contentText,
+    titleText,
+ )
 import "article" Domain.Article.Draft (draftContent, draftTimeline, proofreadedContent, publicationContent)
 import Shared.Domain.Common.Primitive (newPositiveInteger)
 import Shared.Domain.Error (
@@ -40,6 +50,7 @@ import Shared.Domain.Error (
     createServiceUnavailable,
     createUnexpectedError,
  )
+import Shared.Domain.Excerpt (excerptText)
 import Shared.Domain.Slug (Slug, slugText)
 import Shared.Infrastructure.Versioning (
     PersistenceMode (..),
@@ -74,7 +85,7 @@ data OutboxRecord = OutboxRecord
     }
 
 sqlLimits :: SQLLimits
-sqlLimits = SQLLimits{maximumRows = 3, maximumBytes = 16777216, maximumStatements = 1}
+sqlLimits = SQLLimits{maximumRows = 4, maximumBytes = 16777216, maximumStatements = 1}
 
 storageSQL :: DurableObjectStorage -> ExecuteSQL
 storageSQL storage = sqlExec storage sqlLimits
@@ -104,6 +115,7 @@ initializeSchemaWith execute codec = do
             <> "phase TEXT NOT NULL, "
             <> "updated_order TEXT NOT NULL, "
             <> "published_order TEXT, "
+            <> "search_text TEXT NOT NULL DEFAULT '[]', "
             <> "payload TEXT NOT NULL, "
             <> "revision INTEGER NOT NULL CHECK (revision > 0 AND revision <= 9007199254740991))"
     outboxSchema =
@@ -139,7 +151,7 @@ migrateArticleSchema :: ExecuteSQL -> ArticleCodec -> IO (Either DomainError ())
 migrateArticleSchema execute codec = do
     columns <- executeSQL execute
         ( "SELECT name FROM pragma_table_info('article_aggregates') "
-            <> "WHERE name IN ('phase', 'updated_order', 'published_order')"
+            <> "WHERE name IN ('phase', 'updated_order', 'published_order', 'search_text')"
         )
         []
     case columns >>= readIndexColumns of
@@ -154,6 +166,7 @@ migrateArticleSchema execute codec = do
         [ ("phase", "ALTER TABLE article_aggregates ADD COLUMN phase TEXT NOT NULL DEFAULT ''")
         , ("updated_order", "ALTER TABLE article_aggregates ADD COLUMN updated_order TEXT NOT NULL DEFAULT ''")
         , ("published_order", "ALTER TABLE article_aggregates ADD COLUMN published_order TEXT")
+        , ("search_text", "ALTER TABLE article_aggregates ADD COLUMN search_text TEXT NOT NULL DEFAULT '[]'")
         ]
     addMissing remaining = case remaining of
         [] -> pure (Right ())
@@ -165,7 +178,8 @@ migrateArticleSchema execute codec = do
     backfill = do
         found <- executeSQL execute
             ( "SELECT identifier, slug, payload FROM article_aggregates "
-                <> "WHERE phase = '' OR updated_order = '' LIMIT 1"
+                <> "WHERE phase = '' OR updated_order = '' "
+                <> "OR (phase = 'published' AND search_text = '[]') LIMIT 1"
             )
             []
         case found >>= readLegacyArticle codec of
@@ -174,7 +188,8 @@ migrateArticleSchema execute codec = do
             Right (Just (identifier, slug, payload, article)) -> do
                 updated <- executeSQL execute
                     ( "UPDATE article_aggregates SET phase = ?, updated_order = ?, "
-                        <> "published_order = ? WHERE identifier = ? AND slug IS ? "
+                        <> "published_order = ?, search_text = ? "
+                        <> "WHERE identifier = ? AND slug IS ? "
                         <> "AND payload = ? RETURNING identifier"
                     )
                     (articleIndexParameters article <> [identifier, slug, payload])
@@ -187,7 +202,7 @@ readIndexColumns :: SQLResult -> Either DomainError [Text]
 readIndexColumns result = traverse readColumn result.rows
   where
     readColumn [SQLText name]
-        | name `elem` ["phase", "updated_order", "published_order"] = Right name
+        | name `elem` ["phase", "updated_order", "published_order", "search_text"] = Right name
     readColumn _ = Left (corruptStorage "article index schema has an invalid row")
 
 readLegacyArticle :: ArticleCodec -> SQLResult -> Either DomainError (Maybe (SQLValue, SQLValue, SQLValue, Article))
@@ -386,8 +401,8 @@ insertStatement identifier slug encoded article =
     SQLStatement
         { sql =
             "INSERT INTO article_aggregates "
-                <> "(identifier, slug, phase, updated_order, published_order, payload, revision) "
-                <> "VALUES (?, ?, ?, ?, ?, ?, 1) "
+                <> "(identifier, slug, phase, updated_order, published_order, search_text, payload, revision) "
+                <> "VALUES (?, ?, ?, ?, ?, ?, ?, 1) "
                 <> "ON CONFLICT DO NOTHING RETURNING revision"
         , parameters =
             [SQLText (articleIdentifierText identifier), slug]
@@ -400,7 +415,7 @@ updateStatement identifier slug encoded article previous next =
     SQLStatement
         { sql =
             "UPDATE OR IGNORE article_aggregates "
-                <> "SET slug = ?, phase = ?, updated_order = ?, published_order = ?, "
+                <> "SET slug = ?, phase = ?, updated_order = ?, published_order = ?, search_text = ?, "
                 <> "payload = ?, revision = ? "
                 <> "WHERE identifier = ? AND revision = ? RETURNING revision"
         , parameters =
@@ -418,6 +433,7 @@ articleIndexParameters article =
     [ SQLText phase
     , SQLText (timeOrder updatedAt)
     , maybe SQLNull (SQLText . timeOrder) publishedAt
+    , SQLText (articleSearchText article)
     ]
   where
     (phase, updatedAt, publishedAt) = case article of
@@ -426,6 +442,15 @@ articleIndexParameters article =
         Ready draft -> ("ready", (draftTimeline draft).updatedAt, Nothing)
         Published value -> ("published", value.timeline.updatedAt, Just value.publishedAt)
         Private value -> ("private", value.timeline.updatedAt, Just value.publishedAt)
+
+articleSearchText :: Article -> Text
+articleSearchText (Published value) =
+    decodeUtf8 $ Lazy.toStrict $ encode
+        [ Text.toLower (titleText value.publication.title)
+        , Text.toLower (contentText value.publication.body)
+        , Text.toLower (excerptText value.publication.excerpt)
+        ]
+articleSearchText _ = "[]"
 
 timeOrder :: UTCTime -> Text
 timeOrder value =

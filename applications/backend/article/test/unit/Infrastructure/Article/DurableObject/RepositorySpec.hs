@@ -180,7 +180,7 @@ fixtureCodec =
 createsSchema :: IO ()
 createsSchema = do
     (execute, statements) <- newScript
-        ([emptyResult, emptyResult, SQLResult [] [[SQLText "phase"], [SQLText "updated_order"], [SQLText "published_order"]] 0 3, emptyResult]
+        ([emptyResult, emptyResult, SQLResult [] [[SQLText "phase"], [SQLText "updated_order"], [SQLText "published_order"], [SQLText "search_text"]] 0 4, emptyResult]
             <> replicate 4 emptyResult)
     result <- initializeSchemaWith execute fixtureCodec
     check "schema initializes" (result == Right ())
@@ -203,7 +203,7 @@ createsSchema = do
         (all (\statement -> null statement.parameters) issued)
     check "article phase and sort keys are stored"
         (all (`Text.isInfixOf` articleStatement.sql)
-            ["phase TEXT NOT NULL", "updated_order TEXT NOT NULL", "published_order TEXT"])
+            ["phase TEXT NOT NULL", "updated_order TEXT NOT NULL", "published_order TEXT", "search_text TEXT NOT NULL"])
 
 migratesLegacySchema :: IO ()
 migratesLegacySchema = do
@@ -212,7 +212,7 @@ migratesLegacySchema = do
         row = oneRow [SQLText identifier, SQLText "haskell-syntax", SQLText identifier]
         existingColumns = oneRow [SQLText "phase"]
     (execute, statements) <- newScript
-        ( [emptyResult, emptyResult, existingColumns, emptyResult, emptyResult, row]
+        ( [emptyResult, emptyResult, existingColumns, emptyResult, emptyResult, emptyResult, row]
             <> [oneRow [SQLText identifier], emptyResult]
             <> replicate 4 emptyResult
         )
@@ -220,7 +220,7 @@ migratesLegacySchema = do
     check "legacy schema migrates" (result == Right ())
     issued <- statements
     check "only missing columns are added"
-        (length (filter (Text.isPrefixOf "ALTER TABLE" . (.sql)) issued) == 2)
+        (length (filter (Text.isPrefixOf "ALTER TABLE" . (.sql)) issued) == 3)
     check "legacy aggregate is backfilled"
         (any (Text.isInfixOf "UPDATE article_aggregates SET phase" . (.sql)) issued)
     check "indexes are created after backfill"
@@ -231,8 +231,8 @@ rejectsBrokenLegacySchema = do
     article <- start
     let identifier = articleIdentifierText (articleIdentifier article)
         columns = SQLResult []
-            [[SQLText "phase"], [SQLText "updated_order"], [SQLText "published_order"]]
-            0 3
+            [[SQLText "phase"], [SQLText "updated_order"], [SQLText "published_order"], [SQLText "search_text"]]
+            0 4
         schemaPrefix = [emptyResult, emptyResult, columns]
         validRow = oneRow
             [SQLText identifier, SQLText "haskell-syntax", SQLText identifier]
@@ -260,8 +260,8 @@ rejectsBrokenLegacySchema = do
 rejectsMigrationFailures :: IO ()
 rejectsMigrationFailures = do
     let allColumns = SQLResult []
-            [[SQLText "phase"], [SQLText "updated_order"], [SQLText "published_order"]]
-            0 3
+            [[SQLText "phase"], [SQLText "updated_order"], [SQLText "published_order"], [SQLText "search_text"]]
+            0 4
         runFailure failAt columns = do
             calls <- newIORef (0 :: Int)
             let execute _ = do
@@ -325,6 +325,7 @@ insertsAndTracksVersion = do
             , SQLText "unvalidated"
             , SQLText "2026010100000000000000000"
             , SQLNull
+            , SQLText "[]"
             , SQLText (articleIdentifierText (articleIdentifier article))
             ])
 
@@ -355,7 +356,7 @@ findsAndUpdates = do
     statement <- lastStatement issued
     check "update is conditional on the observed revision"
         (statement.sql == "UPDATE OR IGNORE article_aggregates "
-            <> "SET slug = ?, phase = ?, updated_order = ?, published_order = ?, "
+            <> "SET slug = ?, phase = ?, updated_order = ?, published_order = ?, search_text = ?, "
             <> "payload = ?, revision = ? "
             <> "WHERE identifier = ? AND revision = ? RETURNING revision")
     check
@@ -365,6 +366,7 @@ findsAndUpdates = do
                , SQLText "unvalidated"
                , SQLText "2026010100000000000000000"
                , SQLNull
+               , SQLText "[]"
                , SQLText (articleIdentifierText identifier)
                , SQLNumber 2
                , SQLText (articleIdentifierText identifier)
@@ -946,7 +948,7 @@ persistsLifecycleSlugs = do
         check (name <> " can be persisted") (result == Right ())
         statement <- firstStatement =<< statements
         case statement.parameters of
-            [_identifier, storedSlug, phase, updated, publication, _payload] -> do
+            [_identifier, storedSlug, phase, updated, publication, searchText, _payload] -> do
                 check (name <> " retains its slug")
                     (storedSlug == SQLText "haskell-syntax")
                 check (name <> " indexes its lifecycle phase")
@@ -959,6 +961,11 @@ persistsLifecycleSlugs = do
                     (case (hasPublicationTime, publication) of
                         (False, SQLNull) -> True
                         (True, SQLText value) -> "20260101" `Text.isPrefixOf` value
+                        _ -> False)
+                check (name <> " stores searchable text only when published")
+                    (case (name, searchText) of
+                        ("published", SQLText value) -> "lifecycle" `Text.isInfixOf` value
+                        (_, SQLText "[]") -> True
                         _ -> False)
             _ -> fail "expected lifecycle insert parameters")
         [ ("proofreaded", Proofreaded proofreaded, False)

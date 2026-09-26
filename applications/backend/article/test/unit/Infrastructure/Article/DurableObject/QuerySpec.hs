@@ -188,7 +188,7 @@ searchesFilteredReaderPage :: IO ()
 searchesFilteredReaderPage = do
     article <- publishedArticle
     tag <- right (newTagIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAY")
-    criteria <- right (newReaderCriteria 1 (Just 10) (Just "syntax") [tag])
+    criteria <- right (newReaderCriteria 1 (Just 10) (Just "ÉCOLE") [tag])
     row <- storedRow article
     (execute, statements) <- newScript
         [oneRow [SQLNumber 1], oneRow [SQLText (articleIdentifierText (articleIdentifier article))], row]
@@ -200,13 +200,13 @@ searchesFilteredReaderPage = do
     issued <- statements
     check "count and page apply the same keyword and tag predicates" (case issued of
         [count, page, _] ->
-            "json_extract(payload, '$.body')" `Text.isInfixOf` count.sql
+            "json_each(article_aggregates.search_text)" `Text.isInfixOf` count.sql
                 && "json_each(article_aggregates.payload, '$.tags')" `Text.isInfixOf` count.sql
-                && "json_extract(payload, '$.body')" `Text.isInfixOf` page.sql
+                && "json_each(article_aggregates.search_text)" `Text.isInfixOf` page.sql
                 && "json_each(article_aggregates.payload, '$.tags')" `Text.isInfixOf` page.sql
                 && count.parameters ==
-                    [SQLText "published", SQLText "syntax", SQLText "syntax", SQLText "syntax", SQLText "01ARZ3NDEKTSV4RRFFQ69G5FAY"]
-                && take 5 page.parameters == count.parameters
+                    [SQLText "published", SQLText "école", SQLText "01ARZ3NDEKTSV4RRFFQ69G5FAY"]
+                && take 3 page.parameters == count.parameters
         _ -> False)
 
 rejectsInvalidResults :: IO ()
