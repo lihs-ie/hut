@@ -20,6 +20,7 @@ import { recordSearchLog } from "@shared/actions/search-log";
  */
 type CachedSearchResult = {
   identifier: string;
+  publishedAt?: string | Date | null;
   timeline?: { createdAt: string | Date; updatedAt: string | Date };
   // Article specific
   content?: string;
@@ -32,16 +33,22 @@ type CachedSearchResult = {
   entries?: Array<{ text: string; createdAt: string | Date }>;
 };
 
+const restorePublishedAt = (
+  value: string | Date | null | undefined,
+): Date | null => {
+  if (value == null) return null;
+  return restoreDateFromCache(value);
+};
+
 const restoreSearchResultDates = (
   results: CachedSearchResult[]
 ): (Article | Series | Memo)[] => {
   return results.map((item) => {
-    // Restore timeline if present
     const timeline = item.timeline
       ? restoreTimelineFromCache(item.timeline)
       : undefined;
+    const publishedAt = restorePublishedAt(item.publishedAt);
 
-    // Check if it's a Memo (has entries)
     if ("entries" in item && Array.isArray(item.entries)) {
       const entries = item.entries.map(
         (entry) =>
@@ -53,23 +60,24 @@ const restoreSearchResultDates = (
       return {
         ...item,
         timeline,
+        publishedAt,
         entries,
       } as Memo;
     }
 
-    // Check if it's a Series (has chapters)
     if ("chapters" in item && Array.isArray(item.chapters)) {
       return {
         ...item,
         timeline,
+        publishedAt,
         chapters: item.chapters,
       } as Series;
     }
 
-    // Otherwise it's an Article
     return {
       ...item,
       timeline,
+      publishedAt,
     } as Article;
   });
 };

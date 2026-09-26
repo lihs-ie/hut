@@ -84,6 +84,7 @@ export type MemoProperties = {
   tags: TagIdentifier[];
   images: ImageIdentifier[];
   status: PublishStatus;
+  publishedAt: Date | null;
   timeline: Timeline;
 };
 
@@ -97,6 +98,7 @@ export const MemoMold = Mold<Memo, MemoProperties>({
       tags: properties.tags,
       images: properties.images,
       status: properties.status,
+      publishedAt: properties.publishedAt,
       timeline: properties.timeline,
     }),
   prepare: (overrides, seed) => ({
@@ -111,6 +113,10 @@ export const MemoMold = Mold<Memo, MemoProperties>({
       overrides.images ??
       Forger(ImageIdentifierMold).forgeMultiWithSeed(5, seed),
     status: overrides.status ?? Forger(PublishStatusMold).forgeWithSeed(seed),
+    publishedAt:
+      overrides.publishedAt === undefined
+        ? Forger(DateMold).forgeWithSeed(seed)
+        : overrides.publishedAt,
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
 });

@@ -75,3 +75,18 @@ variable "notification_email" {
   type        = string
   sensitive   = true
 }
+
+variable "cloudflare_account_id" {
+  description = "Cloudflare account ID hosting the reader Cloudflare Worker. null にすると cloudflare_reader モジュールが無効化される"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "cloudflare_api_token" {
+  description = "Cloudflare API token with Workers / R2 edit scope. null でも provider init は通るが Cloudflare リソースの作成は失敗する"
+  type        = string
+  default     = null
+  sensitive   = true
+  nullable    = true
+}

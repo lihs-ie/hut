@@ -3,6 +3,7 @@ import { MDXRenderer } from "@shared/components/global/mdx";
 import { ArticleIndex } from "@shared/components/templates/article";
 import { createTableOfContents, findBySlug } from "@shared/actions/article";
 import { incrementViewCount } from "@shared/actions/view";
+import { isPublished } from "@shared/domains/common";
 import { ContentType } from "@shared/domains/search-token/reference";
 import type { Metadata } from "next";
 
@@ -24,7 +25,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
       type: "article",
       title: article.title,
       description: article.excerpt,
-      publishedTime: article.timeline.createdAt.toISOString(),
+      ...(isPublished(article) ? { publishedTime: article.publishedAt.toISOString() } : {}),
       modifiedTime: article.timeline.updatedAt.toISOString(),
       tags: tags.map((tag) => tag.name),
     },

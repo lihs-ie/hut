@@ -1,0 +1,168 @@
+name: Media Dev Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Apply the reviewed Terraform plan
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: media-dev-infrastructure
+  cancel-in-progress: false
+
+env:
+  TERRAFORM_DIRECTORY: infrastructure/environments/dev
+  TERRAFORM_VERSION: "1.14.8"
+
+jobs:
+  apply:
+    name: Plan, apply, and confirm convergence
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+
+      - name: Terraform init
+        run: terraform init -input=false
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+
+      - name: Terraform validate
+        run: terraform validate -no-color
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+
+      - name: Import the existing zone cache ruleset
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TERRAFORM_API_TOKEN }}
+          CLOUDFLARE_ZONE_IDENTIFIER: ${{ vars.CLOUDFLARE_ZONE_IDENTIFIER }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_IDENTIFIER }}
+        run: |
+          set -Eeuo pipefail
+
+          resource='module.media_cloudflare.cloudflare_ruleset.asset_cache[0]'
+          if terraform state show "${resource}" >/dev/null 2>&1; then
+            echo "Cache ruleset is already managed by Terraform."
+            exit 0
+          fi
+
+          ruleset_id="$({
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_IDENTIFIER}/rulesets"
+          } | jq -r '
+            [
+              .result[]
+              | select(
+                  .phase == "http_request_cache_settings"
+                  and .kind == "zone"
+                )
+            ]
+            | if length == 1 then .[0].id else empty end
+          ')"
+
+          if [ -z "${ruleset_id}" ]; then
+            echo "Expected exactly one zone cache ruleset to import." >&2
+            exit 1
+          fi
+
+          terraform import \
+            "${resource}" \
+            "zones/${CLOUDFLARE_ZONE_IDENTIFIER}/${ruleset_id}"
+
+      - name: Terraform plan
+        run: terraform plan -input=false -out=tfplan
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TERRAFORM_API_TOKEN }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_IDENTIFIER }}
+
+      - name: Terraform apply
+        if: ${{ inputs.apply }}
+        run: terraform apply -input=false -auto-approve tfplan
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TERRAFORM_API_TOKEN }}
+
+      - name: Confirm Terraform convergence
+        if: ${{ inputs.apply }}
+        run: |
+          set -Eeuo pipefail
+
+          exit_code=0
+          terraform plan \
+            -input=false \
+            -detailed-exitcode \
+            -out=convergence.tfplan || exit_code=$?
+
+          if [ "${exit_code}" -eq 0 ]; then
+            exit 0
+          fi
+
+          if [ "${exit_code}" -ne 2 ]; then
+            exit "${exit_code}"
+          fi
+
+          terraform show -json convergence.tfplan | jq -e '
+            [
+              .resource_changes[]
+              | select(.change.actions != ["no-op"])
+            ] as $changes
+            | ($changes | length) == 1
+              and $changes[0].address
+                == "module.media_cloudflare.cloudflare_r2_bucket_event_notification.tmp_object_created"
+              and $changes[0].change.actions == ["update"]
+              and $changes[0].change.after_unknown.queue_name == true
+              and (
+                ($changes[0].change.before | del(.queue_name))
+                == ($changes[0].change.after | del(.queue_name))
+              )
+          ' >/dev/null
+
+          echo "Ignoring the Cloudflare provider's computed-only queue_name diff."
+        working-directory: ${{ env.TERRAFORM_DIRECTORY }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TERRAFORM_STATE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRAFORM_STATE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_REGION: auto
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TERRAFORM_API_TOKEN }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_IDENTIFIER }}

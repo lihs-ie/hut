@@ -46,6 +46,7 @@ function toSeriesPayload(series: Series) {
     cover: series.cover,
     chapters: series.chapters,
     status: series.status,
+    publishedAt: series.publishedAt ?? null,
     timeline: series.timeline,
   };
 }

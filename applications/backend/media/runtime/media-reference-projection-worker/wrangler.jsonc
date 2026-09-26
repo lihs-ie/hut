@@ -1,0 +1,75 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "hut-media-reference-projection-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "env": {
+    "dev": {
+      "name": "hut-media-reference-projection-worker-dev",
+      "d1_databases": [
+        {
+          "binding": "MEDIA_DATABASE",
+          "database_name": "hut-media-dev",
+          "migrations_dir": "../../migrations"
+        }
+      ],
+      "queues": {
+        "consumers": [
+          {
+            "queue": "hut-media-reference-projection-dev",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60
+          }
+        ]
+      }
+    },
+    "stg": {
+      "name": "hut-media-reference-projection-worker-stg",
+      "d1_databases": [
+        {
+          "binding": "MEDIA_DATABASE",
+          "database_name": "hut-media-stg",
+          "migrations_dir": "../../migrations"
+        }
+      ],
+      "queues": {
+        "consumers": [
+          {
+            "queue": "hut-media-reference-projection-stg",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60
+          }
+        ]
+      }
+    },
+    "prd": {
+      "name": "hut-media-reference-projection-worker-prd",
+      "d1_databases": [
+        {
+          "binding": "MEDIA_DATABASE",
+          "database_name": "hut-media-prd",
+          "migrations_dir": "../../migrations"
+        }
+      ],
+      "queues": {
+        "consumers": [
+          {
+            "queue": "hut-media-reference-projection-prd",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "retry_delay": 60
+          }
+        ]
+      }
+    }
+  }
+}

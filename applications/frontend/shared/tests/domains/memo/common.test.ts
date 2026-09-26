@@ -136,6 +136,21 @@ describe("domains/memo/common", () => {
         const result = memoSchema.safeParse(Forger(MemoMold).forge({ tags: [] }));
         expect(result.success).toBe(true);
       });
+
+      it("publishedAtがnullでも有効", () => {
+        const result = memoSchema.safeParse(
+          Forger(MemoMold).forge({ publishedAt: null }),
+        );
+        expect(result.success).toBe(true);
+      });
+
+      it("publishedAtがDateでも有効", () => {
+        const publishedAt = new Date("2025-01-01T00:00:00Z");
+        const result = memoSchema.safeParse(
+          Forger(MemoMold).forge({ publishedAt }),
+        );
+        expect(result.success).toBe(true);
+      });
     });
 
     describe("無効なMemoの検証", () => {
@@ -147,6 +162,7 @@ describe("domains/memo/common", () => {
         tags: [],
         images: [],
         status: "draft",
+        publishedAt: null,
         timeline: { createdAt: new Date(), updatedAt: new Date() },
         ...overrides,
       });
@@ -158,6 +174,13 @@ describe("domains/memo/common", () => {
 
       it("titleが空の場合は無効", () => {
         const result = memoSchema.safeParse(createMemoWithOverrides({ title: "" }));
+        expect(result.success).toBe(false);
+      });
+
+      it("publishedAtが文字列の場合は無効", () => {
+        const result = memoSchema.safeParse(
+          createMemoWithOverrides({ publishedAt: "2025-01-01" }),
+        );
         expect(result.success).toBe(false);
       });
     });
@@ -173,6 +196,22 @@ describe("domains/memo/common", () => {
         tags: [],
         images: [],
         status: "draft",
+        publishedAt: null,
+        timeline: Forger(TimelineMold).forge(),
+      });
+      expect(result.isOk).toBe(true);
+    });
+
+    it("publishedAtがnullのUnvalidatedMemoでokを返す", () => {
+      const result = validateMemo({
+        identifier: Forger(MemoIdentifierMold).forge(),
+        title: "下書きメモ",
+        slug: "draft-memo",
+        entries: [],
+        tags: [],
+        images: [],
+        status: "draft",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isOk).toBe(true);
@@ -187,6 +226,7 @@ describe("domains/memo/common", () => {
         tags: [],
         images: [],
         status: "invalid",
+        publishedAt: null,
         timeline: Forger(TimelineMold).forge(),
       });
       expect(result.isErr).toBe(true);
@@ -263,6 +303,15 @@ describe("domains/memo/common", () => {
       expect(updatedMemo.images).toHaveLength(1);
       expect(updatedMemo.images).toContain(existingImage);
     });
+
+    it("publishedAtが保持される", () => {
+      const publishedAt = new Date("2025-01-01T00:00:00Z");
+      const memo = Forger(MemoMold).forge({ publishedAt });
+      const newEntry = Forger(MemoEntryMold).forge();
+      const updatedMemo = addEntry(memo, newEntry);
+
+      expect(updatedMemo.publishedAt).toEqual(publishedAt);
+    });
   });
 
   describe("toSnapshot", () => {
@@ -273,6 +322,21 @@ describe("domains/memo/common", () => {
       expect(snapshot.identifier).toBe(memo.identifier);
       expect(snapshot.title).toBe(memo.title);
       expect(snapshot.status).toBe(memo.status);
+    });
+
+    it("publishedAtが保持される", () => {
+      const publishedAt = new Date("2025-01-01T00:00:00Z");
+      const memo = Forger(MemoMold).forge({ publishedAt });
+      const snapshot = toSnapshot(memo);
+
+      expect(snapshot.publishedAt).toEqual(memo.publishedAt);
+    });
+
+    it("publishedAtがnullの場合もnullとして保持される", () => {
+      const memo = Forger(MemoMold).forge({ publishedAt: null });
+      const snapshot = toSnapshot(memo);
+
+      expect(snapshot.publishedAt).toBeNull();
     });
   });
 

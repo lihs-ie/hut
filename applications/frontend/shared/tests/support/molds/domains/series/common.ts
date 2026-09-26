@@ -115,6 +115,7 @@ export type SeriesProperties = {
   cover: Cover | null;
   chapters: ChapterIdentifier[];
   status: PublishStatus;
+  publishedAt: Date | null;
   timeline: Timeline;
 };
 
@@ -130,6 +131,7 @@ export const SeriesMold = Mold<Series, SeriesProperties>({
       cover: properties.cover,
       chapters: properties.chapters,
       status: properties.status,
+      publishedAt: properties.publishedAt,
       timeline: properties.timeline,
     }),
   prepare: (overrides, seed) => ({
@@ -147,6 +149,10 @@ export const SeriesMold = Mold<Series, SeriesProperties>({
     chapters:
       overrides.chapters ?? Forger(ChapterIdentifierMold).forgeMultiWithSeed(3, seed),
     status: overrides.status ?? PublishStatus.PUBLISHED,
+    publishedAt:
+      overrides.publishedAt === undefined
+        ? Forger(DateMold).forgeWithSeed(seed)
+        : overrides.publishedAt,
     timeline: overrides.timeline ?? Forger(TimelineMold).forgeWithSeed(seed),
   }),
 });

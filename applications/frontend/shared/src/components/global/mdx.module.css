@@ -28,7 +28,7 @@
     "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", var(--font-mono);
   font-size: 1rem;
   line-height: 1.4;
-  background-color: #24292e;
+  background-color: var(--background-secondary);
   border: none;
   border-radius: 4px;
 }

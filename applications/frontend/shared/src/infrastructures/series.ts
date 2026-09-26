@@ -8,6 +8,7 @@ import {
   createSlugIndexInTransaction,
   createVersion,
   deleteSlugIndexInTransaction,
+  FIRESTORE_IN_BATCH_LIMIT,
   FirestoreOperations,
   mapFirestoreError,
   updateSlugIndexInTransaction,
@@ -27,6 +28,7 @@ import {
   aggregateNotFoundError,
   duplicationError,
 } from "@shared/aspects/error";
+import { chunk } from "@shared/aspects/array";
 
 type PersistedSeries = {
   identifier: string;
@@ -38,6 +40,7 @@ type PersistedSeries = {
   cover: string | null;
   status: string;
   chapters: string[];
+  publishedAt: Timestamp | null;
   timeline: {
     createdAt: Timestamp;
     updatedAt: Timestamp;
@@ -68,6 +71,9 @@ export const FirebaseSeriesRepository = (
           subTitle: series.subTitle,
           status: series.status,
           chapters: series.chapters,
+          publishedAt: series.publishedAt
+            ? Timestamp.fromDate(series.publishedAt)
+            : null,
           timeline: {
             createdAt: Timestamp.fromDate(series.timeline.createdAt),
             updatedAt: Timestamp.fromDate(series.timeline.updatedAt),
@@ -91,6 +97,7 @@ export const FirebaseSeriesRepository = (
           subTitle: data.subTitle || null,
           status: data.status ?? "published",
           chapters: data.chapters ?? [],
+          publishedAt: data.publishedAt ? data.publishedAt.toDate() : null,
           timeline: {
             createdAt: data.timeline.createdAt.toDate(),
             updatedAt: data.timeline.updatedAt.toDate(),
@@ -285,26 +292,45 @@ export const FirebaseSeriesRepository = (
   ) => {
     return fromPromise(
       (async () => {
-        const seriesList: Series[] = [];
-
-        for (const identifier of identifiers) {
-          const document = operations.doc(collection, identifier);
-          const snapshot = await operations.getDoc(document);
-
-          if (!snapshot.exists()) {
-            if (throwOnMissing) {
-              throw aggregateNotFoundError(
-                "Series",
-                `Series ${identifier} not found.`,
-              );
-            }
-            continue;
-          }
-
-          seriesList.push(snapshot.data());
+        if (identifiers.length === 0) {
+          return [];
         }
 
-        return seriesList;
+        const uniqueIdentifiers = Array.from(new Set(identifiers));
+        const chunks = chunk(uniqueIdentifiers, FIRESTORE_IN_BATCH_LIMIT).unwrap();
+
+        const batchResults = await Promise.all(
+          chunks.map(async (identifiersChunk) => {
+            const query = operations.query(
+              collection,
+              operations.where("identifier", "in", identifiersChunk),
+            );
+            const snapshot = await operations.getDocs(query);
+            return snapshot.docs.map((document) => document.data());
+          }),
+        );
+
+        const series = new Map<SeriesIdentifier, Series>();
+        for (const entry of batchResults.flat()) {
+          series.set(entry.identifier, entry);
+        }
+
+        if (throwOnMissing) {
+          const missingIdentifier = uniqueIdentifiers.find(
+            (identifier) => !series.has(identifier),
+          );
+          if (missingIdentifier !== undefined) {
+            throw aggregateNotFoundError(
+              "Series",
+              `Series ${missingIdentifier} not found.`,
+            );
+          }
+        }
+
+        return identifiers.flatMap((identifier) => {
+          const entry = series.get(identifier);
+          return entry !== undefined ? [entry] : [];
+        });
       })(),
       mapError,
     );
