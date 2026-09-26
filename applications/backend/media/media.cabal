@@ -34,6 +34,7 @@ library
     Media.Domain.Image.Retention
     Media.Domain.ImageUsage
     Media.UseCase.GetImageStatus
+    Media.UseCase.FindAvailableImages
     Media.UseCase.InspectImage
     Media.UseCase.ProcessImageInspection
     Media.UseCase.ProjectImageUsage
@@ -65,11 +66,13 @@ library worker-adapters
     Media.Infrastructure.Queue.Inspection
     Media.Presentation.API
     Media.Presentation.API.GetImageStatus
+    Media.Presentation.API.FindAvailableImages
     Media.Presentation.API.RequestImageUpload
     Media.Presentation.API.RetryImageInspection
     Media.Presentation.API.RetryImageUpload
     Media.Presentation.Handler.API.Error
     Media.Presentation.Handler.API.GetImageStatus
+    Media.Presentation.Handler.API.FindAvailableImages
     Media.Presentation.Handler.API.Metadata
     Media.Presentation.Handler.API.RequestImageUpload
     Media.Presentation.Handler.API.RetryImageInspection
@@ -203,6 +206,7 @@ test-suite media-unit-test
     Media.Presentation.Server.API.ServerSpec
     Media.TestSupport
     Media.UseCase.GetImageStatusSpec
+    Media.UseCase.FindAvailableImagesSpec
     Media.UseCase.InspectImageSpec
     Media.UseCase.ProcessImageInspectionSpec
     Media.UseCase.ProjectImageUsageSpec

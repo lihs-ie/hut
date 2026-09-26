@@ -25,6 +25,10 @@ import Media.Presentation.API (ErrorResponse (ErrorResponse))
 import Media.Presentation.API.GetImageStatus (
     GetImageStatusResponse (..),
  )
+import Media.Presentation.API.FindAvailableImages (
+    FindAvailableImagesRequest (..),
+    FindAvailableImagesResponse (..),
+ )
 import Media.Presentation.API.RequestImageUpload (
     RequestImageUploadRequest (RequestImageUploadRequest),
     RequestImageUploadResponse (RequestImageUploadResponse),
@@ -38,6 +42,9 @@ import Media.Presentation.API.RetryImageUpload (
 import Media.Presentation.Handler.API.GetImageStatus (
     GetImageStatusHandlerDependencies (GetImageStatusHandlerDependencies),
     GetImageStatusHandlerOutput (GetImageStatusHandlerOutput),
+ )
+import Media.Presentation.Handler.API.FindAvailableImages (
+    FindAvailableImagesHandlerDependencies (FindAvailableImagesHandlerDependencies),
  )
 import Media.Presentation.Handler.API.Metadata (
     MetadataDependencies (MetadataDependencies),
@@ -63,6 +70,7 @@ import Media.Presentation.Server.API (
 import Shared.Domain.Error (
     DomainError,
     createAggregateNotFound,
+    createServiceUnavailable,
     createUnexpectedError,
  )
 import Shared.Domain.Identifier (ULID, newULID)
@@ -88,6 +96,9 @@ run = do
             , named "missing image returns 404" getImageStatusNotFound
             , named "invalid correlation returns 400" invalidCorrelation
             , named "GET /images/:identifier returns 200" getImageStatusRoute
+            , named "POST /images/availability returns available images" findAvailableImagesRoute
+            , named "invalid availability identifier returns 400" invalidAvailabilityIdentifier
+            , named "availability failure returns 503" availabilityFailure
             , named "POST upload-attempts returns 200" retryImageUploadRoute
             , named "POST inspection-retries returns 200" retryImageInspectionRoute
             , named "unknown route returns normalized 404" unknownRoute
@@ -244,6 +255,58 @@ getImageStatusRoute = do
         ( statusCode response == 200
             && responseHeader correlationHeader response == Just suppliedCorrelation
             && responseJSON response == Just getImageStatusResponse
+        )
+
+findAvailableImagesRoute :: IO Bool
+findAvailableImagesRoute = do
+    routeCalled <- newIORef False
+    let operation command = do
+            command `seq` writeIORef routeCalled True
+            pure (Right [newImageIdentifier imageULID])
+        dependencies = replaceFindAvailableImages
+            (FindAvailableImagesHandlerDependencies metadataDependencies operation)
+            successfulDependencies
+        availabilityRequest = internalRequest POST "/images/availability"
+            [("Content-Type", "application/json"), (correlationHeader, suppliedCorrelation)]
+            (Just (encode (FindAvailableImagesRequest [validImageIdentifier])))
+    response <- runServer dependencies availabilityRequest
+    called <- readIORef routeCalled
+    pure
+        ( called
+            && statusCode response == 200
+            && responseHeader correlationHeader response == Just suppliedCorrelation
+            && responseJSON response
+                == Just (FindAvailableImagesResponse [validImageIdentifier])
+        )
+
+invalidAvailabilityIdentifier :: IO Bool
+invalidAvailabilityIdentifier = do
+    let availabilityRequest = internalRequest POST "/images/availability"
+            [("Content-Type", "application/json")]
+            (Just (encode (FindAvailableImagesRequest ["invalid"])))
+    response <- runServer successfulDependencies availabilityRequest
+    pure
+        ( statusCode response == 400
+            && responseJSON response
+                == Just
+                    (ErrorResponse "invalid_image_identifier" "The image identifier is invalid.")
+        )
+
+availabilityFailure :: IO Bool
+availabilityFailure = do
+    let dependencies = replaceFindAvailableImages
+            (FindAvailableImagesHandlerDependencies metadataDependencies
+                (const (pure (Left (createServiceUnavailable "Media" "database failed")))))
+            successfulDependencies
+        availabilityRequest = internalRequest POST "/images/availability"
+            [("Content-Type", "application/json")]
+            (Just (encode (FindAvailableImagesRequest [validImageIdentifier])))
+    response <- runServer dependencies availabilityRequest
+    pure
+        ( statusCode response == 503
+            && responseJSON response
+                == Just
+                    (ErrorResponse "service_unavailable" "The service is temporarily unavailable.")
         )
 
 retryImageUploadRoute :: IO Bool
@@ -455,6 +518,10 @@ baseDependencies requestOperation statusOperation =
             metadataDependencies
             statusOperation
         )
+        ( FindAvailableImagesHandlerDependencies
+            metadataDependencies
+            (const (pure unexpectedFailure))
+        )
         ( RetryImageInspectionHandlerDependencies
             metadataDependencies
             (const (pure unexpectedFailure))
@@ -470,29 +537,40 @@ replaceGetImageStatus ::
     GetImageStatusHandlerDependencies ->
     APIServerDependencies ->
     APIServerDependencies
-replaceGetImageStatus replacement (APIServerDependencies upload retry _ inspection) =
-    APIServerDependencies upload retry replacement inspection
+replaceGetImageStatus replacement (APIServerDependencies upload retry _ availability inspection) =
+    APIServerDependencies upload retry replacement availability inspection
+
+replaceFindAvailableImages ::
+    FindAvailableImagesHandlerDependencies ->
+    APIServerDependencies ->
+    APIServerDependencies
+replaceFindAvailableImages replacement (APIServerDependencies upload retry status _ inspection) =
+    APIServerDependencies upload retry status replacement inspection
 
 replaceRequestImageUpload ::
     RequestImageUploadHandlerDependencies ->
     APIServerDependencies ->
     APIServerDependencies
-replaceRequestImageUpload replacement (APIServerDependencies _ retry status inspection) =
-    APIServerDependencies replacement retry status inspection
+replaceRequestImageUpload
+    replacement
+    (APIServerDependencies _ retry status availability inspection) =
+    APIServerDependencies replacement retry status availability inspection
 
 replaceRetryImageUpload ::
     RetryImageUploadHandlerDependencies ->
     APIServerDependencies ->
     APIServerDependencies
-replaceRetryImageUpload replacement (APIServerDependencies upload _ status inspection) =
-    APIServerDependencies upload replacement status inspection
+replaceRetryImageUpload
+    replacement
+    (APIServerDependencies upload _ status availability inspection) =
+    APIServerDependencies upload replacement status availability inspection
 
 replaceRetryImageInspection ::
     RetryImageInspectionHandlerDependencies ->
     APIServerDependencies ->
     APIServerDependencies
-replaceRetryImageInspection replacement (APIServerDependencies upload retry status _) =
-    APIServerDependencies upload retry status replacement
+replaceRetryImageInspection replacement (APIServerDependencies upload retry status availability _) =
+    APIServerDependencies upload retry status availability replacement
 
 metadataDependencies :: MetadataDependencies
 metadataDependencies =

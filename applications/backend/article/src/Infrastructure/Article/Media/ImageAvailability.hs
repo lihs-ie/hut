@@ -1,7 +1,7 @@
 {-# LANGUAGE PackageImports #-}
 
 module Infrastructure.Article.Media.ImageAvailability (
-    FetchImageStatus,
+    FetchImageAvailability,
     findAvailableImages,
     findAvailableImagesWith,
 ) where
@@ -13,7 +13,7 @@ import Cloudflare.Workers.Binding.ServiceBinding (
  )
 import Cloudflare.Workers.Headers (headersFromList)
 import Cloudflare.Workers.HTTP (
-    Method (GET),
+    Method (POST),
     Request (..),
     Response (..),
     ResponseBody (..),
@@ -22,12 +22,16 @@ import Cloudflare.Workers.HTTP (
 import Cloudflare.Workers.Streaming (readableStreamToLazyByteString)
 import Cloudflare.Workers.URL (parseURL)
 import Control.Exception (try)
-import Data.Aeson (FromJSON (..), eitherDecodeStrict', withObject, (.:))
+import Data.Aeson (FromJSON (..), eitherDecodeStrict', encode, object, withObject, (.:), (.=))
 import Data.ByteString.Lazy qualified as Lazy
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
-import "article" Domain.Article.Common (ImageReference, imageReferenceText)
+import "article" Domain.Article.Common (
+    ImageReference,
+    imageReferenceText,
+    newImageReference,
+ )
 import "shared" Shared.Domain.Error (DomainError, createServiceUnavailable)
 import "shared" Shared.UseCase.Command (
     Actor,
@@ -36,18 +40,13 @@ import "shared" Shared.UseCase.Command (
     correlationIdentifierText,
  )
 
-type FetchImageStatus = Request -> IO (Either DomainError Response)
+type FetchImageAvailability = Request -> IO (Either DomainError Response)
 
-data ImageStatusResponse = ImageStatusResponse
-    { imageIdentifier :: Text
-    , state :: Text
-    }
+newtype AvailabilityResponse = AvailabilityResponse [Text]
 
-instance FromJSON ImageStatusResponse where
-    parseJSON = withObject "ImageStatusResponse" $ \value ->
-        ImageStatusResponse
-            <$> value .: "imageIdentifier"
-            <*> value .: "state"
+instance FromJSON AvailabilityResponse where
+    parseJSON = withObject "AvailabilityResponse" $ \value ->
+        AvailabilityResponse <$> value .: "available"
 
 findAvailableImages ::
     ServiceBinding ->
@@ -55,80 +54,73 @@ findAvailableImages ::
     CorrelationIdentifier ->
     Set ImageReference ->
     IO (Either DomainError (Set ImageReference))
-findAvailableImages binding = findAvailableImagesWith fetchStatus
+findAvailableImages binding = findAvailableImagesWith fetchAvailability
   where
-    fetchStatus request = do
+    fetchAvailability request = do
         result <- try @ServiceBindingError (serviceFetch binding request)
-        pure $ either
-            (const (Left unavailable))
-            Right
-            result
+        pure $ either (const (Left unavailable)) Right result
 
 findAvailableImagesWith ::
-    FetchImageStatus ->
+    FetchImageAvailability ->
     Actor ->
     CorrelationIdentifier ->
     Set ImageReference ->
     IO (Either DomainError (Set ImageReference))
-findAvailableImagesWith fetchStatus actor correlation references =
-    visit Set.empty (Set.toAscList references)
-  where
-    visit available [] = pure (Right available)
-    visit available (reference : remaining) =
-        case imageRequest actor correlation reference of
-            Left err -> pure (Left err)
-            Right request -> do
-                response <- fetchStatus request
-                checked <- case response of
-                    Left err -> pure (Left err)
-                    Right value -> statusAvailable reference value
-                case checked of
-                    Left err -> pure (Left err)
-                    Right True -> visit (Set.insert reference available) remaining
-                    Right False -> visit available remaining
+findAvailableImagesWith _ _ _ references | Set.null references = pure (Right Set.empty)
+findAvailableImagesWith fetchAvailability actor correlation references =
+    case availabilityRequest actor correlation references of
+        Left err -> pure (Left err)
+        Right request -> do
+            response <- fetchAvailability request
+            case response of
+                Left err -> pure (Left err)
+                Right value -> parseAvailability references value
 
-imageRequest ::
-    Actor -> CorrelationIdentifier -> ImageReference -> Either DomainError Request
-imageRequest actor correlation reference = do
+availabilityRequest ::
+    Actor -> CorrelationIdentifier -> Set ImageReference -> Either DomainError Request
+availabilityRequest actor correlation references = do
     url <- maybe (Left unavailable) Right $
-        parseURL ("https://media.internal/images/" <> imageReferenceText reference)
+        parseURL "https://media.internal/images/availability"
+    let identifiers = map imageReferenceText (Set.toAscList references)
     pure Request
-        { requestMethodField = GET
+        { requestMethodField = POST
         , requestURLField = url
         , requestBodyField = Nothing
         , requestHeaders = headersFromList
-            [ ("X-Hut-Actor", actorText actor)
+            [ ("Content-Type", "application/json")
+            , ("X-Hut-Actor", actorText actor)
             , ("X-Correlation-Identifier", correlationIdentifierText correlation)
             ]
-        , requestBodyReaderField = Nothing
+        , requestBodyReaderField = Just $ \_ ->
+            pure (Right (encode (object ["images" .= identifiers])))
         , requestDataCenterField = Nothing
         }
 
-statusAvailable :: ImageReference -> Response -> IO (Either DomainError Bool)
-statusAvailable reference response =
+parseAvailability ::
+    Set ImageReference -> Response -> IO (Either DomainError (Set ImageReference))
+parseAvailability requested response =
     case response of
-        Response (Status 404) _ _ -> pure (Right False)
         Response (Status 200) _ body -> do
             bytes <- case body of
                 ResponseBodyBytes value -> pure (Right value)
                 ResponseBodyLazyBytes value -> pure (Right (Lazy.toStrict value))
                 ResponseBodyStream stream -> do
-                    drained <- readableStreamToLazyByteString 4096 stream
+                    drained <- readableStreamToLazyByteString (2 * 1024 * 1024) stream
                     pure (either (const (Left unavailable)) (Right . Lazy.toStrict) drained)
                 _ -> pure (Left unavailable)
             pure $ do
                 encoded <- bytes
-                status <- either (const (Left unavailable)) Right
-                    (eitherDecodeStrict' encoded :: Either String ImageStatusResponse)
-                if status.imageIdentifier /= imageReferenceText reference
-                    then Left unavailable
-                    else case status.state of
-                        "available" -> Right True
-                        "awaiting_upload" -> Right False
-                        "inspecting" -> Right False
-                        "rejected" -> Right False
-                        _ -> Left unavailable
+                AvailabilityResponse available <- either
+                    (const (Left unavailable))
+                    Right
+                    (eitherDecodeStrict' encoded :: Either String AvailabilityResponse)
+                identifiers <- either (const (Left unavailable)) Right $
+                    traverse newImageReference available
+                let confirmed = Set.fromList identifiers
+                if confirmed `Set.isSubsetOf` requested
+                    then Right confirmed
+                    else Left unavailable
         _ -> pure (Left unavailable)
 
 unavailable :: DomainError
-unavailable = createServiceUnavailable "Media" "image status could not be confirmed"
+unavailable = createServiceUnavailable "Media" "image availability could not be confirmed"

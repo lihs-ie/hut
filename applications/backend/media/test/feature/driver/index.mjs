@@ -3,6 +3,7 @@ const identifiers = {
   inspectionImage: "01J00000000000000000000001",
   inspectionAttempt: "01J00000000000000000000002",
   projectionImage: "01J00000000000000000000003",
+  availabilityImage: "01J00000000000000000000005",
 };
 
 const png = Uint8Array.from(
@@ -39,6 +40,33 @@ async function apiProbe(request, environment) {
         "X-Hut-Actor": "feature-admin-worker",
         "X-Correlation-Identifier": "01J00000000000000000000004",
       },
+    }),
+  );
+  return json({
+    status: response.status,
+    correlation: response.headers.get("X-Correlation-Identifier"),
+    body: await response.json(),
+  });
+}
+
+async function availabilityProbe(environment) {
+  const now = "2026-09-14T00:00:00Z";
+  await environment.MEDIA_DATABASE.prepare(
+    "INSERT OR IGNORE INTO images " +
+      "(identifier,state,available_at,created_at,updated_at) " +
+      "VALUES (?,'available',?,?,?)",
+  ).bind(identifiers.availabilityImage, now, now, now).run();
+  const response = await environment.MEDIA_API_WORKER.fetch(
+    new Request("https://media.feature/images/availability", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Hut-Actor": "feature-admin-worker",
+        "X-Correlation-Identifier": "01J00000000000000000000004",
+      },
+      body: JSON.stringify({
+        images: [identifiers.availabilityImage, identifiers.apiMissingImage],
+      }),
     }),
   );
   return json({
@@ -150,6 +178,8 @@ export default {
         return resourceProbe(environment);
       case "GET /feature/api":
         return apiProbe(request, environment);
+      case "POST /feature/availability":
+        return availabilityProbe(environment);
       case "POST /feature/inspection":
         return seedInspection(environment);
       case "GET /feature/inspection":

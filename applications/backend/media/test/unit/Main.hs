@@ -41,6 +41,9 @@ import Media.Presentation.Server.API.ServerSpec qualified as ServerSpec (
 import Media.UseCase.GetImageStatusSpec qualified as GetImageStatusSpec (
     run,
  )
+import Media.UseCase.FindAvailableImagesSpec qualified as FindAvailableImagesSpec (
+    run,
+ )
 import Media.UseCase.InspectImageSpec qualified as InspectImageSpec (
     run,
  )
@@ -72,6 +75,7 @@ main = do
             , ImageRetentionSpec.run
             , ImageUsageSpec.run
             , GetImageStatusSpec.run
+            , FindAvailableImagesSpec.run
             , InspectImageSpec.run
             , ProcessImageInspectionSpec.run
             , ProjectImageUsageSpec.run
