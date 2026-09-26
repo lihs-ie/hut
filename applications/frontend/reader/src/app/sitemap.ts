@@ -1,7 +1,9 @@
 import type { MetadataRoute } from "next";
+import { connection } from "next/server";
 import { searchAllSlugs as searchArticleSlugs } from "@/actions/article";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  await connection();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hut.lihs.dev";
 
   const articleSlugs = await searchArticleSlugs();

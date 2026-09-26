@@ -4,7 +4,6 @@ import { ArticleIndex } from "@shared/components/templates/article";
 import {
   createTableOfContents,
   findBySlug,
-  searchAllSlugs,
 } from "@/actions/article";
 import { incrementViewCount } from "@/actions/view";
 
@@ -14,10 +13,8 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
-export async function generateStaticParams() {
-  const slugs = await searchAllSlugs();
-
-  return slugs.map((slug) => ({ slug }));
+export function generateStaticParams(): { slug: string }[] {
+  return [];
 }
 
 export default async function ArticleDetailPage(props: Props) {

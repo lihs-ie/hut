@@ -9,6 +9,10 @@ vi.mock("react", () => ({
   cache: <T extends (...args: unknown[]) => unknown>(fn: T) => fn,
 }));
 
+vi.mock("next/server", () => ({
+  connection: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("@/actions/article", () => ({
   searchAllSlugs: vi.fn(),
 }));
