@@ -9,6 +9,8 @@ module Infrastructure.Article.DurableObject.Query (
     searchArticlesWith,
     searchPublishedArticles,
     searchPublishedArticlesWith,
+    readCatalogSnapshot,
+    readCatalogSnapshotWith,
 ) where
 
 import Cloudflare.Workers.Binding.DurableObject (DurableObjectStorage)
@@ -56,6 +58,15 @@ queryLimits = SQLLimits{maximumRows = 100, maximumBytes = 16777216, maximumState
 
 storageSQL :: DurableObjectStorage -> ExecuteSQL
 storageSQL storage = sqlExec storage queryLimits
+
+-- Outbox rows are append-only; every published-list mutation appends an event.
+readCatalogSnapshot :: DurableObjectStorage -> IO (Either DomainError Text)
+readCatalogSnapshot storage = readCatalogSnapshotWith (storageSQL storage)
+
+readCatalogSnapshotWith :: ExecuteSQL -> IO (Either DomainError Text)
+readCatalogSnapshotWith execute = do
+    counted <- executeSQL execute "SELECT COUNT(*) FROM article_outbox" []
+    pure (Text.pack . show <$> (counted >>= readCount))
 
 findArticleBySlug ::
     DurableObjectStorage ->

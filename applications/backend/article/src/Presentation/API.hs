@@ -17,7 +17,7 @@ module Presentation.API (
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import GHC.Generics (Generic)
-import Presentation.API.ArticleView (ArticlePage, ArticleView)
+import Presentation.API.ArticleView (ArticlePage, ArticleView, ReaderArticlePage)
 import Servant.API
 
 type CorrelatedResponse body =
@@ -148,7 +148,7 @@ data ArticleReaderRoutes mode = ArticleReaderRoutes
         mode
             :- QueryParam "page" Text
                 :> QueryParam "size" Text
-                :> Get '[JSON] (CorrelatedResponse ArticlePage)
+                :> Get '[JSON] (CorrelatedResponse ReaderArticlePage)
     , readArticle ::
         mode
             :- Capture "slug" Text

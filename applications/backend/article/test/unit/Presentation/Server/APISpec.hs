@@ -28,7 +28,12 @@ import Presentation.API (
     RegenerationResponse (..),
     SlugAvailabilityResponse (..),
  )
-import Presentation.API.ArticleView (ArticlePage (..), ArticleView (..), PageView (..))
+import Presentation.API.ArticleView (
+    ArticlePage (..),
+    ArticleView (..),
+    PageView (..),
+    ReaderArticlePage (..),
+ )
 import Presentation.Handler.API.Metadata (MetadataDependencies (..))
 import Presentation.Handler.API.Proofread (ProofreadHandlerDependencies (..))
 import Presentation.Handler.API.DraftWriting (DraftWritingDependencies (..))
@@ -283,6 +288,18 @@ readingFilters = do
             }
     response <- send baseDependencies{reading = reader} GET "/articles" []
     check "reader defaults response" (status response == 200)
+    check "reader page exposes an infrastructure snapshot" $ case bodyJSON response of
+        Just (page :: ReaderArticlePage) -> page.snapshot == "0"
+        Nothing -> False
+    reads <- newIORef (0 :: Int)
+    let changing = reader
+            { catalogSnapshot = do
+                count <- readIORef reads
+                writeIORef reads (count + 1)
+                pure (Right (if count == 0 then "1" else "2"))
+            }
+    changed <- send baseDependencies{reading = changing} GET "/articles" []
+    check "reader rejects a mutation during page selection" (status changed == 503)
 
 otherViews :: IO ()
 otherViews = do
@@ -602,6 +619,7 @@ baseDependencies = APIServerDependencies
         , viewAdmin = unavailable
         , checkSlug = unavailable
         , browseReader = unavailable
+        , catalogSnapshot = pure (Right "0")
         , readArticle = unavailable
         }
     , draftWriting = DraftWritingDependencies

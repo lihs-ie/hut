@@ -14,7 +14,14 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Presentation.API (CorrelatedResponse, SlugAvailabilityResponse (..))
-import Presentation.API.ArticleView (ArticlePage (..), ArticleView, articleView, pageView, publishedView)
+import Presentation.API.ArticleView (
+    ArticlePage (..),
+    ArticleView,
+    ReaderArticlePage (..),
+    articleView,
+    pageView,
+    publishedView,
+ )
 import Presentation.Handler.API.Error (domainErrorResponse, publicError)
 import Presentation.Handler.API.Metadata (MetadataDependencies, newCommand, parseArticleIdentifier)
 import Servant.API (addHeader)
@@ -39,6 +46,7 @@ data ReadingHandlerDependencies = ReadingHandlerDependencies
         IO (Either DomainError CheckSlug.CheckSlugAvailabilityResult)
     , browseReader :: BrowseReader.BrowseArticlesForReaderCommand ->
         IO (Either DomainError BrowseReader.BrowseArticlesForReaderResult)
+    , catalogSnapshot :: IO (Either DomainError Text)
     , readArticle :: ReadArticle.ReadArticleCommand ->
         IO (Either DomainError ReadArticle.ReadArticleResult)
     }
@@ -84,17 +92,23 @@ checkSlugHandler dependencies actorHeader correlationHeader rawArticle rawSlug =
 
 browseReaderHandler ::
     ReadingHandlerDependencies -> Maybe Text -> Maybe Text -> Maybe Text ->
-    Handler env (CorrelatedResponse ArticlePage)
+    Handler env (CorrelatedResponse ReaderArticlePage)
 browseReaderHandler dependencies correlationHeader rawPage rawSize = do
     (metadata, correlation) <- newCommand dependencies.metadata
         (Just "reader") correlationHeader ()
     page <- maybe (pure 1) (parsePositive "page" correlation) rawPage
     size <- traverse (parsePositive "size" correlation) rawSize
     let command = metadata{payload = BrowseReader.BrowseArticlesForReaderPayload page size}
+    before <- liftIO dependencies.catalogSnapshot
+        >>= either (throwError . domainErrorResponse correlation) pure
     result <- liftIO (dependencies.browseReader command)
     found <- either (throwError . domainErrorResponse correlation) pure result
-    pure $ addHeader correlation $ ArticlePage
-        (map publishedView found.articles) (pageView found.pager)
+    after <- liftIO dependencies.catalogSnapshot
+        >>= either (throwError . domainErrorResponse correlation) pure
+    if before /= after
+        then throwError (publicError 503 "snapshot_changed" correlation)
+        else pure $ addHeader correlation $ ReaderArticlePage
+            (map publishedView found.articles) (pageView found.pager) before
 
 readArticleHandler ::
     ReadingHandlerDependencies -> Maybe Text -> Text ->

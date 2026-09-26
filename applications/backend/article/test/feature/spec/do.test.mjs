@@ -259,7 +259,9 @@ test("article lifecycle is available through the admin and reader APIs", async (
   assert.deepEqual(readerArticle.tags, [tag]);
   const readerPage = await fetch(apiRoute("/articles"));
   assert.equal(readerPage.status, 200, await readerPage.clone().text());
-  assert.ok((await readerPage.json()).articles.some((article) => article.identifier === identifier));
+  const publishedPage = await readerPage.json();
+  assert.ok(publishedPage.articles.some((article) => article.identifier === identifier));
+  assert.match(publishedPage.snapshot, /^\d+$/);
 
   const takenDown = await fetch(apiRoute(`/admin/articles/${identifier}/publication`), {
     method: "DELETE",
@@ -268,6 +270,9 @@ test("article lifecycle is available through the admin and reader APIs", async (
   assert.equal(takenDown.status, 200, await takenDown.clone().text());
   assert.equal((await takenDown.json()).phase, "private");
   assert.equal((await fetch(apiRoute(`/articles/${slug}`))).status, 404);
+  const privatePage = await fetch(apiRoute("/articles"));
+  assert.equal(privatePage.status, 200, await privatePage.clone().text());
+  assert.notEqual((await privatePage.json()).snapshot, publishedPage.snapshot);
 
   const resumed = await fetch(apiRoute(`/admin/articles/${identifier}/publication-resumptions`), {
     method: "POST",

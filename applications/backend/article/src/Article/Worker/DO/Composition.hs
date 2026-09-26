@@ -228,6 +228,7 @@ adminDependencies storage media assetOrigin =
                             Query.searchPublishedArticles context.storage context.versions articleCodec criteria
                         }
                     command
+            , catalogSnapshot = Query.readCatalogSnapshot storage
             , readArticle = \command -> do
                 manager <- newManager
                 ReadArticle.readArticle

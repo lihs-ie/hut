@@ -43,6 +43,7 @@ import "shared" Shared.Infrastructure.Versioning (VersionContext, emptyVersionCo
 
 run :: IO ()
 run = do
+    readsCatalogSnapshot
     findsSlugOwner
     findsArticleBySlug
     searchesAdminPage
@@ -95,6 +96,17 @@ newScript responses = do
                 value : rest -> (rest, Just value)
             maybe (fail "unexpected query") pure next
     pure (execute, readIORef statements)
+
+readsCatalogSnapshot :: IO ()
+readsCatalogSnapshot = do
+    (execute, statements) <- newScript [oneRow [SQLNumber 17]]
+    snapshot <- readCatalogSnapshotWith execute
+    check "catalog snapshot is the append-only outbox count" (snapshot == Right "17")
+    issued <- statements
+    check "catalog snapshot reads no aggregate payload" (case issued of
+        [statement] -> statement.sql == "SELECT COUNT(*) FROM article_outbox"
+            && null statement.parameters
+        _ -> False)
 
 storedRow :: Article -> IO SQLResult
 storedRow article = do

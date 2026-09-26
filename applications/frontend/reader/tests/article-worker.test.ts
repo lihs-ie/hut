@@ -71,6 +71,7 @@ describe("Article Worker reader repository", () => {
           ))
           : [publishedView("Reader match", `${identifier.slice(0, -2)}A0`)],
         pagination: { total: 101 },
+        snapshot: "1",
       });
     });
     const repository = articleWorkerRepository({ fetch });
@@ -87,7 +88,7 @@ describe("Article Worker reader repository", () => {
   });
 
   it("does not query the worker for a non-published search", async () => {
-    const fetch = vi.fn(async () => Response.json({ articles: [], pagination: { total: 0 } }));
+    const fetch = vi.fn(async () => Response.json({ articles: [], pagination: { total: 0 }, snapshot: "0" }));
     const articles = await articleWorkerRepository({ fetch })
       .search(criteriaSchema.parse({ status: PublishStatus.DRAFT }))
       .unwrap();
@@ -124,7 +125,7 @@ describe("Article Worker reader repository", () => {
 
   it("rejects an incomplete page instead of silently omitting articles", async () => {
     const service: ArticleService = {
-      fetch: async () => Response.json({ articles: [], pagination: { total: 1 } }),
+      fetch: async () => Response.json({ articles: [], pagination: { total: 1 }, snapshot: "1" }),
     };
     const result = await articleWorkerRepository(service)
       .search(criteriaSchema.parse({}))
@@ -147,9 +148,10 @@ describe("Article Worker reader repository", () => {
             ))
             : [],
           pagination: { total: page === "1" ? 101 : 100 },
+          snapshot: String(calls),
         });
       }
-      return Response.json({ articles: [publishedView("After change")], pagination: { total: 1 } });
+      return Response.json({ articles: [publishedView("After change")], pagination: { total: 1 }, snapshot: "3" });
     });
     const articles = await articleWorkerRepository({ fetch })
       .search(criteriaSchema.parse({}))
@@ -160,10 +162,60 @@ describe("Article Worker reader repository", () => {
     expect(fetch).toHaveBeenCalledTimes(3);
   });
 
+  it("retries when articles change without changing the page total", async () => {
+    let calls = 0;
+    const fetch = vi.fn(async (request: Request) => {
+      calls += 1;
+      const page = new URL(request.url).searchParams.get("page");
+      if (calls <= 2) {
+        return Response.json({
+          articles: page === "1"
+            ? Array.from({ length: 100 }, (_, index) => publishedView(
+              "Before change",
+              `${identifier.slice(0, -2)}${String(index).padStart(2, "0")}`,
+            ))
+            : [publishedView("Replacement", `${identifier.slice(0, -2)}A0`)],
+          pagination: { total: 101 },
+          snapshot: String(calls),
+        });
+      }
+      return Response.json({
+        articles: [publishedView("After change")],
+        pagination: { total: 1 },
+        snapshot: "2",
+      });
+    });
+    const articles = await articleWorkerRepository({ fetch })
+      .search(criteriaSchema.parse({})).unwrap();
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].title).toBe("After change");
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("retries a page whose snapshot changed during its backend read", async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(null, {
+        status: 503,
+        headers: { "X-Article-Error-Code": "snapshot_changed" },
+      }))
+      .mockResolvedValueOnce(Response.json({
+        articles: [publishedView()],
+        pagination: { total: 1 },
+        snapshot: "2",
+      }));
+    const articles = await articleWorkerRepository({ fetch })
+      .search(criteriaSchema.parse({})).unwrap();
+
+    expect(articles).toHaveLength(1);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it("fails after repeated duplicate pages", async () => {
     const fetch = vi.fn(async () => Response.json({
       articles: Array.from({ length: 100 }, () => publishedView()),
       pagination: { total: 101 },
+      snapshot: "1",
     }));
     const result = await articleWorkerRepository({ fetch })
       .search(criteriaSchema.parse({}))

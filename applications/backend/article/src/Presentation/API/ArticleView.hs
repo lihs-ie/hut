@@ -4,6 +4,7 @@
 module Presentation.API.ArticleView (
     ArticleView (..),
     ArticlePage (..),
+    ReaderArticlePage (..),
     PageView (..),
     articleView,
     publishedView,
@@ -66,6 +67,14 @@ data PageView = PageView
 data ArticlePage = ArticlePage
     { articles :: [ArticleView]
     , pagination :: PageView
+    }
+    deriving stock (Show, Eq, Generic)
+    deriving anyclass (FromJSON, ToJSON)
+
+data ReaderArticlePage = ReaderArticlePage
+    { articles :: [ArticleView]
+    , pagination :: PageView
+    , snapshot :: Text
     }
     deriving stock (Show, Eq, Generic)
     deriving anyclass (FromJSON, ToJSON)

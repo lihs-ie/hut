@@ -25,6 +25,7 @@ const publishedViewSchema = z.object({
 const articlePageSchema = z.object({
   articles: z.array(publishedViewSchema),
   pagination: z.object({ total: z.number().int().nonnegative() }),
+  snapshot: z.string(),
 });
 
 type PublishedView = z.infer<typeof publishedViewSchema>;
@@ -63,15 +64,23 @@ async function loadPublishedArticles(service: ArticleService): Promise<Article[]
     const articles: Article[] = [];
     const seen = new Set<string>();
     let expectedTotal: number | undefined;
+    let expectedSnapshot: string | undefined;
     let changed = false;
     for (let page = 1; ; page += 1) {
       const response = await requestArticle(service, `/articles?page=${page}&size=100`);
+      if (response.status === 503
+        && response.headers.get("X-Article-Error-Code") === "snapshot_changed") {
+        changed = true;
+        break;
+      }
       if (!response.ok) {
         throw new Error(`Article API returned HTTP ${response.status}`);
       }
       const result = articlePageSchema.parse(await response.json());
       expectedTotal ??= result.pagination.total;
-      if (result.pagination.total !== expectedTotal) {
+      expectedSnapshot ??= result.snapshot;
+      if (result.pagination.total !== expectedTotal
+        || result.snapshot !== expectedSnapshot) {
         changed = true;
         break;
       }
