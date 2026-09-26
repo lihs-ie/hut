@@ -2,6 +2,7 @@
 
 module Article.Worker.DO.Composition (
     articleDOHandler,
+    initializeArticleDO,
 ) where
 
 import Article.Worker.DO.Env (ArticleDOEnv)
@@ -102,49 +103,43 @@ import "article" UseCase.ResumePublication qualified as Resume
 import "article" UseCase.TakeDown qualified as TakeDown
 
 articleDOHandler :: FetchHandler ArticleDOEnv
-articleDOHandler request environment context = do
-    initialized <- initializeSchema storage articleCodec
-    jobs <- case initialized of
-        Left err -> pure (Left err)
-        Right () -> initializeGenerationJobSchemaWith (sqlExec storage claimSQLLimits)
-    case jobs of
-        Left _ -> pure (emptyResponse 500)
-        Right () -> case requestPath request of
-            "/internal/excerpt-generation/claim" ->
-                handleExcerptClaim
-                    (doStorageTransactionWith storage)
-                    (sqlExec storage claimSQLLimits)
-                    request
-            "/internal/excerpt-generation/abandon" ->
-                handleExcerptAbandon
-                    (\generation -> do
-                        outcome <- doStorageTransactionWith storage $ do
-                            result <- abandonGenerationWith
-                                (sqlExec storage claimSQLLimits)
-                                generation
-                            either throwIO pure result
-                        pure (Right outcome)
-                    )
-                    request
-            "/internal/excerpt-generation/complete" -> do
-                driver <- newArticleTransactionDriver storage
-                let dependencies = Prepare.Dependencies
-                        { Prepare.transactionManager = newTransactionManager driver
-                        , Prepare.findArticle = \identifier -> transactionAction $ \transactionContext ->
-                            findArticle transactionContext.storage transactionContext.versions articleCodec identifier
-                        , Prepare.persistArticle = \article -> transactionAction $ \transactionContext ->
-                            persistArticle transactionContext.storage transactionContext.versions articleCodec article
-                        , Prepare.appendEvents = appendReadyEvents generateEventIdentifier
-                        }
-                    apply message = do
-                        result <- applyGeneratedExcerpt driver dependencies message
-                        pure $ fmap completionOutcome result
-                handleExcerptComplete apply request
-            path | "/admin/" `Text.isPrefixOf` path ->
-                articleAPIServer request (adminDependencies storage media assetOrigin) context
-            path | "/articles" == path || "/articles/" `Text.isPrefixOf` path ->
-                articleAPIServer request (adminDependencies storage media assetOrigin) context
-            _ -> pure (emptyResponse 404)
+articleDOHandler request environment context =
+    case requestPath request of
+        "/internal/excerpt-generation/claim" ->
+            handleExcerptClaim
+                (doStorageTransactionWith storage)
+                (sqlExec storage claimSQLLimits)
+                request
+        "/internal/excerpt-generation/abandon" ->
+            handleExcerptAbandon
+                (\generation -> do
+                    outcome <- doStorageTransactionWith storage $ do
+                        result <- abandonGenerationWith
+                            (sqlExec storage claimSQLLimits)
+                            generation
+                        either throwIO pure result
+                    pure (Right outcome)
+                )
+                request
+        "/internal/excerpt-generation/complete" -> do
+            driver <- newArticleTransactionDriver storage
+            let dependencies = Prepare.Dependencies
+                    { Prepare.transactionManager = newTransactionManager driver
+                    , Prepare.findArticle = \identifier -> transactionAction $ \transactionContext ->
+                        findArticle transactionContext.storage transactionContext.versions articleCodec identifier
+                    , Prepare.persistArticle = \article -> transactionAction $ \transactionContext ->
+                        persistArticle transactionContext.storage transactionContext.versions articleCodec article
+                    , Prepare.appendEvents = appendReadyEvents generateEventIdentifier
+                    }
+                apply message = do
+                    result <- applyGeneratedExcerpt driver dependencies message
+                    pure $ fmap completionOutcome result
+            handleExcerptComplete apply request
+        path | "/admin/" `Text.isPrefixOf` path ->
+            articleAPIServer request (adminDependencies storage media assetOrigin) context
+        path | "/articles" == path || "/articles/" `Text.isPrefixOf` path ->
+            articleAPIServer request (adminDependencies storage media assetOrigin) context
+        _ -> pure (emptyResponse 404)
   where
     storage :: DurableObjectStorage
     storage = getBinding (Proxy @"STORAGE") environment
@@ -152,6 +147,13 @@ articleDOHandler request environment context = do
     media = getBinding (Proxy @"MEDIA_API") environment
     assetOrigin :: Text
     assetOrigin = maybe "" unVar (getBinding (Proxy @"MEDIA_ASSET_ORIGIN") environment)
+
+initializeArticleDO :: DurableObjectStorage -> IO ()
+initializeArticleDO storage = do
+    initialized <- initializeSchema storage articleCodec
+    either throwIO pure initialized
+    jobs <- initializeGenerationJobSchemaWith (sqlExec storage claimSQLLimits)
+    either throwIO pure jobs
 
 adminDependencies :: DurableObjectStorage -> ServiceBinding -> Text -> APIServerDependencies
 adminDependencies storage media assetOrigin =

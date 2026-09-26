@@ -4,6 +4,7 @@ import {
   decodeResponse,
   decodeVoid,
   defineWorker,
+  initializeObject,
   runObject,
 } from "@cloudflare-workers-hs/runtime";
 import { DurableObject } from "cloudflare:workers";
@@ -48,6 +49,10 @@ const reactor = await createReactor(
       ],
       void
     >(exports, "alarm", decodeVoid),
+    initialize: bindExport<
+      [storage: DurableObjectStorage],
+      void
+    >(exports, "initialize", decodeVoid),
   }),
 );
 
@@ -63,6 +68,11 @@ interface ArticleWorkerEnv extends ArticleDOEnv {
 }
 
 export class ArticleDurableObject extends DurableObject<ArticleDOEnv> {
+  constructor(context: DurableObjectState, environment: ArticleDOEnv) {
+    super(context, environment);
+    initializeObject(this.ctx, () => reactor.initialize(this.ctx.storage));
+  }
+
   /** Invoke the Haskell fetch handler with this object's storage. */
   fetch(request: Request): Promise<Response> {
     return runObject(

@@ -38,7 +38,7 @@ test("malformed internal requests are rejected", async () => {
   assert.equal(unknown.status, 404);
 });
 
-test("legacy aggregates are migrated before admin queries", async () => {
+test("aggregate schema is initialized before admin queries", async () => {
   const identifier = "01ARZ3NDEKTSV4RRFFQ69G5FB9";
   const response = await fetch(apiRoute(`/admin/articles/${identifier}`), {
     headers: { "X-Hut-Actor": "editor" },

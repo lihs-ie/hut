@@ -28,23 +28,20 @@ async function main() {
   try {
     const { url } = await harness.listen();
     const worker = harness.getWorker("hut-article-api-worker-feature");
+    await fetch(`${url.origin}/article-do?path=${encodeURIComponent("/internal/excerpt-generation/claim")}`);
     const storage = await worker.getDurableObjectStorage("ARTICLE_DO", {
       name: "articles",
     });
+    const initializedIdentifier = "01ARZ3NDEKTSV4RRFFQ69G5FB9";
     await storage.exec(
-      "CREATE TABLE article_aggregates (" +
-        "identifier TEXT PRIMARY KEY, slug TEXT UNIQUE, payload TEXT NOT NULL, " +
-        "revision INTEGER NOT NULL)",
-    );
-    const legacyIdentifier = "01ARZ3NDEKTSV4RRFFQ69G5FB9";
-    await storage.exec(
-      "INSERT INTO article_aggregates (identifier, slug, payload, revision) " +
-        "VALUES (?, ?, ?, 1)",
-      legacyIdentifier,
+      "INSERT INTO article_aggregates " +
+        "(identifier, slug, phase, updated_order, published_order, payload, revision) " +
+        "VALUES (?, ?, 'unvalidated', '20260101000000000000000000', NULL, ?, 1)",
+      initializedIdentifier,
       "legacy-draft",
       JSON.stringify({
         phase: "unvalidated",
-        identifier: legacyIdentifier,
+        identifier: initializedIdentifier,
         title: "Legacy draft",
         body: "A draft saved before search indexes existed.",
         slug: "legacy-draft",
@@ -56,7 +53,6 @@ async function main() {
         publishedAt: null,
       }),
     );
-    await fetch(`${url.origin}/article-do?path=${encodeURIComponent("/internal/excerpt-generation/claim")}`);
     const drafts = [
       ["01ARZ3NDEKTSV4RRFFQ69G5FB0", "01ARZ3NDEKTSV4RRFFQ69G5FA1"],
       ["01ARZ3NDEKTSV4RRFFQ69G5FB1", "01ARZ3NDEKTSV4RRFFQ69G5FA2"],

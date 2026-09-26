@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Article.Worker.DO.Composition (articleDOHandler)
+import Article.Worker.DO.Composition (articleDOHandler, initializeArticleDO)
 import Article.Worker.API.Composition (articleAPIHandler)
 import Article.Worker.DO.Alarm (dispatchArticleOutboxAlarm)
 import Cloudflare.Workers.Binding.DurableObject (DurableObjectStorage (..))
@@ -17,6 +17,11 @@ apiFetch :: JSVal -> JSVal -> JSVal -> IO JSVal
 apiFetch = createFetchHandler articleAPIHandler
 
 foreign export javascript "apiFetch" apiFetch :: JSVal -> JSVal -> JSVal -> IO JSVal
+
+initialize :: JSVal -> IO ()
+initialize = initializeArticleDO . DurableObjectStorage
+
+foreign export javascript "initialize" initialize :: JSVal -> IO ()
 
 alarm :: JSVal -> JSVal -> JSVal -> IO ()
 alarm storage generationQueue mediaQueue =

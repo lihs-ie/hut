@@ -44,7 +44,8 @@
             "queue": "hut-article-excerpt-generation-dlq-dev",
             "max_batch_size": 1,
             "max_batch_timeout": 5,
-            "retry_delay": 300
+            "max_retries": 100,
+            "retry_delay": 600
           }
         ]
       }
@@ -85,7 +86,8 @@
             "queue": "hut-article-excerpt-generation-dlq-stg",
             "max_batch_size": 1,
             "max_batch_timeout": 5,
-            "retry_delay": 300
+            "max_retries": 100,
+            "retry_delay": 600
           }
         ]
       }
@@ -126,7 +128,8 @@
             "queue": "hut-article-excerpt-generation-dlq-prd",
             "max_batch_size": 1,
             "max_batch_timeout": 5,
-            "retry_delay": 300
+            "max_retries": 100,
+            "retry_delay": 600
           }
         ]
       }
