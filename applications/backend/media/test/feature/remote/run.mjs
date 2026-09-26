@@ -338,6 +338,18 @@ async function main() {
       await uploadFixture(...fixture, uploaded);
     }
 
+    const availability = await driverJSON("/api/images/availability", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        images: uploaded.map(({ identifier }) => identifier),
+      }),
+    });
+    assert.deepEqual(
+      new Set(availability.available),
+      new Set(uploaded.map(({ identifier }) => identifier)),
+    );
+
     const [unreferenced, referenced] = uploaded;
     await sendProjection(referenced.identifier, 1, [referenced.identifier]);
     await driverJSON("/age", {
