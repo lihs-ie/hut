@@ -61,7 +61,9 @@ import Shared.Domain.Error (
     createAggregateNotFound,
     createInvariantViolation,
     createOperationNotAllowed,
+    createProcessingTargetChanged,
     createServiceUnavailable,
+    createTransactionOutcomeUnknown,
     createUnexpectedError,
  )
 import Shared.Domain.Identifier (ULID, newULID)
@@ -240,3 +242,9 @@ unavailableError :: DomainError
 unavailableError = createServiceUnavailable "ImageRepository" "offline"
 unexpectedError :: DomainError
 unexpectedError = createUnexpectedError "Image" "unexpected"
+
+unknownOutcomeError :: DomainError
+unknownOutcomeError = createTransactionOutcomeUnknown "Transaction" "acknowledgement lost"
+
+changedTargetError :: DomainError
+changedTargetError = createProcessingTargetChanged "Image" "target changed"

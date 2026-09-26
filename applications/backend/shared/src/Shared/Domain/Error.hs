@@ -1,15 +1,19 @@
 module Shared.Domain.Error (
     DomainError (..),
+    ProcessingTargetChangedError (..),
+    createProcessingTargetChanged,
     InvariantViolationError (..),
     AggregateNotFoundError (..),
     OperationNotAllowedError (..),
     ServiceUnavailableError (..),
     UnexpectedDomainError (..),
+    TransactionOutcomeUnknownError (..),
     createInvariantViolation,
     createAggregateNotFound,
     createOperationNotAllowed,
     createServiceUnavailable,
     createUnexpectedError,
+    createTransactionOutcomeUnknown,
 ) where
 
 import Control.Exception (Exception)
@@ -21,9 +25,23 @@ data DomainError
     | OperationNotAllowed OperationNotAllowedError
     | ServiceUnavailable ServiceUnavailableError
     | UnexpectedError UnexpectedDomainError
+    | TransactionOutcomeUnknown TransactionOutcomeUnknownError
+    | ProcessingTargetChanged ProcessingTargetChangedError
     deriving stock (Show, Eq)
 
 instance Exception DomainError
+
+data ProcessingTargetChangedError = ProcessingTargetChangedError
+    { name :: Text
+    , reason :: Text
+    }
+    deriving stock (Show, Eq)
+
+instance Exception ProcessingTargetChangedError
+
+createProcessingTargetChanged :: Text -> Text -> DomainError
+createProcessingTargetChanged name reason =
+    ProcessingTargetChanged (ProcessingTargetChangedError name reason)
 
 data InvariantViolationError = InvariantViolationError
     { name :: Text
@@ -82,3 +100,15 @@ instance Exception UnexpectedDomainError
 createUnexpectedError :: Text -> Text -> DomainError
 createUnexpectedError name reason =
     UnexpectedError (UnexpectedDomainError name reason)
+
+data TransactionOutcomeUnknownError = TransactionOutcomeUnknownError
+    { name :: Text
+    , reason :: Text
+    }
+    deriving stock (Show, Eq)
+
+instance Exception TransactionOutcomeUnknownError
+
+createTransactionOutcomeUnknown :: Text -> Text -> DomainError
+createTransactionOutcomeUnknown name reason =
+    TransactionOutcomeUnknown (TransactionOutcomeUnknownError name reason)

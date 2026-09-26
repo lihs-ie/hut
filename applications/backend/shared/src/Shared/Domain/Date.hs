@@ -9,13 +9,17 @@ module Shared.Domain.Date (
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Time (UTCTime, defaultTimeLocale, parseTimeM)
+import GHC.Records (HasField (..))
 import Shared.Domain.Error (DomainError, createInvariantViolation)
 
-data Timeline = Timeline
-    { createdAt :: UTCTime
-    , updatedAt :: UTCTime
-    }
+data Timeline = Timeline UTCTime UTCTime
     deriving stock (Show, Eq)
+
+instance HasField "createdAt" Timeline UTCTime where
+    getField (Timeline value _) = value
+
+instance HasField "updatedAt" Timeline UTCTime where
+    getField (Timeline _ value) = value
 
 newTimeline :: UTCTime -> UTCTime -> Either DomainError Timeline
 newTimeline createdAt updatedAt =

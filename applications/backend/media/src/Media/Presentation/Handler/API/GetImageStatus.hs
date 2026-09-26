@@ -99,5 +99,17 @@ getImageStatusError correlation domainError =
                 "The service is temporarily unavailable."
                 "service_unavailable"
                 correlation
+        TransactionOutcomeUnknown _ ->
+            publicServerError
+                500
+                "The operation outcome could not be confirmed."
+                "transaction_outcome_unknown"
+                correlation
+        ProcessingTargetChanged _ ->
+            publicServerError
+                409
+                "The processing target has changed."
+                "processing_target_changed"
+                correlation
         UnexpectedError _ ->
             publicServerError 500 "An unexpected error occurred." "unexpected_error" correlation

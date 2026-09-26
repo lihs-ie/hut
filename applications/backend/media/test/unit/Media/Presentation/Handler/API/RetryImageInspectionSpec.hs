@@ -4,6 +4,7 @@ import Media.Presentation.API.RetryImageInspection (
     RetryImageInspectionResponse (..),
  )
 import Media.Presentation.Handler.API.TestSupport (
+    changedTargetError,
     checkErrors,
     correlated,
     inspectionHandler,
@@ -18,6 +19,7 @@ import Media.Presentation.Handler.API.TestSupport (
     suppliedBytes,
     unavailableError,
     unexpectedError,
+    unknownOutcomeError,
     validAttempt,
     validImage,
  )
@@ -50,4 +52,6 @@ inspectionRetryErrors =
         , (notAllowedError, 409, "image_inspection_cannot_be_retried")
         , (unavailableError, 503, "service_unavailable")
         , (unexpectedError, 500, "unexpected_error")
+        , (unknownOutcomeError, 500, "transaction_outcome_unknown")
+        , (changedTargetError, 409, "processing_target_changed")
         ]
