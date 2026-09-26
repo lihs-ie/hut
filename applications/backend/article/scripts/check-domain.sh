@@ -44,8 +44,33 @@ assert_coverage "Article domain" \
   --include=Domain.Article.Private \
   --include=Domain.Article.Event
 
+assert_coverage "Article use cases" \
+  --include=UseCase.JotDown \
+  --include=UseCase.AmendDraft \
+  --include=UseCase.Proofread \
+  --include=UseCase.PrepareToPublish \
+  --include=UseCase.Publish \
+  --include=UseCase.TakeDown \
+  --include=UseCase.ResumePublication \
+  --include=UseCase.DiscardArticle \
+  --include=UseCase.Reading \
+  --include=UseCase.BrowseArticlesForAdmin \
+  --include=UseCase.ViewArticleForAdmin \
+  --include=UseCase.BrowseArticlesForReader \
+  --include=UseCase.ReadArticle \
+  --include=UseCase.CheckSlugAvailability \
+  --include=UseCase.Helper \
+  --include=UseCase.Result
 
+fixtures="applications/backend/article/test/unit/typecheck"
 assert_coverage "Article Criteria" --include=Domain.Article.Criteria
+assert_coverage "Article reading use cases" \
+  --include=UseCase.Reading \
+  --include=UseCase.BrowseArticlesForAdmin \
+  --include=UseCase.ViewArticleForAdmin \
+  --include=UseCase.BrowseArticlesForReader \
+  --include=UseCase.ReadArticle \
+  --include=UseCase.CheckSlugAvailability
 
 (
   binary="$(cabal list-bin --builddir="${build_directory}" shared:shared-test --enable-coverage --disable-optimization)"
@@ -56,19 +81,25 @@ assert_coverage "Article Criteria" --include=Domain.Article.Criteria
   tix="${component_root}/hpc/vanilla/tix/shared-test.tix"
   assert_coverage "Shared Pager" --include=Shared.Domain.Pager
   assert_coverage "Shared PositiveInteger" --include=Shared.Domain.Common.Primitive
+  assert_coverage "Shared version tracking" --include=Shared.Infrastructure.Versioning
+  assert_coverage "Shared Transaction" \
+    --include=Shared.Domain.Common.Transaction \
+    --include=Shared.Domain.Common.Transaction.Internal \
+    --include=Shared.Infrastructure.Transaction
 )
 
-fixtures="applications/backend/article/test/unit/typecheck"
 compile() {
   cabal exec --builddir="${build_directory}" --enable-coverage --disable-optimization \
     -- ghc -fno-code -XGHC2024 -XDataKinds -XOverloadedStrings \
     -package article "$1"
 }
 compile "${fixtures}/ValidPublish.hs"
-primitive_fixtures="applications/backend/shared/test/unit/typecheck"
-compile "${primitive_fixtures}/ValidPositive.hs"
-for fixture in InvalidPositiveConstructor InvalidPositiveLiteral InvalidPositiveRead InvalidPositiveCoerce; do
-  if output="$(compile "${primitive_fixtures}/${fixture}.hs" 2>&1)"; then
+transaction_fixtures="applications/backend/shared/test/unit/typecheck"
+compile "${transaction_fixtures}/ValidTransaction.hs"
+compile "${transaction_fixtures}/ValidVersioning.hs"
+for fixture in InvalidVersionInteger InvalidPositiveConstructor InvalidPositiveLiteral InvalidPositiveRead \
+  InvalidPositiveCoerce InvalidVersionContext InvalidVersionContextCoerce; do
+  if output="$(compile "${transaction_fixtures}/${fixture}.hs" 2>&1)"; then
     echo "${fixture}: unexpectedly compiled" >&2
     exit 1
   fi
@@ -83,7 +114,25 @@ for fixture in InvalidPositiveConstructor InvalidPositiveLiteral InvalidPositive
   fi
   echo "${fixture}: rejected as expected"
 done
-for fixture in InvalidPublish InvalidCoerce InvalidContentUpdate; do
+for fixture in InvalidTransactionIO InvalidTransactionNesting InvalidTransactionInternal; do
+  if output="$(compile "${transaction_fixtures}/${fixture}.hs" 2>&1)"; then
+    echo "${fixture}: unexpectedly compiled" >&2
+    exit 1
+  fi
+  expected_error=GHC-83865
+  if [[ "${fixture}" == InvalidTransactionInternal ]]; then
+    expected_error="hidden module"
+  fi
+  if ! grep -q "${expected_error}" <<<"${output}"; then
+    printf '%s\n' "${output}" >&2
+    exit 1
+  fi
+  echo "${fixture}: rejected as expected"
+done
+for fixture in InvalidOutboxEvent InvalidPublish InvalidCoerce InvalidContentUpdate InvalidDraftEvent \
+  InvalidPublishEvent InvalidTakeDownEvent InvalidResumeEvent InvalidDiscardEvent \
+  InvalidBrowseArticlesForAdminEvent InvalidBrowseArticlesForReaderEvent \
+  InvalidViewArticleForAdminEvent InvalidReadArticleEvent InvalidCheckSlugAvailabilityEvent; do
   expected_error=GHC-83865
   if [[ "${fixture}" == InvalidCoerce ]]; then
     expected_error=GHC-18872
@@ -94,6 +143,7 @@ for fixture in InvalidPublish InvalidCoerce InvalidContentUpdate; do
   fi
   if ! grep -q "${expected_error}" <<<"${output}"; then
     printf '%s\n' "${output}" >&2
+    echo "${fixture}: failed for an unexpected reason" >&2
     exit 1
   fi
   echo "${fixture}: rejected as expected"

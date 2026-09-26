@@ -1,5 +1,6 @@
 module Shared.UseCase.Command (
     Command (..),
+    commandContext,
     Actor,
     CorrelationIdentifier,
     Causation,
@@ -37,3 +38,13 @@ data Command payload = Command
     , causation :: Maybe Causation
     }
     deriving stock (Show, Eq)
+
+commandContext :: Command payload -> Command ()
+commandContext command =
+    Command
+        { payload = ()
+        , timestamp = command.timestamp
+        , actor = command.actor
+        , correlation = command.correlation
+        , causation = command.causation
+        }
