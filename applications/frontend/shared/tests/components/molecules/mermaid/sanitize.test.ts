@@ -1,8 +1,9 @@
+/** @vitest-environment jsdom */
 import { describe, it, expect } from "vitest";
 import { sanitizeMermaidSvg } from "@shared/components/molecules/mermaid/sanitize";
 
-describe("sanitizeMermaidSvg - Node環境（isomorphic-dompurify）", () => {
-  it("Node環境でもforeignObject要素を保持する", () => {
+describe("sanitizeMermaidSvg - browser DOM", () => {
+  it("foreignObject要素を保持する", () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg">
       <foreignObject x="0" y="0" width="100" height="50">
         <div xmlns="http://www.w3.org/1999/xhtml">開始</div>
@@ -15,7 +16,7 @@ describe("sanitizeMermaidSvg - Node環境（isomorphic-dompurify）", () => {
     expect(result).toContain("開始");
   });
 
-  it("Node環境でもscriptタグを除去する", () => {
+  it("scriptタグを除去する", () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg">
       <script>alert('xss')</script>
       <rect x="0" y="0" width="100" height="50" />

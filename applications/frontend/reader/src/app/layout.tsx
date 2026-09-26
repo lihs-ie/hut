@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Noto_Sans_JP, Geist_Mono } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
@@ -57,6 +58,12 @@ export const metadata: Metadata = {
   },
 };
 
+/** Defers the Firebase-backed profile until a Reader request is available. */
+async function RuntimeFooter() {
+  await connection();
+  return <Footer getProfile={getProfile} />;
+}
+
 /**
  * Reader アプリ全体の共通レイアウトを返す。
  */
@@ -76,7 +83,7 @@ export default function RootLayout({
                 <main>{children}</main>
                 <FooterErrorBoundary>
                   <Suspense fallback={<FooterPresenter mailAddress={null} externalServices={new Map()} />}>
-                    <Footer getProfile={getProfile} />
+                    <RuntimeFooter />
                   </Suspense>
                 </FooterErrorBoundary>
               </NavigationProvider>

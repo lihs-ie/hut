@@ -25,15 +25,6 @@ test.describe("admin unauthenticated access", () => {
       await expect(page).toHaveURL(/\/admin\/login/);
     });
 
-    test("memos management page redirects to login", async ({
-      page,
-    }: TestArgs) => {
-      await page.goto("/admin/memos", { waitUntil: "load" });
-
-      // Should redirect to login page
-      await expect(page).toHaveURL(/\/admin\/login/);
-    });
-
     test("tags management page redirects to login", async ({
       page,
     }: TestArgs) => {
@@ -53,15 +44,6 @@ test.describe("admin unauthenticated access", () => {
     test("tag edit page redirects to login", async ({ page }: TestArgs) => {
       // Using a dummy identifier - will redirect before checking validity
       await page.goto("/admin/tags/dummy-identifier/edit", { waitUntil: "load" });
-
-      // Should redirect to login page
-      await expect(page).toHaveURL(/\/admin\/login/);
-    });
-
-    test("series management page redirects to login", async ({
-      page,
-    }: TestArgs) => {
-      await page.goto("/admin/series", { waitUntil: "load" });
 
       // Should redirect to login page
       await expect(page).toHaveURL(/\/admin\/login/);
@@ -92,12 +74,6 @@ test.describe("admin unauthenticated access", () => {
       await expect(page).toHaveURL(/\/admin\/login/);
     });
 
-    test("new memo page redirects to login", async ({ page }: TestArgs) => {
-      await page.goto("/memos/new", { waitUntil: "load" });
-
-      // Should redirect to login page
-      await expect(page).toHaveURL(/\/admin\/login/);
-    });
   });
 
   test.describe("content edit pages require authentication", () => {
@@ -108,12 +84,6 @@ test.describe("admin unauthenticated access", () => {
       await expect(page).toHaveURL(/\/admin\/login/);
     });
 
-    test("memo edit page redirects to login", async ({ page }: TestArgs) => {
-      await page.goto("/memos/go-tips/edit", { waitUntil: "load" });
-
-      // Should redirect to login page
-      await expect(page).toHaveURL(/\/admin\/login/);
-    });
   });
 
   test.describe("content preview pages require authentication", () => {
@@ -169,23 +139,6 @@ test.describe("admin unauthenticated access", () => {
       await expect(page).toHaveURL(/\/admin\/login/);
     });
 
-    test("memos list page (admin) redirects to login", async ({
-      page,
-    }: TestArgs) => {
-      await page.goto("/memos", { waitUntil: "load" });
-
-      // Admin app requires authentication for all pages
-      await expect(page).toHaveURL(/\/admin\/login/);
-    });
-
-    test("memo detail page (admin) redirects to login", async ({
-      page,
-    }: TestArgs) => {
-      await page.goto("/memos/go-tips", { waitUntil: "load" });
-
-      // Admin app requires authentication for all pages
-      await expect(page).toHaveURL(/\/admin\/login/);
-    });
   });
 
   test.describe("login page is accessible", () => {
@@ -227,7 +180,7 @@ test.describe("admin unauthenticated access", () => {
       await expect(page).toHaveURL(/\/admin\/login/);
 
       // Second request to different protected page
-      await page.goto("/admin/memos", { waitUntil: "load" });
+      await page.goto("/admin/profile/edit", { waitUntil: "load" });
       await expect(page).toHaveURL(/\/admin\/login/);
 
       // Third request

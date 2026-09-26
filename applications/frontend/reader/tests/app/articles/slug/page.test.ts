@@ -11,7 +11,7 @@ vi.mock("react", () => ({
   cache: <T extends (...args: unknown[]) => unknown>(fn: T) => fn,
 }));
 
-vi.mock("@shared/actions/tag", () => ({
+vi.mock("@/actions/tag", () => ({
   findAllTags: vi.fn(),
 }));
 
@@ -24,7 +24,7 @@ vi.mock("@shared/components/templates/article", () => ({
   ArticleIndex: vi.fn(),
 }));
 
-vi.mock("@shared/actions/view", () => ({
+vi.mock("@/actions/view", () => ({
   incrementViewCount: vi.fn(),
 }));
 

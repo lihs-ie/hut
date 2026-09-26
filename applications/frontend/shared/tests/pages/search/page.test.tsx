@@ -14,8 +14,8 @@ vi.mock("@shared/actions/tag", () => ({
   ofNames: vi.fn(),
 }));
 
-vi.mock("@shared/actions/search-token", () => ({
-  searchByToken: vi.fn(),
+vi.mock("@shared/actions/article", () => ({
+  search: vi.fn(),
 }));
 
 import SearchPage from "../../../src/pages/search/page";

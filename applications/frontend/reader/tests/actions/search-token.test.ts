@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ok } from "@shared/aspects/result";
 import { searchByToken } from "../../src/actions/search-token";
 import { ArticleWorkflowProvider } from "../../src/providers/workflows/article";
-import { ReaderSearchTokenWorkflowProvider } from "../../src/providers/workflows/search-token";
 import { articleSchema } from "@shared/domains/articles";
 
 vi.mock("next/cache", () => ({
@@ -13,9 +12,6 @@ vi.mock("next/cache", () => ({
 }));
 vi.mock("@/providers/workflows/article", () => ({
   ArticleWorkflowProvider: { search: vi.fn() },
-}));
-vi.mock("@/providers/workflows/search-token", () => ({
-  ReaderSearchTokenWorkflowProvider: { search: vi.fn() },
 }));
 
 const baseCriteria = {
@@ -31,7 +27,6 @@ describe("Reader search", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(ArticleWorkflowProvider.search).mockReturnValue(ok([]).toAsync());
-    vi.mocked(ReaderSearchTokenWorkflowProvider.search).mockReturnValue(ok([]).toAsync());
   });
 
   it("記事検索を Article API のワークフローへ渡す", async () => {
@@ -73,10 +68,9 @@ describe("Reader search", () => {
     expect(ArticleWorkflowProvider.search).not.toHaveBeenCalled();
   });
 
-  it("Article 指定時は旧 SearchToken 経路を呼ばない", async () => {
-    expect(await searchByToken({ ...baseCriteria, type: "article" })).toEqual([]);
-    expect(ReaderSearchTokenWorkflowProvider.search).not.toHaveBeenCalled();
-    expect(ArticleWorkflowProvider.search).toHaveBeenCalledOnce();
+  it("Series 指定時も Article API を呼ばない", async () => {
+    expect(await searchByToken({ ...baseCriteria, type: "series" })).toEqual([]);
+    expect(ArticleWorkflowProvider.search).not.toHaveBeenCalled();
   });
 
   it("条件がない初期画面で全記事を取得しない", async () => {

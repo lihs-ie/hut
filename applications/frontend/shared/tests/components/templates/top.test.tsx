@@ -4,7 +4,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { isValidElement } from "react";
 import { Forger } from "@lihs-ie/forger-ts";
-import { SeriesMold } from "../../support/molds/domains/series";
 import { ProfileMold } from "../../support/molds/domains/user/common";
 
 vi.mock("@shared/components/organisms/common/top/search", () => ({
@@ -22,16 +21,13 @@ vi.mock("@shared/components/molecules/list/card/profile", () => ({
 }));
 
 describe("components/templates/top/TopIndex", () => {
-  it("Series セクションが含まれる", async () => {
+  it("記事セクションとプロフィールが含まれる", async () => {
     const { TopIndex } = await import(
       "@shared/components/templates/top/index"
     );
 
-    const seriesList = Forger(SeriesMold).forgeMulti(3);
     const result = await TopIndex({
       searchArticles: async () => [],
-      searchMemos: async () => [],
-      searchSeries: async () => seriesList,
       findAllTags: async () => [],
       getProfile: async () => Forger(ProfileMold).forge(),
     });

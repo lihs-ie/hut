@@ -4,8 +4,6 @@ import { Suspense } from "react";
 import { SearchResult } from "@shared/components/organisms/search/result";
 import { SearchResultSkeleton } from "@shared/components/organisms/search/result.skeleton";
 import { Article } from "@shared/domains/articles";
-import { Series } from "@shared/domains/series";
-import { Memo } from "@shared/domains/memo";
 import { Tag } from "@shared/domains/attributes/tag";
 import { SearchFilter } from "@shared/components/organisms/search/filters";
 import { SearchFilterSkeleton } from "@shared/components/organisms/search/filters.skeleton";
@@ -15,7 +13,7 @@ export type Props = {
   unvalidatedCriteria: UnvalidatedCriteria;
   search: (
     unvalidated: UnvalidatedCriteria,
-  ) => Promise<(Article | Series | Memo)[]>;
+  ) => Promise<Article[]>;
   getAllTags: () => Promise<Tag[]>;
   findAllTags: (identifiers: string[]) => Promise<Tag[]>;
   ofNamesTags: (names: string[]) => Promise<Tag[]>;

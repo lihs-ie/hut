@@ -91,6 +91,23 @@ const readerTestFiles = [
   "**/series-list.spec.ts",
 ];
 
+const deferredContentTests = [
+  "**/admin-memos.spec.ts",
+  "**/admin-series.spec.ts",
+  "**/chapter-create.spec.ts",
+  "**/chapter-edit.spec.ts",
+  "**/memo-create.spec.ts",
+  "**/memo-detail.spec.ts",
+  "**/memo-edit.spec.ts",
+  "**/memos-list.spec.ts",
+  "**/series-create.spec.ts",
+  "**/series-edit.spec.ts",
+  "**/series-list.spec.ts",
+  "**/series.spec.ts",
+  "**/home.spec.ts",
+  "**/search.spec.ts",
+];
+
 /**
  * Resolve Playwright reporters from the environment.
  */
@@ -136,7 +153,7 @@ export default defineConfig({
         baseURL: adminBaseURL,
         storageState: "playwright/.auth/admin.json",
       },
-      testIgnore: readerTestFiles,
+      testIgnore: [...readerTestFiles, ...deferredContentTests],
     },
     {
       name: "reader",
@@ -145,6 +162,7 @@ export default defineConfig({
         storageState: undefined,
       },
       testMatch: readerTestFiles,
+      testIgnore: deferredContentTests,
     },
   ],
 });

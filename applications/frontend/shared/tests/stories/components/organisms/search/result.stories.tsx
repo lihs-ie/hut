@@ -5,11 +5,7 @@ import { ContentType } from "@shared/domains/search-token";
 import { tagNameSchema, TagName } from "@shared/domains/attributes/tag";
 import { Forger } from "@lihs-ie/forger-ts";
 import { ArticleMold } from "../../../../support/molds/domains/article";
-import { MemoMold } from "../../../../support/molds/domains/memo";
-import { SeriesMold } from "../../../../support/molds/domains/series";
 import { Article } from "@shared/domains/articles";
-import { Memo } from "@shared/domains/memo";
-import { Series } from "@shared/domains/series";
 
 const meta = {
   component: SearchResultPresenter,
@@ -30,23 +26,9 @@ const articlesWithTagNames = (Forger(ArticleMold).forgeMulti(3) as Article[]).ma
   })
 );
 
-const memosWithTagNames = (Forger(MemoMold).forgeMulti(2) as Memo[]).map(
-  (memo) => ({
-    ...memo,
-    tagNames: sampleTagNames,
-  })
-);
-
-const seriesWithTagNames = (Forger(SeriesMold).forgeMulti(2) as Series[]).map(
-  (series) => ({
-    ...series,
-    tagNames: sampleTagNames,
-  })
-);
-
 export const WithResults: StoryObj<typeof SearchResultPresenter> = {
   args: {
-    contents: [...articlesWithTagNames, ...memosWithTagNames],
+    contents: articlesWithTagNames,
     criteria: {
       freeWord: "TypeScript",
       tags: null,
@@ -86,13 +68,9 @@ export const InitialState: StoryObj<typeof SearchResultPresenter> = {
   },
 };
 
-export const MixedContent: StoryObj<typeof SearchResultPresenter> = {
+export const FilteredByTag: StoryObj<typeof SearchResultPresenter> = {
   args: {
-    contents: [
-      ...articlesWithTagNames,
-      ...memosWithTagNames,
-      ...seriesWithTagNames,
-    ],
+    contents: articlesWithTagNames,
     criteria: {
       freeWord: null,
       tags: ["tag-1"],

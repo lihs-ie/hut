@@ -12,7 +12,7 @@ type Props = {
   }>;
 };
 
-/** Combines Article Worker search with the existing Memo and Series search. */
+/** Searches published articles. */
 export default async function Page({ searchParams }: Props) {
   const parameters = await searchParams;
   return (

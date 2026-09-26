@@ -5,10 +5,7 @@ import {
   restoreDateFromCache,
   restoreTimelineFromCache,
 } from "@shared/aspects/cache";
-import { Memo, MemoEntry } from "@shared/domains/memo";
 import { ContentType, UnvalidatedCriteria, validateCriteria } from "@shared/domains/search-token";
-import { Series } from "@shared/domains/series";
-import { ReaderSearchTokenWorkflowProvider } from "@/providers/workflows/search-token";
 import { ArticleWorkflowProvider } from "@/providers/workflows/article";
 import { PublishStatus } from "@shared/domains/common";
 
@@ -16,12 +13,6 @@ type CachedSearchResult = {
   identifier: string;
   publishedAt?: string | Date | null;
   timeline?: { createdAt: string | Date; updatedAt: string | Date };
-  content?: string;
-  excerpt?: string;
-  chapters?: string[];
-  subTitle?: string | null;
-  cover?: string | null;
-  entries?: Array<{ text: string; createdAt: string | Date }>;
 };
 
 const restorePublishedAt = (
@@ -33,37 +24,12 @@ const restorePublishedAt = (
 
 const restoreSearchResultDates = (
   results: CachedSearchResult[],
-): (Article | Series | Memo)[] => {
+): Article[] => {
   return results.map((item) => {
     const timeline = item.timeline
       ? restoreTimelineFromCache(item.timeline)
       : undefined;
     const publishedAt = restorePublishedAt(item.publishedAt);
-
-    if ("entries" in item && Array.isArray(item.entries)) {
-      const entries = item.entries.map(
-        (entry) =>
-          ({
-            text: entry.text,
-            createdAt: restoreDateFromCache(entry.createdAt),
-          }) as MemoEntry,
-      );
-      return {
-        ...item,
-        timeline,
-        publishedAt,
-        entries,
-      } as Memo;
-    }
-
-    if ("chapters" in item && Array.isArray(item.chapters)) {
-      return {
-        ...item,
-        timeline,
-        publishedAt,
-        chapters: item.chapters,
-      } as Series;
-    }
 
     return {
       ...item,
@@ -75,22 +41,14 @@ const restoreSearchResultDates = (
 
 const searchByTokenInternal = async (
   unvalidated: UnvalidatedCriteria,
-): Promise<(Article | Series | Memo)[]> => {
+): Promise<Article[]> => {
   const criteria = await unwrapForNextJs(validateCriteria(unvalidated).toAsync());
-  const others = criteria.type === ContentType.ARTICLE
-    ? []
-    : await unwrapForNextJs(
-      ReaderSearchTokenWorkflowProvider.search({
-        payload: unvalidated,
-        now: new Date(),
-      }),
-    );
   if (criteria.type !== null && criteria.type !== ContentType.ARTICLE) {
-    return others;
+    return [];
   }
   if (criteria.freeWord === null && !criteria.tags?.length
     && criteria.type === null) {
-    return others;
+    return [];
   }
   const articles = await unwrapForNextJs(
     ArticleWorkflowProvider.search({
@@ -102,9 +60,8 @@ const searchByTokenInternal = async (
       now: new Date(),
     }),
   );
-  const results = [...others, ...articles];
-  if (criteria.sortBy === null || criteria.order === null) return results;
-  return results.sort((left, right) => {
+  if (criteria.sortBy === null || criteria.order === null) return articles;
+  return articles.sort((left, right) => {
     const leftDate = criteria.sortBy === "latest"
       ? left.timeline.updatedAt
       : left.timeline.createdAt;
@@ -118,7 +75,7 @@ const searchByTokenInternal = async (
 
 export const searchByToken = async (
   unvalidated: UnvalidatedCriteria,
-): Promise<(Article | Series | Memo)[]> => {
+): Promise<Article[]> => {
   const cachedResults = await unstable_cache(
     () => searchByTokenInternal(unvalidated),
     ["search-token", JSON.stringify(unvalidated)],

@@ -11,8 +11,6 @@ const targetPages = [
   { path: "/articles/typescript-type-safe-code", name: "article detail" },
   { path: "/search", name: "search" },
   { path: "/about", name: "about" },
-  { path: "/series", name: "series list" },
-  { path: "/series/rust-system-programming", name: "series detail" },
 ];
 
 test.describe("accessibility", () => {
