@@ -6,10 +6,13 @@ import { FirebaseArticleRepository } from "@shared/infrastructures/articles";
 import { articleWorkerRepository, ArticleService } from "@/infrastructures/article-worker";
 import { ReaderFirestoreProvider } from "./firebase-select";
 
-const firebase = FirebaseArticleRepository(
-  ReaderFirestoreProvider.instance,
-  ReaderFirestoreProvider.operations,
-);
+/** Defers Firebase initialization when Article is served by the Worker. */
+function firebaseRepository(): ArticleRepository {
+  return FirebaseArticleRepository(
+    ReaderFirestoreProvider.instance,
+    ReaderFirestoreProvider.operations,
+  );
+}
 
 /** Narrows an optional Cloudflare service binding before issuing requests. */
 function isArticleService(value: unknown): value is ArticleService {
@@ -19,16 +22,23 @@ function isArticleService(value: unknown): value is ArticleService {
 
 /** Uses Article Worker when the reader's Cloudflare environment binds it. */
 async function activeReaderRepository(): Promise<Pick<ArticleRepository, "findBySlug" | "search">> {
-  if (process.env.BUILD_TARGET !== "cloudflare") return firebase;
-  const { env } = await getCloudflareContext({ async: true });
-  const binding: unknown = (env as Record<string, unknown>).ARTICLE_API;
-  if (binding === undefined) return firebase;
+  let env: Record<string, unknown>;
+  try {
+    env = (await getCloudflareContext({ async: true })).env as Record<string, unknown>;
+  } catch (cause) {
+    if (process.env.BUILD_TARGET === "cloudflare") throw cause;
+    return firebaseRepository();
+  }
+  const binding: unknown = env.ARTICLE_API;
+  if (binding === undefined) return firebaseRepository();
   if (!isArticleService(binding)) throw new Error("ARTICLE_API is not a service binding");
   return articleWorkerRepository(binding);
 }
 
 export const ReaderArticleRepositoryProvider = {
-  firebase,
+  get firebase(): ArticleRepository {
+    return firebaseRepository();
+  },
   current: {
     /** Finds a published article from the configured reader source. */
     findBySlug(slug) {
