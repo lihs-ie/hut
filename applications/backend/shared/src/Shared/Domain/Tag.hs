@@ -1,4 +1,4 @@
-module Shared.Domain.Tag (TagIdentifier, newTagIdentifier) where
+module Shared.Domain.Tag (TagIdentifier, newTagIdentifier, tagIdentifierText) where
 
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -12,3 +12,6 @@ newTagIdentifier value =
     if Text.null value || Text.length value > 255
         then Left $ createInvariantViolation "TagIdentifier" "Value length must be 1 ~ 255."
         else Right $ TagIdentifier value
+
+tagIdentifierText :: TagIdentifier -> Text
+tagIdentifierText (TagIdentifier value) = value

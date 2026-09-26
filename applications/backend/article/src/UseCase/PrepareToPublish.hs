@@ -4,6 +4,7 @@ module UseCase.PrepareToPublish (
     PrepareToPublishResult (..),
     Dependencies (..),
     prepareToPublish,
+    prepareToPublishInTransaction,
 ) where
 
 import Data.Text (Text)
@@ -45,7 +46,16 @@ prepareToPublish ::
     Dependencies context m ->
     PrepareToPublishCommand ->
     m (Either DomainError PrepareToPublishResult)
-prepareToPublish dependencies command = runTransaction dependencies.transactionManager $ do
+prepareToPublish dependencies command =
+    runTransaction dependencies.transactionManager
+        (prepareToPublishInTransaction dependencies command)
+
+prepareToPublishInTransaction ::
+    (Monad m) =>
+    Dependencies context m ->
+    PrepareToPublishCommand ->
+    Transaction context m PrepareToPublishResult
+prepareToPublishInTransaction dependencies command = do
     excerpt <- fromEither (newExcerpt command.payload.excerpt)
     source <- requireArticle dependencies.findArticle command.payload.article
     article <- fromEither (transition excerpt source)

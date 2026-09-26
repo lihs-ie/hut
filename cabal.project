@@ -24,7 +24,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lihs-ie/cloudflare-workers-hs.git
-  tag: ab1877a336fc29264bb11f9a50953113cda4dc8b
+  tag: c7e695e9a1dd69570a996ada4c1d1784ecaf414b
   subdir:
     cloudflare-workers
     servant-cloudflare-workers

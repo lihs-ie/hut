@@ -1,0 +1,25 @@
+{
+  "name": "@hut/article-workers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build:wasm": "bash scripts/build-wasm.sh",
+    "test:feature": "bash test/feature/run.sh",
+    "test:feature:live-ai": "node test/feature/live.mjs",
+    "generate:types": "bash scripts/generate-types.sh",
+    "type-check": "bash scripts/type-check.sh",
+    "dry-run:dev": "bash scripts/dry-run-dev.sh"
+  },
+  "dependencies": {
+    "@cloudflare-workers-hs/runtime": "github:lihs-ie/cloudflare-workers-hs-runtime#5fa280bf928eb834d5815c6d560db8e473c64bb7"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "wrangler": "4.133.0"
+  }
+}

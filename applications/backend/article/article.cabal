@@ -46,6 +46,7 @@ library
     UseCase.BrowseArticlesForReader
     UseCase.ReadArticle
     UseCase.CheckSlugAvailability
+    UseCase.RequestExcerptRegeneration
   build-depends:
     base >=4.22 && <4.23,
     containers >=0.8 && <0.9,
@@ -53,12 +54,123 @@ library
     text >=2.1 && <2.2,
     time >=1.15 && <1.16
 
+library worker-adapters
+  import: defaults
+  default-extensions: PackageImports
+  hs-source-dirs: src
+  exposed-modules:
+    Article.Worker.Excerpt.Env
+    Article.Worker.Excerpt.Contract
+    Article.Worker.Excerpt.Composition
+    Article.Worker.API.Env
+    Article.Worker.API.Composition
+    Article.Worker.DO.Env
+    Article.Worker.DO.Composition
+    Article.Worker.DO.Alarm
+    Article.Worker.Completion.Env
+    Article.Worker.Completion.Contract
+    Article.Worker.Completion.Composition
+    Presentation.API
+    Presentation.Handler.API.Error
+    Presentation.Handler.API.Metadata
+    Presentation.Handler.API.Proofread
+    Presentation.Handler.API.RequestExcerptRegeneration
+    Presentation.Server.API
+    Infrastructure.Article.Excerpt.WorkersAI
+    Infrastructure.Article.DurableObject.Transaction
+    Infrastructure.Article.DurableObject.Repository
+    Infrastructure.Article.DurableObject.Codec
+    Infrastructure.Article.DurableObject.Outbox
+    Infrastructure.Article.DurableObject.GenerationJob
+    Infrastructure.Article.DurableObject.Completion
+    Infrastructure.Article.DurableObject.ReadyOutbox
+    Infrastructure.Article.DurableObject.ProofreadOutbox
+    Infrastructure.Article.Queue.ExcerptGeneration
+    Infrastructure.Article.Media.ImageAvailability
+    Presentation.Handler.DO.ExcerptClaim
+    Presentation.Handler.DO.ExcerptComplete
+    Presentation.Handler.Queue.ExcerptGeneration
+    Presentation.Handler.Queue.ExcerptCompletion
+  build-depends:
+    aeson >=2.2 && <2.3,
+    article ==0.1.0.0,
+    base >=4.22 && <4.23,
+    bytestring >=0.12 && <0.13,
+    cloudflare-workers ==0.1.0.0,
+    cloudflare-workers:ghc-wasm-shim,
+    containers >=0.8 && <0.9,
+    mtl >=2.2 && <2.4,
+    servant >=0.20 && <0.21,
+    servant-cloudflare-workers ==0.1.0.0,
+    shared ==0.1.0.0,
+    text >=2.1 && <2.2,
+    time >=1.15 && <1.16
+  if !os(wasi)
+    ghc-options: -fplugin GHC.Wasm.FFI.Plugin
+  if os(wasi)
+    build-depends: ghc-experimental >=9.1401 && <9.1500
+    default-extensions: JavaScriptFFI
+
+executable article-excerpt-worker
+  import: defaults
+  hs-source-dirs: app/article-excerpt-worker
+  main-is: Main.hs
+  build-depends:
+    article,
+    article:worker-adapters,
+    base,
+    cloudflare-workers,
+    cloudflare-workers:ghc-wasm-shim
+  if !os(wasi)
+    buildable: False
+  if os(wasi)
+    build-depends: ghc-experimental >=9.1401 && <9.1500
+    default-extensions: JavaScriptFFI
+    ghc-options: -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=queue"
+
+executable article-do-worker
+  import: defaults
+  hs-source-dirs: app/article-do-worker
+  main-is: Main.hs
+  build-depends:
+    article,
+    article:worker-adapters,
+    base,
+    cloudflare-workers,
+    cloudflare-workers:ghc-wasm-shim
+  if !os(wasi)
+    buildable: False
+  if os(wasi)
+    build-depends: ghc-experimental >=9.1401 && <9.1500
+    default-extensions: JavaScriptFFI
+    ghc-options: -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=fetch" "-optl-Wl,--export=alarm"
+
+executable article-completion-worker
+  import: defaults
+  hs-source-dirs: app/article-completion-worker
+  main-is: Main.hs
+  build-depends:
+    article,
+    article:worker-adapters,
+    base,
+    cloudflare-workers,
+    cloudflare-workers:ghc-wasm-shim
+  if !os(wasi)
+    buildable: False
+  if os(wasi)
+    build-depends: ghc-experimental >=9.1401 && <9.1500
+    default-extensions: JavaScriptFFI
+    ghc-options: -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=queue"
+
 test-suite article-unit-test
   import: defaults
   type: exitcode-stdio-1.0
   hs-source-dirs: test/unit
   main-is: Main.hs
   other-modules:
+    Article.Worker.Excerpt.ContractSpec
+    Article.Worker.Completion.ContractSpec
+    Article.Worker.DO.AlarmSpec
     TestSupport
     Domain.Article.CommonSpec
     Domain.Article.DraftSpec
@@ -70,6 +182,22 @@ test-suite article-unit-test
     UseCase.Transaction.VersionSpec
     Domain.Article.CriteriaSpec
     Domain.Article.EventSpec
+    Infrastructure.Article.Excerpt.WorkersAISpec
+    Infrastructure.Article.DurableObject.TransactionSpec
+    Infrastructure.Article.DurableObject.RepositorySpec
+    Infrastructure.Article.DurableObject.CodecSpec
+    Infrastructure.Article.DurableObject.OutboxSpec
+    Infrastructure.Article.DurableObject.GenerationJobSpec
+    Infrastructure.Article.DurableObject.CompletionSpec
+    Infrastructure.Article.DurableObject.ReadyOutboxSpec
+    Infrastructure.Article.DurableObject.ProofreadOutboxSpec
+    Infrastructure.Article.Queue.ExcerptGenerationSpec
+    Infrastructure.Article.Media.ImageAvailabilitySpec
+    Presentation.Server.APISpec
+    Presentation.Handler.DO.ExcerptClaimSpec
+    Presentation.Handler.DO.ExcerptCompleteSpec
+    Presentation.Handler.Queue.ExcerptGenerationSpec
+    Presentation.Handler.Queue.ExcerptCompletionSpec
     UseCase.Transaction.WriteSpec
     UseCase.Transaction.ReadSpec
     UseCase.Transaction.ProofreadSpec
@@ -89,9 +217,15 @@ test-suite article-unit-test
     UseCase.BrowseArticlesForReaderSpec
     UseCase.ReadArticleSpec
     UseCase.CheckSlugAvailabilitySpec
+    UseCase.RequestExcerptRegenerationSpec
   build-depends:
+    aeson,
     base,
     article,
+    article:worker-adapters,
+    bytestring,
+    cloudflare-workers,
+    cloudflare-workers:host-testkit,
     containers,
     shared,
     text,

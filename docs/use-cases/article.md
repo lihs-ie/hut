@@ -178,19 +178,42 @@ PrepareToPublishは初回生成の適用と手動修正を一つのユースケ�
 ## 6. 非同期Excerpt生成
 
 1. Proofreadは必須項目と管理対象画像の利用可能性を確認して校正済みとして保存する。
-2. ArticleProofreadedに生成対象のタイトル・本文を含める。
-3. ドメイン外のEnvelopeに、生成対象の記事リビジョンを付与する。
-4. コンシューマーがAIにExcerpt生成を依頼する。失敗時は再試行する。
-5. 生成完了イベントにExcerptと元の対象リビジョンを引き継ぐ。
-6. 現在も校正済みで対象リビジョンが一致する場合だけ、生成結果を適用する。
+2. ArticleProofreadedには記事識別子だけを含め、保存時の記事リビジョンをドメイン外のEnvelopeに付与する。
+3. 記事保存と生成依頼のOutbox追加を同一トランザクションで確定する。
+4. OutboxからQueueへ配送し、コンシューマーが識別子と期待リビジョンで対象を取得する。
+5. コンシューマーはCloudflare Workers AIのGemma 4でExcerptを生成する。
+6. 生成完了イベントにExcerptと元の対象リビジョンを含め、別QueueでArticle側へ配送する。
+7. 現在も校正済みで対象リビジョンが一致する場合だけ、生成結果を適用する。
 
 照合と保存はインフラ層で原子的に実行する。途中の編集や重複配送で上書きしない。
 古い生成結果は手動修正済みのExcerptにも適用しない。
 イベント形式のschemaVersionや生成完了イベントの到着順では新旧を判定しない。
+AIの生成依頼ごとに、インフラ専用の生成依頼識別子を付ける。
+同じ記事リビジョンへの依頼Aが失敗して依頼Bを開始した後にAの結果が届いても、
+Article DOは現在有効な依頼Bの識別子との不一致でAを破棄する。
+生成完了通知は`ExcerptGenerated`と呼ぶワーカー間の処理イベントであり、
+Articleのドメインイベントではない。
+
+AIの出力が空文やExcerptの制約に違反した場合は失敗として再試行する。
+再試行上限に達したメッセージはDLQへ送り、インフラの運用記録に残して通知する。
+DLQから無期限に自動再投入しない。原因を修正した後、管理者向けの内部操作で
+現在の校正済み記事に対する新しい生成依頼をOutboxへ記録する。
+これはQueueメッセージの手動配送ではなく、通常の編集・校正フローも変更しない。
+再生成依頼は新たな校正事実ではないためArticleProofreadedを再発行せず、
+Resultにも新たなドメインイベントを含めない。Outboxに生成用の処理依頼を記録する。
+管理者向けの内部操作は`RequestExcerptRegeneration`と呼ぶ。
+同じ記事・同じリビジョンで処理中の依頼があれば既存依頼を返し、AIを重複して実行しない。
+失敗が確定してDLQへ到達した後は、新しい生成依頼を許可する。
+
+生成完了イベントの別Queueから記事への適用が再試行上限に達した場合も、
+運用記録と通知を残し、自動再投入を停止する。生成済みExcerptを別途保管したり、
+DLQをpullして再適用したりしない。復旧には管理者向けの内部再生成操作を使い、
+現在の校正済み記事から新しい依頼を作る。AIの再実行を許容する。
+記事が変更済みなら古い生成結果を破棄する。
 
 ArticleVersionやProofreadingIdentifierはドメインに追加しない。
 ExcerptGenerationFailedというドメイン状態・イベントも追加しない。
-生成完了イベントの具体名とEnvelopeの具体的な型拡張は未確定。
+生成用Envelopeの具体的な型拡張と配送契約の詳細は実装時に確定する。
 
 ## 7. 画像とMedia連携
 
@@ -393,15 +416,17 @@ Commandのtimestamp・actor・correlation・causationはCommand ()へ引き継�
 全下書き状態からの編集、公開・非公開の拒否、画像参照全件、
 メタデータの引き継ぎ、保存失敗・Slug競合・同時更新エラーの伝播を検証する。
 検証スクリプトはドメインと実装済みユースケースそれぞれに式カバレッジ90%以上を要求する。
-本番DBアダプター・実際のMarkdownパーサ・Media問い合わせ・HTTP APIは未実装であり、
-実際のトランザクションの原子性を検証したものではない。
+永続化アダプターと内部Worker契約は実装した。管理用HTTP APIから校正・再生成を呼び、
+校正時のMedia画像確認と生成完了までの経路を接続した。
+Markdownパーサと記事作成・編集APIの結合は未完了である。
 
 ### Proofread / PrepareToPublish の実装
 
 ProofreadはUnvalidatedDraftのみを受け付け、管理対象画像の利用可能性を確認して
 ProofreadedDraftへ遷移する。画像参照が空ならMedia問い合わせは行わない。
-ArticleProofreadedには検証済みのタイトルと本文のsnapshotを含め、
-集約とイベントを保存してからProofreadResultを返す。
+ArticleProofreadedには記事識別子のみを含める。
+集約とイベントを保存してからProofreadResultを返す。Infrastructureは保存後の
+リビジョンを生成依頼のEnvelopeに記録し、コンシューマーはその版の記事を取得する。
 
 PrepareToPublishCommandのpayloadはApplyGeneratedExcerptとReviseExcerptに分ける。
 前者はProofreadedDraftに生成結果を適用し、ArticleReadyToPublishを1件返す。
@@ -418,8 +443,26 @@ PrepareToPublishCommandのpayloadはApplyGeneratedExcerptとReviseExcerptに分�
 保存失敗を検証する。メモリ上の条件付き保存アダプターでは、再校正後の古い結果、
 取得から保存までの編集、重複配送、手動修正後の遅延結果を拒否し、
 記事とOutboxが変更されないことを検証する。
-これは実際のD1トランザクションやQueue配送を検証するfeatureテストではない。
-AI生成・Media問い合わせ・永続化・配信の実アダプターは未実装である。
+Docker上のfeatureテストは、管理用Servant API、Article DO、Mediaの画像状態応答を返す
+テストWorkerを接続し、校正と再生成要求を検証する。Mediaの本番Workerはこのテストに含めない。
+別のlive AIテストは、Wranglerのremote AI bindingでCloudflare Workers AIを実行し、
+生成Queue、完了Queue、Article DOを経てReadyToPublishになることを確認する。
+このテストはCloudflare認証と通信が必要で、推論料金が発生し得る。
+Docker内のremote AI bindingはCloudflareから`InferenceUpstreamError`を返したため、
+実AIテストはホストのWrangler harnessで実行する。DockerテストはMedia応答を
+テストWorkerで提供し、校正・再生成入口を検証する。
+
+管理用の入口は`POST /admin/articles/{articleIdentifier}/proofreading`と
+`POST /admin/articles/{articleIdentifier}/excerpt-generation-requests`である。
+両方とも`X-Hut-Actor`を必須とし、`X-Correlation-Identifier`は省略時に生成する。
+プレゼンテーション層が`DomainError`をHTTP応答へ変換する。
+公開経路は設けず、管理用BFFからService Bindingで呼ぶ前提とする。
+
+```sh
+cd applications/backend/article
+pnpm test:feature
+pnpm test:feature:live-ai
+```
 
 ### Publish / TakeDown の実装
 

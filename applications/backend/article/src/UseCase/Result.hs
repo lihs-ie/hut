@@ -19,6 +19,7 @@ data ArticleUseCase
     | BrowseArticlesForReader
     | ReadArticle
     | CheckSlugAvailability
+    | RequestExcerptRegeneration
 
 type family ArticleEventsFor (useCase :: ArticleUseCase) :: [Type] where
     ArticleEventsFor 'JotDown = '[ArticleDraftStarted]
@@ -34,3 +35,4 @@ type family ArticleEventsFor (useCase :: ArticleUseCase) :: [Type] where
     ArticleEventsFor 'BrowseArticlesForReader = '[]
     ArticleEventsFor 'ReadArticle = '[]
     ArticleEventsFor 'CheckSlugAvailability = '[]
+    ArticleEventsFor 'RequestExcerptRegeneration = '[]

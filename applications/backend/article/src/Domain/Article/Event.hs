@@ -4,18 +4,16 @@ module Domain.Article.Event (
     ArticleDraftStarted,
     ArticleDraftAmended,
     draftImageReferences,
-    ProofreadedArticleContent (..),
     ArticleProofreaded,
     ArticleReadyToPublish,
     ArticlePublished,
     ArticleTakenDown,
     ArticleDiscarded,
-    proofreadedArticleContent,
 ) where
 
 import Data.Set (Set)
-import Domain.Article.Common (ArticleIdentifier, Content, ImageReference, Title)
-import Domain.Article.Draft (ProofreadedDraft, UnvalidatedDraft, draftContent, draftIdentifier, proofreadedContent)
+import Domain.Article.Common (ArticleIdentifier, ImageReference)
+import Domain.Article.Draft (UnvalidatedDraft, draftContent, draftIdentifier)
 import Shared.Domain.Event (DomainEvent)
 
 data ArticleEventKind = DraftStarted | DraftAmended | Proofreaded | ReadyToPublish | Published | TakenDown | Discarded
@@ -33,22 +31,8 @@ draftImageReferences :: UnvalidatedDraft -> ImageReferences
 draftImageReferences draft =
     ImageReferences (draftIdentifier draft) (draftContent draft).images
 
-data ProofreadedArticleContent = ProofreadedArticleContent
-    { article :: ArticleIdentifier
-    , title :: Title
-    , body :: Content
-    }
-    deriving stock (Show, Eq)
-
-type ArticleProofreaded = DomainEvent 'Proofreaded ProofreadedArticleContent
+type ArticleProofreaded = DomainEvent 'Proofreaded ArticleIdentifier
 type ArticleReadyToPublish = DomainEvent 'ReadyToPublish ArticleIdentifier
 type ArticlePublished = DomainEvent 'Published ArticleIdentifier
 type ArticleTakenDown = DomainEvent 'TakenDown ArticleIdentifier
 type ArticleDiscarded = DomainEvent 'Discarded ArticleIdentifier
-
-proofreadedArticleContent :: ProofreadedDraft -> ProofreadedArticleContent
-proofreadedArticleContent draft =
-    ProofreadedArticleContent
-        (draftIdentifier draft)
-        (proofreadedContent draft).title
-        (proofreadedContent draft).body
