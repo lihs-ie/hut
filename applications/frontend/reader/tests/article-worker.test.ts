@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import { isAggregateNotFoundError, isUnexpectedError } from "@shared/aspects/error";
 import { criteriaSchema } from "@shared/domains/articles";
 import { slugSchema, PublishStatus } from "@shared/domains/common";
-import { articleWorkerRepository, ArticleService } from "@/infrastructures/article-worker";
+import {
+  articleWorkerRepository,
+  ArticleService,
+  browsePublishedPage,
+} from "@/infrastructures/article-worker";
 
 const identifier = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
 
@@ -25,6 +29,47 @@ function publishedView(title = "Haskell syntax", articleIdentifier = identifier)
 }
 
 describe("Article Worker reader repository", () => {
+  it("loads only the requested page", async () => {
+    const fetch = vi.fn(async (request: Request) => {
+      const query = new URL(request.url).searchParams;
+      expect(query.get("page")).toBe("2");
+      expect(query.get("size")).toBe("10");
+      return Response.json({
+        articles: [publishedView()],
+        pagination: { total: 11 },
+        snapshot: "3",
+      });
+    });
+    const result = await browsePublishedPage({ fetch }, 2, 10);
+
+    expect(result.total).toBe(11);
+    expect(result.articles).toHaveLength(1);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it("retries a page when its catalog snapshot changes", async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(null, {
+        status: 503,
+        headers: { "X-Article-Error-Code": "snapshot_changed" },
+      }))
+      .mockResolvedValueOnce(Response.json({
+        articles: [publishedView()],
+        pagination: { total: 1 },
+        snapshot: "4",
+      }));
+    const result = await browsePublishedPage({ fetch }, 1, 10);
+
+    expect(result.articles).toHaveLength(1);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects an invalid page before calling the Worker", async () => {
+    const fetch = vi.fn(async () => Response.json({}));
+    await expect(browsePublishedPage({ fetch }, 0, 10)).rejects.toThrow(RangeError);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("reads a published article through its private reader route", async () => {
     const fetch = vi.fn(async (_request: Request) => Response.json(publishedView()));
     const repository = articleWorkerRepository({ fetch });

@@ -58,6 +58,35 @@ describe("Reader Article source selection", () => {
     expect(mocks.fallbackFind).not.toHaveBeenCalled();
   });
 
+  it("browses one page through ARTICLE_API without reading Firebase", async () => {
+    const fetch = vi.fn(async () => Response.json({
+      articles: [{
+        identifier: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+        phase: "published",
+        title: "Haskell syntax",
+        body: "# Syntax",
+        slug: "haskell-syntax",
+        excerpt: "A syntax guide.",
+        tags: [],
+        images: [],
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-02T00:00:00Z",
+        publishedAt: "2026-01-03T00:00:00Z",
+      }],
+      pagination: { total: 1 },
+      snapshot: "1",
+    }));
+    mocks.getCloudflareContext.mockResolvedValue({ env: { ARTICLE_API: { fetch } } });
+    const { ReaderArticleRepositoryProvider } = await import("@/providers/infrastructure/articles");
+
+    const result = await ReaderArticleRepositoryProvider.browse(1, 6).unwrap();
+
+    expect(result.total).toBe(1);
+    expect(result.articles[0].title).toBe("Haskell syntax");
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(mocks.fallbackSearch).not.toHaveBeenCalled();
+  });
+
   it("uses Firebase only when no Article binding is configured", async () => {
     mocks.getCloudflareContext.mockResolvedValue({ env: {} });
     const { ReaderArticleRepositoryProvider } = await import("@/providers/infrastructure/articles");
@@ -68,6 +97,21 @@ describe("Reader Article source selection", () => {
 
     expect(article).toBe("firebase");
     expect(mocks.fallbackFind).toHaveBeenCalledOnce();
+  });
+
+  it("keeps paged browsing available through the Firebase fallback", async () => {
+    mocks.getCloudflareContext.mockResolvedValue({ env: {} });
+    mocks.fallbackSearch.mockReturnValue(ok([
+      { identifier: "older", publishedAt: new Date("2026-01-01T00:00:00Z") },
+      { identifier: "newer", publishedAt: new Date("2026-02-01T00:00:00Z") },
+    ]).toAsync());
+    const { ReaderArticleRepositoryProvider } = await import("@/providers/infrastructure/articles");
+
+    const result = await ReaderArticleRepositoryProvider.browse(1, 1).unwrap();
+
+    expect(result.total).toBe(2);
+    expect(result.articles.map((article) => article.identifier)).toEqual(["newer"]);
+    expect(mocks.fallbackSearch).toHaveBeenCalledOnce();
   });
 
   it("does not silently fall back for a malformed configured binding", async () => {

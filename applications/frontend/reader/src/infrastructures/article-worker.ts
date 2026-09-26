@@ -30,6 +30,11 @@ const articlePageSchema = z.object({
 
 type PublishedView = z.infer<typeof publishedViewSchema>;
 
+export type PublishedArticlePage = {
+  articles: Article[];
+  total: number;
+};
+
 /** Converts a published Article API view into the current reader display model. */
 function toReaderArticle(view: PublishedView): Article {
   const result = validateArticle({
@@ -56,6 +61,33 @@ function toReaderArticle(view: PublishedView): Article {
 /** Fetches an Article API response without forwarding browser credentials. */
 async function requestArticle(service: ArticleService, path: string): Promise<Response> {
   return service.fetch(new Request(new URL(path, "https://article.internal")));
+}
+
+/** Fetches one published page without materializing the entire Article catalog. */
+export async function browsePublishedPage(
+  service: ArticleService,
+  page: number,
+  size: number,
+): Promise<PublishedArticlePage> {
+  if (!Number.isSafeInteger(page) || page < 1
+    || !Number.isSafeInteger(size) || size < 1 || size > 100) {
+    throw new RangeError("Article page and size are out of range");
+  }
+  const query = new URLSearchParams({ page: String(page), size: String(size) });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const response = await requestArticle(service, `/articles?${query}`);
+    if (response.status === 503
+      && response.headers.get("X-Article-Error-Code") === "snapshot_changed") {
+      continue;
+    }
+    if (!response.ok) throw new Error(`Article API returned HTTP ${response.status}`);
+    const result = articlePageSchema.parse(await response.json());
+    return {
+      articles: result.articles.map(toReaderArticle),
+      total: result.pagination.total,
+    };
+  }
+  throw new Error("Article API page changed during the read");
 }
 
 /** Retries a changing offset-based listing instead of returning duplicate or incomplete pages. */

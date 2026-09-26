@@ -3,11 +3,11 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import Page, { revalidate } from "../../src/app/page";
-import { searchArticles } from "../../src/actions/feed/article-search";
+import { latestArticles } from "../../src/actions/feed/article-search";
 import { TopIndex } from "@shared/components/templates/top";
 
 vi.mock("@/actions/feed/article-search", () => ({
-  searchArticles: vi.fn().mockResolvedValue([]),
+  latestArticles: vi.fn().mockResolvedValue([]),
   searchMemos: vi.fn().mockResolvedValue([]),
   searchSeries: vi.fn().mockResolvedValue([]),
 }));
@@ -28,10 +28,9 @@ describe("/ (top) page", () => {
     });
   });
 
-  it("Article の検索を Reader 専用アクションへ接続する", async () => {
+  it("トップ記事を Reader のページ取得へ接続する", async () => {
     const element = Page();
     expect(element.type).toBe(TopIndex);
-    await element.props.searchArticles();
-    expect(searchArticles).toHaveBeenCalledWith({});
+    expect(element.props.searchArticles).toBe(latestArticles);
   });
 });
