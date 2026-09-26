@@ -9,6 +9,8 @@ newtype Slug = Slug Text
 
 newSlug :: Text -> Either DomainError Slug
 newSlug value
+    | Text.length value > 100 =
+        Left (createInvariantViolation "Slug" "length must not exceed 100 characters")
     | all validSegment (Text.splitOn "-" value) = Right (Slug value)
     | otherwise =
         Left

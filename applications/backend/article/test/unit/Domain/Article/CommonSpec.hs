@@ -45,10 +45,10 @@ run = do
         )
     check
         "slug boundaries"
-        ( all (isRight . newSlug) ["a", "0", "a-z-09", "haskell-syntax"]
+        ( all (isRight . newSlug) ["a", "0", "a-z-09", "haskell-syntax", Text.replicate 100 "a"]
             && all
                 (isLeft . newSlug)
-                ["", "A", "-a", "a-", "a--b", "a/b", "a_b", "a b", "１２３"]
+                ["", "A", "-a", "a-", "a--b", "a/b", "a_b", "a b", "１２３", Text.replicate 101 "a"]
         )
     slug <- right (newSlug "haskell-syntax")
     check "slug text" (slugText slug == "haskell-syntax")

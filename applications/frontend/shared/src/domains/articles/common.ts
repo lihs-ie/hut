@@ -43,7 +43,9 @@ export const validateArticleIdentifier = (
 export const titleSchema = z
   .string()
   .min(1, { message: "Title must be at least 1 character long" })
-  .max(100, { message: "Title must be at most 100 characters long" })
+  .refine((value) => Array.from(value).length <= 100, {
+    message: "Title must be at most 100 characters long",
+  })
   .brand("Title");
 
 export type ArticleTitle = z.infer<typeof titleSchema>;
@@ -57,7 +59,9 @@ export type ArticleContent = z.infer<typeof contentSchema>;
 
 export const excerptSchema = z
   .string()
-  .max(300, { message: "Excerpt must be at most 300 characters long" })
+  .refine((value) => Array.from(value).length <= 300, {
+    message: "Excerpt must be at most 300 characters long",
+  })
   .brand("Excerpt");
 
 export type ArticleExcerpt = z.infer<typeof excerptSchema>;

@@ -64,6 +64,11 @@ describe("domains/articles/common", () => {
       const result = titleSchema.safeParse("テスト記事タイトル");
       expect(result.success).toBe(true);
     });
+
+    it("補助平面の文字を Unicode 文字数で数える", () => {
+      expect(titleSchema.safeParse("😀".repeat(100)).success).toBe(true);
+      expect(titleSchema.safeParse("😀".repeat(101)).success).toBe(false);
+    });
   });
 
   describe("contentSchema", () => {
@@ -96,6 +101,11 @@ describe("domains/articles/common", () => {
     describeStringLengthSchema("抜粋", excerptSchema, 0, 300, {
       maxLengthMessage: "Excerpt must be at most 300 characters long",
       allowEmpty: true,
+    });
+
+    it("補助平面の文字を Unicode 文字数で数える", () => {
+      expect(excerptSchema.safeParse("😀".repeat(200)).success).toBe(true);
+      expect(excerptSchema.safeParse("😀".repeat(301)).success).toBe(false);
     });
   });
 

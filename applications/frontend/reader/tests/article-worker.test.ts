@@ -38,6 +38,21 @@ describe("Article Worker reader repository", () => {
     expect(new URL(fetch.mock.calls[0][0].url).pathname).toBe("/articles/haskell-syntax");
   });
 
+  it("accepts backend-valid Unicode title and excerpt lengths", async () => {
+    const service: ArticleService = {
+      fetch: async () => Response.json({
+        ...publishedView("😀".repeat(100)),
+        excerpt: "😀".repeat(151),
+      }),
+    };
+    const article = await articleWorkerRepository(service)
+      .findBySlug(slugSchema.parse("haskell-syntax"))
+      .unwrap();
+
+    expect(article.title).toBe("😀".repeat(100));
+    expect(article.excerpt).toBe("😀".repeat(151));
+  });
+
   it("maps 404 to ArticleNotFound without requesting an admin route", async () => {
     const service: ArticleService = {
       fetch: async () => new Response(null, { status: 404 }),
