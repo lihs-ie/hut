@@ -144,6 +144,20 @@ export function articleWorkerRepository(
       return fromPromise(
         (async () => {
           if (criteria.status && criteria.status !== PublishStatus.PUBLISHED) return [];
+          if (criteria.slug) {
+            const response = await requestArticle(
+              service,
+              `/articles/${encodeURIComponent(criteria.slug)}`,
+            );
+            if (response.status === 404) return [];
+            if (!response.ok) {
+              throw new Error(`Article API returned HTTP ${response.status}`);
+            }
+            const article = toReaderArticle(
+              publishedViewSchema.parse(await response.json()),
+            );
+            return selectArticles([article], criteria);
+          }
           return selectArticles(await loadPublishedArticles(service), criteria);
         })(),
         (cause) => unexpectedError("Failed to search Article API", cause),

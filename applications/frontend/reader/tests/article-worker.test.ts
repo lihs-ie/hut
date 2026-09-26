@@ -96,6 +96,32 @@ describe("Article Worker reader repository", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it("uses the single-article route for a slug search", async () => {
+    const fetch = vi.fn(async () => Response.json(publishedView()));
+    const articles = await articleWorkerRepository({ fetch })
+      .search(criteriaSchema.parse({ slug: "haskell-syntax", freeWord: "functions" }))
+      .unwrap();
+
+    expect(articles).toHaveLength(1);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(new URL(fetch.mock.calls[0][0].url).pathname).toBe("/articles/haskell-syntax");
+  });
+
+  it("returns an empty slug search when the article is absent or does not match", async () => {
+    const missing = articleWorkerRepository({
+      fetch: async () => new Response(null, { status: 404 }),
+    });
+    expect(await missing.search(criteriaSchema.parse({ slug: "missing" })).unwrap()).toEqual([]);
+
+    const unmatched = articleWorkerRepository({
+      fetch: async () => Response.json(publishedView()),
+    });
+    expect(await unmatched.search(criteriaSchema.parse({
+      slug: "haskell-syntax",
+      freeWord: "unrelated",
+    })).unwrap()).toEqual([]);
+  });
+
   it("rejects an incomplete page instead of silently omitting articles", async () => {
     const service: ArticleService = {
       fetch: async () => Response.json({ articles: [], pagination: { total: 1 } }),
