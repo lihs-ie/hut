@@ -83,6 +83,7 @@ run :: IO ()
 run = do
     createsSchema
     migratesLegacySchema
+    rejectsMigrationFailures
     rejectsBrokenLegacySchema
     observesMissingArticle
     insertsAndTracksVersion
@@ -255,6 +256,40 @@ rejectsBrokenLegacySchema = do
   where
     staleArticleError = createProcessingTargetChanged
         "Article" "the observed article changed"
+
+rejectsMigrationFailures :: IO ()
+rejectsMigrationFailures = do
+    let allColumns = SQLResult []
+            [[SQLText "phase"], [SQLText "updated_order"], [SQLText "published_order"]]
+            0 3
+        runFailure failAt columns = do
+            calls <- newIORef (0 :: Int)
+            let execute _ = do
+                    step <- atomicModifyIORef' calls $ \value -> (value + 1, value + 1)
+                    if step == failAt
+                        then throwIO (SQLError "migration unavailable")
+                        else pure (if step == 3 then columns else emptyResult)
+            result <- initializeSchemaWith execute fixtureCodec
+            check "migration SQL failure is reported" (isServiceUnavailable result)
+            check "schema stops at the failing statement" =<< (== failAt) <$> readIORef calls
+    runFailure 3 allColumns
+    runFailure 4 emptyResult
+    runFailure 4 allColumns
+    runFailure 5 allColumns
+    article <- start
+    let identifier = articleIdentifierText (articleIdentifier article)
+        legacy = oneRow [SQLText identifier, SQLText "haskell-syntax", SQLText identifier]
+    calls <- newIORef (0 :: Int)
+    let failUpdate _ = do
+            step <- atomicModifyIORef' calls $ \value -> (value + 1, value + 1)
+            if step == 5
+                then throwIO (SQLError "backfill unavailable")
+                else pure $ case step of
+                    3 -> allColumns
+                    4 -> legacy
+                    _ -> emptyResult
+    update <- initializeSchemaWith failUpdate fixtureCodec
+    check "legacy backfill SQL failure is reported" (isServiceUnavailable update)
 
 observesMissingArticle :: IO ()
 observesMissingArticle = do
@@ -904,18 +939,32 @@ persistsLifecycleSlugs = do
     ready <- right (prepareToPublish timestamp excerpt proofreaded)
     published <- right (publish timestamp ready)
     private <- right (takeDown timestamp published)
-    mapM_ (\(name, article) -> do
+    mapM_ (\(name, article, hasPublicationTime) -> do
         versions <- newVersions
         (execute, statements) <- newScript [oneRow [SQLNumber 1]]
         result <- persistArticleWith execute versions fixtureCodec article
         check (name <> " can be persisted") (result == Right ())
         statement <- firstStatement =<< statements
-        check (name <> " retains its slug")
-            (statement.parameters !! 1 == SQLText "haskell-syntax"))
-        [ ("proofreaded", Proofreaded proofreaded)
-        , ("ready", Ready ready)
-        , ("published", Published published)
-        , ("private", Private private)
+        case statement.parameters of
+            [_identifier, storedSlug, phase, updated, publication, _payload] -> do
+                check (name <> " retains its slug")
+                    (storedSlug == SQLText "haskell-syntax")
+                check (name <> " indexes its lifecycle phase")
+                    (phase == SQLText (Text.pack name))
+                check (name <> " indexes its update time")
+                    (case updated of
+                        SQLText value -> "20260101" `Text.isPrefixOf` value
+                        _ -> False)
+                check (name <> " indexes its publication time")
+                    (case (hasPublicationTime, publication) of
+                        (False, SQLNull) -> True
+                        (True, SQLText value) -> "20260101" `Text.isPrefixOf` value
+                        _ -> False)
+            _ -> fail "expected lifecycle insert parameters")
+        [ ("proofreaded", Proofreaded proofreaded, False)
+        , ("ready", Ready ready, False)
+        , ("published", Published published, True)
+        , ("private", Private private, True)
         ]
 
 isServiceUnavailable :: Either DomainError a -> Bool

@@ -94,13 +94,81 @@ test("admin regeneration route records a request for a proofreaded article", asy
   assert.match(payload.requestIdentifier, /^[0-9A-HJKMNP-TV-Z]{26}$/);
 });
 
-test("article lifecycle is available through the admin and reader APIs", async () => {
+test("failed generation can be replaced by a new request", async () => {
   const headers = { "X-Hut-Actor": "editor", "content-type": "application/json" };
-  const slug = "article-lifecycle-feature";
   const createdResponse = await fetch(apiRoute("/admin/articles"), {
     method: "POST",
     headers,
-    body: JSON.stringify({ title: "Lifecycle", body: "# Lifecycle\n\nA complete article.", slug, tags: [] }),
+    body: JSON.stringify({
+      title: "Generation recovery",
+      body: "# Recovery\n\nThe failed request must not block this article.",
+      slug: "article-generation-recovery-feature",
+      tags: [],
+    }),
+  });
+  assert.equal(createdResponse.status, 201, await createdResponse.clone().text());
+  const { identifier } = await createdResponse.json();
+  const proofread = await fetch(apiRoute(`/admin/articles/${identifier}/proofreading`), {
+    method: "POST",
+    headers,
+  });
+  assert.equal(proofread.status, 200, await proofread.clone().text());
+  const regenerationRoute = `/admin/articles/${identifier}/excerpt-generation-requests`;
+  const first = await fetch(apiRoute(regenerationRoute), { method: "POST", headers });
+  assert.equal(first.status, 200, await first.clone().text());
+  const { requestIdentifier: firstRequest } = await first.json();
+
+  const abandoned = await fetch(route("/internal/excerpt-generation/abandon"), {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      identifier: firstRequest,
+      article: identifier,
+      expectedRevision: 2,
+    }),
+  });
+  assert.equal(abandoned.status, 200, await abandoned.clone().text());
+
+  const second = await fetch(apiRoute(regenerationRoute), { method: "POST", headers });
+  assert.equal(second.status, 200, await second.clone().text());
+  const { requestIdentifier: secondRequest } = await second.json();
+  assert.notEqual(secondRequest, firstRequest);
+
+  const oldClaim = await fetch(route(
+    "/internal/excerpt-generation/claim" +
+    `?article=${identifier}&request=${firstRequest}&expectedRevision=2`,
+  ));
+  assert.equal(oldClaim.status, 204, await oldClaim.clone().text());
+  const newClaim = await fetch(route(
+    "/internal/excerpt-generation/claim" +
+    `?article=${identifier}&request=${secondRequest}&expectedRevision=2`,
+  ));
+  assert.equal(newClaim.status, 200, await newClaim.clone().text());
+});
+
+test("article creation rejects non-ULID tag identifiers", async () => {
+  const response = await fetch(apiRoute("/admin/articles"), {
+    method: "POST",
+    headers: { "X-Hut-Actor": "editor", "content-type": "application/json" },
+    body: JSON.stringify({
+      title: "Invalid tag",
+      body: "Draft body",
+      slug: "invalid-tag-feature",
+      tags: ["haskell"],
+    }),
+  });
+  assert.equal(response.status, 400, await response.clone().text());
+  assert.equal(response.headers.get("X-Article-Error-Code"), "invalid_article");
+});
+
+test("article lifecycle is available through the admin and reader APIs", async () => {
+  const headers = { "X-Hut-Actor": "editor", "content-type": "application/json" };
+  const slug = "article-lifecycle-feature";
+  const tag = "01ARZ3NDEKTSV4RRFFQ69G5FAY";
+  const createdResponse = await fetch(apiRoute("/admin/articles"), {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ title: "Lifecycle", body: "# Lifecycle\n\nA complete article.", slug, tags: [tag] }),
   });
   assert.equal(createdResponse.status, 201, await createdResponse.clone().text());
   const created = await createdResponse.json();
@@ -125,7 +193,7 @@ test("article lifecycle is available through the admin and reader APIs", async (
   const amendedResponse = await fetch(apiRoute(`/admin/articles/${identifier}/draft`), {
     method: "PUT",
     headers,
-    body: JSON.stringify({ title: "Lifecycle", body: "# Lifecycle\n\nUpdated article.", slug, tags: [] }),
+    body: JSON.stringify({ title: "Lifecycle", body: "# Lifecycle\n\nUpdated article.", slug, tags: [tag] }),
   });
   assert.equal(amendedResponse.status, 200, await amendedResponse.clone().text());
   assert.match((await amendedResponse.json()).body, /Updated article/);
@@ -184,7 +252,9 @@ test("article lifecycle is available through the admin and reader APIs", async (
   assert.equal((await published.json()).phase, "published");
   const reader = await fetch(apiRoute(`/articles/${slug}`));
   assert.equal(reader.status, 200, await reader.clone().text());
-  assert.equal((await reader.json()).identifier, identifier);
+  const readerArticle = await reader.json();
+  assert.equal(readerArticle.identifier, identifier);
+  assert.deepEqual(readerArticle.tags, [tag]);
   const readerPage = await fetch(apiRoute("/articles"));
   assert.equal(readerPage.status, 200, await readerPage.clone().text());
   assert.ok((await readerPage.json()).articles.some((article) => article.identifier === identifier));

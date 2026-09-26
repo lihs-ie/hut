@@ -12,14 +12,12 @@ import Cloudflare.Workers.Binding.DurableObject.SQL (
     SQLLimits (..),
     sqlExec,
  )
-import Cloudflare.Workers.Binding.DurableObject (doStorageSetAlarm)
 import Data.Aeson (encode)
 import Data.ByteString.Lazy qualified as Lazy
 import Data.IORef (IORef, readIORef)
-import Data.Time (getCurrentTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Text.Encoding (decodeUtf8)
 import "article" Domain.Article.Common (ArticleIdentifier)
+import Infrastructure.Article.DurableObject.AlarmSchedule (scheduleOutboxAlarmSoon)
 import Infrastructure.Article.DurableObject.GenerationJob (
     GenerationRequestDecision (..),
     requestGenerationWith,
@@ -81,9 +79,7 @@ executeArticleSQL context =
 
 scheduleDelivery :: ArticleTransactionContext -> IO (Either DomainError ())
 scheduleDelivery context = do
-    now <- getCurrentTime
-    let milliseconds = floor (utcTimeToPOSIXSeconds now * 1000)
-    doStorageSetAlarm context.storage (milliseconds + 1000)
+    scheduleOutboxAlarmSoon context.storage
     pure (Right ())
 
 appendProofreadOutboxScheduledWith ::

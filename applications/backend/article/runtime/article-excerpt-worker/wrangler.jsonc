@@ -10,6 +10,10 @@
   "env": {
     "dev": {
       "name": "hut-article-excerpt-worker-dev",
+      "vars": {
+        "GENERATION_QUEUE_NAME": "hut-article-excerpt-generation-dev",
+        "GENERATION_DLQ_NAME": "hut-article-excerpt-generation-dlq-dev"
+      },
       "ai": { "binding": "AI" },
       "durable_objects": {
         "bindings": [
@@ -35,12 +39,22 @@
             "max_retries": 3,
             "retry_delay": 60,
             "dead_letter_queue": "hut-article-excerpt-generation-dlq-dev"
+          },
+          {
+            "queue": "hut-article-excerpt-generation-dlq-dev",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "retry_delay": 300
           }
         ]
       }
     },
     "stg": {
       "name": "hut-article-excerpt-worker-stg",
+      "vars": {
+        "GENERATION_QUEUE_NAME": "hut-article-excerpt-generation-stg",
+        "GENERATION_DLQ_NAME": "hut-article-excerpt-generation-dlq-stg"
+      },
       "ai": { "binding": "AI" },
       "durable_objects": {
         "bindings": [
@@ -66,12 +80,22 @@
             "max_retries": 3,
             "retry_delay": 60,
             "dead_letter_queue": "hut-article-excerpt-generation-dlq-stg"
+          },
+          {
+            "queue": "hut-article-excerpt-generation-dlq-stg",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "retry_delay": 300
           }
         ]
       }
     },
     "prd": {
       "name": "hut-article-excerpt-worker-prd",
+      "vars": {
+        "GENERATION_QUEUE_NAME": "hut-article-excerpt-generation-prd",
+        "GENERATION_DLQ_NAME": "hut-article-excerpt-generation-dlq-prd"
+      },
       "ai": { "binding": "AI" },
       "durable_objects": {
         "bindings": [
@@ -97,6 +121,12 @@
             "max_retries": 3,
             "retry_delay": 60,
             "dead_letter_queue": "hut-article-excerpt-generation-dlq-prd"
+          },
+          {
+            "queue": "hut-article-excerpt-generation-dlq-prd",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "retry_delay": 300
           }
         ]
       }

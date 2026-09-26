@@ -1,6 +1,8 @@
 module Main (main) where
 
+import Article.Worker.API.CompositionSpec qualified as APIComposition
 import Article.Worker.Excerpt.ContractSpec qualified as ExcerptContract
+import Article.Worker.Excerpt.DeadLetterSpec qualified as ExcerptDeadLetter
 import Article.Worker.Completion.ContractSpec qualified as CompletionContract
 import Article.Worker.DO.AlarmSpec qualified as DOAlarm
 import Domain.Article.EventSpec qualified as Event
@@ -10,6 +12,7 @@ import Domain.Article.DraftSpec qualified as Draft
 import Domain.Article.LifecycleSpec qualified as Lifecycle
 import Infrastructure.Article.Excerpt.WorkersAISpec qualified as WorkersAI
 import Infrastructure.Article.DurableObject.TransactionSpec qualified as DOTransaction
+import Infrastructure.Article.DurableObject.AlarmScheduleSpec qualified as DOAlarmSchedule
 import Infrastructure.Article.DurableObject.RepositorySpec qualified as DORepository
 import Infrastructure.Article.DurableObject.QuerySpec qualified as DOQuery
 import Infrastructure.Article.DurableObject.CodecSpec qualified as DOCodec
@@ -25,6 +28,7 @@ import Infrastructure.Article.Media.ImageAvailabilitySpec qualified as ImageAvai
 import Infrastructure.Article.Media.ImageReferencesSpec qualified as ImageReferences
 import Presentation.Handler.DO.ExcerptClaimSpec qualified as ExcerptClaim
 import Presentation.Handler.DO.ExcerptCompleteSpec qualified as ExcerptComplete
+import Presentation.Handler.DO.ExcerptAbandonSpec qualified as ExcerptAbandon
 import Presentation.Handler.Queue.ExcerptGenerationSpec qualified as GenerationHandler
 import Presentation.Handler.Queue.ExcerptCompletionSpec qualified as CompletionHandler
 import Presentation.Server.APISpec qualified as APIServer
@@ -51,7 +55,9 @@ import UseCase.ViewArticleForAdminSpec qualified as ViewAdmin
 
 main :: IO ()
 main = do
+    APIComposition.run
     ExcerptContract.run
+    ExcerptDeadLetter.run
     CompletionContract.run
     DOAlarm.run
     Common.run
@@ -60,6 +66,7 @@ main = do
     Lifecycle.run
     WorkersAI.run
     _ <- DOTransaction.run
+    DOAlarmSchedule.run
     DORepository.run
     DOQuery.run
     DOCodec.run
@@ -75,6 +82,7 @@ main = do
     ImageReferences.run
     ExcerptClaim.run
     ExcerptComplete.run
+    ExcerptAbandon.run
     GenerationHandler.run
     CompletionHandler.run
     APIServer.run

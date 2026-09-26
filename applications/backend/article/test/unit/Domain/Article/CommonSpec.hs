@@ -72,7 +72,12 @@ run = do
         right
             ( newDraftContent
                 extractImages
-                (DraftInput input.title input.body input.slug ["haskell", "haskell"])
+                ( DraftInput
+                    input.title
+                    input.body
+                    input.slug
+                    ["01ARZ3NDEKTSV4RRFFQ69G5FAY", "01ARZ3NDEKTSV4RRFFQ69G5FAY"]
+                )
             )
     check "tags deduplicated" (length deduplicated.tags == 1)
     check

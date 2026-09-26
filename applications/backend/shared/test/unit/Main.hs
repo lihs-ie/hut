@@ -5,6 +5,7 @@ import Shared.Domain.Common.PrimitiveSpec qualified as PrimitiveSpec
 import Shared.Domain.CommonSpec qualified as DomainCommonSpec
 import Shared.Domain.IdentifierSpec qualified as IdentifierSpec
 import Shared.Domain.PagerSpec qualified as PagerSpec
+import Shared.Domain.TagSpec qualified as TagSpec
 import Shared.FFI.SecureRandomSpec qualified as SecureRandomSpec
 import Shared.Infrastructure.VersioningSpec qualified as VersioningSpec
 import Shared.Transaction.BoundarySpec qualified as TransactionBoundary
@@ -26,6 +27,7 @@ main = do
             , TransactionFailure.run
             , TransactionBoundary.run
             , IdentifierSpec.run
+            , TagSpec.run
             , SecureRandomSpec.run
             , UseCaseCommonSpec.run
             , UseCaseIdentifierSpec.run

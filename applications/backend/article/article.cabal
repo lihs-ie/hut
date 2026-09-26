@@ -61,6 +61,7 @@ library worker-adapters
   exposed-modules:
     Article.Worker.Excerpt.Env
     Article.Worker.Excerpt.Contract
+    Article.Worker.Excerpt.DeadLetter
     Article.Worker.Excerpt.Composition
     Article.Worker.API.Env
     Article.Worker.API.Composition
@@ -82,6 +83,7 @@ library worker-adapters
     Presentation.Server.API
     Infrastructure.Article.Excerpt.WorkersAI
     Infrastructure.Article.DurableObject.Transaction
+    Infrastructure.Article.DurableObject.AlarmSchedule
     Infrastructure.Article.DurableObject.Repository
     Infrastructure.Article.DurableObject.Query
     Infrastructure.Article.DurableObject.Codec
@@ -98,6 +100,7 @@ library worker-adapters
     Infrastructure.Article.Media.ImageReferences
     Presentation.Handler.DO.ExcerptClaim
     Presentation.Handler.DO.ExcerptComplete
+    Presentation.Handler.DO.ExcerptAbandon
     Presentation.Handler.Queue.ExcerptGeneration
     Presentation.Handler.Queue.ExcerptCompletion
   build-depends:
@@ -177,7 +180,9 @@ test-suite article-unit-test
   hs-source-dirs: test/unit
   main-is: Main.hs
   other-modules:
+    Article.Worker.API.CompositionSpec
     Article.Worker.Excerpt.ContractSpec
+    Article.Worker.Excerpt.DeadLetterSpec
     Article.Worker.Completion.ContractSpec
     Article.Worker.DO.AlarmSpec
     TestSupport
@@ -193,6 +198,7 @@ test-suite article-unit-test
     Domain.Article.EventSpec
     Infrastructure.Article.Excerpt.WorkersAISpec
     Infrastructure.Article.DurableObject.TransactionSpec
+    Infrastructure.Article.DurableObject.AlarmScheduleSpec
     Infrastructure.Article.DurableObject.RepositorySpec
     Infrastructure.Article.DurableObject.QuerySpec
     Infrastructure.Article.DurableObject.CodecSpec
@@ -209,6 +215,7 @@ test-suite article-unit-test
     Presentation.Server.APISpec
     Presentation.Handler.DO.ExcerptClaimSpec
     Presentation.Handler.DO.ExcerptCompleteSpec
+    Presentation.Handler.DO.ExcerptAbandonSpec
     Presentation.Handler.Queue.ExcerptGenerationSpec
     Presentation.Handler.Queue.ExcerptCompletionSpec
     UseCase.Transaction.WriteSpec

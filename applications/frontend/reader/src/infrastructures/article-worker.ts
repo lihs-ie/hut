@@ -57,6 +57,43 @@ async function requestArticle(service: ArticleService, path: string): Promise<Re
   return service.fetch(new Request(new URL(path, "https://article.internal")));
 }
 
+/** Retries a changing offset-based listing instead of returning duplicate or incomplete pages. */
+async function loadPublishedArticles(service: ArticleService): Promise<Article[]> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const articles: Article[] = [];
+    const seen = new Set<string>();
+    let expectedTotal: number | undefined;
+    let changed = false;
+    for (let page = 1; ; page += 1) {
+      const response = await requestArticle(service, `/articles?page=${page}&size=100`);
+      if (!response.ok) {
+        throw new Error(`Article API returned HTTP ${response.status}`);
+      }
+      const result = articlePageSchema.parse(await response.json());
+      expectedTotal ??= result.pagination.total;
+      if (result.pagination.total !== expectedTotal) {
+        changed = true;
+        break;
+      }
+      for (const view of result.articles) {
+        if (seen.has(view.identifier)) {
+          changed = true;
+          break;
+        }
+        seen.add(view.identifier);
+        articles.push(toReaderArticle(view));
+      }
+      if (changed) break;
+      if (articles.length === expectedTotal) return articles;
+      if (articles.length > expectedTotal || result.articles.length === 0) {
+        changed = true;
+        break;
+      }
+    }
+  }
+  throw new Error("Article API pages changed during the read");
+}
+
 /** Applies the reader's existing search criteria to a published-only page. */
 function selectArticles(articles: Article[], criteria: Parameters<ArticleRepository["search"]>[0]): Article[] {
   if (criteria.status && criteria.status !== PublishStatus.PUBLISHED) {
@@ -107,20 +144,7 @@ export function articleWorkerRepository(
       return fromPromise(
         (async () => {
           if (criteria.status && criteria.status !== PublishStatus.PUBLISHED) return [];
-          const articles: Article[] = [];
-          for (let page = 1; ; page += 1) {
-            const response = await requestArticle(service, `/articles?page=${page}&size=100`);
-            if (!response.ok) {
-              throw new Error(`Article API returned HTTP ${response.status}`);
-            }
-            const result = articlePageSchema.parse(await response.json());
-            articles.push(...result.articles.map(toReaderArticle));
-            if (articles.length >= result.pagination.total) break;
-            if (result.articles.length === 0) {
-              throw new Error("Article API returned an incomplete page");
-            }
-          }
-          return selectArticles(articles, criteria);
+          return selectArticles(await loadPublishedArticles(service), criteria);
         })(),
         (cause) => unexpectedError("Failed to search Article API", cause),
       );

@@ -6,7 +6,6 @@ module Article.Worker.DO.Alarm (
 
 import Cloudflare.Workers.Binding.DurableObject (
     DurableObjectStorage,
-    doStorageSetAlarm,
  )
 import Cloudflare.Workers.Binding.Queue (
     QueueProducer,
@@ -23,6 +22,7 @@ import Infrastructure.Article.DurableObject.Outbox (
     OutboxDispatchResult (..),
     dispatchPending,
  )
+import Infrastructure.Article.DurableObject.AlarmSchedule (scheduleOutboxAlarmAt)
 import Infrastructure.Article.DurableObject.MediaOutbox (dispatchPendingMedia)
 import Infrastructure.Article.DurableObject.LogOutbox (dispatchPendingLogs)
 import "shared" Shared.Domain.Error (DomainError)
@@ -31,7 +31,7 @@ dispatchArticleOutboxAlarm :: DurableObjectStorage -> QueueProducer -> QueueProd
 dispatchArticleOutboxAlarm storage generationQueue mediaQueue =
     runOutboxAlarmWith
         dispatchAll
-        (doStorageSetAlarm storage)
+        (scheduleOutboxAlarmAt storage)
         getCurrentTime
   where
     send queue message = do

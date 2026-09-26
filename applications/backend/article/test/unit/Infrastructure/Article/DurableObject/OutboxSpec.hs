@@ -8,7 +8,7 @@ import Cloudflare.Workers.Binding.DurableObject.SQL (
     SQLStatement (..),
     SQLValue (..),
  )
-import Control.Exception (throwIO)
+import Control.Exception (AsyncException (ThreadKilled), SomeException, throwIO, try)
 import Control.Monad (forM_, unless)
 import Data.Aeson (encode)
 import Data.ByteString.Lazy qualified as Lazy
@@ -268,6 +268,10 @@ handlesQueueException = do
     check "queue exception does not mark delivered"
         . all (not . Text.isInfixOf "status = 'delivered'" . (.sql))
         =<< statements
+    (asyncSQL, _) <- newScript [resultRows [pendingRow "event-1" message]]
+    asyncFailure <- try (dispatchPendingWith asyncSQL (\_ -> throwIO ThreadKilled))
+        :: IO (Either SomeException (Either DomainError OutboxDispatchResult))
+    check "asynchronous queue exception propagates" (either (const True) (const False) asyncFailure)
 
 rejectsMalformedSelection :: IO ()
 rejectsMalformedSelection = do

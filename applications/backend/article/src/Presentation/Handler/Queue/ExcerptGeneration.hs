@@ -2,6 +2,8 @@ module Presentation.Handler.Queue.ExcerptGeneration (
     GenerationDependencies (..),
     handleGenerationMessage,
     handleGenerationBatch,
+    handleGenerationDeadLetterMessage,
+    handleGenerationDeadLetterBatch,
 ) where
 
 import Cloudflare.Workers.Entrypoint.Queue (QueueBatch)
@@ -33,6 +35,7 @@ data GenerationDependencies = GenerationDependencies
     , newIdentifier :: IO (Either DomainError EventIdentifier)
     , currentTime :: IO UTCTime
     , publishGenerated :: ExcerptGeneratedMessage -> IO ()
+    , abandonArticle :: ExcerptGenerationRequested -> IO (Either DomainError ())
     }
 
 handleGenerationMessage ::
@@ -74,3 +77,15 @@ handleGenerationBatch :: GenerationDependencies -> QueueBatch -> IO ()
 handleGenerationBatch dependencies =
     consumeJSONMessages
         (\_ message -> handleGenerationMessage dependencies message)
+
+handleGenerationDeadLetterMessage ::
+    GenerationDependencies -> ExcerptGenerationRequestedMessage -> IO ()
+handleGenerationDeadLetterMessage dependencies
+    (ExcerptGenerationRequestedMessage (EventEnvelope _ _ _ _ _ request)) = do
+        result <- dependencies.abandonArticle request
+        either throwIO pure result
+
+handleGenerationDeadLetterBatch :: GenerationDependencies -> QueueBatch -> IO ()
+handleGenerationDeadLetterBatch dependencies =
+    consumeJSONMessages
+        (\_ message -> handleGenerationDeadLetterMessage dependencies message)

@@ -25,6 +25,7 @@ import Cloudflare.Workers.HTTP (
     requestPath,
  )
 import Data.Proxy (Proxy (Proxy))
+import Control.Exception (throwIO)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Time (getCurrentTime)
@@ -33,6 +34,7 @@ import Infrastructure.Article.DurableObject.DomainOutbox qualified as DomainOutb
 import Infrastructure.Article.DurableObject.Completion (applyGeneratedExcerpt)
 import Infrastructure.Article.DurableObject.GenerationJob (
     GenerationFinalization (..),
+    abandonGenerationWith,
     initializeGenerationJobSchemaWith,
  )
 import Infrastructure.Article.DurableObject.ReadyOutbox (appendReadyEvents)
@@ -70,6 +72,7 @@ import Presentation.Handler.DO.ExcerptComplete (
     CompleteOutcome (..),
     handleExcerptComplete,
  )
+import Presentation.Handler.DO.ExcerptAbandon (handleExcerptAbandon)
 import Presentation.Handler.DO.ExcerptClaim (handleExcerptClaim)
 import Presentation.Server.API (APIServerDependencies (..), articleAPIServer)
 import Shared.Domain.Error (DomainError, createUnexpectedError)
@@ -111,6 +114,17 @@ articleDOHandler request environment context = do
                 handleExcerptClaim
                     (doStorageTransactionWith storage)
                     (sqlExec storage claimSQLLimits)
+                    request
+            "/internal/excerpt-generation/abandon" ->
+                handleExcerptAbandon
+                    (\generation -> do
+                        outcome <- doStorageTransactionWith storage $ do
+                            result <- abandonGenerationWith
+                                (sqlExec storage claimSQLLimits)
+                                generation
+                            either throwIO pure result
+                        pure (Right outcome)
+                    )
                     request
             "/internal/excerpt-generation/complete" -> do
                 driver <- newArticleTransactionDriver storage

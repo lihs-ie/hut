@@ -8,9 +8,9 @@ import { articleWorkerRepository, ArticleService } from "@/infrastructures/artic
 const identifier = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
 
 /** Builds an Article API response with valid published data. */
-function publishedView(title = "Haskell syntax") {
+function publishedView(title = "Haskell syntax", articleIdentifier = identifier) {
   return {
-    identifier,
+    identifier: articleIdentifier,
     phase: "published",
     title,
     body: "# Syntax\n\nFunctions and types.",
@@ -65,8 +65,11 @@ describe("Article Worker reader repository", () => {
       const page = new URL(request.url).searchParams.get("page");
       return Response.json({
         articles: page === "1"
-          ? Array.from({ length: 100 }, () => publishedView())
-          : [publishedView("Reader match")],
+          ? Array.from({ length: 100 }, (_, index) => publishedView(
+            "Haskell syntax",
+            `${identifier.slice(0, -2)}${String(index).padStart(2, "0")}`,
+          ))
+          : [publishedView("Reader match", `${identifier.slice(0, -2)}A0`)],
         pagination: { total: 101 },
       });
     });
@@ -102,5 +105,45 @@ describe("Article Worker reader repository", () => {
       .match({ ok: () => null, err: (error) => error });
 
     expect(isUnexpectedError(result)).toBe(true);
+  });
+
+  it("retries when the total changes between pages", async () => {
+    let calls = 0;
+    const fetch = vi.fn(async (request: Request) => {
+      calls += 1;
+      const page = new URL(request.url).searchParams.get("page");
+      if (calls <= 2) {
+        return Response.json({
+          articles: page === "1"
+            ? Array.from({ length: 100 }, (_, index) => publishedView(
+              "Before change",
+              `${identifier.slice(0, -2)}${String(index).padStart(2, "0")}`,
+            ))
+            : [],
+          pagination: { total: page === "1" ? 101 : 100 },
+        });
+      }
+      return Response.json({ articles: [publishedView("After change")], pagination: { total: 1 } });
+    });
+    const articles = await articleWorkerRepository({ fetch })
+      .search(criteriaSchema.parse({}))
+      .unwrap();
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].title).toBe("After change");
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("fails after repeated duplicate pages", async () => {
+    const fetch = vi.fn(async () => Response.json({
+      articles: Array.from({ length: 100 }, () => publishedView()),
+      pagination: { total: 101 },
+    }));
+    const result = await articleWorkerRepository({ fetch })
+      .search(criteriaSchema.parse({}))
+      .match({ ok: () => null, err: (error) => error });
+
+    expect(isUnexpectedError(result)).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(3);
   });
 });

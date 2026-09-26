@@ -36,7 +36,7 @@ otherImage :: Either DomainError ImageReference
 otherImage = newImageReference "01ARZ3NDEKTSV4RRFFQ69G5FAW"
 
 input :: DraftInput
-input = DraftInput "Haskell" "Body with managed-image" (Just "haskell-syntax") ["haskell"]
+input = DraftInput "Haskell" "Body with managed-image" (Just "haskell-syntax") ["01ARZ3NDEKTSV4RRFFQ69G5FAY"]
 
 -- A deterministic domain-test port, not a Markdown parser.
 extractImages :: ExtractImageReferences

@@ -3,6 +3,7 @@ module Article.Worker.Excerpt.Composition (
 ) where
 
 import Article.Worker.Excerpt.Contract (claimArticleContent)
+import Article.Worker.Excerpt.DeadLetter (abandonGenerationRequest)
 import Article.Worker.Excerpt.Env (ExcerptWorkerEnv)
 import Cloudflare.Workers.Binding.Queue (
     QueueProducer,
@@ -10,8 +11,10 @@ import Cloudflare.Workers.Binding.Queue (
     queueSendDefaultOptions,
  )
 import Cloudflare.Workers.Binding.WorkersAI (WorkersAI)
-import Cloudflare.Workers.Entrypoint.Queue (QueueConsumer)
+import Cloudflare.Workers.Binding.Var (Var, unVar)
+import Cloudflare.Workers.Entrypoint.Queue (QueueBatch (..), QueueConsumer)
 import Cloudflare.Workers.Env (getBinding, getDurableObjectNamespace)
+import Control.Exception (throwIO)
 import Data.Aeson (encode)
 import Data.ByteString.Lazy qualified as Lazy
 import Data.Proxy (Proxy (Proxy))
@@ -20,6 +23,7 @@ import Infrastructure.Article.Excerpt.WorkersAI qualified as WorkersAI
 import Presentation.Handler.Queue.ExcerptGeneration (
     GenerationDependencies (..),
     handleGenerationBatch,
+    handleGenerationDeadLetterBatch,
  )
 import "shared" Shared.Domain.Identifier (ulidText)
 import "shared" Shared.Domain.Error (DomainError, createUnexpectedError)
@@ -32,7 +36,12 @@ import "shared" Shared.UseCase.Identifier (
 
 excerptWorkerHandler :: QueueConsumer ExcerptWorkerEnv
 excerptWorkerHandler batch environment _context =
-    handleGenerationBatch dependencies batch
+    if batch.queueBatchQueueName == unVar generationQueueName
+        then handleGenerationBatch dependencies batch
+        else
+            if batch.queueBatchQueueName == unVar generationDeadLetterQueueName
+                then handleGenerationDeadLetterBatch dependencies batch
+                else throwIO (createUnexpectedError "ArticleExcerpt" "unexpected queue")
   where
     dependencies =
         GenerationDependencies
@@ -44,6 +53,7 @@ excerptWorkerHandler batch environment _context =
                 queueSend completionQueue
                     (Lazy.toStrict (encode message))
                     queueSendDefaultOptions
+            , abandonArticle = abandonGenerationRequest articleNamespace
             }
     articleNamespace =
         getDurableObjectNamespace (Proxy @"ARTICLE_DO") environment
@@ -52,6 +62,10 @@ excerptWorkerHandler batch environment _context =
         getBinding
             (Proxy @"ARTICLE_EXCERPT_COMPLETION_QUEUE")
             environment :: QueueProducer
+    generationQueueName =
+        getBinding (Proxy @"GENERATION_QUEUE_NAME") environment :: Var
+    generationDeadLetterQueueName =
+        getBinding (Proxy @"GENERATION_DLQ_NAME") environment :: Var
 
 generateEventIdentifier :: IO (Either DomainError EventIdentifier)
 generateEventIdentifier = do

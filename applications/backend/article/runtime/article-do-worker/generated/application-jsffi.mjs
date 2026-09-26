@@ -176,6 +176,15 @@ ZC2ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBy
   }
 })()),
 ZC3ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziBytesZC: ($1,$2) => (new Uint8Array(__exports.memory.buffer, $1, $2).slice()),
+ZC3ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziDurableObjectZC: ($1) => ((() => {
+  const alarmTime = $1;
+
+  if (!Number.isSafeInteger(alarmTime) || alarmTime < 0) {
+    throw new TypeError('the Durable Object alarm time is not a non-negative safe integer: ' + typeof alarmTime);
+  }
+
+  return alarmTime;
+})()),
 ZC12ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziDurableObjectZC: async ($1,$2) => ((async () => {
   try {
     await $1.setAlarm($2);
@@ -190,6 +199,20 @@ ZC12ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziD
     };
   }
 })()),
+ZC13ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziDurableObjectZC: async ($1) => ((async () => {
+  try {
+    return {
+      ok: true,
+      value: await $1.getAlarm()
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: `${error}`
+    };
+  }
+})()),
+ZC23ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziDurableObjectZC: ($1) => ($1 === undefined || $1 === null),
 ZC36ZCcldflrzmwrkrszm0zi1zi0zi0zm2c908212ZCCloudflareziWorkersziInternalziFFIziDurableObjectZC: async ($1) => ((async () => {
   try {
     return {

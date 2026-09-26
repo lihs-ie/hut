@@ -74,6 +74,7 @@ test-suite shared-test
     Shared.Transaction.FailureSpec
     Shared.Transaction.BoundarySpec
     Shared.Domain.IdentifierSpec
+    Shared.Domain.TagSpec
     Shared.FFI.SecureRandomSpec
     Shared.UseCase.CommonSpec
     Shared.UseCase.IdentifierSpec

@@ -11,10 +11,16 @@ import Cloudflare.Workers.Binding.WorkersAI.Gemma (
  )
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text qualified as Text
-import Domain.Article.Draft (proofread, proofreadedContent)
+import Domain.Article.Common (
+    DraftInput (..),
+    confirmAvailableImageReferences,
+    newArticleIdentifier,
+    newDraftContent,
+ )
+import Domain.Article.Draft (newUnvalidatedDraft, proofread, proofreadedContent)
 import Infrastructure.Article.Excerpt.WorkersAI (excerptFromOutput, generateExcerptWith, generationInput)
 import Shared.Domain.Excerpt (excerptText)
-import TestSupport (check, confirmed, right, start, timestamp)
+import TestSupport (check, confirmed, extractImages, right, start, timestamp)
 
 run :: IO ()
 run = do
@@ -27,6 +33,22 @@ run = do
             check "input includes title" ("Haskell" `Text.isInfixOf` user)
             check "input includes body" ("Body with managed-image" `Text.isInfixOf` user)
         _ -> fail "expected system and user messages"
+
+    longContent <- right
+        (newDraftContent extractImages
+            (DraftInput "Long article" (Text.replicate 12000 "a" <> Text.replicate 12000 "z")
+                (Just "long-article") []))
+    articleIdentifier <- right (newArticleIdentifier "01ARZ3NDEKTSV4RRFFQ69G5FAV")
+    longDraft <- right (newUnvalidatedDraft articleIdentifier (timestamp 0) longContent)
+    emptyImages <- right (confirmAvailableImageReferences mempty mempty)
+    longArticle <- right (proofread (timestamp 1) emptyImages longDraft)
+    case generationInput (proofreadedContent longArticle) of
+        GemmaMessages (_ :| [GemmaUser user]) -> do
+            check "long source is bounded" (Text.length user < 13000)
+            check "long source retains beginning" (Text.replicate 100 "a" `Text.isInfixOf` user)
+            check "long source retains end" (Text.replicate 100 "z" `Text.isInfixOf` user)
+            check "long source marks omitted middle" ("[Middle of article omitted]" `Text.isInfixOf` user)
+        _ -> fail "expected long article user message"
 
     let chatOutput =
             GemmaChatOutput

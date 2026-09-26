@@ -61,11 +61,22 @@ generationInput content =
                         [ "Title:"
                         , titleText content.title
                         , "Article:"
-                        , contentText content.body
+                        , excerptSource (contentText content.body)
                         ]
                     )
                ]
         )
+
+excerptSource :: Text.Text -> Text.Text
+excerptSource body
+    | Text.length body <= sourceLimit = body
+    | otherwise =
+        Text.take sourceHeadLength body
+            <> "\n[Middle of article omitted]\n"
+            <> Text.takeEnd (sourceLimit - sourceHeadLength) body
+  where
+    sourceLimit = 12000
+    sourceHeadLength = 9000
 
 excerptFromOutput :: GemmaOutput -> Either DomainError Excerpt
 excerptFromOutput output = do

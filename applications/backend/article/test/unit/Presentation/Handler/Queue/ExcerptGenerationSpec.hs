@@ -29,6 +29,7 @@ run = do
     proofreaded <- right (proofread (timestamp 1) available draft)
     published <- newIORef Nothing
     generatedCount <- newIORef (0 :: Int)
+    abandoned <- newIORef Nothing
     let request = ExcerptGenerationRequested requestIdentifier articleIdentifier revision
         message =
             ExcerptGenerationRequestedMessage
@@ -42,6 +43,9 @@ run = do
                 , newIdentifier = pure (Right generatedIdentifier)
                 , currentTime = pure (timestamp 2)
                 , publishGenerated = writeIORef published . Just
+                , abandonArticle = \failedRequest -> do
+                    writeIORef abandoned (Just failedRequest)
+                    pure (Right ())
                 }
     handleGenerationMessage dependencies message
     sent <- readIORef published
@@ -69,6 +73,14 @@ run = do
         message
     check "changed target is acknowledged without AI" . (== 1) =<< readIORef generatedCount
 
+    failedClaim <- try (handleGenerationMessage
+        dependencies
+            { claimArticle =
+                \_ -> pure (Left (createServiceUnavailable "ArticleDO" "failure"))
+            }
+        message) :: IO (Either DomainError ())
+    check "DO claim failure is retried" (either (const True) (const False) failedClaim)
+
     let unavailable =
             dependencies
                 { generateExcerpt =
@@ -91,3 +103,17 @@ run = do
         Left _ -> True
         Right _ -> False
     check "identifier failure does not publish" . (== Nothing) =<< readIORef published
+
+    handleGenerationDeadLetterMessage dependencies message
+    check "dead letter releases the matching job" . (== Just request) =<< readIORef abandoned
+    check "dead letter does not call AI" . (== 1) =<< readIORef generatedCount
+
+    failedAbandon <- try (handleGenerationDeadLetterMessage
+        dependencies
+            { abandonArticle = \_ ->
+                pure (Left (createServiceUnavailable "ArticleDO" "failure"))
+            }
+        message) :: IO (Either DomainError ())
+    check "failed dead-letter release is retried" $ case failedAbandon of
+        Left _ -> True
+        Right _ -> False

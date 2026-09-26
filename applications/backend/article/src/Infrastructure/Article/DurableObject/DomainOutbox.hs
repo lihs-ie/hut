@@ -11,19 +11,17 @@ module Infrastructure.Article.DurableObject.DomainOutbox (
 ) where
 
 import Data.Aeson (Value, encode, object, (.=))
-import Cloudflare.Workers.Binding.DurableObject (doStorageSetAlarm)
 import Data.ByteString.Lazy qualified as Lazy
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
-import Data.Time (getCurrentTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import "article" Domain.Article (
     ArticleIdentifier,
     articleIdentifierText,
     imageReferenceText,
  )
 import "article" Domain.Article.Event (ImageReferences (..))
+import Infrastructure.Article.DurableObject.AlarmSchedule (scheduleOutboxAlarmSoon)
 import "article" UseCase.Result (ArticleEventsFor)
 import "article" UseCase.Result qualified as Result
 import Infrastructure.Article.DurableObject.Repository (OutboxRecord (..), appendOutbox)
@@ -70,9 +68,7 @@ scheduled ::
 scheduled append command events = do
     append command events
     transactionAction $ \context -> do
-        now <- getCurrentTime
-        doStorageSetAlarm context.storage
-            (floor (utcTimeToPOSIXSeconds now * 1000) + 1000)
+        scheduleOutboxAlarmSoon context.storage
         pure (Right ())
 
 appendToStorage ::

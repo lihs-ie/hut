@@ -9,15 +9,13 @@ module Infrastructure.Article.DurableObject.ReadyOutbox (
 
 import Data.Aeson (encode, object, (.=))
 import Control.Monad (foldM)
-import Cloudflare.Workers.Binding.DurableObject (doStorageSetAlarm)
 import Data.ByteString.Lazy qualified as Lazy
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
-import Data.Time (getCurrentTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import "article" Domain.Article (articleIdentifierText)
 import "article" UseCase.Result (ArticleEventsFor)
 import "article" UseCase.Result qualified as Result
+import Infrastructure.Article.DurableObject.AlarmSchedule (scheduleOutboxAlarmSoon)
 import "shared" Shared.Domain.Common.Transaction (Transaction)
 import "shared" Shared.Domain.Error (DomainError)
 import "shared" Shared.Domain.Event (DomainEvent (..), Events (..), OneOf (..))
@@ -41,10 +39,7 @@ appendReadyEvents newIdentifier command events = do
         command
         events
   where
-    schedule context = do
-        now <- getCurrentTime
-        doStorageSetAlarm context.storage
-            (floor (utcTimeToPOSIXSeconds now * 1000) + 1000)
+    schedule context = scheduleOutboxAlarmSoon context.storage
 
 appendReadyEventsWithSchedule ::
     (context -> OutboxRecord -> IO (Either DomainError ())) ->

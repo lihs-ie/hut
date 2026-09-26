@@ -1,7 +1,7 @@
 module Infrastructure.Article.DurableObject.ReadyOutboxSpec (run) where
 
 import Data.Aeson (Value (..), decodeStrict')
-import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.Text.Encoding (encodeUtf8)
 import Domain.Article.Event (ArticleReadyToPublish)
 import Infrastructure.Article.DurableObject.ReadyOutbox (
@@ -85,6 +85,16 @@ propagatesFailures = do
             command
             events
     check "outbox failure aborts" (appendFailure == Left unavailable)
+    attempted <- newIORef (0 :: Int)
+    twoEvents <- runTransactionInContext () $
+        appendReadyEventsWith
+            (\_ _ -> modifyIORef' attempted (+ 1) >> pure (Left unavailable))
+            (pure (Right event))
+            command
+            (Events [Here (DomainEvent article), Here (DomainEvent article)]
+                :: Events '[ArticleReadyToPublish])
+    check "first failed append aborts remaining events" (twoEvents == Left unavailable)
+    check "only first event was attempted" =<< ((== 1) <$> readIORef attempted)
 
 schedulesOnlyAfterAppend :: IO ()
 schedulesOnlyAfterAppend = do

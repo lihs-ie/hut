@@ -83,7 +83,11 @@ run = do
             { claimedTitle = Text.replicate 100 "T"
             , claimedBody = "A body with two managed images"
             , claimedSlug = "haskell-2"
-            , claimedTags = ["haskell", "workers", "haskell"]
+            , claimedTags =
+                [ "01ARZ3NDEKTSV4RRFFQ69G5FAY"
+                , "01ARZ3NDEKTSV4RRFFQ69G5FAZ"
+                , "01ARZ3NDEKTSV4RRFFQ69G5FAY"
+                ]
             , claimedImages = ["01ARZ3NDEKTSV4RRFFQ69G5FAV", "01ARZ3NDEKTSV4RRFFQ69G5FAX"]
             }
     assertAccepted "valid title, slug, deduplicated tags and distinct images" rich

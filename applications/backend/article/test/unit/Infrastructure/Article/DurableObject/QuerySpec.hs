@@ -176,6 +176,13 @@ rejectsInvalidResults = do
     (badOwner, _) <- newScript [oneRow [SQLText "not-an-identifier"]]
     owner <- findSlugOwnerWith badOwner slug
     check "corrupt stored owner is rejected" (isUnexpected owner)
+    (badOwnerShape, _) <- newScript [oneRow [SQLNumber 1]]
+    malformedOwner <- findSlugOwnerWith badOwnerShape slug
+    check "non-text slug owner is rejected" (isUnexpected malformedOwner)
+    (duplicateOwners, _) <- newScript [SQLResult []
+        [[SQLText "first"], [SQLText "second"]] 0 2]
+    ambiguousOwner <- findSlugOwnerWith duplicateOwners slug
+    check "duplicate slug owners are rejected" (isUnexpected ambiguousOwner)
     criteria <- right (newCriteria AllArticles 1 Nothing)
     (badCount, _) <- newScript [oneRow [SQLText "one"]]
     tracked <- versions
@@ -190,6 +197,9 @@ rejectsInvalidResults = do
     (badPage, _) <- newScript [oneRow [SQLNumber 1], oneRow [SQLText "invalid"]]
     malformed <- searchArticlesWith badPage tracked articleCodec criteria
     check "malformed page identifier fails" (isUnexpected malformed)
+    (badPageShape, _) <- newScript [oneRow [SQLNumber 1], oneRow [SQLNumber 2]]
+    malformedShape <- searchArticlesWith badPageShape tracked articleCodec criteria
+    check "non-text page identifier fails" (isUnexpected malformedShape)
     (badCountShape, _) <- newScript [oneRow [SQLNumber 1.5]]
     fractional <- searchArticlesWith badCountShape tracked articleCodec criteria
     check "fractional count fails" (isUnexpected fractional)
@@ -217,6 +227,14 @@ rejectsMissingAndPrivateResults = do
     (noSlug, _) <- newScript [SQLResult [] [] 0 0]
     absent <- findArticleBySlugWith noSlug tracked articleCodec slug
     check "unknown slug is absent" (absent == Right Nothing)
+    (brokenAggregate, _) <- newScript
+        [ oneRow [SQLText (articleIdentifierText (articleIdentifier draft))]
+        , oneRow [SQLText "haskell-syntax", SQLText "broken payload", SQLNumber 1]
+        ]
+    corrupt <- findArticleBySlugWith brokenAggregate tracked articleCodec slug
+    check "slug lookup rejects a corrupt aggregate" (case corrupt of
+        Left (UnexpectedError _) -> True
+        _ -> False)
     criteria <- right (newCriteria AllArticles 1 Nothing)
     (missing, _) <- newScript
         [oneRow [SQLNumber 1], oneRow [SQLText (articleIdentifierText (articleIdentifier draft))],
@@ -248,6 +266,19 @@ rejectsStorageErrors = do
     searched <- searchArticlesWith unavailable tracked articleCodec criteria
     check "search storage failure maps to domain error" (case searched of
         Left (ServiceUnavailable err) -> not (null (show err))
+        _ -> False)
+    bySlug <- findArticleBySlugWith unavailable tracked articleCodec slug
+    check "slug read failure maps to domain error" (case bySlug of
+        Left ServiceUnavailable{} -> True
+        _ -> False)
+    (selection, _) <- newScript [oneRow [SQLNumber 1]]
+    calls <- newIORef (0 :: Int)
+    let failSelection statement = do
+            step <- atomicModifyIORef' calls $ \value -> (value + 1, value)
+            if step == 0 then selection statement else throwIO (SQLError "page unavailable")
+    failedPage <- searchArticlesWith failSelection tracked articleCodec criteria
+    check "page selection failure maps to domain error" (case failedPage of
+        Left ServiceUnavailable{} -> True
         _ -> False)
 
 searchesEveryPhase :: IO ()
