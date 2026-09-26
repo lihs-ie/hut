@@ -11,11 +11,11 @@ import { ReaderArticleRepositoryProvider } from "@/providers/infrastructure/arti
 export const ArticleWorkflowProvider = {
   findBySlug: createArticleFindBySlugWorkflow(validateSlug)(
     LoggerProvider.console,
-  )(ReaderArticleRepositoryProvider.firebase.findBySlug)(
+  )(ReaderArticleRepositoryProvider.current.findBySlug)(
     createPublishedOnlyFilter("Article"),
   ),
 
   search: createArticleSearchWorkflow(validateCriteria)(
-    ReaderArticleRepositoryProvider.firebase.search,
+    ReaderArticleRepositoryProvider.current.search,
   )(LoggerProvider.console),
 } as const;
